@@ -24,11 +24,17 @@ OUT = ROOT / "src" / "assets" / "art"
 BG_SIZE = (1280, 720)
 SPRITE_HEIGHT = 480
 
+# Where to crop backgrounds that aren't 16:9: 0 = keep the top/left, 1 = keep the bottom/right.
+BG_FOCUS: dict[str, float] = {"bg_brindlemoor": 0.75}
+# Backgrounds kept at their own aspect (scaled to 720 tall). The scene lays them out itself.
+BG_KEEP_ASPECT = {"bg_title"}
+
 # Sprites that came out facing left. Game art faces right; the engine mirrors enemies itself.
 FLIP: set[str] = set()
 
 # Background removal thresholds (RGB distance from the detected background color).
 KEY_HARD = 70   # closer than this and connected to the border -> fully transparent
+KEY_HOLE = 40   # this close anywhere (e.g. a gap between wing and body) -> transparent too
 KEY_SOFT = 230  # edge pixels between HARD and SOFT get partial alpha
 EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
@@ -36,14 +42,20 @@ EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 def process_background(src: Path, key: str) -> Path:
     img = Image.open(src).convert("RGB")
     w, h = img.size
-    target = BG_SIZE[0] / BG_SIZE[1]
-    if w / h > target:
-        new_w = round(h * target)
-        img = img.crop(((w - new_w) // 2, 0, (w - new_w) // 2 + new_w, h))
+    if key in BG_KEEP_ASPECT:
+        img = img.resize((round(w * BG_SIZE[1] / h), BG_SIZE[1]), Image.LANCZOS)
     else:
-        new_h = round(w / target)
-        img = img.crop((0, (h - new_h) // 2, w, (h - new_h) // 2 + new_h))
-    img = img.resize(BG_SIZE, Image.LANCZOS)
+        focus = BG_FOCUS.get(key, 0.5)
+        target = BG_SIZE[0] / BG_SIZE[1]
+        if w / h > target:
+            new_w = round(h * target)
+            x0 = round((w - new_w) * focus)
+            img = img.crop((x0, 0, x0 + new_w, h))
+        else:
+            new_h = round(w / target)
+            y0 = round((h - new_h) * focus)
+            img = img.crop((0, y0, w, y0 + new_h))
+        img = img.resize(BG_SIZE, Image.LANCZOS)
     out = OUT / f"{key}.webp"
     img.save(out, quality=85, method=6)
     return out
@@ -89,11 +101,11 @@ def process_sprite(src: Path, key: str) -> Path:
     key_color = np.median(ring, axis=0)
     dist = np.sqrt(((rgb - key_color) ** 2).sum(axis=2))
 
-    # Only remove background-colored pixels connected to the image border,
-    # so matching colors inside the character (eyes, gems) survive.
+    # Remove background-colored areas connected to the border, plus enclosed pockets that are
+    # very close to the key color. Merely similar colors inside the character (eyes, gems) survive.
     border = np.zeros((h, w), bool)
     border[0, :] = border[-1, :] = border[:, 0] = border[:, -1] = True
-    bg = _grow(border, dist < KEY_HARD)
+    bg = _grow(border | (dist < KEY_HOLE), dist < KEY_HARD)
 
     # Soft alpha on a thin band around the removed area for anti-aliased edges.
     alpha = np.ones((h, w), np.float32)

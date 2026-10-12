@@ -41,7 +41,7 @@ export const ROOMS: RoomDef[] = [
         id: 'elder_maren',
         name: 'Elder Maren',
         title: 'Town Elder',
-        x: 200,
+        x: 150,
         y: 615,
         look: { shape: 'humanoid', color: 0x7f8c8d, accent: 0xecf0f1, scale: 1, art: 'npc_elder_maren' },
         role: { kind: 'talk' },
@@ -55,7 +55,7 @@ export const ROOMS: RoomDef[] = [
         id: 'tobin',
         name: 'Tobin',
         title: 'Shopkeeper',
-        x: 470,
+        x: 500,
         y: 605,
         look: { shape: 'humanoid', color: 0xb9770e, accent: 0x5d3a0a, scale: 1, art: 'npc_tobin' },
         role: {
@@ -68,7 +68,7 @@ export const ROOMS: RoomDef[] = [
         id: 'ilsa',
         name: 'Ilsa',
         title: 'Innkeeper',
-        x: 760,
+        x: 850,
         y: 610,
         look: { shape: 'humanoid', color: 0xa93226, accent: 0xf5cba7, scale: 1, art: 'npc_ilsa' },
         role: { kind: 'inn' },
@@ -78,7 +78,7 @@ export const ROOMS: RoomDef[] = [
         id: 'gate_guard',
         name: 'Garrick',
         title: 'Gate Guard',
-        x: 1020,
+        x: 1060,
         y: 600,
         look: { shape: 'humanoid', color: 0x34495e, accent: 0xbdc3c7, scale: 1.05, art: 'npc_gate_guard' },
         role: { kind: 'talk' },
@@ -120,4 +120,4 @@ export const ROOMS: RoomDef[] = [
 
 /** Where new characters start, and where you wake up after losing a battle. */
 export const START = { roomId: 'brindlemoor', x: 620, y: 650 };
-export const INN_SPAWN = { roomId: 'brindlemoor', x: 840, y: 650 };
+export const INN_SPAWN = { roomId: 'brindlemoor', x: 760, y: 650 };
