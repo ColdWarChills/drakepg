@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
-import type { Look } from '../data/types';
-import { pickArt } from './art';
+import type { Look, WeaponDef } from '../data/types';
+import { hasArt, pickArt } from './art';
 
 /** On-screen size of a scale-1 character drawn from art. */
 const ART_HEIGHT = 240;
@@ -14,10 +14,31 @@ function tri(scene: Phaser.Scene, color: number, x1: number, y1: number, x2: num
 /**
  * A character, origin at the feet. Uses `look.art` when that image exists in src/assets/art/,
  * otherwise draws placeholder shapes. Scenes only depend on the returned Container.
+ * With a `weapon` that has art (and a look with bare art), the weapon is drawn in the figure's hands;
+ * the weapon images are stored as `c.getData('weapons')` so battle animations can swing them.
  */
-export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look, facing: 1 | -1 = 1) {
+export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look, facing: 1 | -1 = 1, weapon?: WeaponDef | null) {
   const c = scene.add.container(x, y);
   const { color, accent } = look;
+
+  const bare = look.bare;
+  if (bare && weapon?.art && hasArt(scene, bare.art) && hasArt(scene, weapon.art)) {
+    const img = scene.add.image(0, 0, bare.art).setOrigin(0.5, 1);
+    const s = Math.min(ART_HEIGHT / img.height, ART_MAX_WIDTH / img.width);
+    img.setScale(s);
+    const weapons = bare.hands.map((hand) => {
+      const w = scene.add.image((hand.x - img.width / 2) * s, (hand.y - img.height) * s, weapon.art!);
+      w.setOrigin(0.5, weapon.grip ?? 0.85).setAngle(hand.angle);
+      w.setScale(((weapon.size ?? 0.6) * img.displayHeight) / w.height);
+      w.setData('angle', hand.angle);
+      return w;
+    });
+    // Weapons go behind the body so the fists cover the grips.
+    c.add([scene.add.ellipse(0, 0, img.displayWidth * 0.7, 22, 0x000000, 0.35), ...weapons, img]);
+    c.setData('weapons', weapons);
+    c.setScale(look.scale * facing, look.scale);
+    return c;
+  }
 
   const art = pickArt(scene, look.art);
   if (art) {

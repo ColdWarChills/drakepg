@@ -1,7 +1,56 @@
 export type StatKey = 'str' | 'int' | 'dex' | 'end';
 export type Stats = Record<StatKey, number>;
 
-export type DamageType = 'physical' | 'magic';
+/** Melee scales with STR, pierce with DEX, magic with INT. Each has its own defense. */
+export type DamageType = 'melee' | 'pierce' | 'magic';
+
+export type Element = 'fire' | 'water' | 'ice' | 'wind' | 'earth' | 'energy' | 'light' | 'dark';
+
+/**
+ * Elemental resistance in percent: 50 = takes half damage, -50 = takes 50% more, 100 = immune.
+ * `all` adds to every element.
+ */
+export type Resists = Partial<Record<Element | 'all', number>>;
+
+/** Defense against each damage type (see `mitigate` in Battle.ts). */
+export type Defenses = Partial<Record<DamageType, number>>;
+
+/** A status a move puts on its target (or on the user with `self`). */
+export interface Apply {
+  status: string;
+  /** How many of the target's turns it lasts. */
+  turns: number;
+  /** 0-1, default 1. */
+  chance?: number;
+  self?: boolean;
+}
+
+/** Buffs, debuffs, damage over time, stuns. Lives in statuses.ts. */
+export interface StatusDef {
+  id: string;
+  name: string;
+  /** Shown red on the target when true, green when false. */
+  harmful: boolean;
+  description: string;
+  /** Damage each turn: share of the applier's normal hit, in this element ('weapon' = applier's weapon element). */
+  dot?: { power: number; element?: Element | 'weapon' };
+  /** Heal each turn: share of max HP. */
+  regen?: number;
+  /** Skip the next turn. */
+  stun?: boolean;
+  /** +0.3 = deal 30% more damage. */
+  damageDealt?: number;
+  /** -0.4 = take 40% less damage. */
+  damageTaken?: number;
+  /** Added to the holder's resistances. */
+  resists?: Resists;
+  /** Added to the holder's hit chance, e.g. -0.3. */
+  hitChance?: number;
+  /** Added to the holder's crit chance. */
+  critChance?: number;
+  /** Subtracted from the hit chance of anyone attacking the holder. */
+  evasion?: number;
+}
 
 /** How a character is drawn: art if it exists, otherwise placeholder shapes. */
 export interface Look {
@@ -12,6 +61,17 @@ export interface Look {
   scale: number;
   /** Image key(s) in src/assets/art/ (file name without extension); first existing wins. Falls back to shapes. */
   art?: ArtRef;
+  /** Empty-handed art used when the equipped weapon has art of its own; the weapon is drawn in `hands`. */
+  bare?: { art: string; hands: Hand[] };
+}
+
+/** A fist on the bare art that holds the weapon. Weapons are drawn behind the body, so the fist covers the grip. */
+export interface Hand {
+  /** Fist center in the bare art's own pixels (as written by prepare_art.py). */
+  x: number;
+  y: number;
+  /** Weapon angle in degrees: 0 = pointing up, 90 = pointing forward. */
+  angle: number;
 }
 
 export interface SkillDef {
@@ -19,18 +79,28 @@ export interface SkillDef {
   name: string;
   description: string;
   mpCost: number;
-  kind: 'damage' | 'heal';
-  /** Damage skills only. */
-  damageType?: DamageType;
-  /** Damage: multiplier on a normal hit. Heal: share of max HP restored. */
+  /** After use, the skill is locked for this many of your turns. 0 = usable every turn. */
+  cooldown: number;
+  /** 'buff' only applies statuses. */
+  kind: 'damage' | 'heal' | 'buff';
+  /** Damage skills: default 'weapon' (the equipped weapon's type). */
+  damageType?: DamageType | 'weapon';
+  /** Damage skills: default 'weapon' (the equipped weapon's element, if any). */
+  element?: Element | 'weapon';
+  /** Damage: multiplier on a normal hit. Heal: share of max HP restored. Buff: unused (0). */
   power: number;
   /** Damage: number of separate hits (default 1). */
   hits?: number;
-  /** Battle visual. Defaults: physical -> 'slash', magic -> 'fire', heal -> 'heal'. */
+  /** Added to crit chance for this skill's hits. */
+  critBonus?: number;
+  /** Heal this share of the damage dealt. */
+  lifesteal?: number;
+  applies?: Apply[];
+  /** Battle visual. Defaults: melee/pierce -> 'slash', magic -> 'bolt', heal -> 'heal', buff -> 'buff'. */
   fx?: SkillFx;
 }
 
-export type SkillFx = 'slash' | 'heavy' | 'fire' | 'frost' | 'heal';
+export type SkillFx = 'slash' | 'heavy' | 'bolt' | 'heal' | 'buff';
 
 export type ClassId = 'warrior' | 'mage' | 'rogue';
 
@@ -57,20 +127,42 @@ interface ItemBase {
   price: number;
 }
 
+/** Weapon special: may trigger after a normal Attack lands. */
+export interface ProcDef {
+  name: string;
+  /** 0-1 per landed Attack. */
+  chance: number;
+  /** Extra hit at this multiplier (0 = no extra hit). */
+  power: number;
+  hits?: number;
+  /** Default: the weapon's element. */
+  element?: Element;
+  applies?: Apply[];
+  /** Heal this share of max HP. */
+  heal?: number;
+}
+
 export interface WeaponDef extends ItemBase {
   type: 'weapon';
   damage: [number, number];
-  /** Physical weapons scale with STR, magic weapons with INT. */
+  /** Melee scales with STR, pierce with DEX, magic with INT. */
   damageType: DamageType;
+  /** No element = neutral (ignores resistances). */
+  element?: Element;
   stats?: Partial<Stats>;
+  proc?: ProcDef;
+  /** Upright weapon image (handle at the bottom) drawn in the hero's hand. */
+  art?: string;
+  /** Where the hand holds it: 0 = top of the image, 1 = bottom. Default 0.85. */
+  grip?: number;
+  /** Length on screen relative to the hero's height. Default 0.6. */
+  size?: number;
 }
 
 export interface ArmorDef extends ItemBase {
   type: 'armor';
-  /** Reduces physical damage. */
-  defense: number;
-  /** Reduces magic damage. */
-  resist: number;
+  defense: Defenses;
+  resists?: Resists;
   stats?: Partial<Stats>;
 }
 
@@ -85,12 +177,15 @@ export type EquipSlot = 'weapon' | 'armor';
 export interface MonsterAttack {
   name: string;
   damageType: DamageType;
+  /** Default: the monster's element. */
+  element?: Element;
   /** Multiplier on the monster's damage roll. */
   power: number;
   /** Relative chance to pick this attack. */
   weight: number;
   /** Telegraphed attack: the monster spends a turn winding up (this text is shown), then hits next turn. */
   windup?: string;
+  applies?: Apply[];
 }
 
 export interface MonsterDef {
@@ -101,8 +196,12 @@ export interface MonsterDef {
   hp: number;
   stats: Stats;
   damage: [number, number];
-  defense: number;
-  resist: number;
+  /** Element of its attacks unless an attack says otherwise. */
+  element?: Element;
+  defense: Defenses;
+  resists?: Resists;
+  /** Status ids that never stick (bosses ignore stuns). */
+  immune?: string[];
   attacks: MonsterAttack[];
   xp: number;
   gold: [number, number];

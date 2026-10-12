@@ -25,7 +25,13 @@ npm run preview  # serve the dist/ build locally
   - **Thornheart Hollow**: sealed by thorns until the Elder sends you there. Home of the chapter boss.
 - **Quests**: a 4-quest chain (tracker on the left). Kill counts, then turn in for XP, gold and items. The last one ends the chapter.
 - **Battle**: turn-based. Attack / Skills / Items / **Defend** (-60% damage, regain MP) / Flee (mouse or keys **1-6**). The boss winds up big attacks a turn ahead: defend or heal.
-- **Leveling**: each level gives **stat points** (spend with **+** in the Character panel) and unlocks class skills at set levels.
+  - **Elements**: Fire, Water, Ice, Wind, Earth, Energy, Light, Dark. Weapons, spells and monster attacks carry one (or none: neutral). Every monster's weaknesses and resistances are shown under its name; hits show **WEAK!** / **Resisted**. Rule of thumb: a creature resists its own element and is weak to the opposite (Fire/Ice, Water/Energy, Earth/Wind, Light/Dark).
+  - **Attack types**: Melee (STR), Pierce (DEX), Magic (INT). Each has its own defense on armor and monsters.
+  - **Skills** cost MP and most have a **cooldown** (turns until reuse, shown on the button). Hover a skill for its description.
+  - **Statuses**: burn, poison, bleed, stun, weaken, expose, buffs and more, shown as chips under each status panel with turns left.
+  - **Weapon specials**: some weapons have a chance to trigger an extra effect when an Attack lands (shown in the item line).
+- **Leveling**: each level gives **stat points** (spend with **+** in the Character panel) and unlocks class skills at set levels (12 per class, up to level 20).
+- **Gear you can see**: the equipped weapon is drawn in the hero's hands.
 - **Result**: XP and gold count-up, loot, quest progress, level-up. Losing wakes you at the inn with no penalty.
 - **Character panel** (button or **C**): stats, stat points, skills, equipment, bag. **M** toggles sound. **Esc** closes windows.
 - **Sound**: all effects are synthesized in code (WebAudio), no audio files.
@@ -46,17 +52,24 @@ npm run preview  # serve the dist/ build locally
 2. Run `python3 scripts/prepare_art.py` (needs Pillow + numpy). It removes flat backgrounds from sprites, trims, resizes, and writes WebP files to `src/assets/art/`.
 3. Every file in `src/assets/art/` is loaded at boot by its file name. Point data at it with `look.art`, `zone.background` or `room.background`.
 
+Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editing the hero image to empty fists). `look.bare.hands` in `classes.ts` holds each fist's pixel position in that processed image and the weapon's idle angle; **re-measure them if the bare art is regenerated**. Weapon images are `wpn_<id>`, drawn upright with the handle at the bottom (the script makes them 320px tall); a weapon's `art`, `grip` (0 = top, 1 = bottom of the image: where the fist holds it) and `size` (length relative to the hero) are set in `items.ts`. Weapons are drawn behind the body so the fist covers the grip. A weapon without art falls back to the hero's original picture.
+
 ### Adding content
 
 - **Room**: add to `ROOMS` in `src/data/world.ts` with its walkable strip (`walk`), `exits` (left/right to another room), `npcs`, and optionally a `zoneId` + `monsterCount` for roaming monsters. Link it from a neighbor's `exits`.
-- **Monster**: add to `src/data/monsters.ts`, then add it to a zone's `encounters` in `src/data/world.ts`.
-- **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`.
-- **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. `fx` picks its battle visual (`slash`, `heavy`, `fire`, `frost`, `heal`).
+- **Monster**: add to `src/data/monsters.ts` (with an `element`, `resists` in percent, `defense` per attack type, and `immune` statuses if any), then add it to a zone's `encounters` in `src/data/world.ts`. An attack can `applies` statuses; `power: 0` makes it a pure buff.
+- **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`.
+- **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. Set `cooldown`, and `element`/`damageType` if it shouldn't use the weapon's. `applies` adds statuses (`self: true` for buffs). `fx: 'heavy'` gives a leap (or a big spell).
+- **Status**: add to `src/data/statuses.ts` (damage over time, regen, stun, damage/defense/resist/hit/crit modifiers).
 - **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look) and to `ClassId` in `src/data/types.ts`.
 - **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked by thorns until that quest is accepted; a room `boss` appears while its quest is active.
 - **Boss**: a monster with `boss: true` (can't flee). An attack with `windup` text is telegraphed one turn before it hits.
 
 Broken references (e.g. a drop pointing at a missing item) throw at startup in `validateData()`.
+
+### Balance check
+
+`npm run sim` plays thousands of battles headless (same rules as the game) with a simple AI and prints win rate, HP left, turns and potions used per class and monster. Run it after changing monsters, skills, items or `BALANCE`. `npm run sim -- 2000` for more battles per cell.
 
 ### Saves
 

@@ -7,7 +7,9 @@ import type {
   ClassId,
   ConsumableDef,
   DamageType,
+  Element,
   EquipSlot,
+  Resists,
   SkillDef,
   StatKey,
   Stats,
@@ -15,6 +17,11 @@ import type {
 } from '../data/types';
 
 export const STAT_KEYS: StatKey[] = ['str', 'int', 'dex', 'end'];
+
+/** Melee scales with STR, pierce with DEX, magic with INT. */
+export function statFor(stats: Stats, type: DamageType): number {
+  return type === 'magic' ? stats.int : type === 'pierce' ? stats.dex : stats.str;
+}
 
 export const STAT_LABELS: Record<StatKey, string> = {
   str: 'STR',
@@ -147,16 +154,22 @@ export class Player {
     return 12 + this.level * 3 + this.stats.int * 2;
   }
 
-  get defense(): number {
-    return this.armor?.defense ?? 0;
+  defenseFor(type: DamageType): number {
+    return this.armor?.defense[type] ?? 0;
   }
 
-  get resist(): number {
-    return this.armor?.resist ?? 0;
+  /** Elemental resistances from gear (before buffs and the cap, which Battle applies). */
+  get resists(): Resists {
+    return { ...this.armor?.resists };
   }
 
   get weaponDamageType(): DamageType {
-    return this.weapon?.damageType ?? 'physical';
+    return this.weapon?.damageType ?? 'melee';
+  }
+
+  /** Undefined = neutral. */
+  get weaponElement(): Element | undefined {
+    return this.weapon?.element;
   }
 
   get weaponDamage(): [number, number] {
@@ -164,7 +177,7 @@ export class Player {
   }
 
   statFor(type: DamageType): number {
-    return type === 'magic' ? this.stats.int : this.stats.str;
+    return statFor(this.stats, type);
   }
 
   /** Damage range of a basic attack, before enemy defense. For UI. */

@@ -108,8 +108,8 @@ export function shockwave(scene: Phaser.Scene, x: number, y: number, color: numb
 }
 
 /** Sparks where a hit lands. */
-export function hitSparks(scene: Phaser.Scene, x: number, y: number, magic: boolean, crit: boolean): void {
-  const colors = magic ? [0xffffff, 0x9fd3ff, 0x6c63ff] : [0xffffff, 0xfff1a8, 0xffb347];
+export function hitSparks(scene: Phaser.Scene, x: number, y: number, magic: boolean, crit: boolean, palette?: number[]): void {
+  const colors = palette ?? (magic ? [0xffffff, 0x9fd3ff, 0x6c63ff] : [0xffffff, 0xfff1a8, 0xffb347]);
   burst(scene, x, y, TEX.spark, crit ? 26 : 14, {
     speed: { min: 180, max: crit ? 560 : 420 },
     angle: { min: 0, max: 360 },
@@ -124,10 +124,10 @@ export function hitSparks(scene: Phaser.Scene, x: number, y: number, magic: bool
     scale: { start: crit ? 2.2 : 1.5, end: 0 },
     alpha: { start: 0.9, end: 0 },
     lifespan: 300,
-    tint: magic ? 0x9fd3ff : 0xffe7a0,
+    tint: palette ? colors[1] : magic ? 0x9fd3ff : 0xffe7a0,
     blendMode: 'ADD',
   });
-  shockwave(scene, x, y, magic ? 0x9fd3ff : 0xffffff, crit ? 2.2 : 1.4, 1);
+  shockwave(scene, x, y, palette ? colors[1] : magic ? 0x9fd3ff : 0xffffff, crit ? 2.2 : 1.4, 1);
 }
 
 /** A crescent sweep across a target. `dir` 1 = swinging from the left. */

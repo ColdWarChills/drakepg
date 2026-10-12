@@ -59,6 +59,8 @@ let showedControls = false;
 export class RoomScene extends Phaser.Scene {
   private room!: RoomDef;
   private player!: Actor;
+  /** Weapon id the player figure was drawn with. */
+  private playerWeapon: string | null = null;
   private npcs: Npc[] = [];
   private mobs: Mob[] = [];
   private keys!: Keys;
@@ -151,8 +153,9 @@ export class RoomScene extends Phaser.Scene {
       y = data.y;
     }
     const look = session.player.classDef.look;
-    const fig = drawFigure(this, x, y, look, 1);
+    const fig = drawFigure(this, x, y, look, 1, session.player.weapon);
     this.player = this.makeActor(fig, x, y, look.scale);
+    this.playerWeapon = session.player.data.equipment.weapon;
     if (data.via === 'exit') this.player.facing = data.side === 'left' ? 1 : -1;
     this.clampToWalk(this.player);
     this.place(this.player);
@@ -207,6 +210,17 @@ export class RoomScene extends Phaser.Scene {
       if (farFromPlayer && farFromOthers) break;
     }
     return best;
+  }
+
+  /** The hero holds the equipped weapon, so redraw them after a weapon swap. */
+  private redrawPlayerIfRearmed(): void {
+    const weapon = session.player.data.equipment.weapon;
+    if (weapon === this.playerWeapon) return;
+    this.playerWeapon = weapon;
+    const old = this.player.fig;
+    this.player.fig = drawFigure(this, this.player.x, this.player.y, session.player.classDef.look, 1, session.player.weapon);
+    old.destroy();
+    this.place(this.player);
   }
 
   private makeActor(fig: Phaser.GameObjects.Container, x: number, y: number, scale: number): Actor {
@@ -717,6 +731,7 @@ export class RoomScene extends Phaser.Scene {
 
   private refresh = (): void => {
     this.hud.refresh(session.player);
+    this.redrawPlayerIfRearmed();
     if (this.tracker) this.refreshQuests();
     this.save(false);
   };

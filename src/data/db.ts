@@ -3,8 +3,9 @@ import { ITEMS } from './items';
 import { MONSTERS } from './monsters';
 import { QUESTS } from './quests';
 import { SKILLS } from './skills';
+import { STATUSES } from './statuses';
 import { ROOMS, ZONES } from './world';
-import type { ClassDef, ClassId, ItemDef, MonsterDef, QuestDef, RoomDef, SkillDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, ItemDef, MonsterDef, QuestDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -23,6 +24,7 @@ const zones = index('zone', ZONES);
 const rooms = index('room', ROOMS);
 const classes = index('class', CLASSES);
 const quests = index('quest', QUESTS);
+const statuses = index('status', STATUSES);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -38,6 +40,7 @@ export const db = {
   room: (id: string): RoomDef => get('room', rooms, id),
   class: (id: ClassId): ClassDef => get('class', classes, id),
   quest: (id: string): QuestDef => get('quest', quests, id),
+  status: (id: string): StatusDef => get('status', statuses, id),
   hasClass: (id: string) => classes.has(id),
   quests: (): readonly QuestDef[] => QUESTS,
   hasRoom: (id: string) => rooms.has(id),
@@ -47,10 +50,15 @@ export const db = {
 
 /** Catch broken cross-references (e.g. a drop pointing at a deleted item) at startup. */
 export function validateData(): void {
+  const checkApplies = (list: Apply[] | undefined) => list?.forEach((a) => db.status(a.status));
   for (const m of MONSTERS) {
     for (const d of m.drops) db.item(d.itemId);
     if (m.attacks.length === 0) throw new Error(`Monster ${m.id} has no attacks`);
+    m.attacks.forEach((a) => checkApplies(a.applies));
+    m.immune?.forEach((id) => db.status(id));
   }
+  for (const s of SKILLS) checkApplies(s.applies);
+  for (const item of ITEMS) if (item.type === 'weapon') checkApplies(item.proc?.applies);
   for (const z of ZONES) for (const e of z.encounters) db.monster(e.monsterId);
   for (const c of CLASSES) {
     db.item(c.weapon);

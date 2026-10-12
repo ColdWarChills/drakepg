@@ -89,7 +89,7 @@ export class ResultScene extends Phaser.Scene {
       }
 
       if (levelsGained > 0) {
-        const hero = drawFigure(this, cx - 280, 470 + shift, player.classDef.look, 1).setScale(0.55);
+        const hero = drawFigure(this, cx - 280, 470 + shift, player.classDef.look, 1, player.weapon).setScale(0.55);
         this.time.delayedCall(1200, () => {
           fx.levelUpBurst(this, hero.x, hero.y);
           sfx.play(this, 'levelup');

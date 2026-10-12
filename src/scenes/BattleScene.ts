@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
-import type { ConsumableDef, MonsterDef, SkillFx, ZoneDef } from '../data/types';
-import { Battle, type BattleEvent, type Side } from '../game/Battle';
+import { ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS } from '../data/elements';
+import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, ZoneDef } from '../data/types';
+import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
 import { recordKill } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
@@ -22,13 +23,20 @@ const ENEMY_X = 950;
 const LOG_LINES = 4;
 /** Height above the feet where hits land. */
 const CHEST = 120;
-
-const FIRE = [0xfff2a8, 0xffa733, 0xff5a1f, 0x8a1c00];
-const ARCANE = [0xe6f0ff, 0x9fb7ff, 0x7a5cff];
-const FROST = [0xffffff, 0xbff4ff, 0x5ec8ff, 0x1f6fb2];
+/** Skills shown per page of the Skills menu (the other slots are More / Back). */
+const SKILLS_PER_PAGE = 4;
 
 type Menu = 'main' | 'skills' | 'items';
-type MenuButton = { label: string; sub?: string; enabled?: boolean; run: () => void };
+type MenuButton = { label: string; sub?: string; enabled?: boolean; hover?: string; run: () => void };
+
+/** How a hit is animated. */
+interface Style {
+  kind: 'slash' | 'heavy' | 'bolt' | 'proc' | 'enemy-melee' | 'enemy-spit';
+  colors: number[];
+  big?: boolean;
+}
+
+const EFFECT_TAGS: Record<Effect, string> = { weak: 'WEAK!', resisted: 'Resisted', immune: 'Immune' };
 
 export class BattleScene extends Phaser.Scene {
   private battle!: Battle;
@@ -44,12 +52,16 @@ export class BattleScene extends Phaser.Scene {
   private log: string[] = [];
   private menu!: Phaser.GameObjects.Container;
   private menuButtons: MenuButton[] = [];
+  private skillPage = 0;
   private busy = false;
   private twinFlip = false;
   /** Red glow while the enemy winds up a telegraphed attack. */
   private chargeAura: Phaser.GameObjects.Image | null = null;
   /** Blue bubble while the player defends. */
   private shield: Phaser.GameObjects.Arc | null = null;
+  private statusRows: Record<Side, Phaser.GameObjects.Container> | null = null;
+  /** Statuses as shown so far during playback (status id -> turns). The battle itself is already a turn ahead. */
+  private shown: Record<Side, Map<string, number>> = { player: new Map(), enemy: new Map() };
 
   private get playerLook() {
     return this.battle.player.classDef.look;
@@ -67,11 +79,13 @@ export class BattleScene extends Phaser.Scene {
     this.battle = new Battle(session.player, this.monster);
     this.log = [];
     this.busy = true;
+    this.skillPage = 0;
     this.chargeAura = null;
     this.shield = null;
+    this.shown = { player: new Map(), enemy: new Map() };
 
     drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
-    this.playerFig = drawFigure(this, -200, GROUND_Y, this.playerLook, 1);
+    this.playerFig = drawFigure(this, -200, GROUND_Y, this.playerLook, 1, session.player.weapon);
     this.enemyFig = drawFigure(this, this.scale.width + 200, GROUND_Y, this.monster.look, -1);
 
     this.drawStatus();
@@ -124,21 +138,79 @@ export class BattleScene extends Phaser.Scene {
     const m = this.monster;
     this.statusPanel(16, 16, 420, 120);
     addText(this, 32, 26, `${p.name}  ·  Lv ${p.level}`, { size: 22, bold: true });
+    const weaponEl = p.weaponElement;
+    addText(this, 420, 30, weaponEl ? ELEMENT_LABELS[weaponEl] : 'Neutral', {
+      size: 16,
+      bold: true,
+      color: weaponEl ? ELEMENT_TEXT[weaponEl] : COLORS.textDim,
+    }).setOrigin(1, 0);
     this.playerHp = new Bar(this, 32, 74, 388, 26, COLORS.hp, 'HP ');
     this.playerMp = new Bar(this, 32, 108, 388, 22, COLORS.mp, 'MP ');
 
     const ex = this.scale.width - 436;
-    this.statusPanel(ex, 16, 420, 90);
+    this.statusPanel(ex, 16, 420, 120);
     addText(this, ex + 16, 26, `${m.name}  ·  Lv ${m.level}${m.boss ? '  ·  BOSS' : ''}`, {
       size: 22,
       bold: true,
       color: m.boss ? COLORS.textBad : COLORS.text,
     });
-    this.enemyHp = new Bar(this, ex + 16, 76, 388, 26, COLORS.hp, 'HP ');
+    this.enemyHp = new Bar(this, ex + 16, 68, 388, 26, COLORS.hp, 'HP ');
+    this.drawAffinities(ex + 16, 108);
+
+    this.statusRows = { player: this.add.container(16, 152), enemy: this.add.container(ex, 152) };
+  }
+
+  /** "Earth · Weak: Fire Wind · Resists: Earth Water", each element in its color. */
+  private drawAffinities(x: number, y: number): void {
+    const m = this.monster;
+    const resists = m.resists ?? {};
+    const weak = ELEMENTS.filter((e) => (resists[e] ?? 0) <= -25);
+    const strong = ELEMENTS.filter((e) => (resists[e] ?? 0) >= 25);
+    const parts: { text: string; color: string }[] = [];
+    if (m.element) parts.push({ text: ELEMENT_LABELS[m.element], color: ELEMENT_TEXT[m.element] });
+    const group = (label: string, list: Element[]) => {
+      if (list.length === 0) return;
+      parts.push({ text: `${parts.length ? '  ·  ' : ''}${label}`, color: COLORS.textDim });
+      list.forEach((e) => parts.push({ text: ` ${ELEMENT_LABELS[e]}`, color: ELEMENT_TEXT[e] }));
+    };
+    group('Weak:', weak);
+    group('Resists:', strong);
+    let cx = x;
+    for (const part of parts) {
+      const t = addText(this, cx, y, part.text, { size: 15, bold: true, color: part.color }).setOrigin(0, 0.5);
+      cx += t.width;
+    }
   }
 
   private statusPanel(x: number, y: number, w: number, h: number): void {
     this.add.rectangle(x, y, w, h, COLORS.panel, 0.9).setOrigin(0).setRounded(10).setStrokeStyle(2, COLORS.panelBorder);
+  }
+
+  /** Catch the chips up with the battle (after a turn has finished playing). */
+  private syncStatuses(): void {
+    for (const side of ['player', 'enemy'] as Side[]) {
+      this.shown[side] = new Map(this.battle.statuses(side).map((s) => [s.def.id, s.turns]));
+    }
+    this.refreshStatuses();
+  }
+
+  /** Chips under each status panel: "Burn 2", "War Cry 3". */
+  private refreshStatuses(): void {
+    if (!this.statusRows) return;
+    for (const side of ['player', 'enemy'] as Side[]) {
+      const row = this.statusRows[side];
+      row.removeAll(true);
+      let x = 0;
+      for (const [id, turns] of this.shown[side]) {
+        const def = db.status(id);
+        const label = addText(this, 0, 0, `${def.name} ${turns}`, { size: 14, bold: true, color: def.harmful ? '#ffd0cc' : '#d4ffd8' }).setOrigin(0, 0.5);
+        const w = label.width + 16;
+        const chip = this.add.rectangle(x, 0, w, 24, def.harmful ? 0x6e1f1f : 0x1f5a2c, 0.9).setOrigin(0, 0.5).setRounded(8);
+        label.setPosition(x + 8, 0);
+        row.add([chip, label]);
+        x += w + 6;
+      }
+    }
   }
 
   private drawBottomPanel(): void {
@@ -149,7 +221,7 @@ export class BattleScene extends Phaser.Scene {
       .setOrigin(0)
       .setRounded(12)
       .setStrokeStyle(3, COLORS.panelBorder);
-    this.logText = addText(this, 30, top + 18, '', { size: 19, wrap: 560 }).setLineSpacing(6);
+    this.logText = addText(this, 30, top + 18, '', { size: 19, wrap: 590 }).setLineSpacing(6);
     this.menu = this.add.container(0, 0);
   }
 
@@ -168,6 +240,20 @@ export class BattleScene extends Phaser.Scene {
   }
 
   // --- Menus ---
+
+  private skillButton(skill: SkillDef): MenuButton {
+    const cd = this.battle.cooldownLeft(skill.id);
+    const element = skill.element && skill.element !== 'weapon' ? ELEMENT_LABELS[skill.element] : null;
+    const sub = cd > 0 ? `Ready in ${cd}` : `${skill.mpCost} MP${element ? ` · ${element}` : ''}`;
+    const cdText = skill.cooldown > 0 ? ` Cooldown ${skill.cooldown}.` : '';
+    return {
+      label: skill.name,
+      sub,
+      enabled: this.battle.canUseSkill(skill.id),
+      hover: `${skill.name}: ${skill.description}${cdText}`,
+      run: () => this.act(() => this.battle.useSkill(skill.id)),
+    };
+  }
 
   private showMenu(menu: Menu): void {
     this.menu.removeAll(true);
@@ -188,12 +274,21 @@ export class BattleScene extends Phaser.Scene {
         },
       );
     } else if (menu === 'skills') {
-      for (const skill of p.knownSkills) {
+      const skills = p.knownSkills;
+      if (skills.length <= SKILLS_PER_PAGE + 1) {
+        buttons.push(...skills.map((s) => this.skillButton(s)));
+      } else {
+        const pages = Math.ceil(skills.length / SKILLS_PER_PAGE);
+        this.skillPage %= pages;
+        const shown = skills.slice(this.skillPage * SKILLS_PER_PAGE, (this.skillPage + 1) * SKILLS_PER_PAGE);
+        buttons.push(...shown.map((s) => this.skillButton(s)));
         buttons.push({
-          label: skill.name,
-          sub: `${skill.mpCost} MP`,
-          enabled: this.battle.canUseSkill(skill.id),
-          run: () => this.act(() => this.battle.useSkill(skill.id)),
+          label: 'More',
+          sub: `${this.skillPage + 1} / ${pages}`,
+          run: () => {
+            this.skillPage += 1;
+            this.showMenu('skills');
+          },
         });
       }
       buttons.push({ label: 'Back', run: () => this.showMenu('main') });
@@ -204,6 +299,7 @@ export class BattleScene extends Phaser.Scene {
         buttons.push({
           label: item.name,
           sub: `x${entry.qty}`,
+          hover: `${item.name}: ${item.description}`,
           run: () => {
             if (!this.battle.canUseItem(item.id)) this.pushLog(`${item.name} would have no effect right now.`);
             else this.act(() => this.battle.useItem(item.id));
@@ -222,8 +318,9 @@ export class BattleScene extends Phaser.Scene {
     buttons.forEach((b, i) => {
       const x = 650 + (i % cols) * (bw + 10) + bw / 2;
       const y = 590 + Math.floor(i / cols) * (bh + 10);
-      const btn = new Button(this, x, y, b.label, b.run, { width: bw, height: bh, sublabel: b.sub, fontSize: 20 });
+      const btn = new Button(this, x, y, b.label, b.run, { width: bw, height: bh, sublabel: b.sub, fontSize: b.label.length > 13 ? 17 : 20 });
       if (b.enabled === false) btn.setEnabled(false);
+      if (b.hover) btn.onHover(() => this.logText.setText(b.hover!), () => this.logText.setText(this.log.join('\n')));
       btn.add(addText(this, -bw / 2 + 10, -bh / 2 + 6, `${i + 1}`, { size: 13, color: COLORS.textDim }));
       btn.setScale(0.8).setAlpha(0);
       this.tweens.add({ targets: btn, scale: 1, alpha: 1, duration: 180, delay: i * 30, ease: 'Back.easeOut' });
@@ -240,8 +337,10 @@ export class BattleScene extends Phaser.Scene {
     this.busy = true;
     this.menuButtons = [];
     this.menu.removeAll(true);
+    this.logText.setText(this.log.join('\n'));
     for (const event of events) await this.play(event);
     this.refreshBars();
+    this.syncStatuses();
 
     if (this.battle.isOver) {
       await this.wait(600);
@@ -260,19 +359,33 @@ export class BattleScene extends Phaser.Scene {
     return side === 'player' ? PLAYER_X : ENEMY_X;
   }
 
-  /** Which visual a hit or miss uses. */
-  private styleOf(e: { source: Side; moveId: string; damageType: 'physical' | 'magic' }): SkillFx | 'arcane' | 'enemy-melee' | 'enemy-spit' {
-    if (e.source === 'enemy') return e.damageType === 'magic' ? 'enemy-spit' : 'enemy-melee';
-    if (e.moveId === 'attack') return e.damageType === 'magic' ? 'arcane' : 'slash';
+  private nameOf(side: Side): string {
+    return side === 'player' ? 'You' : this.monster.name;
+  }
+
+  private colorsOf(element: Element | undefined): number[] {
+    return element ? ELEMENT_COLORS[element] : NEUTRAL_COLORS;
+  }
+
+  private styleOf(e: { source: Side; moveId: string; damageType: DamageType; element?: Element }): Style {
+    const colors = this.colorsOf(e.element);
+    if (e.source === 'enemy') {
+      return {
+        kind: e.damageType === 'magic' ? 'enemy-spit' : 'enemy-melee',
+        colors: e.element ? colors : [0xffffff, this.monster.look.color, this.monster.look.accent],
+      };
+    }
+    if (e.moveId === 'proc') return { kind: 'proc', colors };
+    if (e.moveId === 'attack') return { kind: e.damageType === 'magic' ? 'bolt' : 'slash', colors };
     const skill = db.skill(e.moveId);
-    return skill.fx ?? (skill.damageType === 'magic' ? 'fire' : 'slash');
+    if (e.damageType === 'magic') return { kind: 'bolt', colors, big: skill.fx === 'heavy' };
+    return { kind: skill.fx === 'heavy' ? 'heavy' : 'slash', colors };
   }
 
   private async play(e: BattleEvent): Promise<void> {
-    const enemyName = this.monster.name;
-    await this.playEvent(e, enemyName);
-    // An enemy attack resolves the player's guard and the boss's wind-up.
-    const enemyActed = e.kind === 'windup' || ((e.kind === 'hit' || e.kind === 'miss') && e.source === 'enemy');
+    await this.playEvent(e);
+    // An enemy action resolves the player's guard and the boss's wind-up.
+    const enemyActed = e.kind === 'windup' || ((e.kind === 'hit' || e.kind === 'miss' || e.kind === 'buff') && e.source === 'enemy');
     if (enemyActed) {
       if (e.kind !== 'windup' && this.chargeAura) {
         this.chargeAura.destroy();
@@ -286,36 +399,108 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  private async playEvent(e: BattleEvent, enemyName: string): Promise<void> {
+  private async playEvent(e: BattleEvent): Promise<void> {
+    const enemyName = this.monster.name;
     switch (e.kind) {
       case 'hit':
       case 'miss': {
         const style = this.styleOf(e);
         await this.attackAnim(e.source, style, () => (e.kind === 'hit' ? this.impact(e, style) : this.dodge(e.source === 'player' ? 'enemy' : 'player')));
+        const who = e.source === 'player' ? 'You use' : `${enemyName} uses`;
         if (e.kind === 'hit') {
-          const crit = e.crit ? ' Critical!' : '';
-          this.pushLog(e.source === 'player' ? `You use ${e.move}: ${e.damage} damage.${crit}` : `${enemyName} uses ${e.move}: ${e.damage} damage.${crit}`);
+          const notes = [e.crit ? ' Critical!' : '', e.effect === 'weak' ? ' Weak spot!' : '', e.effect === 'resisted' ? ' Resisted.' : '', e.effect === 'immune' ? ' Immune!' : ''].join('');
+          this.pushLog(e.moveId === 'proc' ? `${e.move}! ${e.damage} damage.${notes}` : `${who} ${e.move}: ${e.damage} damage.${notes}`);
         } else {
           this.pushLog(e.source === 'player' ? `You use ${e.move}, but miss.` : `${enemyName} uses ${e.move}, but misses.`);
         }
-        await this.wait(380);
+        await this.wait(e.moveId === 'proc' ? 200 : 380);
         break;
       }
       case 'heal': {
-        const isSkill = db.hasSkill(e.moveId);
+        const x = this.homeX(e.source);
+        const isSkill = db.hasSkill(e.moveId) || e.moveId === 'proc';
         const color = e.mp > 0 && e.hp === 0 ? 0x7ec8ff : isSkill ? 0x7dff9a : 0xff8a8a;
-        if (isSkill) {
+        // Lifesteal and weapon specials heal right after the blow, without a wind-up.
+        const afterHit = e.moveId === 'proc' || (db.hasSkill(e.moveId) && db.skill(e.moveId).kind === 'damage');
+        if (!afterHit && isSkill) {
           sfx.play(this, 'charge');
-          await fx.chargeUp(this, PLAYER_X + 30, GROUND_Y - CHEST, color, 280);
-        } else {
-          await this.tween({ targets: this.playerFig, y: GROUND_Y - 20, duration: 120, yoyo: true });
+          await fx.chargeUp(this, x + 30, GROUND_Y - CHEST, color, 280);
+        } else if (!afterHit) {
+          await this.tween({ targets: this.figOf(e.source), y: GROUND_Y - 20, duration: 120, yoyo: true });
         }
         sfx.play(this, 'heal');
-        fx.healSparkles(this, PLAYER_X, GROUND_Y, color);
-        floatText(this, PLAYER_X, GROUND_Y - 220, restoreText(e), COLORS.textGood, 30);
+        fx.healSparkles(this, x, GROUND_Y, color);
+        floatText(this, x, GROUND_Y - 220, restoreText(e), COLORS.textGood, 30);
         this.refreshBars();
-        this.pushLog(`You use ${e.move}: ${restoreText(e)}.`);
-        await this.wait(650);
+        this.pushLog(afterHit ? `${e.move} restores ${restoreText(e)}.` : `You use ${e.move}: ${restoreText(e)}.`);
+        await this.wait(afterHit ? 350 : 650);
+        break;
+      }
+      case 'buff': {
+        const x = this.homeX(e.source);
+        if (e.moveId === 'proc') {
+          floatText(this, ENEMY_X, GROUND_Y - 270, `${e.move}!`, COLORS.textGold, 26);
+          this.pushLog(`${e.move}!`);
+          await this.wait(250);
+          break;
+        }
+        sfx.play(this, 'charge');
+        await fx.chargeUp(this, x, GROUND_Y - CHEST, e.source === 'player' ? 0xffe08a : this.monster.look.accent, 320);
+        fx.shockwave(this, x, GROUND_Y, 0xffe08a, 2.2, 0.35);
+        this.pushLog(`${e.source === 'player' ? 'You use' : `${enemyName} uses`} ${e.move}.`);
+        await this.wait(200);
+        break;
+      }
+      case 'status': {
+        const def = db.status(e.status);
+        const x = this.homeX(e.target);
+        floatText(this, x, GROUND_Y - 280, def.name, def.harmful ? COLORS.textBad : COLORS.textGood, 26);
+        this.shown[e.target].set(def.id, Math.max(this.shown[e.target].get(def.id) ?? 0, e.turns));
+        this.refreshStatuses();
+        const target = e.target === 'player' ? 'You are' : `${enemyName} is`;
+        this.pushLog(`${target} affected by ${def.name} for ${e.turns} turn${e.turns > 1 ? 's' : ''}.`);
+        await this.wait(300);
+        break;
+      }
+      case 'immune': {
+        floatText(this, this.homeX(e.target), GROUND_Y - 280, 'Immune', COLORS.textDim, 26);
+        this.pushLog(`${this.nameOf(e.target)} shrugs off ${db.status(e.status).name}.`);
+        await this.wait(300);
+        break;
+      }
+      case 'tick': {
+        const def = db.status(e.status);
+        const x = this.homeX(e.target);
+        if (e.damage > 0 || e.heal === 0) {
+          const color = e.element ? ELEMENT_TEXT[e.element] : COLORS.textBad;
+          fx.hitSparks(this, x, GROUND_Y - CHEST, true, false, this.colorsOf(e.element));
+          fx.whiteFlash(this, this.figOf(e.target), 70);
+          sfx.play(this, 'hit');
+          floatText(this, x, GROUND_Y - 220, `${e.damage}`, color, 28, e.effect ? EFFECT_TAGS[e.effect] : def.name);
+          this.pushLog(`${def.name}: ${e.damage} damage to ${e.target === 'player' ? 'you' : enemyName}.`);
+        } else {
+          fx.healSparkles(this, x, GROUND_Y, 0x7dff9a);
+          floatText(this, x, GROUND_Y - 220, `+${e.heal}`, COLORS.textGood, 28, def.name);
+          this.pushLog(`${def.name}: ${e.target === 'player' ? 'you heal' : `${enemyName} heals`} ${e.heal} HP.`);
+        }
+        this.refreshBars();
+        await this.wait(380);
+        break;
+      }
+      case 'expire': {
+        this.shown[e.target].delete(e.status);
+        this.refreshStatuses();
+        break;
+      }
+      case 'stunned': {
+        const fig = this.figOf(e.side);
+        floatText(this, this.homeX(e.side), GROUND_Y - 280, 'Stunned!', COLORS.textGold, 30);
+        this.pushLog(e.side === 'player' ? 'You are stunned and lose your turn!' : `${enemyName} is stunned!`);
+        this.shown[e.side].delete('stun');
+        this.refreshStatuses();
+        await this.tween({ targets: fig, angle: e.side === 'player' ? -6 : 6, duration: 90, yoyo: true, repeat: 2 });
+        fig.angle = 0;
+        await this.wait(250);
         break;
       }
       case 'defend': {
@@ -387,18 +572,28 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
+  /** Swing the weapons a figure holds (if its art shows them). */
+  private swing(fig: Phaser.GameObjects.Container, big = false): void {
+    const weapons = (fig.getData('weapons') as Phaser.GameObjects.Image[] | undefined) ?? [];
+    for (const w of weapons) {
+      const base = w.getData('angle') as number;
+      this.tweens.add({ targets: w, angle: base + (big ? 110 : 75), duration: big ? 140 : 110, yoyo: true, ease: 'Quad.easeOut' });
+    }
+  }
+
   /** Attacker's animation. `onContact` fires at the moment the blow lands. */
-  private async attackAnim(source: Side, style: ReturnType<BattleScene['styleOf']>, onContact: () => void): Promise<void> {
+  private async attackAnim(source: Side, style: Style, onContact: () => void): Promise<void> {
     const fig = this.figOf(source);
     const dir = source === 'player' ? 1 : -1;
     const home = this.homeX(source);
     const target = { x: this.homeX(source === 'player' ? 'enemy' : 'player'), y: GROUND_Y - CHEST };
 
-    switch (style) {
+    switch (style.kind) {
       case 'slash':
       case 'enemy-melee': {
         sfx.play(this, 'slash');
         await this.tween({ targets: fig, x: target.x - 170 * dir, duration: 180, ease: 'Quad.easeIn' });
+        this.swing(fig);
         onContact();
         await this.tween({ targets: fig, x: home, duration: 260, ease: 'Quad.easeOut' });
         break;
@@ -422,44 +617,43 @@ export class BattleScene extends Phaser.Scene {
         fig.y = GROUND_Y;
         fig.angle = 0;
         sfx.play(this, 'slash');
+        this.swing(fig, true);
         onContact();
         fx.dust(this, fig.x, GROUND_Y, 10);
         await this.tween({ targets: fig, x: home, duration: 320, ease: 'Quad.easeOut' });
         break;
       }
-      case 'fire':
-      case 'frost':
-      case 'arcane':
+      case 'bolt':
       case 'enemy-spit': {
-        const colors =
-          style === 'fire'
-            ? FIRE
-            : style === 'frost'
-              ? FROST
-              : style === 'arcane'
-                ? ARCANE
-                : [0xffffff, this.monster.look.color, this.monster.look.accent];
         const hand = { x: fig.x + 50 * dir, y: GROUND_Y - CHEST - 10 };
+        const spit = style.kind === 'enemy-spit';
         await this.tween({ targets: fig, x: home - 20 * dir, duration: 120 });
         sfx.play(this, 'charge');
-        await fx.chargeUp(this, hand.x, hand.y, colors[1], style === 'enemy-spit' ? 180 : 300);
+        await fx.chargeUp(this, hand.x, hand.y, style.colors[1], spit ? 180 : style.big ? 520 : 300);
         sfx.play(this, 'fireball');
         await Promise.all([
           this.tween({ targets: fig, x: home + 20 * dir, duration: 120, ease: 'Back.easeOut' }),
-          fx.projectile(this, hand, target, colors, style === 'enemy-spit' ? 360 : 420),
+          fx.projectile(this, hand, target, style.colors, spit ? 360 : style.big ? 520 : 420),
         ]);
         sfx.play(this, 'explode');
+        if (style.big) {
+          fx.explosion(this, target.x, target.y, style.colors);
+          this.cameras.main.shake(260, 0.012);
+        }
         onContact();
         await this.tween({ targets: fig, x: home, duration: 200 });
         break;
       }
-      case 'heal':
+      case 'proc': {
+        // Weapon special: a burst at the target right after the blow.
+        fx.explosion(this, target.x, target.y, style.colors);
         onContact();
         break;
+      }
     }
   }
 
-  private impact(e: Extract<BattleEvent, { kind: 'hit' }>, style: ReturnType<BattleScene['styleOf']>): void {
+  private impact(e: Extract<BattleEvent, { kind: 'hit' }>, style: Style): void {
     const targetSide: Side = e.source === 'player' ? 'enemy' : 'player';
     const fig = this.figOf(targetSide);
     const dir = e.source === 'player' ? 1 : -1;
@@ -468,33 +662,29 @@ export class BattleScene extends Phaser.Scene {
     const magic = e.damageType === 'magic';
     const maxHp = targetSide === 'enemy' ? this.battle.enemy.maxHp : this.battle.player.maxHp;
     const weight = Phaser.Math.Clamp(e.damage / maxHp, 0.05, 0.6);
+    const palette = e.element ? style.colors : undefined;
 
-    if (style === 'slash' || style === 'enemy-melee') {
-      const color = e.source === 'enemy' ? this.monster.look.accent : 0xffffff;
+    if (style.kind === 'slash' || style.kind === 'enemy-melee') {
+      const color = e.element ? style.colors[1] : e.source === 'enemy' ? this.monster.look.accent : 0xffffff;
       this.twinFlip = !this.twinFlip;
       fx.slash(this, x, y, dir as 1 | -1, color, this.twinFlip ? 0.35 : -0.35);
-    } else if (style === 'heavy') {
-      fx.slash(this, x, y, dir as 1 | -1, 0xffe08a, 0.6, true);
-      fx.shockwave(this, x, GROUND_Y, 0xffe08a, 3, 0.3);
+    } else if (style.kind === 'heavy') {
+      const color = e.element ? style.colors[1] : 0xffe08a;
+      fx.slash(this, x, y, dir as 1 | -1, color, 0.6, true);
+      fx.shockwave(this, x, GROUND_Y, color, 3, 0.3);
     }
-    fx.hitSparks(this, x, y, magic, e.crit);
-    sfx.play(this, e.crit || style === 'heavy' ? 'crit' : 'hit');
+    fx.hitSparks(this, x, y, magic, e.crit, palette);
+    sfx.play(this, e.crit || style.kind === 'heavy' || style.big ? 'crit' : 'hit');
     fx.whiteFlash(this, fig);
-    fx.hitStop(this, e.crit || style === 'heavy' ? 120 : 60);
+    fx.hitStop(this, e.crit || style.kind === 'heavy' ? 120 : 60);
     this.cameras.main.shake(e.crit ? 220 : 140, 0.004 + weight * 0.03);
 
     // Knockback.
     this.tweens.add({ targets: fig, x: x + 28 * dir, duration: 70, yoyo: true, ease: 'Quad.easeOut' });
 
-    floatText(
-      this,
-      x,
-      GROUND_Y - 230,
-      `${e.damage}`,
-      magic ? COLORS.textMagic : e.source === 'enemy' ? COLORS.textBad : '#ffffff',
-      e.crit ? 50 : 36,
-      e.crit ? 'CRIT!' : undefined,
-    );
+    const color = e.element ? ELEMENT_TEXT[e.element] : magic ? COLORS.textMagic : e.source === 'enemy' ? COLORS.textBad : '#ffffff';
+    const tags = [e.crit ? 'CRIT!' : '', e.effect ? EFFECT_TAGS[e.effect] : ''].filter(Boolean).join(' ');
+    floatText(this, x, GROUND_Y - 230, `${e.damage}`, color, e.crit || e.effect === 'weak' ? 50 : 36, tags || undefined);
     this.refreshBars();
   }
 

@@ -29,6 +29,10 @@ export const BALANCE = {
   defendDamage: 0.4,
   /** MP regained when defending. */
   defendMp: 4,
+  /** Highest elemental resistance a player can reach from gear and buffs (100 would be immune). */
+  maxPlayerResist: 80,
+  /** Monsters can go from -100 (double damage) to 100 (immune). */
+  minResist: -100,
 
   // Exploration
   /** Player walk speed in px/s (horizontal; vertical is 70% of this). */

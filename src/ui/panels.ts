@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config';
 import { db } from '../data/db';
-import type { ItemDef, NpcDef } from '../data/types';
+import { DAMAGE_TYPE_LABELS, ELEMENTS, ELEMENT_LABELS } from '../data/elements';
+import type { Defenses, ItemDef, NpcDef, Resists } from '../data/types';
 import { STAT_KEYS, STAT_LABELS, type Player } from '../game/Player';
 import { Button } from './Button';
 import { Modal } from './Modal';
@@ -17,13 +18,37 @@ export function itemSummary(item: ItemDef): string {
           .join('')
       : '';
   switch (item.type) {
-    case 'weapon':
-      return `${item.damage[0]}-${item.damage[1]} ${item.damageType === 'magic' ? 'magic' : 'phys'} dmg${bonus(item.stats)}`;
+    case 'weapon': {
+      const element = item.element ? ` ${ELEMENT_LABELS[item.element]}` : '';
+      return `${item.damage[0]}-${item.damage[1]} ${DAMAGE_TYPE_LABELS[item.damageType]}${element}${bonus(item.stats)}${item.proc ? `  ·  ${item.proc.name} ${Math.round(item.proc.chance * 100)}%` : ''}`;
+    }
     case 'armor':
-      return `DEF ${item.defense}  RES ${item.resist}${bonus(item.stats)}`;
+      return `${defenseText(item.defense)}${resistText(item.resists, '  ')}${bonus(item.stats)}`;
     case 'consumable':
       return item.description;
   }
+}
+
+/** Description plus the numbers a list line has no room for (weapon specials). */
+export function itemDetails(item: ItemDef): string {
+  if (item.type !== 'weapon' || !item.proc) return `${item.name}: ${item.description}`;
+  const p = item.proc;
+  return `${item.name}: ${item.description}  Special: ${p.name}, ${Math.round(p.chance * 100)}% chance on Attack.`;
+}
+
+/** "DEF Melee 9 · Pierce 10 · Magic 4" */
+export function defenseText(d: Defenses): string {
+  return `DEF ${(['melee', 'pierce', 'magic'] as const).map((t) => `${DAMAGE_TYPE_LABELS[t]} ${d[t] ?? 0}`).join(' · ')}`;
+}
+
+/** "  Fire +15, Ice -10" or '' if none. */
+export function resistText(r: Resists | undefined, prefix = ''): string {
+  if (!r) return '';
+  const parts = ELEMENTS.filter((e) => (r[e] ?? 0) + (r.all ?? 0) !== 0).map((e) => {
+    const v = (r[e] ?? 0) + (r.all ?? 0);
+    return `${ELEMENT_LABELS[e]} ${v > 0 ? '+' : ''}${v}`;
+  });
+  return parts.length ? `${prefix}${parts.join(', ')}` : '';
 }
 
 /** "+40 HP, +20 MP" */
@@ -35,9 +60,9 @@ export function restoreText(r: { hp: number; mp: number }): string {
 const ROWS_PER_PAGE = 6;
 
 const STAT_HELP: Record<string, string> = {
-  str: 'Physical damage',
+  str: 'Melee damage',
   int: 'Magic damage, max MP',
-  dex: 'Hit, crit, flee',
+  dex: 'Pierce damage, hit, crit',
   end: 'Max HP',
 };
 
@@ -81,22 +106,31 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
         c.add(plus);
       }
     });
-    c.add(
-      addText(scene, 40, 380, [`Attack  ${minDmg}-${maxDmg} ${player.weaponDamageType === 'magic' ? 'magic' : 'phys'}`, `Defense  ${player.defense}    Resist  ${player.resist}`, `Gold  ${player.gold}`].join('\n'), {
-        size: 19,
-      }).setLineSpacing(6),
-    );
+    const element = player.weaponElement;
+    const lines = [
+      `Attack  ${minDmg}-${maxDmg} ${DAMAGE_TYPE_LABELS[player.weaponDamageType]} · ${element ? ELEMENT_LABELS[element] : 'Neutral'}`,
+      defenseText(player.armor?.defense ?? {}),
+      resistText(player.resists, 'Resists  ') || 'Resists  none',
+      `Gold  ${player.gold}`,
+    ];
+    c.add(addText(scene, 40, 380, lines.join('\n'), { size: 17 }).setLineSpacing(6));
 
     // --- Skills (under the equipment column) ---
     c.add(addText(scene, 380, 330, 'Skills', { size: 22, bold: true, color: COLORS.textGold }));
+    const perColumn = Math.ceil(player.classDef.skills.length / 2);
     player.classDef.skills.forEach((entry, i) => {
       const skill = db.skill(entry.skillId);
       const known = entry.level <= player.level;
-      const t = addText(scene, 380, 368 + i * 30, known ? `${skill.name}  ·  ${skill.mpCost} MP` : `${skill.name}  ·  unlocks at Lv ${entry.level}`, {
-        size: 17,
+      const x = 380 + Math.floor(i / perColumn) * 180;
+      const y = 366 + (i % perColumn) * 27;
+      const t = addText(scene, x, y, known ? skill.name : `Lv ${entry.level}  ${skill.name}`, {
+        size: 15,
         color: known ? COLORS.textMagic : COLORS.textDim,
       });
-      t.setInteractive().on('pointerover', () => info.setText(`${skill.name}: ${skill.description}`)).on('pointerout', () => info.setText(''));
+      const cd = skill.cooldown > 0 ? `, cooldown ${skill.cooldown}` : '';
+      t.setInteractive()
+        .on('pointerover', () => info.setText(`${skill.name} (${skill.mpCost} MP${cd}): ${skill.description}`))
+        .on('pointerout', () => info.setText(''));
       c.add(t);
     });
 
@@ -155,7 +189,7 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
         },
         { width: 100, height: 40, fontSize: 17 },
       );
-      btn.onHover(() => info.setText(`${item.name}: ${item.description}`), () => info.setText(''));
+      btn.onHover(() => info.setText(itemDetails(item)), () => info.setText(''));
       c.add(btn);
     });
 
@@ -199,7 +233,7 @@ export function openShop(scene: Phaser.Scene, player: Player, title: string, sto
         render();
       }, { width: 140, height: 52, sublabel: `${item.price} g` });
       btn.setEnabled(player.gold >= item.price);
-      btn.onHover(() => info.setText(`${item.name}: ${item.description}`));
+      btn.onHover(() => info.setText(itemDetails(item)));
       c.add(btn);
     });
   };

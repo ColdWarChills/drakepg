@@ -1,5 +1,9 @@
 import type { MonsterDef } from './types';
 
+/**
+ * Resist rule of thumb (see OPPOSITE in elements.ts): +50 to its own element, -50 to the opposite.
+ * Forest creatures also burn.
+ */
 export const MONSTERS: MonsterDef[] = [
   {
     id: 'mossling',
@@ -9,11 +13,12 @@ export const MONSTERS: MonsterDef[] = [
     hp: 34,
     stats: { str: 3, int: 3, dex: 2, end: 3 },
     damage: [4, 7],
-    defense: 2,
-    resist: 2,
+    element: 'earth',
+    defense: { melee: 2, pierce: 2, magic: 2 },
+    resists: { earth: 50, water: 25, fire: -50, wind: -25 },
     attacks: [
-      { name: 'Slam', damageType: 'physical', power: 1, weight: 3 },
-      { name: 'Spore Puff', damageType: 'magic', power: 1.2, weight: 1 },
+      { name: 'Slam', damageType: 'melee', power: 1, weight: 3 },
+      { name: 'Spore Puff', damageType: 'magic', power: 1.1, weight: 1, applies: [{ status: 'spores', turns: 2, chance: 0.3 }] },
     ],
     xp: 14,
     gold: [3, 7],
@@ -27,11 +32,12 @@ export const MONSTERS: MonsterDef[] = [
     hp: 46,
     stats: { str: 6, int: 1, dex: 4, end: 5 },
     damage: [4, 8],
-    defense: 6,
-    resist: 1,
+    element: 'earth',
+    defense: { melee: 6, pierce: 4, magic: 1 },
+    resists: { earth: 50, wind: -50, fire: -25 },
     attacks: [
-      { name: 'Gore', damageType: 'physical', power: 1, weight: 3 },
-      { name: 'Thorn Charge', damageType: 'physical', power: 1.5, weight: 1 },
+      { name: 'Gore', damageType: 'pierce', power: 1, weight: 3 },
+      { name: 'Thorn Charge', damageType: 'melee', power: 1.5, weight: 1 },
     ],
     xp: 22,
     gold: [5, 10],
@@ -48,15 +54,21 @@ export const MONSTERS: MonsterDef[] = [
     hp: 38,
     stats: { str: 3, int: 7, dex: 7, end: 3 },
     damage: [5, 8],
-    defense: 2,
-    resist: 8,
+    element: 'fire',
+    defense: { melee: 2, pierce: 2, magic: 8 },
+    resists: { fire: 75, ice: -50, water: -50 },
     attacks: [
-      { name: 'Claw', damageType: 'physical', power: 0.9, weight: 2 },
-      { name: 'Cinder Spit', damageType: 'magic', power: 1.3, weight: 2 },
+      { name: 'Claw', damageType: 'melee', power: 0.9, weight: 2 },
+      { name: 'Cinder Spit', damageType: 'magic', power: 1.2, weight: 2, applies: [{ status: 'burn', turns: 2, chance: 0.3 }] },
     ],
     xp: 20,
     gold: [6, 11],
-    drops: [{ itemId: 'mana_potion', chance: 0.25 }],
+    drops: [
+      { itemId: 'mana_potion', chance: 0.25 },
+      { itemId: 'cinder_fang', chance: 0.05 },
+      { itemId: 'emberbrand', chance: 0.05 },
+      { itemId: 'ember_wand', chance: 0.05 },
+    ],
   },
   {
     id: 'bramble_bandit',
@@ -66,11 +78,12 @@ export const MONSTERS: MonsterDef[] = [
     hp: 54,
     stats: { str: 6, int: 3, dex: 6, end: 6 },
     damage: [5, 9],
-    defense: 6,
-    resist: 4,
+    element: 'dark',
+    defense: { melee: 6, pierce: 6, magic: 4 },
+    resists: { dark: 50, light: -50 },
     attacks: [
-      { name: 'Stab', damageType: 'physical', power: 1, weight: 3 },
-      { name: 'Dirty Trick', damageType: 'physical', power: 1.4, weight: 1 },
+      { name: 'Stab', damageType: 'pierce', power: 1, weight: 3 },
+      { name: 'Dirty Trick', damageType: 'melee', power: 1.2, weight: 1, applies: [{ status: 'blind', turns: 2, chance: 0.5 }] },
     ],
     xp: 32,
     gold: [10, 18],
@@ -88,15 +101,18 @@ export const MONSTERS: MonsterDef[] = [
     hp: 220,
     stats: { str: 8, int: 7, dex: 4, end: 10 },
     damage: [15, 20],
-    // Thick bark shrugs off spells; easier to hurt with steel. Keeps the three classes even (see sim notes).
-    defense: 4,
-    resist: 18,
+    element: 'earth',
+    // Thick bark shrugs off spells; easier to hurt with steel and fire.
+    defense: { melee: 4, pierce: 4, magic: 18 },
+    resists: { earth: 75, water: 50, fire: -25, wind: -25 },
+    immune: ['stun'],
     attacks: [
-      { name: 'Bramble Lash', damageType: 'physical', power: 1, weight: 4 },
-      { name: 'Spore Cloud', damageType: 'magic', power: 1.1, weight: 2 },
+      { name: 'Bramble Lash', damageType: 'melee', power: 1, weight: 4 },
+      { name: 'Spore Cloud', damageType: 'magic', power: 0.9, weight: 2, applies: [{ status: 'spores', turns: 3, chance: 0.7 }] },
+      { name: 'Bark Hide', damageType: 'melee', power: 0, weight: 1, applies: [{ status: 'bark_hide', turns: 2, self: true }] },
       {
         name: 'Root Crush',
-        damageType: 'physical',
+        damageType: 'melee',
         power: 2.6,
         weight: 2,
         windup: 'The Thornheart sinks its roots deep into the earth... (Defend or heal!)',

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { COLORS, FONT } from '../config';
 import { CLASSES } from '../data/classes';
 import { db } from '../data/db';
-import type { ClassDef, ClassId } from '../data/types';
+import type { ClassDef, ClassId, WeaponDef } from '../data/types';
 import { START } from '../data/world';
 import { Player, STAT_KEYS, STAT_LABELS } from '../game/Player';
 import { SaveSystem } from '../game/SaveSystem';
@@ -112,14 +112,19 @@ export class CreateScene extends Phaser.Scene {
     const group = this.add.container(x, CARD_Y + CARD_H / 2);
     const box = this.add.rectangle(0, 0, CARD_W, CARD_H, COLORS.panel, 0.92).setRounded(14).setStrokeStyle(3, COLORS.panelBorder);
     box.setInteractive({ useHandCursor: true }).on('pointerup', () => this.select(cls.id));
-    const fig = drawFigure(this, 0, -CARD_H / 2 + 215, cls.look, 1).setScale(cls.look.scale * 0.72);
+    const fig = drawFigure(this, 0, -CARD_H / 2 + 215, cls.look, 1, db.item(cls.weapon) as WeaponDef).setScale(cls.look.scale * 0.72);
     const name = addText(this, 0, 30, cls.name, { size: 30, bold: true, color: COLORS.textGold }).setOrigin(0.5);
     const tag = addText(this, 0, 66, cls.tagline, { size: 17, align: 'center', wrap: CARD_W - 40, color: COLORS.text }).setOrigin(0.5);
     const stats = addText(this, 0, 106, STAT_KEYS.map((k) => `${STAT_LABELS[k]} ${cls.stats[k]}`).join('   '), {
       size: 16,
       color: COLORS.textDim,
     }).setOrigin(0.5);
-    const skills = cls.skills.map((s) => `${db.skill(s.skillId).name}${s.level > 1 ? ` (Lv ${s.level})` : ''}`).join('  ·  ');
+    const early = cls.skills.filter((s) => s.level <= 4);
+    const later = cls.skills.length - early.length;
+    const skills = [
+      ...early.map((s) => `${db.skill(s.skillId).name}${s.level > 1 ? ` (Lv ${s.level})` : ''}`),
+      ...(later > 0 ? [`+${later} more by Lv ${Math.max(...cls.skills.map((s) => s.level))}`] : []),
+    ].join('  ·  ');
     const skillText = addText(this, 0, 150, skills, { size: 15, align: 'center', wrap: CARD_W - 40, color: COLORS.textMagic }).setOrigin(0.5);
     group.add([box, fig, name, tag, stats, skillText]);
     this.cards.push({ cls, box, group, fig });

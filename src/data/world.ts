@@ -68,7 +68,7 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0xb9770e, accent: 0x5d3a0a, scale: 1, art: 'npc_tobin' },
         role: {
           kind: 'shop',
-          stock: ['health_potion', 'mana_potion', 'iron_sword', 'oak_staff', 'leather_armor', 'apprentice_robe'],
+          stock: ['health_potion', 'mana_potion', 'iron_sword', 'hunting_knife', 'oak_staff', 'leather_armor', 'apprentice_robe'],
         },
         dialogue: ['Best prices this side of the river. Have a look!'],
       },

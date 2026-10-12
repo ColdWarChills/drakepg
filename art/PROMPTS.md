@@ -124,3 +124,23 @@ The boss arena. Without it, the game reuses the forest backgrounds, darkened.
 ```
 A hidden hollow at the heart of a cursed forest: a circle of giant ancient trees whose roots and thorny brambles twist together into walls, a huge gnarled dead tree in the background with a faint sickly green glow pulsing from a crack in its trunk, drifting green spores, dim moonlight from above. The bottom 30% of the image is flat, open, root-covered dirt ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
 ```
+
+## Weapons (drawn in the hero's hand)
+
+Model **Nano Banana**, Unlimited on, aspect **9:16**, with any finished character as the style reference. File name `wpn_<item id>`. Fill in the description:
+
+```
+A single <weapon description>, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+After processing, set the weapon's `art`, `grip` (where the handle's middle is, 0 = top, 1 = bottom) and `size` in `src/data/items.ts`.
+
+## Empty-handed heroes (`char_<class>_bare`)
+
+Attach the class's hero image as the reference (aspect 3:4) and ask for an edit:
+
+```
+Edit this image (image 1). Remove the <weapon> completely. Keep everything else exactly the same: the same <class description>, colors, pose, bold outline style, proportions and the plain flat <magenta / bright green> background. The hand that held it is now an empty clenched fist in the same place, as if gripping an invisible handle. No weapon anywhere in the image. No text.
+```
+
+Then re-measure the fist positions in `look.bare.hands` (src/data/classes.ts).
