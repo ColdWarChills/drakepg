@@ -16,6 +16,9 @@ export type BattleEvent =
   | { kind: 'miss'; source: Side; move: string; moveId: string; damageType: DamageType }
   | { kind: 'heal'; source: Side; move: string; moveId: string; hp: number; mp: number }
   | { kind: 'flee'; success: boolean }
+  | { kind: 'defend'; mp: number }
+  /** Enemy is winding up a telegraphed attack that lands next turn. */
+  | { kind: 'windup'; move: string; text: string }
   | { kind: 'defeated'; side: Side };
 
 export type BattleState = 'player_turn' | 'victory' | 'defeat' | 'fled';
@@ -40,6 +43,9 @@ export class Battle {
   readonly enemy: Enemy;
   state: BattleState = 'player_turn';
   rewards: Rewards | null = null;
+  /** Telegraphed attack the enemy will use on its next turn. */
+  charging: MonsterAttack | null = null;
+  private defending = false;
 
   constructor(
     readonly player: Player,
@@ -102,13 +108,26 @@ export class Battle {
     return this.endPlayerTurn(events);
   }
 
+  /** Brace: take reduced damage this turn and recover a little MP. */
+  defend(): BattleEvent[] {
+    if (this.isOver) return [];
+    this.defending = true;
+    const mp = this.player.restoreMp(BALANCE.defendMp);
+    return this.endPlayerTurn([{ kind: 'defend', mp }]);
+  }
+
+  get canFlee(): boolean {
+    return !this.enemy.def.boss;
+  }
+
   get fleeChance(): number {
+    if (!this.canFlee) return 0;
     const diff = this.player.stats.dex - this.enemy.def.stats.dex;
     return clamp(BALANCE.baseFleeChance + diff * 0.03, 0.2, 0.9);
   }
 
   flee(): BattleEvent[] {
-    if (this.isOver) return [];
+    if (this.isOver || !this.canFlee) return [];
     if (chance(this.rng, this.fleeChance)) {
       this.state = 'fled';
       return [{ kind: 'flee', success: true }];
@@ -126,6 +145,7 @@ export class Battle {
       return events;
     }
     events.push(this.enemyTurn());
+    this.defending = false;
     if (this.player.isDead) {
       events.push({ kind: 'defeated', side: 'player' });
       this.state = 'defeat';
@@ -134,13 +154,24 @@ export class Battle {
   }
 
   private enemyTurn(): BattleEvent {
-    const attack: MonsterAttack = weightedPick(this.rng, this.enemy.def.attacks, (a) => a.weight);
+    let attack: MonsterAttack;
+    if (this.charging) {
+      attack = this.charging;
+      this.charging = null;
+    } else {
+      attack = weightedPick(this.rng, this.enemy.def.attacks, (a) => a.weight);
+      if (attack.windup) {
+        this.charging = attack;
+        return { kind: 'windup', move: attack.name, text: attack.windup };
+      }
+    }
     const m = this.enemy.def;
     const attacker: AttackerInfo = { stats: m.stats, roll: m.damage };
     const armor = attack.damageType === 'magic' ? this.player.resist : this.player.defense;
     const result = this.resolveHit(attacker, this.player.stats.dex, armor, attack.damageType, attack.power);
     const base = { source: 'enemy' as const, move: attack.name, moveId: 'enemy', damageType: attack.damageType };
     if (!result) return { kind: 'miss', ...base };
+    if (this.defending) result.damage = Math.max(1, Math.round(result.damage * BALANCE.defendDamage));
     this.player.takeDamage(result.damage);
     return { kind: 'hit', ...base, ...result };
   }

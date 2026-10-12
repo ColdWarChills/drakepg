@@ -1,9 +1,7 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config';
-import { Player } from '../game/Player';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
-import { START } from '../data/world';
 import { hasArt } from '../ui/art';
 import { Button } from '../ui/Button';
 import * as fx from '../ui/fx';
@@ -63,7 +61,7 @@ export class TitleScene extends Phaser.Scene {
       fontSize: 26,
     }).setEnabled(hasSave);
 
-    addText(this, cx, height - 30, 'v0.2', { size: 16, color: COLORS.textDim }).setOrigin(0.5);
+    addText(this, cx, height - 30, 'v0.3 · Chapter 1', { size: 16, color: COLORS.textDim }).setOrigin(0.5);
   }
 
   /** Draws the background and returns the x to center the menu on. */
@@ -96,12 +94,9 @@ export class TitleScene extends Phaser.Scene {
     return width / 2;
   }
 
+  /** The save is only replaced once the new character is confirmed. */
   private startNew(): void {
-    SaveSystem.clear();
-    const player = Player.createNew();
-    session.start(player);
-    SaveSystem.save(player);
-    goTo(this, SceneKeys.Room, { ...START, via: 'spawn', intro: true });
+    goTo(this, SceneKeys.Create);
   }
 
   private continueGame(): void {
@@ -117,9 +112,9 @@ export class TitleScene extends Phaser.Scene {
   private confirmOverwrite(): void {
     const modal = new Modal(this, 640, 260, 'Start over?');
     modal.content.add(
-      addText(this, 320, 100, 'This deletes your current save.', { size: 22, align: 'center' }).setOrigin(0.5),
+      addText(this, 320, 100, 'Your current save is replaced once you begin.', { size: 22, align: 'center' }).setOrigin(0.5),
     );
-    modal.content.add(new Button(this, 200, 190, 'Delete & start', () => this.startNew(), { width: 220 }));
+    modal.content.add(new Button(this, 200, 190, 'New character', () => this.startNew(), { width: 220 }));
     modal.content.add(new Button(this, 440, 190, 'Cancel', () => modal.close(), { width: 220 }));
   }
 }

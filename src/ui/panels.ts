@@ -34,6 +34,13 @@ export function restoreText(r: { hp: number; mp: number }): string {
 
 const ROWS_PER_PAGE = 6;
 
+const STAT_HELP: Record<string, string> = {
+  str: 'Physical damage',
+  int: 'Magic damage, max MP',
+  dex: 'Hit, crit, flee',
+  end: 'Max HP',
+};
+
 /** Character sheet + equipment + bag. Calls `onChange` after anything that changes the player. */
 export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange: () => void): Modal {
   const modal = new Modal(scene, 1100, 600, 'Character', () => {});
@@ -46,20 +53,52 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
 
     // --- Stats column ---
     const [minDmg, maxDmg] = player.attackRange;
-    const lines = [
-      `${player.name}`,
-      `Level ${player.level}   (${player.xp} / ${player.xpNeeded} XP)`,
-      '',
-      `HP  ${player.hp} / ${player.maxHp}`,
-      `MP  ${player.mp} / ${player.maxMp}`,
-      '',
-      ...STAT_KEYS.map((k) => `${STAT_LABELS[k]}  ${s[k]}`),
-      '',
-      `Attack  ${minDmg}-${maxDmg}`,
-      `Defense  ${player.defense}   Resist  ${player.resist}`,
-      `Gold  ${player.gold}`,
-    ];
-    c.add(addText(scene, 40, 70, lines.join('\n'), { size: 21, color: COLORS.text }).setLineSpacing(4));
+    const info = addText(scene, 40, 545, '', { size: 18, color: COLORS.textDim, wrap: 1020 });
+    c.add(info);
+    c.add(addText(scene, 40, 64, player.name, { size: 26, bold: true }));
+    c.add(addText(scene, 40, 98, `Level ${player.level} ${player.classDef.name}   ·   ${player.xp} / ${player.xpNeeded} XP`, { size: 18, color: COLORS.textDim }));
+    c.add(addText(scene, 40, 130, `HP  ${player.hp} / ${player.maxHp}      MP  ${player.mp} / ${player.maxMp}`, { size: 20 }));
+
+    const points = player.data.statPoints;
+    if (points > 0) {
+      const label = addText(scene, 40, 168, `${points} stat point${points > 1 ? 's' : ''} to spend`, { size: 19, bold: true, color: COLORS.textGold });
+      scene.tweens.add({ targets: label, alpha: 0.55, duration: 600, yoyo: true, repeat: -1 });
+      c.add(label);
+    }
+    STAT_KEYS.forEach((k, i) => {
+      const y = 214 + i * 40;
+      c.add(addText(scene, 40, y, STAT_LABELS[k], { size: 21, bold: true }).setOrigin(0, 0.5));
+      c.add(addText(scene, 110, y, `${s[k]}`, { size: 21 }).setOrigin(0, 0.5));
+      const hover = addText(scene, 165, y, STAT_HELP[k], { size: 15, color: COLORS.textDim }).setOrigin(0, 0.5);
+      c.add(hover);
+      if (points > 0) {
+        hover.setX(205);
+        const plus = new Button(scene, 175, y, '+', () => {
+          player.spendStatPoint(k);
+          onChange();
+          render();
+        }, { width: 40, height: 34, fontSize: 22 });
+        c.add(plus);
+      }
+    });
+    c.add(
+      addText(scene, 40, 380, [`Attack  ${minDmg}-${maxDmg} ${player.weaponDamageType === 'magic' ? 'magic' : 'phys'}`, `Defense  ${player.defense}    Resist  ${player.resist}`, `Gold  ${player.gold}`].join('\n'), {
+        size: 19,
+      }).setLineSpacing(6),
+    );
+
+    // --- Skills (under the equipment column) ---
+    c.add(addText(scene, 380, 330, 'Skills', { size: 22, bold: true, color: COLORS.textGold }));
+    player.classDef.skills.forEach((entry, i) => {
+      const skill = db.skill(entry.skillId);
+      const known = entry.level <= player.level;
+      const t = addText(scene, 380, 368 + i * 30, known ? `${skill.name}  ·  ${skill.mpCost} MP` : `${skill.name}  ·  unlocks at Lv ${entry.level}`, {
+        size: 17,
+        color: known ? COLORS.textMagic : COLORS.textDim,
+      });
+      t.setInteractive().on('pointerover', () => info.setText(`${skill.name}: ${skill.description}`)).on('pointerout', () => info.setText(''));
+      c.add(t);
+    });
 
     // --- Equipment column ---
     c.add(addText(scene, 380, 70, 'Equipped', { size: 22, bold: true, color: COLORS.textGold }));
@@ -87,9 +126,6 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
     const pages = Math.max(1, Math.ceil(entries.length / ROWS_PER_PAGE));
     page = Math.min(page, pages - 1);
     const shown = entries.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE);
-    const info = addText(scene, 40, 545, '', { size: 18, color: COLORS.textDim, wrap: 1020 });
-    c.add(info);
-
     if (entries.length === 0) c.add(addText(scene, 740, 115, 'Empty', { size: 18, color: COLORS.textDim }));
 
     shown.forEach((entry, i) => {
@@ -180,17 +216,17 @@ export interface DialogueAction {
   run: (close: () => void) => void;
 }
 
-/** NPC dialogue box. Pages through `npc.dialogue`, then shows the actions. */
-export function openDialogue(scene: Phaser.Scene, npc: NpcDef, actions: DialogueAction[]): Modal {
+/** NPC dialogue box. Pages through `lines` (default: the NPC's own), then shows the actions. */
+export function openDialogue(scene: Phaser.Scene, npc: NpcDef, actions: DialogueAction[], lines: string[] = npc.dialogue): Modal {
   const modal = new Modal(scene, 860, 320, `${npc.name}, ${npc.title}`);
   let line = 0;
 
   const render = () => {
     modal.content.removeAll(true);
     const c = modal.content;
-    c.add(addText(scene, 50, 80, npc.dialogue[line], { size: 23, wrap: 760 }).setLineSpacing(6));
+    c.add(addText(scene, 50, 80, lines[line], { size: 23, wrap: 760 }).setLineSpacing(6));
 
-    const isLast = line >= npc.dialogue.length - 1;
+    const isLast = line >= lines.length - 1;
     const buttons: DialogueAction[] = isLast
       ? [...actions, { label: 'Goodbye', run: () => modal.close() }]
       : [{ label: 'Next', run: () => { line += 1; render(); } }];

@@ -3,12 +3,13 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import type { ConsumableDef, MonsterDef, SkillFx, ZoneDef } from '../data/types';
 import { Battle, type BattleEvent, type Side } from '../game/Battle';
+import { recordKill } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
 import { drawScenery } from '../ui/backdrops';
 import { Bar } from '../ui/Bar';
 import { Button } from '../ui/Button';
-import { drawFigure, PLAYER_LOOK } from '../ui/figures';
+import { drawFigure } from '../ui/figures';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { restoreText } from '../ui/panels';
@@ -24,6 +25,7 @@ const CHEST = 120;
 
 const FIRE = [0xfff2a8, 0xffa733, 0xff5a1f, 0x8a1c00];
 const ARCANE = [0xe6f0ff, 0x9fb7ff, 0x7a5cff];
+const FROST = [0xffffff, 0xbff4ff, 0x5ec8ff, 0x1f6fb2];
 
 type Menu = 'main' | 'skills' | 'items';
 type MenuButton = { label: string; sub?: string; enabled?: boolean; run: () => void };
@@ -44,6 +46,14 @@ export class BattleScene extends Phaser.Scene {
   private menuButtons: MenuButton[] = [];
   private busy = false;
   private twinFlip = false;
+  /** Red glow while the enemy winds up a telegraphed attack. */
+  private chargeAura: Phaser.GameObjects.Image | null = null;
+  /** Blue bubble while the player defends. */
+  private shield: Phaser.GameObjects.Arc | null = null;
+
+  private get playerLook() {
+    return this.battle.player.classDef.look;
+  }
 
   constructor() {
     super(SceneKeys.Battle);
@@ -57,15 +67,21 @@ export class BattleScene extends Phaser.Scene {
     this.battle = new Battle(session.player, this.monster);
     this.log = [];
     this.busy = true;
+    this.chargeAura = null;
+    this.shield = null;
 
     drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
-    this.playerFig = drawFigure(this, -200, GROUND_Y, PLAYER_LOOK, 1);
+    this.playerFig = drawFigure(this, -200, GROUND_Y, this.playerLook, 1);
     this.enemyFig = drawFigure(this, this.scale.width + 200, GROUND_Y, this.monster.look, -1);
 
     this.drawStatus();
     this.drawBottomPanel();
     this.refreshBars(false);
-    this.pushLog(`A wild ${this.monster.name} (Lv ${this.monster.level}) appears in the ${this.zone.name}!`);
+    this.pushLog(
+      this.monster.boss
+        ? `${this.monster.name} awakens! There is no running from this fight.`
+        : `A wild ${this.monster.name} (Lv ${this.monster.level}) appears in the ${this.zone.name}!`,
+    );
 
     ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX'].forEach((key, i) => {
       this.input.keyboard!.on(`keydown-${key}`, () => {
@@ -84,7 +100,14 @@ export class BattleScene extends Phaser.Scene {
     ]);
     fx.dust(this, PLAYER_X, GROUND_Y, 6);
     fx.dust(this, ENEMY_X, GROUND_Y, 6);
-    this.idle(this.playerFig, PLAYER_LOOK.scale);
+    if (this.monster.boss) {
+      sfx.play(this, 'warning');
+      this.cameras.main.shake(400, 0.012);
+      this.cameras.main.flash(250, 120, 0, 0);
+      fx.shockwave(this, ENEMY_X, GROUND_Y, 0xff4d4d, 4, 0.3);
+      await this.wait(500);
+    }
+    this.idle(this.playerFig, this.playerLook.scale);
     this.idle(this.enemyFig, this.monster.look.scale);
     this.busy = false;
     this.showMenu('main');
@@ -106,7 +129,11 @@ export class BattleScene extends Phaser.Scene {
 
     const ex = this.scale.width - 436;
     this.statusPanel(ex, 16, 420, 90);
-    addText(this, ex + 16, 26, `${m.name}  ·  Lv ${m.level}`, { size: 22, bold: true });
+    addText(this, ex + 16, 26, `${m.name}  ·  Lv ${m.level}${m.boss ? '  ·  BOSS' : ''}`, {
+      size: 22,
+      bold: true,
+      color: m.boss ? COLORS.textBad : COLORS.text,
+    });
     this.enemyHp = new Bar(this, ex + 16, 76, 388, 26, COLORS.hp, 'HP ');
   }
 
@@ -152,7 +179,13 @@ export class BattleScene extends Phaser.Scene {
         { label: 'Attack', run: () => this.act(() => this.battle.attack()) },
         { label: 'Skills', run: () => this.showMenu('skills') },
         { label: 'Items', run: () => this.showMenu('items') },
-        { label: 'Flee', sub: `${Math.round(this.battle.fleeChance * 100)}%`, run: () => this.act(() => this.battle.flee()) },
+        { label: 'Defend', sub: `-60% dmg, +MP`, run: () => this.act(() => this.battle.defend()) },
+        {
+          label: 'Flee',
+          sub: this.battle.canFlee ? `${Math.round(this.battle.fleeChance * 100)}%` : 'Boss',
+          enabled: this.battle.canFlee,
+          run: () => this.act(() => this.battle.flee()),
+        },
       );
     } else if (menu === 'skills') {
       for (const skill of p.knownSkills) {
@@ -237,6 +270,23 @@ export class BattleScene extends Phaser.Scene {
 
   private async play(e: BattleEvent): Promise<void> {
     const enemyName = this.monster.name;
+    await this.playEvent(e, enemyName);
+    // An enemy attack resolves the player's guard and the boss's wind-up.
+    const enemyActed = e.kind === 'windup' || ((e.kind === 'hit' || e.kind === 'miss') && e.source === 'enemy');
+    if (enemyActed) {
+      if (e.kind !== 'windup' && this.chargeAura) {
+        this.chargeAura.destroy();
+        this.chargeAura = null;
+      }
+      if (this.shield) {
+        const s = this.shield;
+        this.shield = null;
+        this.tweens.add({ targets: s, alpha: 0, scale: 1.4, duration: 250, onComplete: () => s.destroy() });
+      }
+    }
+  }
+
+  private async playEvent(e: BattleEvent, enemyName: string): Promise<void> {
     switch (e.kind) {
       case 'hit':
       case 'miss': {
@@ -268,20 +318,44 @@ export class BattleScene extends Phaser.Scene {
         await this.wait(650);
         break;
       }
+      case 'defend': {
+        sfx.play(this, 'open');
+        this.shield?.destroy();
+        this.shield = this.add.circle(PLAYER_X, GROUND_Y - 110, 120).setStrokeStyle(6, 0x8ec5ff, 0.9).setFillStyle(0x8ec5ff, 0.12);
+        this.shield.setScale(0.2);
+        this.tweens.add({ targets: this.shield, scale: 1, duration: 220, ease: 'Back.easeOut' });
+        floatText(this, PLAYER_X, GROUND_Y - 230, e.mp > 0 ? `Defend  +${e.mp} MP` : 'Defend', COLORS.textMagic, 28);
+        this.pushLog('You brace yourself.');
+        this.refreshBars();
+        await this.wait(350);
+        break;
+      }
+      case 'windup': {
+        sfx.play(this, 'warning');
+        this.pushLog(e.text);
+        this.cameras.main.shake(350, 0.006);
+        floatText(this, ENEMY_X, GROUND_Y - 260, `${e.move}!`, COLORS.textBad, 34);
+        this.chargeAura = this.add.image(ENEMY_X, GROUND_Y - 120, 'fx_soft').setTint(0xff3b3b).setBlendMode('ADD').setScale(8).setAlpha(0.5);
+        this.chargeAura.setDepth(-0.5);
+        this.tweens.add({ targets: this.chargeAura, scale: 10, alpha: 0.8, duration: 450, yoyo: true, repeat: -1 });
+        this.tweens.add({ targets: this.enemyFig, x: ENEMY_X + 25, duration: 180, yoyo: true, ease: 'Quad.easeOut' });
+        await this.wait(700);
+        break;
+      }
       case 'flee': {
         const fig = this.playerFig;
         if (e.success) {
           this.pushLog('You got away safely.');
           sfx.play(this, 'miss');
           this.tweens.killTweensOf(fig);
-          fig.setScale(-PLAYER_LOOK.scale, PLAYER_LOOK.scale);
+          fig.setScale(-this.playerLook.scale, this.playerLook.scale);
           for (let i = 0; i < 4; i++) this.time.delayedCall(i * 90, () => fx.dust(this, fig.x, GROUND_Y, 3));
           await this.tween({ targets: fig, x: -200, duration: 520, ease: 'Cubic.easeIn' });
         } else {
           this.pushLog("You couldn't get away!");
-          fig.setScale(-PLAYER_LOOK.scale, PLAYER_LOOK.scale);
+          fig.setScale(-this.playerLook.scale, this.playerLook.scale);
           await this.tween({ targets: fig, x: PLAYER_X - 60, duration: 180, ease: 'Quad.easeOut' });
-          fig.setScale(PLAYER_LOOK.scale, PLAYER_LOOK.scale);
+          fig.setScale(this.playerLook.scale, this.playerLook.scale);
           fx.dust(this, fig.x, GROUND_Y, 5);
           await this.tween({ targets: fig, x: PLAYER_X, duration: 220, ease: 'Back.easeOut' });
         }
@@ -354,10 +428,17 @@ export class BattleScene extends Phaser.Scene {
         break;
       }
       case 'fire':
+      case 'frost':
       case 'arcane':
       case 'enemy-spit': {
         const colors =
-          style === 'fire' ? FIRE : style === 'arcane' ? ARCANE : [0xffffff, this.monster.look.color, this.monster.look.accent];
+          style === 'fire'
+            ? FIRE
+            : style === 'frost'
+              ? FROST
+              : style === 'arcane'
+                ? ARCANE
+                : [0xffffff, this.monster.look.color, this.monster.look.accent];
         const hand = { x: fig.x + 50 * dir, y: GROUND_Y - CHEST - 10 };
         await this.tween({ targets: fig, x: home - 20 * dir, duration: 120 });
         sfx.play(this, 'charge');
@@ -453,10 +534,18 @@ export class BattleScene extends Phaser.Scene {
     switch (this.battle.state) {
       case 'victory': {
         const rewards = this.battle.rewards ?? { xp: 0, gold: 0, items: [] };
+        const levelBefore = player.level;
         const levelsGained = player.grantRewards(rewards);
+        const quests = recordKill(player, this.monster.id).map((q) => ({
+          name: q.quest.name,
+          goal: q.quest.goal,
+          count: q.count,
+          target: q.target,
+        }));
         if (BALANCE.restoreAfterBattle) player.restoreFull();
         SaveSystem.save(player);
-        const data: ResultSceneData = { outcome: 'victory', monsterName, rewards, levelsGained, back };
+        const newSkills = player.skillsLearnedSince(levelBefore).map((s) => s.name);
+        const data: ResultSceneData = { outcome: 'victory', monsterName, rewards, levelsGained, newSkills, quests, back };
         goTo(this, SceneKeys.Result, data);
         break;
       }

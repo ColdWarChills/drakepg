@@ -10,8 +10,8 @@ export interface Look {
   accent: number;
   /** 1 = player-sized. */
   scale: number;
-  /** Image key in src/assets/art/ (file name without extension). Falls back to shapes if missing. */
-  art?: string;
+  /** Image key(s) in src/assets/art/ (file name without extension); first existing wins. Falls back to shapes. */
+  art?: ArtRef;
 }
 
 export interface SkillDef {
@@ -30,7 +30,24 @@ export interface SkillDef {
   fx?: SkillFx;
 }
 
-export type SkillFx = 'slash' | 'heavy' | 'fire' | 'heal';
+export type SkillFx = 'slash' | 'heavy' | 'fire' | 'frost' | 'heal';
+
+export type ClassId = 'warrior' | 'mage' | 'rogue';
+
+export interface ClassDef {
+  id: ClassId;
+  name: string;
+  tagline: string;
+  /** Starting base stats. */
+  stats: Stats;
+  /** Added automatically on every level up, on top of the free stat points. */
+  growth: Partial<Stats>;
+  weapon: string;
+  armor: string;
+  /** Skills and the level each unlocks at. */
+  skills: { skillId: string; level: number }[];
+  look: Look;
+}
 
 interface ItemBase {
   id: string;
@@ -72,6 +89,8 @@ export interface MonsterAttack {
   power: number;
   /** Relative chance to pick this attack. */
   weight: number;
+  /** Telegraphed attack: the monster spends a turn winding up (this text is shown), then hits next turn. */
+  windup?: string;
 }
 
 export interface MonsterDef {
@@ -88,6 +107,8 @@ export interface MonsterDef {
   xp: number;
   gold: [number, number];
   drops: { itemId: string; chance: number }[];
+  /** Bosses can't be fled from and get a bigger presence on screen. */
+  boss?: boolean;
 }
 
 /** Painted background image key(s); the first one that exists is used. */
@@ -130,6 +151,8 @@ export interface RoomExit {
   to: string;
   /** Shown on the arrow at the screen edge. */
   label: string;
+  /** Exit stays blocked until this quest is accepted (or done). */
+  requiresQuest?: string;
 }
 
 export type Ambient = 'dust' | 'leaves' | 'fireflies';
@@ -148,4 +171,25 @@ export interface RoomDef {
   /** Monsters roaming here come from this zone; battles use its scenery. */
   zoneId?: string;
   monsterCount?: number;
+  /** A boss standing in the room. Gone once its quest is complete. */
+  boss?: { monsterId: string; x: number; y: number; questId: string };
+}
+
+export interface QuestDef {
+  id: string;
+  name: string;
+  /** NPC id who offers and accepts the quest. */
+  giver: string;
+  /** Quest that must be completed first. */
+  requires?: string;
+  objective: { kind: 'kill'; monsterId: string; count: number };
+  /** Short tracker text, e.g. "Mosslings defeated". */
+  goal: string;
+  offer: string[];
+  /** Said when you talk to the giver before finishing. */
+  reminder: string;
+  complete: string[];
+  rewards: { xp: number; gold: number; items?: string[]; classItems?: Partial<Record<ClassId, string>> };
+  /** Last quest of a chapter: shows the chapter-complete banner. */
+  endsChapter?: string;
 }

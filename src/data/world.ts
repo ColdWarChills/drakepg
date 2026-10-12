@@ -25,6 +25,14 @@ export const ZONES: ZoneDef[] = [
       { monsterId: 'bramble_bandit', weight: 4 },
     ],
   },
+  {
+    id: 'thornheart_hollow',
+    name: 'Thornheart Hollow',
+    recommendedLevel: [4, 6],
+    background: ['bg_thornheart_hollow', 'bg_thornwood_deep', 'bg_thornwood'],
+    backdrop: { kind: 'forest', shade: 0.5 },
+    encounters: [],
+  },
 ];
 
 export const ROOMS: RoomDef[] = [
@@ -111,10 +119,25 @@ export const ROOMS: RoomDef[] = [
     backdrop: { kind: 'forest', shade: 0.35 },
     walk: [530, 700],
     ambient: ['leaves', 'fireflies'],
-    exits: [{ side: 'left', to: 'thornwood_path', label: 'Thornwood Path' }],
+    exits: [
+      { side: 'left', to: 'thornwood_path', label: 'Thornwood Path' },
+      { side: 'right', to: 'thornheart_hollow', label: 'Thornheart Hollow', requiresQuest: 'heart_of_thorns' },
+    ],
     npcs: [],
     zoneId: 'thornwood_deep',
     monsterCount: 4,
+  },
+  {
+    id: 'thornheart_hollow',
+    name: 'Thornheart Hollow',
+    background: ['bg_thornheart_hollow', 'bg_thornwood_deep', 'bg_thornwood'],
+    backdrop: { kind: 'forest', shade: 0.5 },
+    walk: [530, 700],
+    ambient: ['fireflies', 'leaves'],
+    exits: [{ side: 'left', to: 'thornwood_deep', label: 'Deep Thornwood' }],
+    npcs: [],
+    zoneId: 'thornheart_hollow',
+    boss: { monsterId: 'thornheart', x: 930, y: 630, questId: 'heart_of_thorns' },
   },
 ];
 

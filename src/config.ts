@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -23,6 +23,12 @@ export const BALANCE = {
   statDamageScale: 0.6,
   baseFleeChance: 0.5,
   maxLevel: 50,
+  /** Free stat points per level up (class growth is added on top). */
+  statPointsPerLevel: 3,
+  /** Damage taken while defending is multiplied by this. */
+  defendDamage: 0.4,
+  /** MP regained when defending. */
+  defendMp: 4,
 
   // Exploration
   /** Player walk speed in px/s (horizontal; vertical is 70% of this). */

@@ -67,19 +67,28 @@ export function floatText(
 }
 
 /** Short message near the top of the screen. */
+const activeToasts = new WeakMap<Phaser.Scene, number>();
+
+/** Several toasts at once stack downward instead of overlapping. */
 export function toast(scene: Phaser.Scene, text: string, color: string = COLORS.text): void {
   const { width } = scene.scale;
-  const label = addText(scene, width / 2, 110, text, { size: 24, color, bold: true, stroke: true })
+  const slot = activeToasts.get(scene) ?? 0;
+  activeToasts.set(scene, slot + 1);
+  const y = 110 + slot * 38;
+  const label = addText(scene, width / 2, y, text, { size: 24, color, bold: true, stroke: true })
     .setOrigin(0.5)
     .setDepth(6000)
     .setAlpha(0);
   scene.tweens.chain({
     targets: label,
     tweens: [
-      { alpha: 1, y: 100, duration: 200 },
-      { alpha: 1, duration: 1200 },
-      { alpha: 0, y: 90, duration: 300 },
+      { alpha: 1, y: y - 10, duration: 200 },
+      { alpha: 1, duration: 1600 },
+      { alpha: 0, y: y - 20, duration: 300 },
     ],
-    onComplete: () => label.destroy(),
+    onComplete: () => {
+      label.destroy();
+      activeToasts.set(scene, Math.max(0, (activeToasts.get(scene) ?? 1) - 1));
+    },
   });
 }

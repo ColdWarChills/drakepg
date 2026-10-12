@@ -15,23 +15,30 @@ npm run preview  # serve the dist/ build locally
 
 ## What's in the game
 
+**Chapter 1: The Restless Thornwood**
+
 - **Title**: New Game / Continue (save in browser localStorage, including where you're standing).
-- **Rooms** (DragonFable-style screens): walk with **WASD / arrows** or **click to walk**. Walk off an edge with an arrow to change room.
-  - **Brindlemoor** (town): talk with **E / Space** or click. Elder (story), Tobin (shop), Ilsa (inn, rest for gold), Garrick (tips).
+- **Create**: type a name (or Random) and pick a class: **Warrior**, **Mage** or **Rogue** (click or **1-3**). Each has its own stats, gear and skills.
+- **Rooms** (DragonFable-style screens): walk with **WASD / arrows** or **click to walk**. Walk off an edge to change room.
+  - **Brindlemoor** (town): talk with **E / Space** or click. Elder Maren and Garrick give quests (**!** = new, **?** = ready to turn in), Tobin runs the shop, Ilsa the inn.
   - **Thornwood Path** and **Deep Thornwood**: monsters roam and chase you when you get close. Touch one to fight it. Label color = level vs yours.
-- **Battle**: turn-based. Attack / Skills / Items / Flee (mouse or keys **1-6**). Slashes, fireballs, hit-stop, screen shake, crits.
-- **Result**: XP and gold count-up, loot, level-up burst. You return to the same spot; the monster is gone. Losing wakes you at the inn with no penalty.
-- **Character panel** (button or **C**): stats, equipment, bag. **Esc** closes windows.
+  - **Thornheart Hollow**: sealed by thorns until the Elder sends you there. Home of the chapter boss.
+- **Quests**: a 4-quest chain (tracker on the left). Kill counts, then turn in for XP, gold and items. The last one ends the chapter.
+- **Battle**: turn-based. Attack / Skills / Items / **Defend** (-60% damage, regain MP) / Flee (mouse or keys **1-6**). The boss winds up big attacks a turn ahead: defend or heal.
+- **Leveling**: each level gives **stat points** (spend with **+** in the Character panel) and unlocks class skills at set levels.
+- **Result**: XP and gold count-up, loot, quest progress, level-up. Losing wakes you at the inn with no penalty.
+- **Character panel** (button or **C**): stats, stat points, skills, equipment, bag. **M** toggles sound. **Esc** closes windows.
+- **Sound**: all effects are synthesized in code (WebAudio), no audio files.
 
 ## Where things live
 
 | Path | What |
 | --- | --- |
 | `src/config.ts` | Screen size, colors, **`BALANCE`** design knobs |
-| `src/data/` | Content: items, skills, monsters, zones, rooms and NPCs. Edit these to add content. |
-| `src/game/` | Rules, no Phaser: `Player`, `Battle`, `SaveSystem`, `rng` |
-| `src/scenes/` | Screens: Boot, Title, Room (exploration), Battle, Result |
-| `src/ui/` | Buttons, bars, modals, panels, figures, scenery, `fx.ts` (particles and effects) |
+| `src/data/` | Content: classes, items, skills, monsters, quests, zones, rooms and NPCs. Edit these to add content. |
+| `src/game/` | Rules, no Phaser: `Player`, `Battle`, `Quests`, `SaveSystem`, `rng` |
+| `src/scenes/` | Screens: Boot, Title, Create, Room (exploration), Battle, Result |
+| `src/ui/` | Buttons, bars, modals, panels, figures, scenery, `fx.ts` (particles and effects), `sfx.ts` (sounds) |
 
 ### Art
 
@@ -44,13 +51,16 @@ npm run preview  # serve the dist/ build locally
 - **Room**: add to `ROOMS` in `src/data/world.ts` with its walkable strip (`walk`), `exits` (left/right to another room), `npcs`, and optionally a `zoneId` + `monsterCount` for roaming monsters. Link it from a neighbor's `exits`.
 - **Monster**: add to `src/data/monsters.ts`, then add it to a zone's `encounters` in `src/data/world.ts`.
 - **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`.
-- **Skill**: add to `src/data/skills.ts` and to `STARTING_SKILLS` (until skill learning exists). `fx` picks its battle visual (`slash`, `heavy`, `fire`, `heal`).
+- **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. `fx` picks its battle visual (`slash`, `heavy`, `fire`, `frost`, `heal`).
+- **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look) and to `ClassId` in `src/data/types.ts`.
+- **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked by thorns until that quest is accepted; a room `boss` appears while its quest is active.
+- **Boss**: a monster with `boss: true` (can't flee). An attack with `windup` text is telegraphed one turn before it hits.
 
 Broken references (e.g. a drop pointing at a missing item) throw at startup in `validateData()`.
 
 ### Saves
 
-Saved in `localStorage` under `drakepg.save`. If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
+Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
 
 ## Playing on GitHub Pages
 

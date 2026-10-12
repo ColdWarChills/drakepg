@@ -59,6 +59,58 @@ export const ITEMS: ItemDef[] = [
     stats: { dex: 2 },
   },
 
+  {
+    id: 'worn_staff',
+    type: 'weapon',
+    name: 'Worn Staff',
+    description: 'An apprentice staff. Hits with magic.',
+    price: 15,
+    damage: [4, 7],
+    damageType: 'magic',
+  },
+  {
+    id: 'rusty_dagger',
+    type: 'weapon',
+    name: 'Rusty Dagger',
+    description: 'Short, quick, a bit rusty.',
+    price: 15,
+    damage: [4, 7],
+    damageType: 'physical',
+    stats: { dex: 1 },
+  },
+
+  // Chapter 1 boss rewards
+  {
+    id: 'thornheart_blade',
+    type: 'weapon',
+    name: 'Thornheart Blade',
+    description: 'Carved from the Thornheart. Still smells of spring rain.',
+    price: 400,
+    damage: [12, 17],
+    damageType: 'physical',
+    stats: { str: 2, end: 1 },
+  },
+  {
+    id: 'heartwood_staff',
+    type: 'weapon',
+    name: 'Heartwood Staff',
+    description: 'A living staff that hums with old magic.',
+    price: 400,
+    damage: [10, 15],
+    damageType: 'magic',
+    stats: { int: 4 },
+  },
+  {
+    id: 'briar_fang',
+    type: 'weapon',
+    name: 'Briar Fang',
+    description: 'A dagger grown from a single great thorn.',
+    price: 400,
+    damage: [10, 14],
+    damageType: 'physical',
+    stats: { dex: 3 },
+  },
+
   // Armor
   {
     id: 'travel_garb',
@@ -68,6 +120,15 @@ export const ITEMS: ItemDef[] = [
     price: 10,
     defense: 3,
     resist: 3,
+  },
+  {
+    id: 'novice_robe',
+    type: 'armor',
+    name: 'Novice Robe',
+    description: 'Thin cloth with a few protective stitches.',
+    price: 15,
+    defense: 2,
+    resist: 6,
   },
   {
     id: 'leather_armor',

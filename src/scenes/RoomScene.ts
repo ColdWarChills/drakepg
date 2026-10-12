@@ -1,13 +1,15 @@
 import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
-import type { MonsterDef, NpcDef, RoomDef } from '../data/types';
+import { ROOMS } from '../data/world';
+import type { MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
+import { acceptQuest, activeQuests, questForNpc, questStarted, questStatus, turnInQuest } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { defaultRng, weightedPick } from '../game/rng';
 import { session, type RoamingMonster } from '../game/session';
 import { drawScenery } from '../ui/backdrops';
 import { Button } from '../ui/Button';
-import { drawFigure, PLAYER_LOOK } from '../ui/figures';
+import { drawFigure } from '../ui/figures';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { Hud } from '../ui/Hud';
@@ -62,6 +64,13 @@ export class RoomScene extends Phaser.Scene {
   private keys!: Keys;
   private hud!: Hud;
   private soundBtn!: Button;
+  private charBtn!: Button;
+  private tracker!: Phaser.GameObjects.Container;
+  private markers = new Map<Npc, Phaser.GameObjects.Text>();
+  private boss: (Actor & { def: MonsterDef; label: Phaser.GameObjects.Text }) | null = null;
+  private wallBumpAt = 0;
+  /** Set once walking into the boss has asked "fight?"; cleared after stepping away. */
+  private bossAsked = false;
   private prompt!: Phaser.GameObjects.Container;
   private promptText!: Phaser.GameObjects.Text;
   private moveTarget: { x: number; y: number } | null = null;
@@ -80,6 +89,10 @@ export class RoomScene extends Phaser.Scene {
     this.room = db.room(data.roomId);
     this.npcs = [];
     this.mobs = [];
+    this.markers = new Map();
+    this.boss = null;
+    this.wallBumpAt = 0;
+    this.bossAsked = false;
     this.moveTarget = null;
     this.pendingNpc = null;
     this.safeUntil = 0;
@@ -96,17 +109,22 @@ export class RoomScene extends Phaser.Scene {
     // A moment of safety on arrival so nothing jumps you mid-fade.
     if (data.via !== 'spawn') this.safeUntil = this.time.now + 1200;
     this.spawnMonsters(data);
+    this.spawnBoss();
     this.buildUi(data.via !== 'battle');
+    this.refreshQuests();
 
     // Movement keys are polled each frame; one-shot actions use key-down events so quick taps are never missed.
     const kb = this.input.keyboard!;
+    kb.enableGlobalCapture();
     this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Keys;
     kb.on('keydown-ESC', () => this.closeTopModal());
     kb.on('keydown-C', () => this.openCharacter());
     kb.on('keydown-M', () => this.toggleSound());
     const talk = () => {
-      const npc = this.modalOpen() || this.leaving ? null : this.nearestNpc();
-      if (npc) this.interact(npc);
+      if (this.modalOpen() || this.leaving) return;
+      const target = this.nearestTarget();
+      if (target === 'boss') this.confirmBoss();
+      else if (target) this.interact(target);
     };
     kb.on('keydown-E', talk);
     kb.on('keydown-SPACE', talk);
@@ -115,7 +133,7 @@ export class RoomScene extends Phaser.Scene {
     this.saveLocation();
     if (data.via === 'spawn' && data.intro) {
       const elder = this.npcs.find((n) => n.def.role.kind === 'talk');
-      if (elder) this.time.delayedCall(500, () => this.interact(elder));
+      if (elder) this.time.delayedCall(500, () => this.interact(elder, true));
     }
   }
 
@@ -132,8 +150,9 @@ export class RoomScene extends Phaser.Scene {
       x = data.x;
       y = data.y;
     }
-    const fig = drawFigure(this, x, y, PLAYER_LOOK, 1);
-    this.player = this.makeActor(fig, x, y, PLAYER_LOOK.scale);
+    const look = session.player.classDef.look;
+    const fig = drawFigure(this, x, y, look, 1);
+    this.player = this.makeActor(fig, x, y, look.scale);
     if (data.via === 'exit') this.player.facing = data.side === 'left' ? 1 : -1;
     this.clampToWalk(this.player);
     this.place(this.player);
@@ -244,6 +263,10 @@ export class RoomScene extends Phaser.Scene {
     for (const exit of this.room.exits) {
       const dir = exit.side === 'right' ? 1 : -1;
       const x = exit.side === 'right' ? width - 46 : 46;
+      if (!this.exitOpen(exit)) {
+        this.drawThornWall(exit.side);
+        continue;
+      }
       const c = this.add.container(x, y).setDepth(UI_DEPTH - 1);
       const arrow = this.add.graphics();
       arrow.fillStyle(0xf1c40f, 1).lineStyle(4, 0x3e2723, 1);
@@ -264,6 +287,62 @@ export class RoomScene extends Phaser.Scene {
     }
   }
 
+  private exitOpen(exit: RoomExit): boolean {
+    return !exit.requiresQuest || questStarted(session.player, exit.requiresQuest);
+  }
+
+  /** Brambles blocking a locked exit. */
+  private drawThornWall(side: 'left' | 'right'): void {
+    const { width } = this.scale;
+    const [top, bottom] = this.room.walk;
+    const x0 = side === 'right' ? width - 90 : 0;
+    const g = this.add.graphics().setDepth(bottom + 1);
+    for (let i = 0; i < 70; i++) {
+      const x = x0 + ((i * 37) % 90);
+      const y = top - 260 + ((i * 53) % (bottom - top + 280));
+      g.lineStyle(6, i % 3 ? 0x2b1d14 : 0x1f3a1c, 1);
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + ((i * 29) % 50) - 25, y + 40);
+      g.strokePath();
+      g.fillStyle(0x4a3426, 1).fillTriangle(x - 4, y + 10, x + 4, y + 10, x + (i % 2 ? 12 : -12), y + 2);
+    }
+    addText(this, side === 'right' ? width - 50 : 50, top - 290, 'Blocked by\nthorns', { size: 15, bold: true, align: 'center', color: COLORS.textDim, stroke: true })
+      .setOrigin(0.5)
+      .setDepth(UI_DEPTH - 1);
+  }
+
+  private bumpWall(): void {
+    if (this.time.now < this.wallBumpAt) return;
+    this.wallBumpAt = this.time.now + 2000;
+    sfx.play(this, 'denied');
+    this.cameras.main.shake(120, 0.004);
+    toast(this, 'A wall of thorns blocks the way.', COLORS.textDim);
+  }
+
+  private spawnBoss(): void {
+    const b = this.room.boss;
+    if (!b || questStatus(session.player, db.quest(b.questId)) !== 'active') return;
+    const def = db.monster(b.monsterId);
+    const fig = drawFigure(this, b.x, b.y, def.look, -1);
+    const actor = this.makeActor(fig, b.x, b.y, def.look.scale);
+    actor.facing = 1;
+    const label = addText(this, b.x, 0, `${def.name}  ·  Boss`, { size: 18, bold: true, color: COLORS.textBad, stroke: true }).setOrigin(0.5, 1);
+    this.boss = { ...actor, def, label };
+    this.place(this.boss);
+    const aura = this.add.image(b.x, b.y - 120, 'fx_soft').setTint(0x7dff9a).setBlendMode('ADD').setScale(9).setAlpha(0.25).setDepth(b.y - 1);
+    this.tweens.add({ targets: aura, alpha: 0.45, scale: 10, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const hit = this.add
+      .rectangle(b.x, b.y - actor.height * actor.scale * 0.5, 260, actor.height * actor.scale, 0xffffff, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(b.y + 1);
+    hit.on('pointerup', () => {
+      if (this.modalOpen() || this.leaving) return;
+      if (this.nearestTarget() === 'boss') this.confirmBoss();
+      else this.moveTarget = { x: b.x - 170, y: b.y };
+    });
+  }
+
   private buildUi(titleCard: boolean): void {
     const { width, height } = this.scale;
     this.hud = new Hud(this, 16, 16);
@@ -274,11 +353,11 @@ export class RoomScene extends Phaser.Scene {
       new Button(this, right - 70, y, label, run, { width: 140, height: 48, fontSize: 19 }).setDepth(UI_DEPTH);
     btn(40, 'Title', () => this.saveAndQuit());
     btn(98, 'Save', () => this.save(true));
-    btn(156, 'Character', () => this.openCharacter());
-    this.soundBtn = new Button(this, right - 172, 40, sfx.isMuted() ? 'Sound: off' : 'Sound: on', () => this.toggleSound(), {
-      width: 120,
+    this.charBtn = btn(156, 'Character', () => this.openCharacter());
+    this.soundBtn = new Button(this, right - 70, 214, sfx.isMuted() ? 'Sound: off' : 'Sound: on', () => this.toggleSound(), {
+      width: 140,
       height: 48,
-      fontSize: 15,
+      fontSize: 17,
     }).setDepth(UI_DEPTH);
 
     addText(this, width / 2, 36, this.room.name, { size: 30, bold: true, color: COLORS.textGold, stroke: true })
@@ -297,6 +376,8 @@ export class RoomScene extends Phaser.Scene {
         .setDepth(UI_DEPTH);
       this.tweens.add({ targets: hint, alpha: 0, delay: 9000, duration: 1000, onComplete: () => hint.destroy() });
     }
+
+    this.tracker = this.add.container(16, 176).setDepth(UI_DEPTH);
 
     // "E Talk" bubble shown over the nearest NPC.
     const bg = this.add.rectangle(0, 0, 110, 34, 0x1d1826, 0.92).setRounded(10).setStrokeStyle(2, COLORS.panelBorder);
@@ -379,18 +460,35 @@ export class RoomScene extends Phaser.Scene {
 
     // Exits.
     const { width } = this.scale;
-    const exitL = this.room.exits.find((e) => e.side === 'left');
-    const exitR = this.room.exits.find((e) => e.side === 'right');
+    const exitL = this.room.exits.find((e) => e.side === 'left' && this.exitOpen(e));
+    const exitR = this.room.exits.find((e) => e.side === 'right' && this.exitOpen(e));
     if (exitR && p.x > width - EDGE / 2) return this.leave('right');
     if (exitL && p.x < EDGE / 2) return this.leave('left');
-    this.clampToWalk(p, exitL ? 0 : EDGE, exitR ? width : width - EDGE);
+    const wallR = !exitR && this.room.exits.some((e) => e.side === 'right');
+    const wallL = !exitL && this.room.exits.some((e) => e.side === 'left');
+    const maxX = exitR ? width : wallR ? width - 110 : width - EDGE;
+    const minX = exitL ? 0 : wallL ? 110 : EDGE;
+    if ((wallR && p.x >= maxX && vx > 0) || (wallL && p.x <= minX && vx < 0)) this.bumpWall();
+    this.clampToWalk(p, minX, maxX);
     this.place(p, time);
+    if (this.boss) {
+      this.place(this.boss, time);
+      const dx = Math.abs(this.boss.x - p.x);
+      if (dx > 280) this.bossAsked = false;
+      else if (!blocked && !this.bossAsked && dx < 130 && Math.abs(this.boss.y - p.y) < 70) {
+        this.bossAsked = true;
+        this.moveTarget = null;
+        this.confirmBoss();
+      }
+    }
   }
 
   private updateNpc(npc: Npc, time: number): void {
     // Turn toward the player when they're close.
     if (Math.abs(npc.x - this.player.x) < 260) npc.facing = this.player.x < npc.x ? -1 : 1;
     this.place(npc, time);
+    const marker = this.markers.get(npc);
+    if (marker) marker.setPosition(npc.x, npc.label.y - npc.label.height - 8 + Math.sin(time * 0.005) * 5);
   }
 
   private updateMob(m: Mob, dt: number, time: number, blocked: boolean): void {
@@ -467,14 +565,29 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private updatePrompt(blocked: boolean): void {
-    const near = blocked ? null : this.nearestNpc();
+    const near = blocked ? null : this.nearestTarget();
     if (!near) {
       this.prompt.setVisible(false);
       return;
     }
-    const verb = near.def.role.kind === 'shop' ? 'Shop' : near.def.role.kind === 'inn' ? 'Rest' : 'Talk';
+    if (near === 'boss') {
+      this.promptText.setText('E  Fight');
+      this.prompt.setVisible(true).setPosition(this.boss!.x, this.boss!.label.y - this.boss!.label.height - 22);
+      return;
+    }
+    const q = questForNpc(session.player, near.def.id);
+    const verb =
+      q?.status === 'ready' ? 'Turn in' : q?.status === 'available' ? 'Quest' : near.def.role.kind === 'shop' ? 'Shop' : near.def.role.kind === 'inn' ? 'Rest' : 'Talk';
     this.promptText.setText(`E  ${verb}`);
-    this.prompt.setVisible(true).setPosition(near.x, near.label.y - near.label.height - 22);
+    const marker = this.markers.get(near);
+    const above = marker?.visible ? marker.y - 46 : near.label.y - near.label.height - 22;
+    this.prompt.setVisible(true).setPosition(near.x, above);
+  }
+
+  /** Closest thing the player can interact with: an NPC, or the boss. */
+  private nearestTarget(): Npc | 'boss' | null {
+    if (this.boss && Math.abs(this.boss.x - this.player.x) < 280 && Math.abs(this.boss.y - this.player.y) < 110) return 'boss';
+    return this.nearestNpc();
   }
 
   // --- Helpers ---
@@ -604,6 +717,7 @@ export class RoomScene extends Phaser.Scene {
 
   private refresh = (): void => {
     this.hud.refresh(session.player);
+    if (this.tracker) this.refreshQuests();
     this.save(false);
   };
 
@@ -634,11 +748,41 @@ export class RoomScene extends Phaser.Scene {
     openCharacterPanel(this, session.player, this.refresh);
   }
 
-  private interact(npc: Npc): void {
+  private interact(npc: Npc, intro = false): void {
     if (this.modalOpen()) return;
     const player = session.player;
     const role = npc.def.role;
     const actions: DialogueAction[] = [];
+    let lines = npc.def.dialogue;
+
+    const q = questForNpc(player, npc.def.id);
+    if (q?.status === 'ready') {
+      const quest = q.quest;
+      lines = quest.complete;
+      actions.push({ label: 'Complete', run: (close) => (close(), this.completeQuest(quest, npc)) });
+      this.moveTarget = null;
+      this.tweens.add({ targets: npc.fig, y: npc.fig.y - 10, duration: 100, yoyo: true });
+      openDialogue(this, npc.def, actions, lines);
+      return;
+    }
+    if (q?.status === 'available') {
+      const quest = q.quest;
+      lines = intro ? [...npc.def.dialogue, ...quest.offer] : quest.offer;
+      actions.push({
+        label: 'Accept',
+        run: (close) => {
+          close();
+          acceptQuest(player, quest);
+          sfx.play(this, 'quest');
+          toast(this, `New quest: ${quest.name}`, COLORS.textGold);
+          this.refreshQuests();
+          this.save(false);
+        },
+      });
+    } else if (q?.status === 'active') {
+      const count = player.data.quests[q.quest.id]?.count ?? 0;
+      lines = [`${q.quest.reminder}  (${q.quest.goal}: ${count}/${q.quest.objective.count})`];
+    }
     this.moveTarget = null;
     this.player.facing = npc.x < this.player.x ? -1 : 1;
     this.tweens.add({ targets: npc.fig, y: npc.fig.y - 10, duration: 100, yoyo: true });
@@ -673,6 +817,130 @@ export class RoomScene extends Phaser.Scene {
       });
     }
 
-    openDialogue(this, npc.def, actions);
+    openDialogue(this, npc.def, actions, lines);
+  }
+
+  // --- Quests ---
+
+  /** Update NPC markers, the quest tracker, and the stat-point hint on the Character button. */
+  private refreshQuests(): void {
+    const player = session.player;
+    for (const npc of this.npcs) {
+      const q = questForNpc(player, npc.def.id);
+      const symbol = q?.status === 'ready' ? '?' : q?.status === 'available' ? '!' : '';
+      let marker = this.markers.get(npc);
+      if (!marker) {
+        marker = addText(this, npc.x, 0, '', { size: 40, bold: true, color: COLORS.textGold, stroke: true }).setOrigin(0.5, 1);
+        marker.setDepth(UI_DEPTH - 3);
+        this.markers.set(npc, marker);
+      }
+      marker.setText(symbol).setVisible(symbol !== '');
+    }
+
+    this.tracker.removeAll(true);
+    const quests = activeQuests(player);
+    if (quests.length > 0) {
+      const rows = quests.slice(0, 3).map((q) =>
+        q.status === 'ready'
+          ? `${q.quest.name}: done! Return to ${this.giverName(q.quest)}`
+          : `${q.quest.name}: ${q.quest.goal} ${q.count}/${q.quest.objective.count}`,
+      );
+      const text = addText(this, 12, 8, rows.join('\n'), { size: 16, color: COLORS.text }).setLineSpacing(6);
+      const bg = this.add
+        .rectangle(0, 0, Math.max(340, text.width + 24), text.height + 16, COLORS.panel, 0.8)
+        .setOrigin(0)
+        .setRounded(8)
+        .setStrokeStyle(2, COLORS.panelBorder);
+      this.tracker.add([bg, text]);
+    }
+
+    const points = player.data.statPoints;
+    this.charBtn.setLabel(points > 0 ? `Character (${points})` : 'Character');
+    this.tweens.killTweensOf(this.charBtn);
+    this.charBtn.setScale(1);
+    if (points > 0) this.tweens.add({ targets: this.charBtn, scale: 1.07, duration: 500, yoyo: true, repeat: -1 });
+  }
+
+  private giverName(quest: QuestDef): string {
+    return ROOMS.flatMap((r) => r.npcs).find((n) => n.id === quest.giver)?.name ?? 'the quest giver';
+  }
+
+  private completeQuest(quest: QuestDef, npc: Npc): void {
+    const player = session.player;
+    const result = turnInQuest(player, quest);
+    if (!result) return;
+    sfx.play(this, 'quest');
+    const { rewards, levelsGained, newSkills } = result;
+    toast(this, `Quest complete: ${quest.name}`, COLORS.textGold);
+    const items = rewards.items.map((id) => db.item(id).name);
+    toast(this, [`+${rewards.xp} XP`, `+${rewards.gold} gold`, ...items].join('   '), COLORS.textGood);
+    void fx.coinShower(this, { x: npc.x, y: npc.y - 120 }, { x: 320, y: 40 }, Math.ceil(rewards.gold / 6), () => sfx.play(this, 'coin'));
+    if (levelsGained > 0) {
+      this.time.delayedCall(500, () => {
+        fx.levelUpBurst(this, this.player.x, this.player.y);
+        sfx.play(this, 'levelup');
+        toast(this, `Level up! Now level ${player.level}. +${levelsGained * BALANCE.statPointsPerLevel} stat points (C)`, COLORS.textGood);
+        newSkills.forEach((s) => toast(this, `New skill: ${s.name}`, COLORS.textMagic));
+      });
+    }
+    this.refresh();
+    this.refreshQuests();
+    if (quest.endsChapter) this.time.delayedCall(1400, () => this.chapterComplete(quest.endsChapter!));
+  }
+
+  private chapterComplete(title: string): void {
+    const { width, height } = this.scale;
+    const layer = this.add.container(0, 0).setDepth(6500);
+    const shade = this.add.rectangle(0, 0, width, height, 0x000000, 0.7).setOrigin(0).setInteractive();
+    const head = addText(this, width / 2, 220, 'Chapter Complete!', { size: 72, bold: true, color: COLORS.textGold, stroke: true }).setOrigin(0.5);
+    const sub = addText(this, width / 2, 300, title, { size: 30, color: COLORS.text }).setOrigin(0.5);
+    const note = addText(this, width / 2, 370, 'Thanks for playing this early build. More chapters are on the way.\nYou can keep exploring, leveling and shopping.', {
+      size: 20,
+      align: 'center',
+      color: COLORS.textDim,
+    }).setOrigin(0.5);
+    layer.add([shade, head, sub, note]);
+    head.setScale(0.3);
+    this.tweens.add({ targets: head, scale: 1, duration: 600, ease: 'Back.easeOut' });
+    sfx.play(this, 'victory');
+    fx.confetti(this);
+    for (let i = 0; i < 6; i++) {
+      this.time.delayedCall(i * 350, () => {
+        const x = Phaser.Math.Between(200, width - 200);
+        const y = Phaser.Math.Between(120, 420);
+        fx.explosion(this, x, y, [0xffffff, Phaser.Utils.Array.GetRandom([0xffd75e, 0x7ec8ff, 0xff7b9c, 0x7dff9a]), 0xffffff]);
+        sfx.play(this, 'explode');
+      });
+    }
+    const btn = new Button(this, width / 2, 480, 'Continue', () => layer.destroy(), { width: 240, height: 60 });
+    layer.add(btn);
+  }
+
+  // --- Boss ---
+
+  private confirmBoss(): void {
+    if (!this.boss || this.modalOpen()) return;
+    const def = this.boss.def;
+    const modal = new Modal(this, 700, 300, def.name);
+    modal.content.add(
+      addText(this, 350, 110, 'Ancient bark creaks as it turns toward you.\nThere is no running from this fight.', { size: 22, align: 'center' }).setOrigin(0.5),
+    );
+    modal.content.add(new Button(this, 230, 230, 'Fight', () => (modal.close(), this.startBossBattle()), { width: 220 }));
+    modal.content.add(new Button(this, 470, 230, 'Not yet', () => modal.close(), { width: 220 }));
+  }
+
+  private startBossBattle(): void {
+    if (!this.boss || this.leaving) return;
+    this.leaving = true;
+    this.prompt.setVisible(false);
+    session.saveRoom({ roomId: this.room.id, fightingUid: -1, monsters: [] });
+    this.saveLocation();
+    sfx.play(this, 'encounter');
+    const cam = this.cameras.main;
+    cam.shake(500, 0.015);
+    cam.flash(300, 255, 60, 60);
+    cam.zoomTo(1.4, 600, 'Cubic.easeIn');
+    const data: BattleSceneData = { zoneId: this.room.zoneId!, monsterId: this.boss.def.id, roomId: this.room.id, x: this.player.x, y: this.player.y };
+    this.time.delayedCall(600, () => goTo(this, SceneKeys.Battle, data, 300));
   }
 }

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Look } from '../data/types';
-import { hasArt } from './art';
+import { pickArt } from './art';
 
 /** On-screen size of a scale-1 character drawn from art. */
 const ART_HEIGHT = 240;
@@ -19,9 +19,10 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
   const c = scene.add.container(x, y);
   const { color, accent } = look;
 
-  if (hasArt(scene, look.art)) {
+  const art = pickArt(scene, look.art);
+  if (art) {
     // Art is drawn facing right; flip for left-facing figures.
-    const img = scene.add.image(0, 0, look.art).setOrigin(0.5, 1).setFlipX(facing === -1);
+    const img = scene.add.image(0, 0, art).setOrigin(0.5, 1).setFlipX(facing === -1);
     img.setScale(Math.min(ART_HEIGHT / img.height, ART_MAX_WIDTH / img.width));
     c.add([scene.add.ellipse(0, 0, img.displayWidth * 0.7, 22, 0x000000, 0.35), img]);
     c.setScale(look.scale);
@@ -81,5 +82,3 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
   return c;
 }
 
-/** The player's look. Will come from character customization later. */
-export const PLAYER_LOOK: Look = { shape: 'humanoid', color: 0x2e86de, accent: 0x5b3a1e, scale: 1, art: 'char_player' };

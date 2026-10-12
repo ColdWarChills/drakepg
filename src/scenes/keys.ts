@@ -4,6 +4,7 @@ import type { Rewards } from '../game/Player';
 export const SceneKeys = {
   Boot: 'Boot',
   Title: 'Title',
+  Create: 'Create',
   Room: 'Room',
   Battle: 'Battle',
   Result: 'Result',
@@ -30,7 +31,17 @@ export interface BattleSceneData {
 }
 
 export type ResultSceneData =
-  | { outcome: 'victory'; monsterName: string; rewards: Rewards; levelsGained: number; back: RoomSceneData }
+  | {
+      outcome: 'victory';
+      monsterName: string;
+      rewards: Rewards;
+      levelsGained: number;
+      /** Names of skills unlocked by this level up. */
+      newSkills: string[];
+      /** Quest counters this kill advanced. */
+      quests: { name: string; goal: string; count: number; target: number }[];
+      back: RoomSceneData;
+    }
   | { outcome: 'defeat'; monsterName: string };
 
 /** Fade out, then start another scene. */

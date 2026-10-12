@@ -79,4 +79,31 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'leather_armor', chance: 0.05 },
     ],
   },
+  {
+    id: 'thornheart',
+    name: 'The Thornheart',
+    level: 5,
+    boss: true,
+    look: { shape: 'beast', color: 0x4a3426, accent: 0x2f5d25, scale: 1.5, art: 'mon_thornheart' },
+    hp: 220,
+    stats: { str: 8, int: 7, dex: 4, end: 10 },
+    damage: [15, 20],
+    // Thick bark shrugs off spells; easier to hurt with steel. Keeps the three classes even (see sim notes).
+    defense: 4,
+    resist: 18,
+    attacks: [
+      { name: 'Bramble Lash', damageType: 'physical', power: 1, weight: 4 },
+      { name: 'Spore Cloud', damageType: 'magic', power: 1.1, weight: 2 },
+      {
+        name: 'Root Crush',
+        damageType: 'physical',
+        power: 2.6,
+        weight: 2,
+        windup: 'The Thornheart sinks its roots deep into the earth... (Defend or heal!)',
+      },
+    ],
+    xp: 120,
+    gold: [60, 80],
+    drops: [],
+  },
 ];

@@ -1,9 +1,10 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
-import { STARTING_SKILLS } from '../data/skills';
 import { START } from '../data/world';
 import type {
   ArmorDef,
+  ClassDef,
+  ClassId,
   ConsumableDef,
   DamageType,
   EquipSlot,
@@ -28,6 +29,12 @@ export interface Location {
   y: number;
 }
 
+/** Progress on a quest. No entry = not started. */
+export interface QuestState {
+  status: 'active' | 'done';
+  count: number;
+}
+
 export interface InventoryEntry {
   itemId: string;
   qty: number;
@@ -44,9 +51,13 @@ export interface PlayerData {
   mp: number;
   equipment: Record<EquipSlot, string | null>;
   inventory: InventoryEntry[];
-  skills: string[];
   /** Where the player stands. Added in save version 2. */
   location: Location;
+  /** Added in save version 3. */
+  classId: ClassId;
+  /** Unspent points from leveling up. */
+  statPoints: number;
+  quests: Record<string, QuestState>;
 }
 
 export interface Rewards {
@@ -65,22 +76,25 @@ const UNARMED: [number, number] = [2, 4];
 export class Player {
   constructor(public data: PlayerData) {}
 
-  static createNew(name = 'Hero'): Player {
+  static createNew(name = 'Hero', classId: ClassId = 'warrior'): Player {
+    const cls = db.class(classId);
     const player = new Player({
       name,
       level: 1,
       xp: 0,
       gold: 30,
-      baseStats: { str: 5, int: 5, dex: 5, end: 5 },
+      baseStats: { ...cls.stats },
       hp: 1,
       mp: 1,
-      equipment: { weapon: 'training_sword', armor: 'travel_garb' },
+      equipment: { weapon: cls.weapon, armor: cls.armor },
       inventory: [
         { itemId: 'health_potion', qty: 2 },
         { itemId: 'mana_potion', qty: 1 },
       ],
-      skills: [...STARTING_SKILLS],
       location: { ...START },
+      classId,
+      statPoints: 0,
+      quests: {},
     });
     player.restoreFull();
     return player;
@@ -88,6 +102,9 @@ export class Player {
 
   get name() {
     return this.data.name;
+  }
+  get classDef(): ClassDef {
+    return db.class(this.data.classId);
   }
   get level() {
     return this.data.level;
@@ -165,8 +182,28 @@ export class Player {
     return xpToNext(this.level);
   }
 
+  /** Class skills unlocked at the current level. */
   get knownSkills(): SkillDef[] {
-    return this.data.skills.map((id) => db.skill(id));
+    return this.classDef.skills.filter((s) => s.level <= this.level).map((s) => db.skill(s.skillId));
+  }
+
+  /** Skills that unlock after `fromLevel`, up to the current level. */
+  skillsLearnedSince(fromLevel: number): SkillDef[] {
+    return this.classDef.skills
+      .filter((s) => s.level > fromLevel && s.level <= this.level)
+      .map((s) => db.skill(s.skillId));
+  }
+
+  /** Spend one free point. Returns false if there are none. */
+  spendStatPoint(stat: StatKey): boolean {
+    if (this.data.statPoints <= 0) return false;
+    this.data.statPoints -= 1;
+    this.data.baseStats[stat] += 1;
+    // Current HP/MP grow along with the max they just raised.
+    if (stat === 'end') this.data.hp += 4;
+    if (stat === 'int') this.data.mp += 2;
+    this.clampVitals();
+    return true;
   }
 
   get isDead(): boolean {
@@ -215,7 +252,9 @@ export class Player {
     while (this.level < BALANCE.maxLevel && this.data.xp >= this.xpNeeded) {
       this.data.xp -= this.xpNeeded;
       this.data.level += 1;
-      for (const key of STAT_KEYS) this.data.baseStats[key] += 1;
+      const growth = this.classDef.growth;
+      for (const key of STAT_KEYS) this.data.baseStats[key] += growth[key] ?? 0;
+      this.data.statPoints += BALANCE.statPointsPerLevel;
       gained += 1;
     }
     if (this.level >= BALANCE.maxLevel) this.data.xp = 0;

@@ -1,6 +1,6 @@
 # Art prompts
 
-Painted cartoon style, original designs. 12 images (3 backgrounds, 9 characters), plus 1 optional.
+Painted cartoon style, original designs. 14 images (4 backgrounds, 10 characters), plus optional extras (class heroes, deep forest).
 
 ## How to make them
 
@@ -73,6 +73,29 @@ A small winged fire imp demon, charcoal-grey skin with glowing orange ember crac
 A sneaky forest bandit, dark purple hooded cloak, face half-covered by a cloth mask, leather armor with thorny bramble vines wrapped around the arms, holding a curved dagger in a crouched, ready stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
 ```
 
+### 9b. `mon_thornheart` · 1:1 (Chapter 1 boss)
+```
+A huge ancient forest guardian boss monster gone wild: a hulking four-legged beast made of twisted dark wood and bark, a glowing sickly green heart visible through a crack in its chest, thick thorny bramble vines wrapped around its body, moss and small mushrooms on its back, antler-like branches on its head, glowing green eyes, roots trailing from its feet. Menacing, powerful stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### Class heroes (optional) · 3:4
+The game uses these per class; any missing one falls back to `char_player`. Same [CHAR-M] style text and reference rule as above.
+
+`char_warrior`
+```
+A young warrior hero, about 18, short messy brown hair, determined face, blue tunic with a dented steel breastplate and shoulder pad, brown leather belt, brown boots, a steel sword held ready at his side. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+`char_mage`
+```
+A young mage hero, about 18, shoulder-length dark hair, curious clever face, deep purple hooded robe with gold trim, a leather satchel of scrolls, holding a wooden staff topped with a softly glowing orange crystal. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+`char_rogue`
+```
+A young rogue hero, about 18, messy auburn hair, sly confident grin, dark green hooded short cloak, brown leather vest and bracers, many small belt pouches, a dagger in each hand in a light, ready stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
 ## Backgrounds
 
 ### 10. `bg_title` · 16:9
@@ -94,4 +117,10 @@ A dark enchanted forest clearing: tall twisted trees with thorny brambles, hangi
 Darker variant for the second forest room. Without it, the game reuses `bg_thornwood`, darkened.
 ```
 The deepest, darkest part of an enchanted forest at dusk: enormous ancient twisted trees, thick thorny bramble walls, glowing blue-green mushrooms, faint purple mist, fireflies. The bottom 30% of the image is flat, open, mossy dirt ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
+```
+
+### 14. `bg_thornheart_hollow` · 16:9
+The boss arena. Without it, the game reuses the forest backgrounds, darkened.
+```
+A hidden hollow at the heart of a cursed forest: a circle of giant ancient trees whose roots and thorny brambles twist together into walls, a huge gnarled dead tree in the background with a faint sickly green glow pulsing from a crack in its trunk, drifting green spores, dim moonlight from above. The bottom 30% of the image is flat, open, root-covered dirt ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
 ```

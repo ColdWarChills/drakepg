@@ -1,10 +1,12 @@
 import type { SkillDef } from './types';
 
+/** Who learns what, and when, is set per class in classes.ts. */
 export const SKILLS: SkillDef[] = [
+  // Warrior
   {
     id: 'heavy_strike',
     name: 'Heavy Strike',
-    description: 'A slow, crushing blow. 1.6x physical damage.',
+    description: 'A leaping, crushing blow. 1.6x physical damage.',
     mpCost: 6,
     kind: 'damage',
     damageType: 'physical',
@@ -12,33 +14,98 @@ export const SKILLS: SkillDef[] = [
     fx: 'heavy',
   },
   {
+    id: 'second_wind',
+    name: 'Second Wind',
+    description: 'Catch your breath. Heal 25% of max HP.',
+    mpCost: 7,
+    kind: 'heal',
+    power: 0.25,
+  },
+  {
+    id: 'skull_splitter',
+    name: 'Skull Splitter',
+    description: 'Everything into one swing. 2.4x physical damage.',
+    mpCost: 12,
+    kind: 'damage',
+    damageType: 'physical',
+    power: 2.4,
+    fx: 'heavy',
+  },
+
+  // Mage
+  {
     id: 'ember_bolt',
     name: 'Ember Bolt',
     description: 'Hurl a bolt of fire. 1.8x magic damage.',
-    mpCost: 8,
+    mpCost: 7,
     kind: 'damage',
     damageType: 'magic',
     power: 1.8,
   },
   {
-    id: 'twin_cut',
-    name: 'Twin Cut',
-    description: 'Two quick slashes at 0.75x each.',
-    mpCost: 5,
-    kind: 'damage',
-    damageType: 'physical',
-    power: 0.75,
-    hits: 2,
-  },
-  {
     id: 'mend',
     name: 'Mend',
     description: 'Heal 30% of max HP.',
-    mpCost: 10,
+    mpCost: 9,
     kind: 'heal',
     power: 0.3,
   },
-];
+  {
+    id: 'frost_lance',
+    name: 'Frost Lance',
+    description: 'A spear of ice. 2.2x magic damage.',
+    mpCost: 10,
+    kind: 'damage',
+    damageType: 'magic',
+    power: 2.2,
+    fx: 'frost',
+  },
+  {
+    id: 'meteor',
+    name: 'Meteor',
+    description: 'Call down a falling star. 3.2x magic damage.',
+    mpCost: 20,
+    kind: 'damage',
+    damageType: 'magic',
+    power: 3.2,
+  },
 
-/** Skills every new character starts with. */
-export const STARTING_SKILLS = ['heavy_strike', 'ember_bolt', 'twin_cut', 'mend'];
+  // Rogue
+  {
+    id: 'twin_cut',
+    name: 'Twin Cut',
+    description: 'Two quick slashes at 0.8x each.',
+    mpCost: 5,
+    kind: 'damage',
+    damageType: 'physical',
+    power: 0.8,
+    hits: 2,
+  },
+  {
+    id: 'bandage',
+    name: 'Bandage',
+    description: 'Patch yourself up. Heal 20% of max HP.',
+    mpCost: 5,
+    kind: 'heal',
+    power: 0.2,
+  },
+  {
+    id: 'flurry',
+    name: 'Flurry',
+    description: 'Three rapid strikes at 0.65x each.',
+    mpCost: 9,
+    kind: 'damage',
+    damageType: 'physical',
+    power: 0.65,
+    hits: 3,
+  },
+  {
+    id: 'assassinate',
+    name: 'Assassinate',
+    description: 'Strike a vital spot. 2.8x physical damage.',
+    mpCost: 15,
+    kind: 'damage',
+    damageType: 'physical',
+    power: 2.8,
+  },
+];

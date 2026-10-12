@@ -1,14 +1,23 @@
 import Phaser from 'phaser';
-import { COLORS } from '../config';
+import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { INN_SPAWN } from '../data/world';
 import { session } from '../game/session';
 import { Button } from '../ui/Button';
-import { drawFigure, PLAYER_LOOK } from '../ui/figures';
+import { drawFigure } from '../ui/figures';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type ResultSceneData, type RoomSceneData } from './keys';
+
+/** "Mossling" -> "the Mossling"; names that already start with "The" are left alone. */
+function the(name: string): string {
+  return /^the /i.test(name) ? name : `the ${name}`;
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export class ResultScene extends Phaser.Scene {
   constructor() {
@@ -54,10 +63,23 @@ export class ResultScene extends Phaser.Scene {
 
       // Count-up rows.
       const loot = rewards.items.length ? rewards.items.map((id) => db.item(id).name).join(', ') : 'nothing';
-      addText(this, cx, 245, `You defeated the ${data.monsterName}.`, { size: 24 }).setOrigin(0.5);
+      addText(this, cx, 245, `You defeated ${the(data.monsterName)}.`, { size: 24 }).setOrigin(0.5);
       const xpText = addText(this, cx, 300, '+0 XP', { size: 30, bold: true, color: COLORS.textGood }).setOrigin(0.5);
       const goldText = addText(this, cx, 345, '+0 gold', { size: 30, bold: true, color: COLORS.textGold }).setOrigin(0.5);
       const lootText = addText(this, cx, 390, `Loot: ${loot}`, { size: 24 }).setOrigin(0.5).setAlpha(0);
+      data.quests.forEach((q, i) => {
+        const done = q.count >= q.target;
+        const line = addText(this, cx, 428 + i * 28, `${q.name}: ${q.goal} ${q.count}/${q.target}${done ? '  ✔ Return to the quest giver' : ''}`, {
+          size: 19,
+          bold: done,
+          color: done ? COLORS.textGood : COLORS.textGold,
+        })
+          .setOrigin(0.5)
+          .setAlpha(0);
+        this.tweens.add({ targets: line, alpha: 1, delay: 1100 + i * 150, duration: 300 });
+        if (done) this.time.delayedCall(1100, () => sfx.play(this, 'quest'));
+      });
+      const shift = data.quests.length * 28;
       this.countUp(xpText, rewards.xp, ' XP', 400);
       this.countUp(goldText, rewards.gold, ' gold', 650);
       this.tweens.add({ targets: lootText, alpha: 1, delay: 1000, duration: 300 });
@@ -67,12 +89,14 @@ export class ResultScene extends Phaser.Scene {
       }
 
       if (levelsGained > 0) {
-        const hero = drawFigure(this, cx - 280, 470, PLAYER_LOOK, 1).setScale(0.55);
+        const hero = drawFigure(this, cx - 280, 470 + shift, player.classDef.look, 1).setScale(0.55);
         this.time.delayedCall(1200, () => {
           fx.levelUpBurst(this, hero.x, hero.y);
           sfx.play(this, 'levelup');
           this.cameras.main.shake(200, 0.006);
-          const banner = addText(this, cx + 40, 450, `LEVEL UP!  Now level ${player.level}`, {
+          const extras = [`+${data.levelsGained * BALANCE.statPointsPerLevel} stat points (press C)`, ...data.newSkills.map((n) => `New skill: ${n}`)];
+          addText(this, cx + 40, 485 + shift, extras.join('   ·   '), { size: 18, color: COLORS.textMagic, bold: true }).setOrigin(0.5);
+          const banner = addText(this, cx + 40, 450 + shift, `LEVEL UP!  Now level ${player.level}`, {
             size: 32,
             bold: true,
             color: COLORS.textGood,
@@ -90,13 +114,13 @@ export class ResultScene extends Phaser.Scene {
           });
         });
       } else {
-        addText(this, cx, 450, `XP ${player.xp} / ${player.xpNeeded}`, { size: 20, color: COLORS.textDim }).setOrigin(0.5);
+        addText(this, cx, 455 + shift, `XP ${player.xp} / ${player.xpNeeded}`, { size: 20, color: COLORS.textDim }).setOrigin(0.5);
       }
 
-      this.continueButton('Continue', data.back, 540);
+      this.continueButton('Continue', data.back, 560 + Math.min(shift, 20));
     } else {
       this.cameras.main.shake(300, 0.006);
-      const lines = [`The ${data.monsterName} got the better of you.`, '', 'You wake up at the inn, fully rested.'];
+      const lines = [`${capitalize(the(data.monsterName))} got the better of you.`, '', 'You wake up at the inn, fully rested.'];
       addText(this, cx, 330, lines.join('\n'), { size: 26, align: 'center' }).setOrigin(0.5).setLineSpacing(6);
       this.continueButton('Wake up', { ...INN_SPAWN, via: 'spawn' }, 520);
     }

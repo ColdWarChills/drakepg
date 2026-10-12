@@ -56,6 +56,8 @@ export const SaveSystem = {
 /**
  * Upgrade old save files here when PlayerData changes. Bump SAVE_VERSION alongside.
  * v1 -> v2: added `location`; sanitize() fills it with the start position.
+ * v2 -> v3: added `classId` (old saves become Warriors), `statPoints`, `quests`; dropped `skills`
+ *           (skills now come from the class and level).
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -66,9 +68,21 @@ function migrate(file: SaveFile): SaveFile | null {
   return file;
 }
 
-/** Fill missing fields and drop references to items/skills that no longer exist. */
+function sanitizeQuests(raw: unknown): PlayerData['quests'] {
+  const out: PlayerData['quests'] = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [id, q] of Object.entries(raw as Record<string, { status?: unknown; count?: unknown }>)) {
+    if (!db.quests().some((d) => d.id === id) || !q) continue;
+    if (q.status !== 'active' && q.status !== 'done') continue;
+    out[id] = { status: q.status, count: typeof q.count === 'number' ? Math.max(0, Math.floor(q.count)) : 0 };
+  }
+  return out;
+}
+
+/** Fill missing fields and drop references to items, rooms and quests that no longer exist. */
 function sanitize(raw: Partial<PlayerData>): PlayerData {
-  const fresh = Player.createNew().data;
+  const classId = typeof raw.classId === 'string' && db.hasClass(raw.classId) ? raw.classId : 'warrior';
+  const fresh = Player.createNew('Hero', classId).data;
   const num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 
   const baseStats = { ...fresh.baseStats };
@@ -91,11 +105,13 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     inventory: (Array.isArray(raw.inventory) ? raw.inventory : [])
       .filter((e) => e && db.hasItem(e.itemId) && num(e.qty, 0) > 0)
       .map((e) => ({ itemId: e.itemId, qty: Math.floor(e.qty) })),
-    skills: (Array.isArray(raw.skills) ? raw.skills : fresh.skills).filter((id) => db.hasSkill(id)),
     location:
       raw.location && db.hasRoom(raw.location.roomId)
         ? { roomId: raw.location.roomId, x: num(raw.location.x, fresh.location.x), y: num(raw.location.y, fresh.location.y) }
         : fresh.location,
+    classId,
+    statPoints: Math.max(0, Math.floor(num(raw.statPoints, 0))),
+    quests: sanitizeQuests(raw.quests),
   };
 
   const player = new Player(data);
