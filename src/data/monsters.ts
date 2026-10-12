@@ -5,7 +5,7 @@ export const MONSTERS: MonsterDef[] = [
     id: 'mossling',
     name: 'Mossling',
     level: 1,
-    look: { shape: 'blob', color: 0x5e9c4a, accent: 0x2f5d25, scale: 0.9, art: 'mon_mossling' },
+    look: { shape: 'blob', color: 0x5e9c4a, accent: 0x2f5d25, scale: 0.75, art: 'mon_mossling' },
     hp: 34,
     stats: { str: 3, int: 3, dex: 2, end: 3 },
     damage: [4, 7],

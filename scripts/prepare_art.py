@@ -92,6 +92,33 @@ def _dilate(mask: np.ndarray, steps: int) -> np.ndarray:
     return out
 
 
+def _drop_specks(alpha: np.ndarray, min_share: float = 0.002) -> None:
+    """Clear small detached blobs (stray marks in the background) so they don't stretch the trim box.
+    Works on a 4x downsampled mask so a plain Python flood fill stays fast."""
+    f = 4
+    h, w = alpha.shape
+    small = (alpha[: h - h % f, : w - w % f] > 0.3).reshape(h // f, f, w // f, f).any(axis=(1, 3))
+    sh, sw = small.shape
+    seen = np.zeros_like(small)
+    min_cells = max(4, int(small.size * min_share))
+    for y0 in range(sh):
+        for x0 in range(sw):
+            if not small[y0, x0] or seen[y0, x0]:
+                continue
+            stack, cells = [(y0, x0)], []
+            seen[y0, x0] = True
+            while stack:
+                y, x = stack.pop()
+                cells.append((y, x))
+                for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+                    if 0 <= ny < sh and 0 <= nx < sw and small[ny, nx] and not seen[ny, nx]:
+                        seen[ny, nx] = True
+                        stack.append((ny, nx))
+            if len(cells) < min_cells:
+                for y, x in cells:
+                    alpha[y * f : (y + 1) * f, x * f : (x + 1) * f] = 0
+
+
 def process_sprite(src: Path, key: str) -> Path:
     rgb = np.asarray(Image.open(src).convert("RGB")).astype(np.float32)
     h, w, _ = rgb.shape
@@ -112,6 +139,8 @@ def process_sprite(src: Path, key: str) -> Path:
     band = _dilate(bg, 3) & ~bg
     alpha[band] = np.clip((dist[band] - KEY_HARD) / (KEY_SOFT - KEY_HARD), 0, 1)
     alpha[bg] = 0
+
+    _drop_specks(alpha)
 
     # Remove background color bleeding into edge pixels.
     a = np.maximum(alpha, 1e-3)[..., None]
