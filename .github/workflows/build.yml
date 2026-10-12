@@ -1,0 +1,40 @@
+name: Build & deploy
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      # Uploads to itch.io only from the default branch, and only once both are set in
+      # repo Settings -> Secrets and variables -> Actions:
+      #   secret   BUTLER_API_KEY  (itch.io -> Settings -> API keys)
+      #   variable ITCH_GAME       e.g. "yourname/drakepg"  (user/game from the itch.io page URL)
+      - name: Deploy to itch.io
+        if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+        run: |
+          if [ -z "$BUTLER_API_KEY" ] || [ -z "$ITCH_GAME" ]; then
+            echo "::notice::Skipping itch.io deploy. Set secret BUTLER_API_KEY and variable ITCH_GAME to enable it."
+            exit 0
+          fi
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler
+          chmod +x butler/butler
+          ./butler/butler -V
+          ./butler/butler push dist "$ITCH_GAME:html5" --userversion "${GITHUB_SHA::7}"
