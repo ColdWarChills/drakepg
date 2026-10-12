@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config';
 import { Button } from './Button';
+import { play } from './sfx';
 import { addText } from './text';
 
 /**
@@ -47,6 +48,7 @@ export class Modal extends Phaser.GameObjects.Container {
     }
 
     scene.add.existing(this);
+    play(scene, 'open');
     shade.setAlpha(0);
     scene.tweens.add({ targets: shade, alpha: 1, duration: 150 });
     body.setAlpha(0).setY(24);

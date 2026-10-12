@@ -6,6 +6,7 @@ import { session } from '../game/session';
 import { Button } from '../ui/Button';
 import { drawFigure, PLAYER_LOOK } from '../ui/figures';
 import * as fx from '../ui/fx';
+import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type ResultSceneData, type RoomSceneData } from './keys';
 
@@ -49,6 +50,7 @@ export class ResultScene extends Phaser.Scene {
     if (data.outcome === 'victory') {
       const { rewards, levelsGained } = data;
       this.time.delayedCall(250, () => fx.confetti(this));
+      sfx.play(this, 'victory');
 
       // Count-up rows.
       const loot = rewards.items.length ? rewards.items.map((id) => db.item(id).name).join(', ') : 'nothing';
@@ -68,6 +70,7 @@ export class ResultScene extends Phaser.Scene {
         const hero = drawFigure(this, cx - 280, 470, PLAYER_LOOK, 1).setScale(0.55);
         this.time.delayedCall(1200, () => {
           fx.levelUpBurst(this, hero.x, hero.y);
+          sfx.play(this, 'levelup');
           this.cameras.main.shake(200, 0.006);
           const banner = addText(this, cx + 40, 450, `LEVEL UP!  Now level ${player.level}`, {
             size: 32,
@@ -109,6 +112,7 @@ export class ResultScene extends Phaser.Scene {
       ease: 'Cubic.easeOut',
       onUpdate: () => text.setText(`+${Math.round(counter.v)}${suffix}`),
       onComplete: () => {
+        if (to > 0) sfx.play(this, 'coin');
         this.tweens.add({ targets: text, scale: 1.25, duration: 90, yoyo: true });
       },
     });

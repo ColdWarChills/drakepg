@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config';
+import { play } from './sfx';
 import { addText } from './text';
 
 export interface ButtonOptions {
@@ -66,6 +67,7 @@ export class Button extends Phaser.GameObjects.Container {
       if (!this.enabled) return;
       this.bg.setFillStyle(COLORS.buttonHover);
       this.squash(1);
+      play(this.scene, 'click');
       this.onClick();
     });
 

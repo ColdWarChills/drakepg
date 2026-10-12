@@ -9,6 +9,7 @@ import { drawScenery } from '../ui/backdrops';
 import { Button } from '../ui/Button';
 import { drawFigure, PLAYER_LOOK } from '../ui/figures';
 import * as fx from '../ui/fx';
+import * as sfx from '../ui/sfx';
 import { Hud } from '../ui/Hud';
 import { Modal } from '../ui/Modal';
 import { openCharacterPanel, openDialogue, openShop, type DialogueAction } from '../ui/panels';
@@ -60,6 +61,7 @@ export class RoomScene extends Phaser.Scene {
   private mobs: Mob[] = [];
   private keys!: Keys;
   private hud!: Hud;
+  private soundBtn!: Button;
   private prompt!: Phaser.GameObjects.Container;
   private promptText!: Phaser.GameObjects.Text;
   private moveTarget: { x: number; y: number } | null = null;
@@ -101,6 +103,7 @@ export class RoomScene extends Phaser.Scene {
     this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Keys;
     kb.on('keydown-ESC', () => this.closeTopModal());
     kb.on('keydown-C', () => this.openCharacter());
+    kb.on('keydown-M', () => this.toggleSound());
     const talk = () => {
       const npc = this.modalOpen() || this.leaving ? null : this.nearestNpc();
       if (npc) this.interact(npc);
@@ -272,6 +275,11 @@ export class RoomScene extends Phaser.Scene {
     btn(40, 'Title', () => this.saveAndQuit());
     btn(98, 'Save', () => this.save(true));
     btn(156, 'Character', () => this.openCharacter());
+    this.soundBtn = new Button(this, right - 172, 40, sfx.isMuted() ? 'Sound: off' : 'Sound: on', () => this.toggleSound(), {
+      width: 120,
+      height: 48,
+      fontSize: 15,
+    }).setDepth(UI_DEPTH);
 
     addText(this, width / 2, 36, this.room.name, { size: 30, bold: true, color: COLORS.textGold, stroke: true })
       .setOrigin(0.5)
@@ -365,6 +373,7 @@ export class RoomScene extends Phaser.Scene {
       if (this.dustTimer <= 0) {
         this.dustTimer = 0.22;
         fx.dust(this, p.x - p.facing * 20, p.y, 2, p.y - 1);
+        sfx.play(this, 'step');
       }
     }
 
@@ -527,6 +536,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private alertPop(m: Mob): void {
+    sfx.play(this, 'alert');
     const mark = addText(this, m.x, m.y - m.height * m.scale - 30, '!', { size: 44, bold: true, color: COLORS.textBad, stroke: true })
       .setOrigin(0.5)
       .setDepth(UI_DEPTH - 3)
@@ -577,6 +587,7 @@ export class RoomScene extends Phaser.Scene {
     });
     this.saveLocation();
 
+    sfx.play(this, 'encounter');
     fx.whiteFlash(this, m.fig, 140);
     fx.hitSparks(this, (m.x + this.player.x) / 2, m.y - 80, false, true);
     const cam = this.cameras.main;
@@ -611,6 +622,11 @@ export class RoomScene extends Phaser.Scene {
     this.save(false);
     this.leaving = true;
     goTo(this, SceneKeys.Title);
+  }
+
+  private toggleSound(): void {
+    const muted = sfx.toggleMute();
+    this.soundBtn.setLabel(muted ? 'Sound: off' : 'Sound: on');
   }
 
   private openCharacter(): void {
@@ -649,6 +665,7 @@ export class RoomScene extends Phaser.Scene {
           this.cameras.main.once('camerafadeoutcomplete', () => {
             this.cameras.main.fadeIn(500, 0, 0, 0);
             fx.healSparkles(this, this.player.x, this.player.y);
+            sfx.play(this, 'heal');
             toast(this, 'You feel refreshed.', COLORS.textGood);
             this.refresh();
           });

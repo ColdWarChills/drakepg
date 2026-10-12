@@ -10,6 +10,7 @@ import { Bar } from '../ui/Bar';
 import { Button } from '../ui/Button';
 import { drawFigure, PLAYER_LOOK } from '../ui/figures';
 import * as fx from '../ui/fx';
+import * as sfx from '../ui/sfx';
 import { restoreText } from '../ui/panels';
 import { addText, floatText } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type BattleSceneData, type ResultSceneData, type RoomSceneData } from './keys';
@@ -253,8 +254,13 @@ export class BattleScene extends Phaser.Scene {
       case 'heal': {
         const isSkill = db.hasSkill(e.moveId);
         const color = e.mp > 0 && e.hp === 0 ? 0x7ec8ff : isSkill ? 0x7dff9a : 0xff8a8a;
-        if (isSkill) await fx.chargeUp(this, PLAYER_X + 30, GROUND_Y - CHEST, color, 280);
-        else await this.tween({ targets: this.playerFig, y: GROUND_Y - 20, duration: 120, yoyo: true });
+        if (isSkill) {
+          sfx.play(this, 'charge');
+          await fx.chargeUp(this, PLAYER_X + 30, GROUND_Y - CHEST, color, 280);
+        } else {
+          await this.tween({ targets: this.playerFig, y: GROUND_Y - 20, duration: 120, yoyo: true });
+        }
+        sfx.play(this, 'heal');
         fx.healSparkles(this, PLAYER_X, GROUND_Y, color);
         floatText(this, PLAYER_X, GROUND_Y - 220, restoreText(e), COLORS.textGood, 30);
         this.refreshBars();
@@ -266,6 +272,7 @@ export class BattleScene extends Phaser.Scene {
         const fig = this.playerFig;
         if (e.success) {
           this.pushLog('You got away safely.');
+          sfx.play(this, 'miss');
           this.tweens.killTweensOf(fig);
           fig.setScale(-PLAYER_LOOK.scale, PLAYER_LOOK.scale);
           for (let i = 0; i < 4; i++) this.time.delayedCall(i * 90, () => fx.dust(this, fig.x, GROUND_Y, 3));
@@ -289,12 +296,14 @@ export class BattleScene extends Phaser.Scene {
           fx.whiteFlash(this, fig, 220);
           await this.wait(200);
           fx.deathPoof(this, fig.x, GROUND_Y - 60, this.monster.look.color);
+          sfx.play(this, 'explode');
           this.cameras.main.shake(200, 0.008);
           const gold = this.battle.rewards?.gold ?? 0;
-          void fx.coinShower(this, { x: fig.x, y: GROUND_Y - 100 }, { x: 60, y: 40 }, Math.ceil(gold / 2));
+          void fx.coinShower(this, { x: fig.x, y: GROUND_Y - 100 }, { x: 60, y: 40 }, Math.ceil(gold / 2), () => sfx.play(this, 'coin'));
           await this.tween({ targets: fig, alpha: 0, scaleY: fig.scaleY * 0.2, duration: 380, ease: 'Cubic.easeIn' });
         } else {
           this.pushLog('You collapse...');
+          sfx.play(this, 'defeat');
           this.cameras.main.flash(300, 160, 0, 0);
           this.cameras.main.shake(300, 0.01);
           await this.tween({ targets: fig, angle: -80, alpha: 0.5, duration: 600, ease: 'Bounce.easeOut' });
@@ -314,6 +323,7 @@ export class BattleScene extends Phaser.Scene {
     switch (style) {
       case 'slash':
       case 'enemy-melee': {
+        sfx.play(this, 'slash');
         await this.tween({ targets: fig, x: target.x - 170 * dir, duration: 180, ease: 'Quad.easeIn' });
         onContact();
         await this.tween({ targets: fig, x: home, duration: 260, ease: 'Quad.easeOut' });
@@ -337,6 +347,7 @@ export class BattleScene extends Phaser.Scene {
         });
         fig.y = GROUND_Y;
         fig.angle = 0;
+        sfx.play(this, 'slash');
         onContact();
         fx.dust(this, fig.x, GROUND_Y, 10);
         await this.tween({ targets: fig, x: home, duration: 320, ease: 'Quad.easeOut' });
@@ -349,11 +360,14 @@ export class BattleScene extends Phaser.Scene {
           style === 'fire' ? FIRE : style === 'arcane' ? ARCANE : [0xffffff, this.monster.look.color, this.monster.look.accent];
         const hand = { x: fig.x + 50 * dir, y: GROUND_Y - CHEST - 10 };
         await this.tween({ targets: fig, x: home - 20 * dir, duration: 120 });
+        sfx.play(this, 'charge');
         await fx.chargeUp(this, hand.x, hand.y, colors[1], style === 'enemy-spit' ? 180 : 300);
+        sfx.play(this, 'fireball');
         await Promise.all([
           this.tween({ targets: fig, x: home + 20 * dir, duration: 120, ease: 'Back.easeOut' }),
           fx.projectile(this, hand, target, colors, style === 'enemy-spit' ? 360 : 420),
         ]);
+        sfx.play(this, 'explode');
         onContact();
         await this.tween({ targets: fig, x: home, duration: 200 });
         break;
@@ -383,6 +397,7 @@ export class BattleScene extends Phaser.Scene {
       fx.shockwave(this, x, GROUND_Y, 0xffe08a, 3, 0.3);
     }
     fx.hitSparks(this, x, y, magic, e.crit);
+    sfx.play(this, e.crit || style === 'heavy' ? 'crit' : 'hit');
     fx.whiteFlash(this, fig);
     fx.hitStop(this, e.crit || style === 'heavy' ? 120 : 60);
     this.cameras.main.shake(e.crit ? 220 : 140, 0.004 + weight * 0.03);
@@ -403,6 +418,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private dodge(side: Side): void {
+    sfx.play(this, 'miss');
     const fig = this.figOf(side);
     const away = side === 'enemy' ? 1 : -1;
     fx.slash(this, this.homeX(side) - 60 * away, GROUND_Y - CHEST, -away as 1 | -1, 0xffffff, 0);

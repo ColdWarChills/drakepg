@@ -5,6 +5,7 @@ import type { ItemDef, NpcDef } from '../data/types';
 import { STAT_KEYS, STAT_LABELS, type Player } from '../game/Player';
 import { Button } from './Button';
 import { Modal } from './Modal';
+import { play } from './sfx';
 import { addText, toast } from './text';
 
 /** One line summary of an item's numbers, for lists. */
@@ -105,7 +106,10 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
         () => {
           if (isConsumable) {
             const r = player.useConsumable(item.id);
-            if (r) toast(scene, restoreText(r), COLORS.textGood);
+            if (r) {
+              play(scene, 'heal');
+              toast(scene, restoreText(r), COLORS.textGood);
+            }
             else toast(scene, 'Already full', COLORS.textDim);
           } else {
             player.equip(item.id);
@@ -149,9 +153,11 @@ export function openShop(scene: Phaser.Scene, player: Player, title: string, sto
       c.add(addText(scene, 520, y, owned > 0 ? `Owned ${owned}` : '', { size: 16, color: COLORS.textDim }).setOrigin(0, 0.5));
       const btn = new Button(scene, 710, y, 'Buy', () => {
         if (player.buy(id)) {
+          play(scene, 'coin');
           toast(scene, `Bought ${item.name}`, COLORS.textGood);
           onChange();
         } else {
+          play(scene, 'denied');
           toast(scene, 'Not enough gold', COLORS.textBad);
         }
         render();
