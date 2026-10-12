@@ -10,6 +10,8 @@ export interface Look {
   accent: number;
   /** 1 = player-sized. */
   scale: number;
+  /** Image key in src/assets/art/ (file name without extension). Falls back to shapes if missing. */
+  art?: string;
 }
 
 export interface SkillDef {
@@ -92,6 +94,8 @@ export interface ZoneDef {
   /** Background tint for the battle scene. */
   skyColor: number;
   groundColor: number;
+  /** Battle background image key. */
+  background?: string;
   encounters: { monsterId: string; weight: number }[];
 }
 
@@ -116,5 +120,7 @@ export interface NpcDef {
 export interface TownDef {
   id: string;
   name: string;
+  /** Town background image key. */
+  background?: string;
   npcs: NpcDef[];
 }

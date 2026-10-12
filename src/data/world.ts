@@ -8,6 +8,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [1, 4],
     skyColor: 0x2c3e2f,
     groundColor: 0x23301f,
+    background: 'bg_thornwood',
     encounters: [
       { monsterId: 'mossling', weight: 4 },
       { monsterId: 'thornback_boar', weight: 3 },
@@ -21,13 +22,14 @@ export const TOWNS: TownDef[] = [
   {
     id: 'brindlemoor',
     name: 'Brindlemoor',
+    background: 'bg_brindlemoor',
     npcs: [
       {
         id: 'elder_maren',
         name: 'Elder Maren',
         title: 'Town Elder',
         x: 200,
-        look: { shape: 'humanoid', color: 0x7f8c8d, accent: 0xecf0f1, scale: 1 },
+        look: { shape: 'humanoid', color: 0x7f8c8d, accent: 0xecf0f1, scale: 1, art: 'npc_elder_maren' },
         role: { kind: 'talk' },
         dialogue: [
           'Ah, a new face. Welcome to Brindlemoor.',
@@ -40,7 +42,7 @@ export const TOWNS: TownDef[] = [
         name: 'Tobin',
         title: 'Shopkeeper',
         x: 470,
-        look: { shape: 'humanoid', color: 0xb9770e, accent: 0x5d3a0a, scale: 1 },
+        look: { shape: 'humanoid', color: 0xb9770e, accent: 0x5d3a0a, scale: 1, art: 'npc_tobin' },
         role: {
           kind: 'shop',
           stock: [
@@ -59,7 +61,7 @@ export const TOWNS: TownDef[] = [
         name: 'Ilsa',
         title: 'Innkeeper',
         x: 740,
-        look: { shape: 'humanoid', color: 0xa93226, accent: 0xf5cba7, scale: 1 },
+        look: { shape: 'humanoid', color: 0xa93226, accent: 0xf5cba7, scale: 1, art: 'npc_ilsa' },
         role: { kind: 'inn' },
         dialogue: ['A warm bed and a hot meal. You look like you need both.'],
       },
@@ -68,7 +70,7 @@ export const TOWNS: TownDef[] = [
         name: 'Garrick',
         title: 'Gate Guard',
         x: 1080,
-        look: { shape: 'humanoid', color: 0x34495e, accent: 0xbdc3c7, scale: 1.05 },
+        look: { shape: 'humanoid', color: 0x34495e, accent: 0xbdc3c7, scale: 1.05, art: 'npc_gate_guard' },
         role: { kind: 'gate', zoneIds: ['thornwood'] },
         dialogue: ['Heading out? Mind the thorns, and run if it gets ugly.'],
       },

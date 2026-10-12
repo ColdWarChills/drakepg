@@ -3,6 +3,7 @@ import { COLORS } from '../config';
 import { Player } from '../game/Player';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
+import { addBackground } from '../ui/art';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { addText } from '../ui/text';
@@ -17,11 +18,16 @@ export class TitleScene extends Phaser.Scene {
     enterScene(this);
     const { width, height } = this.scale;
 
-    // Simple layered backdrop: night sky, moon, distant hills.
-    this.add.rectangle(0, 0, width, height, 0x1a1428).setOrigin(0);
-    this.add.circle(1020, 150, 70, 0xf5e6c4, 0.9);
-    this.add.ellipse(300, height, 900, 320, 0x2b2140);
-    this.add.ellipse(1000, height, 1000, 260, 0x221a33);
+    if (addBackground(this, 'bg_title')) {
+      // Darken a little so the logo and buttons stay readable.
+      this.add.rectangle(0, 0, width, height, 0x000000, 0.25).setOrigin(0);
+    } else {
+      // Simple layered backdrop: night sky, moon, distant hills.
+      this.add.rectangle(0, 0, width, height, 0x1a1428).setOrigin(0);
+      this.add.circle(1020, 150, 70, 0xf5e6c4, 0.9);
+      this.add.ellipse(300, height, 900, 320, 0x2b2140);
+      this.add.ellipse(1000, height, 1000, 260, 0x221a33);
+    }
 
     addText(this, width / 2, 170, 'DRAKEPG', { size: 96, bold: true, color: COLORS.textGold, stroke: true })
       .setOrigin(0.5);

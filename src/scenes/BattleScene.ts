@@ -5,6 +5,7 @@ import type { ConsumableDef, ZoneDef } from '../data/types';
 import { Battle, rollEncounter, type BattleEvent, type Side } from '../game/Battle';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
+import { addBackground } from '../ui/art';
 import { Bar } from '../ui/Bar';
 import { Button } from '../ui/Button';
 import { drawFigure, PLAYER_LOOK } from '../ui/figures';
@@ -67,6 +68,7 @@ export class BattleScene extends Phaser.Scene {
   // --- Layout ---
 
   private drawBackdrop(): void {
+    if (addBackground(this, this.zone.background)) return;
     const { width, height } = this.scale;
     this.add.rectangle(0, 0, width, height, this.zone.skyColor).setOrigin(0);
     // Tree line.

@@ -1,5 +1,10 @@
 import Phaser from 'phaser';
 import type { Look } from '../data/types';
+import { hasArt } from './art';
+
+/** On-screen size of a scale-1 character drawn from art. */
+const ART_HEIGHT = 240;
+const ART_MAX_WIDTH = 300;
 
 /** Triangle in container-local coordinates. */
 function tri(scene: Phaser.Scene, color: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number) {
@@ -7,12 +12,21 @@ function tri(scene: Phaser.Scene, color: number, x1: number, y1: number, x2: num
 }
 
 /**
- * Placeholder characters built from shapes. Origin is at the feet.
- * Replace with sprites once art exists; scenes only depend on the returned Container.
+ * A character, origin at the feet. Uses `look.art` when that image exists in src/assets/art/,
+ * otherwise draws placeholder shapes. Scenes only depend on the returned Container.
  */
 export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look, facing: 1 | -1 = 1) {
   const c = scene.add.container(x, y);
   const { color, accent } = look;
+
+  if (hasArt(scene, look.art)) {
+    // Art is drawn facing right; flip for left-facing figures.
+    const img = scene.add.image(0, 0, look.art).setOrigin(0.5, 1).setFlipX(facing === -1);
+    img.setScale(Math.min(ART_HEIGHT / img.height, ART_MAX_WIDTH / img.width));
+    c.add([scene.add.ellipse(0, 0, img.displayWidth * 0.7, 22, 0x000000, 0.35), img]);
+    c.setScale(look.scale);
+    return c;
+  }
 
   const shadow = scene.add.ellipse(0, 0, 110, 22, 0x000000, 0.35);
   c.add(shadow);
@@ -68,4 +82,4 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
 }
 
 /** The player's look. Will come from character customization later. */
-export const PLAYER_LOOK: Look = { shape: 'humanoid', color: 0x2e86de, accent: 0x5b3a1e, scale: 1 };
+export const PLAYER_LOOK: Look = { shape: 'humanoid', color: 0x2e86de, accent: 0x5b3a1e, scale: 1, art: 'char_player' };

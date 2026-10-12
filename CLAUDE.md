@@ -12,4 +12,5 @@ Browser turn-based RPG. Phaser 4 + TypeScript + Vite. See README.md for layout a
 - Tuning numbers go in `BALANCE` in `src/config.ts`.
 - Changing `PlayerData` requires bumping `SAVE_VERSION` and a `migrate()` step.
 - Design space is 1280x720 (Scale.FIT). Every scene's `create()` calls `enterScene(this)`; switch scenes with `goTo()`.
+- Art: raw images in `art/raw/` -> `python3 scripts/prepare_art.py` -> `src/assets/art/<key>.webp`, auto-loaded by key (`src/ui/art.ts`). Missing art falls back to shapes. Sprites face right.
 - Original names/art only. No assets or names from Artix Entertainment games.

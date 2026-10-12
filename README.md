@@ -21,7 +21,7 @@ npm run preview  # serve the dist/ build locally
 - **Result**: XP, gold, loot, level up. Defeat sends you back to town with no penalty.
 - **Character panel** (button or `C` key): stats, equipment, bag. Equip gear, use potions.
 
-Art is placeholder shapes (`src/ui/figures.ts`).
+Characters and backgrounds use images from `src/assets/art/` when present, and placeholder shapes otherwise (`src/ui/figures.ts`).
 
 ## Where things live
 
@@ -32,6 +32,12 @@ Art is placeholder shapes (`src/ui/figures.ts`).
 | `src/game/` | Rules, no Phaser: `Player`, `Battle`, `SaveSystem`, `rng` |
 | `src/scenes/` | Screens: Boot, Title, Town, Battle, Result |
 | `src/ui/` | Buttons, bars, modals, panels, placeholder figures |
+
+### Art
+
+1. Generate images with the prompts in [`art/PROMPTS.md`](art/PROMPTS.md) and put them in `art/raw/`, named by key (e.g. `mon_mossling.png`).
+2. Run `python3 scripts/prepare_art.py` (needs Pillow + numpy). It removes flat backgrounds from sprites, trims, resizes, and writes WebP files to `src/assets/art/`.
+3. Every file in `src/assets/art/` is loaded at boot by its file name. Point data at it with `look.art`, `zone.background` or `town.background`.
 
 ### Adding content
 

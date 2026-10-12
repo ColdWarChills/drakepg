@@ -5,6 +5,7 @@ import type { NpcDef } from '../data/types';
 import { START_TOWN_ID } from '../data/world';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
+import { addBackground } from '../ui/art';
 import { Button } from '../ui/Button';
 import { drawFigure, PLAYER_LOOK } from '../ui/figures';
 import { Hud } from '../ui/Hud';
@@ -26,7 +27,7 @@ export class TownScene extends Phaser.Scene {
     const town = db.town(START_TOWN_ID);
     const player = session.player;
 
-    this.drawBackdrop();
+    this.drawBackdrop(town.background);
     for (const npc of town.npcs) this.addNpc(npc);
     drawFigure(this, 610, GROUND_Y + 40, PLAYER_LOOK, 1);
 
@@ -73,7 +74,8 @@ export class TownScene extends Phaser.Scene {
     openCharacterPanel(this, session.player, this.refresh);
   }
 
-  private drawBackdrop(): void {
+  private drawBackdrop(art: string | undefined): void {
+    if (addBackground(this, art)) return;
     const { width, height } = this.scale;
     this.add.rectangle(0, 0, width, height, 0x87a9c9).setOrigin(0);
     this.add.rectangle(0, 260, width, 200, 0xa9c4d9).setOrigin(0);
