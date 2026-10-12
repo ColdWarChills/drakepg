@@ -1,6 +1,6 @@
 # Art prompts
 
-Painted cartoon style, original designs. 12 images: 3 backgrounds, 9 characters.
+Painted cartoon style, original designs. 12 images (3 backgrounds, 9 characters), plus 1 optional.
 
 ## How to make them
 
@@ -9,7 +9,8 @@ Painted cartoon style, original designs. 12 images: 3 backgrounds, 9 characters.
    > Match the art style of the reference image exactly. Only the style, not the character.
 3. Download each pick and rename it to its **file name** below (any extension: `.png`, `.jpg`, `.webp`).
 4. On GitHub open the `art/raw/` folder → **Add file → Upload files** → drop them in → **Commit changes**.
-5. Tell Claude. It removes the backgrounds, trims and resizes everything, and wires it into the game.
+5. Or just paste them into the Claude chat and say which is which.
+6. Tell Claude. It removes the backgrounds, trims and resizes everything, and wires it into the game.
 
 Renaming is optional: if it's a hassle, upload as-is and say so. Same if a character faces the wrong way.
 
@@ -87,4 +88,10 @@ A cozy medieval village street in daytime. From left to right: a small stone cot
 ### 12. `bg_thornwood` · 16:9
 ```
 A dark enchanted forest clearing: tall twisted trees with thorny brambles, hanging vines, mossy rocks, dappled light beams through the canopy, green and teal palette. The bottom 30% of the image is flat, open, mossy dirt ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
+```
+
+### 13. `bg_thornwood_deep` · 16:9 (optional)
+Darker variant for the second forest room. Without it, the game reuses `bg_thornwood`, darkened.
+```
+The deepest, darkest part of an enchanted forest at dusk: enormous ancient twisted trees, thick thorny bramble walls, glowing blue-green mushrooms, faint purple mist, fireflies. The bottom 30% of the image is flat, open, mossy dirt ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
 ```

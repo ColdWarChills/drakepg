@@ -53,7 +53,10 @@ export const SaveSystem = {
   },
 };
 
-/** Upgrade old save files here when PlayerData changes. Bump SAVE_VERSION alongside. */
+/**
+ * Upgrade old save files here when PlayerData changes. Bump SAVE_VERSION alongside.
+ * v1 -> v2: added `location`; sanitize() fills it with the start position.
+ */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
   if (file.version > SAVE_VERSION) {
@@ -89,6 +92,10 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
       .filter((e) => e && db.hasItem(e.itemId) && num(e.qty, 0) > 0)
       .map((e) => ({ itemId: e.itemId, qty: Math.floor(e.qty) })),
     skills: (Array.isArray(raw.skills) ? raw.skills : fresh.skills).filter((id) => db.hasSkill(id)),
+    location:
+      raw.location && db.hasRoom(raw.location.roomId)
+        ? { roomId: raw.location.roomId, x: num(raw.location.x, fresh.location.x), y: num(raw.location.y, fresh.location.y) }
+        : fresh.location,
   };
 
   const player = new Player(data);

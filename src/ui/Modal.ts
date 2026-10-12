@@ -17,7 +17,7 @@ export class Modal extends Phaser.GameObjects.Container {
     super(scene, 0, 0);
     this.panelWidth = width;
     this.panelHeight = height;
-    this.setDepth(500);
+    this.setDepth(5000);
 
     const shade = scene.add.rectangle(0, 0, sw, sh, 0x000000, 0.6).setOrigin(0).setInteractive();
     const left = (sw - width) / 2;
@@ -33,7 +33,9 @@ export class Modal extends Phaser.GameObjects.Container {
       .setOrigin(0.5);
 
     this.content = scene.add.container(left, top);
-    this.add([shade, panel, heading, this.content]);
+    // Everything but the shade lives in `body` so it can pop in on its own.
+    const body = scene.add.container(0, 0, [panel, heading, this.content]);
+    this.add([shade, body]);
 
     if (onClose !== undefined) {
       const close = new Button(scene, left + width - 34, top + 28, 'X', () => this.close(onClose), {
@@ -41,10 +43,14 @@ export class Modal extends Phaser.GameObjects.Container {
         height: 40,
         fontSize: 20,
       });
-      this.add(close);
+      body.add(close);
     }
 
     scene.add.existing(this);
+    shade.setAlpha(0);
+    scene.tweens.add({ targets: shade, alpha: 1, duration: 150 });
+    body.setAlpha(0).setY(24);
+    scene.tweens.add({ targets: body, alpha: 1, y: 0, duration: 200, ease: 'Back.easeOut' });
   }
 
   close(after?: () => void): void {

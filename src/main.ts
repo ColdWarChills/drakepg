@@ -4,7 +4,7 @@ import { BattleScene } from './scenes/BattleScene';
 import { BootScene } from './scenes/BootScene';
 import { ResultScene } from './scenes/ResultScene';
 import { TitleScene } from './scenes/TitleScene';
-import { TownScene } from './scenes/TownScene';
+import { RoomScene } from './scenes/RoomScene';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -16,7 +16,7 @@ const game = new Phaser.Game({
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
   },
-  scene: [BootScene, TitleScene, TownScene, BattleScene, ResultScene],
+  scene: [BootScene, TitleScene, RoomScene, BattleScene, ResultScene],
 });
 
 // Handy for poking at state from the browser console during development.

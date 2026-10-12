@@ -3,8 +3,10 @@ import { COLORS } from '../config';
 import { Player } from '../game/Player';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
+import { START } from '../data/world';
 import { addBackground } from '../ui/art';
 import { Button } from '../ui/Button';
+import * as fx from '../ui/fx';
 import { Modal } from '../ui/Modal';
 import { addText } from '../ui/text';
 import { enterScene, goTo, SceneKeys } from './keys';
@@ -28,9 +30,32 @@ export class TitleScene extends Phaser.Scene {
       this.add.ellipse(300, height, 900, 320, 0x2b2140);
       this.add.ellipse(1000, height, 1000, 260, 0x221a33);
     }
+    fx.starField(this, 70, height * 0.55);
+    // Embers drifting up.
+    this.add.particles(0, 0, 'fx_soft', {
+      x: { min: 0, max: width },
+      y: height + 10,
+      speedY: { min: -70, max: -30 },
+      speedX: { min: -15, max: 15 },
+      scale: { start: 0.35, end: 0 },
+      alpha: { start: 0.9, end: 0 },
+      lifespan: 7000,
+      frequency: 140,
+      tint: [0xffb347, 0xff7b39, 0xffe066],
+      blendMode: 'ADD',
+    }).fastForward(7000);
 
-    addText(this, width / 2, 170, 'DRAKEPG', { size: 96, bold: true, color: COLORS.textGold, stroke: true })
-      .setOrigin(0.5);
+    const logo = addText(this, width / 2, 170, 'DRAKEPG', { size: 96, bold: true, color: COLORS.textGold, stroke: true })
+      .setOrigin(0.5)
+      .setScale(0.6)
+      .setAlpha(0);
+    this.tweens.chain({
+      targets: logo,
+      tweens: [
+        { scale: 1, alpha: 1, duration: 600, ease: 'Back.easeOut' },
+        { y: 178, duration: 2200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' },
+      ],
+    });
     addText(this, width / 2, 250, 'a turn-based adventure', { size: 26, color: COLORS.textDim }).setOrigin(0.5);
 
     const hasSave = SaveSystem.hasSave();
@@ -54,7 +79,7 @@ export class TitleScene extends Phaser.Scene {
     const player = Player.createNew();
     session.start(player);
     SaveSystem.save(player);
-    goTo(this, SceneKeys.Town, { intro: true });
+    goTo(this, SceneKeys.Room, { ...START, via: 'spawn', intro: true });
   }
 
   private continueGame(): void {
@@ -64,7 +89,7 @@ export class TitleScene extends Phaser.Scene {
       return;
     }
     session.start(player);
-    goTo(this, SceneKeys.Town);
+    goTo(this, SceneKeys.Room, { ...player.data.location, via: 'spawn' });
   }
 
   private confirmOverwrite(): void {

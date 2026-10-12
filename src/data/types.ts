@@ -3,7 +3,7 @@ export type Stats = Record<StatKey, number>;
 
 export type DamageType = 'physical' | 'magic';
 
-/** Placeholder look, drawn from shapes until real art exists. */
+/** How a character is drawn: art if it exists, otherwise placeholder shapes. */
 export interface Look {
   shape: 'humanoid' | 'blob' | 'beast' | 'imp';
   color: number;
@@ -26,7 +26,11 @@ export interface SkillDef {
   power: number;
   /** Damage: number of separate hits (default 1). */
   hits?: number;
+  /** Battle visual. Defaults: physical -> 'slash', magic -> 'fire', heal -> 'heal'. */
+  fx?: SkillFx;
 }
+
+export type SkillFx = 'slash' | 'heavy' | 'fire' | 'heal';
 
 interface ItemBase {
   id: string;
@@ -86,41 +90,62 @@ export interface MonsterDef {
   drops: { itemId: string; chance: number }[];
 }
 
+/** Painted background image key(s); the first one that exists is used. */
+export type ArtRef = string | string[];
+
+/** Procedural scenery used when there's no background art. */
+export interface Backdrop {
+  kind: 'town' | 'forest';
+  /** Darken the whole scene, 0-1. */
+  shade?: number;
+}
+
+/** Encounter table + battle scenery shared by the rooms of an area. */
 export interface ZoneDef {
   id: string;
   name: string;
-  description: string;
   recommendedLevel: [number, number];
-  /** Background tint for the battle scene. */
-  skyColor: number;
-  groundColor: number;
-  /** Battle background image key. */
-  background?: string;
+  background?: ArtRef;
+  backdrop: Backdrop;
   encounters: { monsterId: string; weight: number }[];
 }
 
-export type NpcRole =
-  | { kind: 'talk' }
-  | { kind: 'shop'; stock: string[] }
-  | { kind: 'inn' }
-  | { kind: 'gate'; zoneIds: string[] };
+export type NpcRole = { kind: 'talk' } | { kind: 'shop'; stock: string[] } | { kind: 'inn' };
 
 export interface NpcDef {
   id: string;
   name: string;
   title: string;
-  /** X position on the town street (0-1280). */
+  /** Feet position in the room (1280x720 screen). */
   x: number;
+  y: number;
   look: Look;
   role: NpcRole;
   /** Shown when the dialog opens. Several lines are paged with "Next". */
   dialogue: string[];
 }
 
-export interface TownDef {
+export interface RoomExit {
+  side: 'left' | 'right';
+  to: string;
+  /** Shown on the arrow at the screen edge. */
+  label: string;
+}
+
+export type Ambient = 'dust' | 'leaves' | 'fireflies';
+
+/** One walkable screen. Walk off a side with an exit to enter the next room. */
+export interface RoomDef {
   id: string;
   name: string;
-  /** Town background image key. */
-  background?: string;
+  background?: ArtRef;
+  backdrop: Backdrop;
+  /** Feet can move between these y values (the ground strip). */
+  walk: [number, number];
+  exits: RoomExit[];
   npcs: NpcDef[];
+  ambient?: Ambient[];
+  /** Monsters roaming here come from this zone; battles use its scenery. */
+  zoneId?: string;
+  monsterCount?: number;
 }

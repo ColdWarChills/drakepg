@@ -9,6 +9,7 @@ export const SKILLS: SkillDef[] = [
     kind: 'damage',
     damageType: 'physical',
     power: 1.6,
+    fx: 'heavy',
   },
   {
     id: 'ember_bolt',

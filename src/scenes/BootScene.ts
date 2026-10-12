@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { COLORS } from '../config';
 import { validateData } from '../data/db';
 import { preloadArt } from '../ui/art';
+import { createFxTextures } from '../ui/fx';
 import { addText } from '../ui/text';
 import { SceneKeys } from './keys';
 
@@ -20,6 +21,7 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     validateData();
+    createFxTextures(this);
     this.scene.start(SceneKeys.Title);
   }
 }

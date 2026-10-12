@@ -25,9 +25,16 @@ export function hasArt(scene: Phaser.Scene, key: string | undefined): key is str
   return key !== undefined && scene.textures.exists(key);
 }
 
+/** First key in `ref` that has art loaded. */
+export function pickArt(scene: Phaser.Scene, ref: string | string[] | undefined): string | undefined {
+  const keys = ref === undefined ? [] : Array.isArray(ref) ? ref : [ref];
+  return keys.find((k) => hasArt(scene, k));
+}
+
 /** Full-screen background, scaled to cover the screen. Returns false if the art is missing. */
-export function addBackground(scene: Phaser.Scene, key: string | undefined): boolean {
-  if (!hasArt(scene, key)) return false;
+export function addBackground(scene: Phaser.Scene, ref: string | string[] | undefined): boolean {
+  const key = pickArt(scene, ref);
+  if (!key) return false;
   const { width, height } = scene.scale;
   const img = scene.add.image(width / 2, height / 2, key);
   img.setScale(Math.max(width / img.width, height / img.height));

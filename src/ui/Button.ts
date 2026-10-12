@@ -53,15 +53,29 @@ export class Button extends Phaser.GameObjects.Container {
     this.setSize(width, height);
     this.bg.setInteractive({ useHandCursor: true });
     this.bg.on('pointerover', () => this.enabled && this.bg.setFillStyle(COLORS.buttonHover));
-    this.bg.on('pointerout', () => this.enabled && this.bg.setFillStyle(this.baseColor));
-    this.bg.on('pointerdown', () => this.enabled && this.bg.setFillStyle(COLORS.buttonDown));
+    this.bg.on('pointerout', () => {
+      if (this.enabled) this.bg.setFillStyle(this.baseColor);
+      this.squash(1);
+    });
+    this.bg.on('pointerdown', () => {
+      if (!this.enabled) return;
+      this.bg.setFillStyle(COLORS.buttonDown);
+      this.squash(0.93);
+    });
     this.bg.on('pointerup', () => {
       if (!this.enabled) return;
       this.bg.setFillStyle(COLORS.buttonHover);
+      this.squash(1);
       this.onClick();
     });
 
     scene.add.existing(this);
+  }
+
+  private squash(scale: number): void {
+    if (!this.scene) return;
+    this.scene.tweens.killTweensOf(this);
+    this.scene.tweens.add({ targets: this, scale, duration: scale < 1 ? 60 : 180, ease: scale < 1 ? 'Quad.easeOut' : 'Back.easeOut' });
   }
 
   setEnabled(enabled: boolean): this {

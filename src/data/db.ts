@@ -1,8 +1,8 @@
 import { ITEMS } from './items';
 import { MONSTERS } from './monsters';
 import { SKILLS } from './skills';
-import { TOWNS, ZONES } from './world';
-import type { ItemDef, MonsterDef, SkillDef, TownDef, ZoneDef } from './types';
+import { ROOMS, ZONES } from './world';
+import type { ItemDef, MonsterDef, RoomDef, SkillDef, ZoneDef } from './types';
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -18,7 +18,7 @@ const items = index('item', ITEMS);
 const skills = index('skill', SKILLS);
 const monsters = index('monster', MONSTERS);
 const zones = index('zone', ZONES);
-const towns = index('town', TOWNS);
+const rooms = index('room', ROOMS);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -31,7 +31,8 @@ export const db = {
   skill: (id: string): SkillDef => get('skill', skills, id),
   monster: (id: string): MonsterDef => get('monster', monsters, id),
   zone: (id: string): ZoneDef => get('zone', zones, id),
-  town: (id: string): TownDef => get('town', towns, id),
+  room: (id: string): RoomDef => get('room', rooms, id),
+  hasRoom: (id: string) => rooms.has(id),
   hasItem: (id: string) => items.has(id),
   hasSkill: (id: string) => skills.has(id),
 };
@@ -43,10 +44,11 @@ export function validateData(): void {
     if (m.attacks.length === 0) throw new Error(`Monster ${m.id} has no attacks`);
   }
   for (const z of ZONES) for (const e of z.encounters) db.monster(e.monsterId);
-  for (const t of TOWNS) {
-    for (const npc of t.npcs) {
+  for (const r of ROOMS) {
+    if (r.zoneId) db.zone(r.zoneId);
+    for (const exit of r.exits) db.room(exit.to);
+    for (const npc of r.npcs) {
       if (npc.role.kind === 'shop') npc.role.stock.forEach((id) => db.item(id));
-      if (npc.role.kind === 'gate') npc.role.zoneIds.forEach((id) => db.zone(id));
     }
   }
 }

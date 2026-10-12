@@ -1,6 +1,6 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
-import type { DamageType, MonsterAttack, MonsterDef, Stats, ZoneDef } from '../data/types';
+import type { DamageType, MonsterAttack, MonsterDef, Stats } from '../data/types';
 import type { Player, Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
 
@@ -10,10 +10,11 @@ export type Side = 'player' | 'enemy';
  * What happened during a turn, in order. The battle scene plays these back as animations,
  * so the rules here never touch Phaser.
  */
+/** `moveId` is 'attack', a skill id, an item id, or 'enemy' for monster attacks. */
 export type BattleEvent =
-  | { kind: 'hit'; source: Side; move: string; damageType: DamageType; damage: number; crit: boolean }
-  | { kind: 'miss'; source: Side; move: string }
-  | { kind: 'heal'; source: Side; move: string; hp: number; mp: number }
+  | { kind: 'hit'; source: Side; move: string; moveId: string; damageType: DamageType; damage: number; crit: boolean }
+  | { kind: 'miss'; source: Side; move: string; moveId: string; damageType: DamageType }
+  | { kind: 'heal'; source: Side; move: string; moveId: string; hp: number; mp: number }
   | { kind: 'flee'; success: boolean }
   | { kind: 'defeated'; side: Side };
 
@@ -33,13 +34,6 @@ interface AttackerInfo {
 /** Share of damage removed by `armor`. 10 armor = 25%, 30 armor = 50%. */
 function mitigate(damage: number, armor: number): number {
   return damage * (1 - armor / (armor + 30));
-}
-
-/** Pick a monster for this zone, skipping anything more than one level above the player. */
-export function rollEncounter(zone: ZoneDef, playerLevel: number, rng: Rng = defaultRng): MonsterDef {
-  const fair = zone.encounters.filter((e) => db.monster(e.monsterId).level <= playerLevel + 1);
-  const pool = fair.length > 0 ? fair : zone.encounters;
-  return db.monster(weightedPick(rng, pool, (e) => e.weight).monsterId);
 }
 
 export class Battle {
@@ -64,7 +58,7 @@ export class Battle {
   attack(): BattleEvent[] {
     if (this.isOver) return [];
     const p = this.player;
-    const events = [this.strikeEnemy('Attack', p.weaponDamageType, 1)];
+    const events = [this.strikeEnemy('Attack', 'attack', p.weaponDamageType, 1)];
     return this.endPlayerTurn(events);
   }
 
@@ -79,11 +73,11 @@ export class Battle {
     const events: BattleEvent[] = [];
     if (skill.kind === 'heal') {
       const amount = Math.round(this.player.maxHp * skill.power + this.player.stats.int);
-      events.push({ kind: 'heal', source: 'player', move: skill.name, hp: this.player.heal(amount), mp: 0 });
+      events.push({ kind: 'heal', source: 'player', move: skill.name, moveId: skill.id, hp: this.player.heal(amount), mp: 0 });
     } else {
       const hits = skill.hits ?? 1;
       for (let i = 0; i < hits && this.enemy.hp > 0; i++) {
-        events.push(this.strikeEnemy(skill.name, skill.damageType ?? 'physical', skill.power));
+        events.push(this.strikeEnemy(skill.name, skill.id, skill.damageType ?? 'physical', skill.power));
       }
     }
     return this.endPlayerTurn(events);
@@ -103,7 +97,7 @@ export class Battle {
     const restored = this.player.useConsumable(itemId);
     if (!restored) return [];
     const events: BattleEvent[] = [
-      { kind: 'heal', source: 'player', move: item.name, hp: restored.hp, mp: restored.mp },
+      { kind: 'heal', source: 'player', move: item.name, moveId: item.id, hp: restored.hp, mp: restored.mp },
     ];
     return this.endPlayerTurn(events);
   }
@@ -145,20 +139,21 @@ export class Battle {
     const attacker: AttackerInfo = { stats: m.stats, roll: m.damage };
     const armor = attack.damageType === 'magic' ? this.player.resist : this.player.defense;
     const result = this.resolveHit(attacker, this.player.stats.dex, armor, attack.damageType, attack.power);
-    if (!result) return { kind: 'miss', source: 'enemy', move: attack.name };
+    const base = { source: 'enemy' as const, move: attack.name, moveId: 'enemy', damageType: attack.damageType };
+    if (!result) return { kind: 'miss', ...base };
     this.player.takeDamage(result.damage);
-    return { kind: 'hit', source: 'enemy', move: attack.name, damageType: attack.damageType, ...result };
+    return { kind: 'hit', ...base, ...result };
   }
 
-  private strikeEnemy(move: string, damageType: DamageType, power: number): BattleEvent {
+  private strikeEnemy(move: string, moveId: string, damageType: DamageType, power: number): BattleEvent {
     const p = this.player;
     const attacker: AttackerInfo = { stats: p.stats, roll: p.weaponDamage };
     const m = this.enemy.def;
     const armor = damageType === 'magic' ? m.resist : m.defense;
     const result = this.resolveHit(attacker, m.stats.dex, armor, damageType, power);
-    if (!result) return { kind: 'miss', source: 'player', move };
+    if (!result) return { kind: 'miss', source: 'player', move, moveId, damageType };
     this.enemy.hp = Math.max(0, this.enemy.hp - result.damage);
-    return { kind: 'hit', source: 'player', move, damageType, ...result };
+    return { kind: 'hit', source: 'player', move, moveId, damageType, ...result };
   }
 
   /** Shared hit/crit/damage math for both sides. Returns null on a miss. */

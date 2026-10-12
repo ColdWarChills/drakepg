@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import { STARTING_SKILLS } from '../data/skills';
+import { START } from '../data/world';
 import type {
   ArmorDef,
   ConsumableDef,
@@ -21,6 +22,12 @@ export const STAT_LABELS: Record<StatKey, string> = {
   end: 'END',
 };
 
+export interface Location {
+  roomId: string;
+  x: number;
+  y: number;
+}
+
 export interface InventoryEntry {
   itemId: string;
   qty: number;
@@ -38,6 +45,8 @@ export interface PlayerData {
   equipment: Record<EquipSlot, string | null>;
   inventory: InventoryEntry[];
   skills: string[];
+  /** Where the player stands. Added in save version 2. */
+  location: Location;
 }
 
 export interface Rewards {
@@ -71,6 +80,7 @@ export class Player {
         { itemId: 'mana_potion', qty: 1 },
       ],
       skills: [...STARTING_SKILLS],
+      location: { ...START },
     });
     player.restoreFull();
     return player;

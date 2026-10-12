@@ -33,17 +33,37 @@ export function addText(
   return scene.add.text(x, y, text, textStyle(opts));
 }
 
-/** Damage numbers, "+40 HP", etc. Rises and fades out. */
-export function floatText(scene: Phaser.Scene, x: number, y: number, text: string, color: string, size = 32): void {
-  const label = addText(scene, x, y, text, { size, color, bold: true, stroke: true }).setOrigin(0.5).setDepth(1000);
-  scene.tweens.add({
+/** Damage numbers, "+40 HP", etc. Pops in, drifts up and fades. */
+export function floatText(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  text: string,
+  color: string,
+  size = 32,
+  tag?: string,
+): void {
+  const jitter = Phaser.Math.Between(-24, 24);
+  const label = addText(scene, x + jitter, y, text, { size, color, bold: true, stroke: true })
+    .setOrigin(0.5)
+    .setDepth(4000)
+    .setScale(0.3);
+  scene.tweens.chain({
     targets: label,
-    y: y - 70,
-    alpha: { from: 1, to: 0 },
-    duration: 1000,
-    ease: 'Cubic.easeOut',
+    tweens: [
+      { scale: 1.3, duration: 110, ease: 'Back.easeOut' },
+      { scale: 1, duration: 120 },
+      { y: y - 80, x: x + jitter * 1.6, alpha: 0, duration: 800, delay: 250, ease: 'Cubic.easeIn' },
+    ],
     onComplete: () => label.destroy(),
   });
+  if (tag) {
+    const t = addText(scene, x + jitter, y - size * 0.9, tag, { size: Math.round(size * 0.5), color: COLORS.textGold, bold: true, stroke: true })
+      .setOrigin(0.5)
+      .setDepth(4000)
+      .setAngle(-8);
+    scene.tweens.add({ targets: t, y: t.y - 60, alpha: 0, delay: 500, duration: 700, onComplete: () => t.destroy() });
+  }
 }
 
 /** Short message near the top of the screen. */
@@ -51,7 +71,7 @@ export function toast(scene: Phaser.Scene, text: string, color: string = COLORS.
   const { width } = scene.scale;
   const label = addText(scene, width / 2, 110, text, { size: 24, color, bold: true, stroke: true })
     .setOrigin(0.5)
-    .setDepth(2000)
+    .setDepth(6000)
     .setAlpha(0);
   scene.tweens.chain({
     targets: label,

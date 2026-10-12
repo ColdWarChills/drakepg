@@ -25,7 +25,7 @@ export class Hud extends Phaser.GameObjects.Container {
     this.mpBar = new Bar(scene, 16, 90, 308, 24, COLORS.mp, 'MP ');
     this.xpBar = new Bar(scene, 16, 124, 308, 18, COLORS.xp, 'XP ');
     this.add([bg, this.nameText, this.goldText, this.hpBar, this.mpBar, this.xpBar]);
-    this.setDepth(100);
+    this.setDepth(3000);
     scene.add.existing(this);
   }
 
