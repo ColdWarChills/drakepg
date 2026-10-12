@@ -45,6 +45,12 @@ Broken references (e.g. a drop pointing at a missing item) throw at startup in `
 
 Saved in `localStorage` under `drakepg.save`. If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
 
+## Playing on GitHub Pages
+
+Every push to the default branch deploys to `https://coldwarchills.github.io/drakepg/`.
+
+One-time setup: repo **Settings → Pages → Build and deployment → Source: GitHub Actions**. Until that's set, the workflow skips the Pages step. After enabling, re-run it from **Actions → Build & deploy → Run workflow** (or just push).
+
 ## Deploying to itch.io
 
 GitHub Actions builds every push. To also upload to itch.io from the default branch:

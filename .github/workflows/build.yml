@@ -5,9 +5,19 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      deploy: ${{ steps.target.outputs.deploy }}
+      pages_enabled: ${{ steps.pages.outputs.enabled }}
     steps:
       - uses: actions/checkout@v5
 
@@ -19,12 +29,34 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      # Uploads to itch.io only from the default branch, and only once both are set in
-      # repo Settings -> Secrets and variables -> Actions:
+      # Deploys only happen from pushes/manual runs on the default branch.
+      - id: target
+        run: echo "deploy=${{ github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch }}" >> "$GITHUB_OUTPUT"
+
+      # GitHub Pages must be switched on once by hand (Settings -> Pages -> Source: GitHub Actions).
+      # Until then, skip the Pages deploy instead of failing.
+      - id: pages
+        if: steps.target.outputs.deploy == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/pages" --silent 2>/dev/null; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping GitHub Pages deploy. Enable it in Settings -> Pages -> Source: GitHub Actions."
+          fi
+
+      - if: steps.pages.outputs.enabled == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      # Uploads to itch.io once both are set in repo Settings -> Secrets and variables -> Actions:
       #   secret   BUTLER_API_KEY  (itch.io -> Settings -> API keys)
       #   variable ITCH_GAME       e.g. "yourname/drakepg"  (user/game from the itch.io page URL)
       - name: Deploy to itch.io
-        if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+        if: steps.target.outputs.deploy == 'true'
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
           ITCH_GAME: ${{ vars.ITCH_GAME }}
@@ -38,3 +70,17 @@ jobs:
           chmod +x butler/butler
           ./butler/butler -V
           ./butler/butler push dist "$ITCH_GAME:html5" --userversion "${GITHUB_SHA::7}"
+
+  pages:
+    needs: build
+    if: needs.build.outputs.deploy == 'true' && needs.build.outputs.pages_enabled == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
