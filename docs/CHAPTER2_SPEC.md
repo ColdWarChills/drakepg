@@ -39,6 +39,8 @@ Water, Energy, Dark. Chapter 1's Earth boss weapons are neutral here, so the new
 
 Bosses stay for rematches (half XP/gold, boss Sigil odds).
 
+The Stormscale Drakeling is **Tough** (added 2026-10-13): Energy 75, Wind/Earth 25, weak to Water -75 and Ice -25. Water weapons from the Bog Lurker, Bogmother or Hulda's forge are the counter.
+
 ## Elites (PR 1)
 
 - [x] Any roaming monster (Chapter 1 too) can spawn as an Elite: **8%** per spawn, max **1 per room**. While a quest wants an Elite: **25%**.

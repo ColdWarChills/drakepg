@@ -78,6 +78,11 @@ A small winged fire imp demon, charcoal-grey skin with glowing orange ember crac
 A sneaky forest bandit, dark purple hooded cloak, face half-covered by a cloth mask, leather armor with thorny bramble vines wrapped around the arms, holding a curved dagger in a crouched, ready stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
 ```
 
+### 9a. `mon_barkshell_beetle` · 4:3 (tough)
+```
+A big armored forest beetle, its domed shell made of thick cracked dark bark with moss in the cracks, dry and brittle-looking, strong curved mandibles, six stubby legs, small glowing amber eyes, sturdy low stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
 ### 9b. `mon_thornheart` · 1:1 (Chapter 1 boss)
 ```
 A huge ancient forest guardian boss monster gone wild: a hulking four-legged beast made of twisted dark wood and bark, a glowing sickly green heart visible through a crack in its chest, thick thorny bramble vines wrapped around its body, moss and small mushrooms on its back, antler-like branches on its head, glowing green eyes, roots trailing from its feet. Menacing, powerful stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.

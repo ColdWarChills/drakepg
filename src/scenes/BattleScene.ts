@@ -40,6 +40,8 @@ interface Style {
 
 const EFFECT_TAGS: Record<Effect, string> = { weak: 'WEAK!', resisted: 'Resisted', immune: 'Immune' };
 const ELITE_GLOW = 0xffc23d;
+/** Name color of `tough` monsters: they need a counter. */
+const TOUGH_CSS = '#ff9a4d';
 
 export class BattleScene extends Phaser.Scene {
   private battle!: Battle;
@@ -110,7 +112,9 @@ export class BattleScene extends Phaser.Scene {
         ? `${this.monster.name} awakens! There is no running from this fight.`
         : elite
           ? `An Elite ${this.monster.name} (Lv ${this.monster.level}) blocks your path! ${elite.name}: ${elite.description}`
-          : `A wild ${this.monster.name} (Lv ${this.monster.level}) appears in the ${this.zone.name}!`,
+          : this.monster.tough
+            ? `A tough ${this.monster.name} (Lv ${this.monster.level}) blocks the way! Hit it where it is weak.`
+            : `A wild ${this.monster.name} (Lv ${this.monster.level}) appears in the ${this.zone.name}!`,
     );
 
     ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX'].forEach((key, i) => {
@@ -167,10 +171,12 @@ export class BattleScene extends Phaser.Scene {
     // Elites get an extra line explaining their affix.
     const affix = m.elite ? db.affix(m.elite.affix) : null;
     this.statusPanel(ex, 16, 420, affix ? 148 : 120);
-    const head = addText(this, ex + 16, 26, `${m.name}  ·  Lv ${m.level}${m.boss ? '  ·  BOSS' : affix ? '  ·  ELITE' : ''}`, {
+    // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
+    const tags = [m.boss ? 'BOSS' : affix ? 'ELITE' : m.tough ? 'TOUGH' : ''].filter(Boolean);
+    const head = addText(this, ex + 16, 26, [`${m.name}`, `Lv ${m.level}`, ...tags].join('  ·  '), {
       size: 22,
       bold: true,
-      color: m.boss ? COLORS.textBad : affix ? COLORS.textGold : COLORS.text,
+      color: m.boss ? COLORS.textBad : affix ? COLORS.textGold : m.tough ? TOUGH_CSS : COLORS.text,
     });
     // Long Elite names shrink to fit the panel.
     if (head.width > 388) head.setScale(388 / head.width);
@@ -207,6 +213,8 @@ export class BattleScene extends Phaser.Scene {
       this.affinityRow.add(t);
       cx += t.width;
     }
+    // Many weaknesses and resists shrink to fit the panel.
+    if (cx > 388) this.affinityRow.setScale(388 / cx);
   }
 
   private statusPanel(x: number, y: number, w: number, h: number): void {

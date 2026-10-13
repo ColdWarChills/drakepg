@@ -317,7 +317,7 @@ export class RoomScene extends Phaser.Scene {
     const actor = this.makeActor(fig, r.x, r.y, def.look.scale * 0.85);
     const diff = def.level - session.player.level;
     const color = diff >= 2 ? COLORS.textBad : diff === 1 ? COLORS.textGold : diff <= -2 ? COLORS.textDim : COLORS.text;
-    const label = addText(this, r.x, 0, `${def.name}  Lv ${def.level}`, { size: Math.round(15 * this.ls), bold: true, color, stroke: true }).setOrigin(0.5, 1);
+    const label = addText(this, r.x, 0, `${def.name}  Lv ${def.level}${def.tough ? '  ·  Tough' : ''}`, { size: Math.round(15 * this.ls), bold: true, color, stroke: true }).setOrigin(0.5, 1);
     const mob: Mob = { ...actor, uid: r.uid, def, label, state: 'idle', timer: Phaser.Math.FloatBetween(0.3, 1.5), target: null };
     mob.facing = r.x > this.player.x ? -1 : 1;
     if (r.elite) {

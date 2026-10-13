@@ -205,9 +205,17 @@ table('Chapter 1 trash (full HP each fight, 1 potion)', [
   { monster: 'mossling', level: 1, gear: STARTER, potions: 1 },
   { monster: 'thornback_boar', level: 1, gear: STARTER, potions: 1 },
   { monster: 'thornback_boar', level: 2, gear: STARTER, potions: 1 },
-  { monster: 'ash_imp', level: 2, gear: STARTER, potions: 1 },
   { monster: 'bramble_bandit', level: 3, gear: STARTER, potions: 1 },
   { monster: 'bramble_bandit', level: 3, gear: SHOP, potions: 1 },
+]);
+
+table('Chapter 1 tough monsters (full HP, 1 potion): the counter should matter', [
+  { monster: 'ash_imp', level: 1, gear: STARTER, potions: 1 },
+  { monster: 'ash_imp', level: 3, gear: STARTER, potions: 1 },
+  { monster: 'ash_imp', level: 3, gear: SHOP, potions: 1 },
+  { monster: 'barkshell_beetle', level: 4, gear: SHOP, potions: 1 },
+  { monster: 'barkshell_beetle', level: 4, gear: FIRE, potions: 1 },
+  { monster: 'barkshell_beetle', level: 5, gear: SHOP, potions: 1 },
 ]);
 
 table('Thornheart (boss, 3 potions)', [

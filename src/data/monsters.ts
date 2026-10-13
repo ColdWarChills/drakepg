@@ -2,7 +2,8 @@ import type { MonsterDef } from './types';
 
 /**
  * Resist rule of thumb (see OPPOSITE in elements.ts): +50 to its own element, -50 to the opposite.
- * Forest creatures also burn.
+ * Early trash is neutral and weak to several elements; `tough` monsters hit hard and resist a lot,
+ * but have one or two big weaknesses you are meant to bring a counter for.
  */
 export const MONSTERS: MonsterDef[] = [
   {
@@ -13,12 +14,11 @@ export const MONSTERS: MonsterDef[] = [
     hp: 34,
     stats: { str: 3, int: 3, dex: 2, end: 3 },
     damage: [4, 7],
-    element: 'earth',
     defense: { melee: 2, pierce: 2, magic: 2 },
-    resists: { earth: 50, water: 25, fire: -50, wind: -25 },
+    resists: { fire: -50, wind: -25, ice: -25 },
     attacks: [
       { name: 'Slam', damageType: 'melee', power: 1, weight: 3 },
-      { name: 'Spore Puff', damageType: 'magic', power: 1.1, weight: 1, applies: [{ status: 'spores', turns: 2, chance: 0.3 }] },
+      { name: 'Spore Puff', damageType: 'magic', element: 'earth', power: 1.1, weight: 1, applies: [{ status: 'spores', turns: 2, chance: 0.3 }] },
     ],
     xp: 14,
     gold: [3, 7],
@@ -32,9 +32,8 @@ export const MONSTERS: MonsterDef[] = [
     hp: 46,
     stats: { str: 6, int: 1, dex: 4, end: 5 },
     damage: [4, 8],
-    element: 'earth',
     defense: { melee: 6, pierce: 4, magic: 1 },
-    resists: { earth: 50, wind: -50, fire: -25 },
+    resists: { wind: -50, water: -25, energy: -25 },
     attacks: [
       { name: 'Gore', damageType: 'pierce', power: 1, weight: 3 },
       { name: 'Thorn Charge', damageType: 'melee', power: 1.5, weight: 1 },
@@ -51,20 +50,22 @@ export const MONSTERS: MonsterDef[] = [
   {
     id: 'ash_imp',
     name: 'Ash Imp',
-    level: 2,
+    level: 3,
+    tough: true,
     look: { shape: 'imp', color: 0xc0462b, accent: 0x2b1a12, scale: 0.8, art: 'mon_ash_imp' },
-    hp: 38,
-    stats: { str: 3, int: 7, dex: 7, end: 3 },
-    damage: [5, 8],
+    hp: 64,
+    stats: { str: 3, int: 9, dex: 8, end: 4 },
+    damage: [10, 14],
     element: 'fire',
-    defense: { melee: 2, pierce: 2, magic: 8 },
-    resists: { fire: 75, ice: -50, water: -50 },
+    // Fire only feeds it. Douse it with ice or water.
+    defense: { melee: 4, pierce: 4, magic: 8 },
+    resists: { fire: 100, earth: 25, wind: 25, ice: -75, water: -50 },
     attacks: [
       { name: 'Claw', damageType: 'melee', power: 0.9, weight: 2 },
       { name: 'Cinder Spit', damageType: 'magic', power: 1.2, weight: 2, applies: [{ status: 'burn', turns: 2, chance: 0.3 }] },
     ],
-    xp: 20,
-    gold: [6, 11],
+    xp: 38,
+    gold: [12, 18],
     drops: [
       { itemId: 'mana_potion', chance: 0.25 },
       { itemId: 'cinder_fang', chance: 0.05 },
@@ -81,9 +82,8 @@ export const MONSTERS: MonsterDef[] = [
     hp: 54,
     stats: { str: 6, int: 3, dex: 6, end: 6 },
     damage: [5, 9],
-    element: 'dark',
     defense: { melee: 6, pierce: 6, magic: 4 },
-    resists: { dark: 50, light: -50 },
+    resists: { light: -50, energy: -25, ice: -25 },
     attacks: [
       { name: 'Stab', damageType: 'pierce', power: 1, weight: 3 },
       { name: 'Dirty Trick', damageType: 'melee', power: 1.2, weight: 1, applies: [{ status: 'blind', turns: 2, chance: 0.5 }] },
@@ -96,6 +96,32 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'scrap', chance: 0.5, qty: 2 },
       { itemId: 'dust', chance: 0.2 },
       { itemId: 'essence_dark', chance: 0.3 },
+    ],
+  },
+  {
+    id: 'barkshell_beetle',
+    name: 'Barkshell Beetle',
+    level: 4,
+    tough: true,
+    look: { shape: 'beast', color: 0x5a4a2a, accent: 0x9c7a3a, scale: 1, art: 'mon_barkshell_beetle' },
+    hp: 84,
+    stats: { str: 8, int: 2, dex: 3, end: 8 },
+    damage: [17, 22],
+    element: 'earth',
+    // Steel glances off the shell, but it is old dry bark: it burns, and wind flips it over.
+    defense: { melee: 24, pierce: 24, magic: 3 },
+    resists: { earth: 75, water: 25, ice: 25, fire: -75, wind: -50 },
+    attacks: [
+      { name: 'Mandible Snap', damageType: 'pierce', power: 1, weight: 3 },
+      { name: 'Shell Up', damageType: 'melee', power: 0, weight: 1, applies: [{ status: 'bark_hide', turns: 2, self: true }] },
+    ],
+    xp: 50,
+    gold: [14, 22],
+    drops: [
+      { itemId: 'health_potion', chance: 0.25 },
+      { itemId: 'scrap', chance: 0.4, qty: 2 },
+      { itemId: 'dust', chance: 0.3 },
+      { itemId: 'essence_earth', chance: 0.5 },
     ],
   },
   {
@@ -242,13 +268,15 @@ export const MONSTERS: MonsterDef[] = [
     id: 'stormscale_drakeling',
     name: 'Stormscale Drakeling',
     level: 9,
+    tough: true,
     look: { shape: 'beast', color: 0x3a6ea5, accent: 0xffd21f, scale: 0.95, art: 'mon_stormscale_drakeling' },
     hp: 240,
     stats: { str: 12, int: 8, dex: 12, end: 10 },
     damage: [14, 20],
     element: 'energy',
-    defense: { melee: 8, pierce: 8, magic: 10 },
-    resists: { energy: 50, water: -50, wind: 25 },
+    // Lightning in scales: it shrugs off most things, but water shorts it out.
+    defense: { melee: 10, pierce: 10, magic: 12 },
+    resists: { energy: 75, wind: 25, earth: 25, water: -75, ice: -25 },
     attacks: [
       { name: 'Bite', damageType: 'pierce', power: 1, weight: 3 },
       { name: 'Spark Breath', damageType: 'magic', power: 1.2, weight: 2, applies: [{ status: 'shock', turns: 2, chance: 0.3 }] },

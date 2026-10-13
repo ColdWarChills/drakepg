@@ -9,9 +9,9 @@ export const ZONES: ZoneDef[] = [
     background: 'bg_thornwood',
     backdrop: { kind: 'forest' },
     encounters: [
-      { monsterId: 'mossling', weight: 4 },
-      { monsterId: 'thornback_boar', weight: 3 },
-      { monsterId: 'ash_imp', weight: 3 },
+      { monsterId: 'mossling', weight: 5 },
+      { monsterId: 'thornback_boar', weight: 4 },
+      { monsterId: 'ash_imp', weight: 1 },
     ],
   },
   {
@@ -21,9 +21,10 @@ export const ZONES: ZoneDef[] = [
     background: ['bg_thornwood_deep', 'bg_thornwood'],
     backdrop: { kind: 'forest', shade: 0.35 },
     encounters: [
-      { monsterId: 'thornback_boar', weight: 3 },
-      { monsterId: 'ash_imp', weight: 3 },
+      { monsterId: 'thornback_boar', weight: 2 },
       { monsterId: 'bramble_bandit', weight: 4 },
+      { monsterId: 'ash_imp', weight: 2 },
+      { monsterId: 'barkshell_beetle', weight: 2 },
     ],
   },
   {

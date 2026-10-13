@@ -240,6 +240,8 @@ export interface MonsterDef {
   drops: { itemId: string; chance: number; qty?: number }[];
   /** Bosses can't be fled from and get a bigger presence on screen. */
   boss?: boolean;
+  /** Stronger than its level suggests; tagged "Tough" so players bring the counter its weaknesses ask for. */
+  tough?: boolean;
   /** Only on Elite copies made by `makeElite` (src/game/Elites.ts), never in monsters.ts. */
   elite?: EliteInfo;
   /** Changes once, the first time its HP drops to `at` (share of max HP) or below. */
