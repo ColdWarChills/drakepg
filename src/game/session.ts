@@ -1,6 +1,6 @@
 import { Player } from './Player';
 
-/** A monster roaming a room. Lives only in memory; rooms respawn their monsters when re-entered. */
+/** A monster roaming a room. Lives only in memory (rooms are remembered for this play session, not saved). */
 export interface RoamingMonster {
   uid: number;
   monsterId: string;
@@ -18,8 +18,24 @@ export interface RoomSnapshot {
   fightingUid: number;
 }
 
+/** A treasure chest standing in a room until it is opened. Mimics bite. */
+export interface Chest {
+  x: number;
+  y: number;
+  mimic: boolean;
+}
+
+/** A room as you left it: who was still alive, and when you walked out. */
+export interface RoomMemory {
+  monsters: RoamingMonster[];
+  chest: Chest | null;
+  /** Date.now() when you left. */
+  leftAt: number;
+}
+
 let current: Player | null = null;
 let snapshot: RoomSnapshot | null = null;
+const rooms = new Map<string, RoomMemory>();
 
 /** The character currently being played, plus transient world state. Shared by all scenes. */
 export const session = {
@@ -32,6 +48,21 @@ export const session = {
   start(player: Player): void {
     current = player;
     snapshot = null;
+    rooms.clear();
+  },
+
+  /** Remember a room you are leaving, so its dead monsters stay dead for a while. */
+  rememberRoom(roomId: string, memory: RoomMemory): void {
+    rooms.set(roomId, memory);
+  },
+
+  roomMemory(roomId: string): RoomMemory | undefined {
+    return rooms.get(roomId);
+  },
+
+  /** Every room starts fresh again (the testing menu's "Respawn monsters"). */
+  forgetRooms(): void {
+    rooms.clear();
   },
 
   /** Remember the room before a battle. */

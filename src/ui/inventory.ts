@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { featureOn } from '../game/Features';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
@@ -180,7 +181,9 @@ class InventoryView {
     else this.renderShopSide();
 
     // Tabs
-    TABS.forEach((t, i) => {
+    const tabs = TABS.filter((t) => t.tab !== 'material' || featureOn(this.player, 'materials'));
+    if (!tabs.some((t) => t.tab === remembered.tab)) remembered.tab = 'all';
+    tabs.forEach((t, i) => {
       const active = remembered.tab === t.tab;
       const b = new Button(scene, GRID_X + 48 + i * 106, 96, t.label, () => {
         remembered.tab = t.tab;

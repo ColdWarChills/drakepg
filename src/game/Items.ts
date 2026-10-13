@@ -66,7 +66,7 @@ export interface ItemGrant extends Partial<GearTraits> {
 }
 
 /** Where loot comes from. Quest rewards roll white lines only. */
-export type DropSource = 'mob' | 'elite' | 'boss' | 'quest';
+export type DropSource = 'mob' | 'elite' | 'boss' | 'chest' | 'quest';
 
 export const ROLL_LABELS: Record<RollKey, string> = {
   damage: 'Damage',
@@ -103,11 +103,12 @@ export function rollGear(def: GearDef, rng: Rng = defaultRng, quality?: number):
 }
 
 /** Item grant for a dropped or rewarded item: gear gets rolled (and maybe a Sigil and mods), consumables don't. */
-export function grantFor(itemId: string, rng: Rng = defaultRng, source: DropSource = 'quest'): ItemGrant {
+export function grantFor(itemId: string, rng: Rng = defaultRng, source: DropSource = 'quest', extras = true): ItemGrant {
   const def = db.item(itemId);
   if (!isGearDef(def)) return { itemId };
   const grant: ItemGrant = { itemId, rolls: rollGear(def, rng) };
-  if (source === 'quest') return grant;
+  // `extras` off: no Sigils or mods yet (they unlock in a later chapter).
+  if (source === 'quest' || !extras) return grant;
   const sigil = rollSigil(rng, source);
   const modCount = sigil ? BALANCE.sigils[sigil].mods : chance(rng, BALANCE.modChance) ? 1 : 0;
   if (sigil) grant.sigil = sigil;

@@ -12,6 +12,9 @@ export function drawScenery(scene: Phaser.Scene, art: ArtRef | undefined, backdr
     if (backdrop.kind === 'town') drawTown(scene, groundY);
     else if (backdrop.kind === 'marsh') drawMarsh(scene, groundY);
     else if (backdrop.kind === 'outpost') drawOutpost(scene, groundY);
+    else if (backdrop.kind === 'snow') drawSnow(scene, groundY);
+    else if (backdrop.kind === 'village') drawVillage(scene, groundY);
+    else if (backdrop.kind === 'cave') drawCave(scene, groundY);
     else drawForest(scene, groundY);
   }
   if (backdrop.shade) {
@@ -168,4 +171,96 @@ function stiltHut(scene: Phaser.Scene, groundY: number, x: number, w: number, si
   g.fillStyle(0x3e2723, 1).fillRect(x - 24, floor - 80, 48, 80);
   scene.add.rectangle(x, floor - 175, 110, 28, 0x3e2723).setStrokeStyle(2, 0xc9a66b);
   addText(scene, x, floor - 175, sign, { size: 16, bold: true, color: '#f3e9d2' }).setOrigin(0.5);
+}
+
+function drawSnow(scene: Phaser.Scene, groundY: number): void {
+  const { width, height } = scene.scale;
+  // Cold sky, far peaks with snowcaps, then a near ridge.
+  scene.add.rectangle(0, 0, width, height, 0x9db4cc).setOrigin(0);
+  scene.add.rectangle(0, groundY - 300, width, 300, 0xb9cadb).setOrigin(0);
+  const peaks = scene.add.graphics();
+  for (let i = 0; i < 7; i++) {
+    const x = i * 210 - 40 + ((i * 53) % 70);
+    const h = 300 + ((i * 97) % 160);
+    const w = 300 + ((i * 41) % 120);
+    peaks.fillStyle(0x6f8199, 1).fillTriangle(x - w / 2, groundY, x, groundY - h, x + w / 2, groundY);
+    peaks.fillStyle(0xf2f6fa, 1).fillTriangle(x - w * 0.16, groundY - h * 0.68, x, groundY - h, x + w * 0.16, groundY - h * 0.68);
+  }
+  // Snowy pines.
+  const pines = scene.add.graphics();
+  for (let i = 0; i < 16; i++) {
+    const x = (i * 83 + ((i * 29) % 40)) % width;
+    const h = 110 + ((i * 37) % 90);
+    const base = groundY + 4;
+    pines.fillStyle(0x4a3527, 1).fillRect(x - 5, base - 20, 10, 20);
+    for (let t = 0; t < 3; t++) {
+      const y = base - 20 - t * (h / 3.2);
+      const w = (h / 2.2) * (1 - t * 0.25);
+      pines.fillStyle(0x2f5a46, 1).fillTriangle(x - w / 2, y, x, y - h / 2.4, x + w / 2, y);
+      pines.fillStyle(0xf4f8fc, 1).fillTriangle(x - w / 4, y - h / 4.8, x, y - h / 2.4, x + w / 4, y - h / 4.8);
+    }
+  }
+  // Snow on the ground.
+  scene.add.rectangle(0, groundY, width, height - groundY, 0xe6eef6).setOrigin(0);
+  scene.add.rectangle(0, groundY, width, 8, 0xb9cadb).setOrigin(0);
+  const drifts = scene.add.graphics();
+  for (let i = 0; i < 7; i++) {
+    const x = 80 + i * 200 + ((i * 31) % 70);
+    const y = groundY + 50 + ((i * 59) % (height - groundY - 80));
+    drifts.fillStyle(0xd3e0ec, 1).fillEllipse(x, y, 220 + ((i * 23) % 80), 26);
+  }
+}
+
+function drawVillage(scene: Phaser.Scene, groundY: number): void {
+  drawSnow(scene, groundY);
+  // Log cabins with snowy roofs.
+  cabin(scene, groundY, 230, 'Ranger');
+  cabin(scene, groundY, 620, 'Trader');
+  cabin(scene, groundY, 1000, 'Hearth');
+}
+
+function cabin(scene: Phaser.Scene, groundY: number, x: number, sign: string): void {
+  const g = scene.add.graphics();
+  const w = 240;
+  const h = 150;
+  const top = groundY - h;
+  g.fillStyle(0x6b4a30, 1).fillRect(x - w / 2, top, w, h);
+  g.lineStyle(3, 0x4a3220, 1);
+  for (let i = 1; i < 6; i++) g.lineBetween(x - w / 2, top + i * 25, x + w / 2, top + i * 25);
+  g.fillStyle(0x3e2a1c, 1).fillTriangle(x - w / 2 - 24, top, x, top - 90, x + w / 2 + 24, top);
+  g.fillStyle(0xf4f8fc, 1).fillTriangle(x - w / 2 - 20, top - 4, x, top - 84, x + w / 2 + 20, top - 4);
+  g.fillStyle(0xffd27a, 1).fillRect(x - w / 4 - 22, top + 40, 44, 36).fillRect(x + w / 4 - 22, top + 40, 44, 36);
+  g.fillStyle(0x3e2723, 1).fillRect(x - 26, groundY - 86, 52, 86);
+  g.fillStyle(0x7a7a7a, 1).fillRect(x + w / 4, top - 70, 22, 50);
+  scene.add.rectangle(x, top - 110, 110, 28, 0x3e2723).setStrokeStyle(2, 0xc9a66b);
+  addText(scene, x, top - 110, sign, { size: 16, bold: true, color: '#f3e9d2' }).setOrigin(0.5);
+}
+
+function drawCave(scene: Phaser.Scene, groundY: number): void {
+  const { width, height } = scene.scale;
+  // Dark rock, warm glow from below.
+  scene.add.rectangle(0, 0, width, height, 0x1e1a1c).setOrigin(0);
+  scene.add.rectangle(0, groundY - 220, width, 220, 0x2c2224).setOrigin(0);
+  const rock = scene.add.graphics();
+  for (let i = 0; i < 18; i++) {
+    const x = i * 75 + ((i * 37) % 40);
+    const h = 60 + ((i * 53) % 140);
+    rock.fillStyle(0x352a2c, 1).fillTriangle(x - 30, 0, x, h, x + 30, 0);
+  }
+  for (let i = 0; i < 9; i++) {
+    const x = i * 150 + ((i * 47) % 60);
+    const h = 70 + ((i * 61) % 110);
+    rock.fillStyle(0x3d3032, 1).fillTriangle(x - 40, groundY, x, groundY - h, x + 40, groundY);
+  }
+  scene.add.rectangle(0, groundY, width, height - groundY, 0x3a2e2b).setOrigin(0);
+  scene.add.rectangle(0, groundY, width, 8, 0x241c1a).setOrigin(0);
+  // Hot springs glowing orange, with steam above.
+  const pools = scene.add.graphics();
+  for (let i = 0; i < 5; i++) {
+    const x = 140 + i * 260 + ((i * 41) % 80);
+    const y = groundY + 50 + ((i * 59) % (height - groundY - 90));
+    pools.fillStyle(0xff7a2e, 0.85).fillEllipse(x, y, 190 + ((i * 29) % 70), 30);
+    pools.fillStyle(0xffd27a, 0.6).fillEllipse(x - 20, y - 3, 90, 8);
+    pools.fillStyle(0xffffff, 0.08).fillEllipse(x, y - 60, 160, 90);
+  }
 }

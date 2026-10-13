@@ -28,6 +28,8 @@ export interface BattleSceneData {
   monsterId: string;
   /** Elite affix id: fight the Elite version. */
   elite?: string;
+  /** A mimic sized to the zone (src/game/Chests.ts). */
+  mimic?: boolean;
   /** Where to go back to afterwards. */
   roomId: string;
   x: number;

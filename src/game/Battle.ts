@@ -3,6 +3,7 @@ import { db } from '../data/db';
 import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, StatusDef, Stats } from '../data/types';
 import { cheats } from './cheats';
 import { grantFor } from './Items';
+import { featureOn } from './Features';
 import { rollLoot } from './Loot';
 import { statFor, type Player, type Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
@@ -28,6 +29,8 @@ export type BattleEvent =
       damage: number;
       crit: boolean;
       effect?: Effect;
+      /** This hit cracked the enemy's shell: pips left (0 = broken). */
+      shellLeft?: number;
     }
   | { kind: 'miss'; source: Side; move: string; moveId: string; damageType: DamageType; element?: Element }
   | { kind: 'heal'; source: Side; move: string; moveId: string; hp: number; mp: number }
@@ -48,6 +51,8 @@ export type BattleEvent =
   | { kind: 'rage'; mp: number }
   /** A boss changes form (new element and resistances). */
   | { kind: 'phase'; text: string; element: Element }
+  /** The enemy's shell grew back. */
+  | { kind: 'shell'; left: number; text: string }
   | { kind: 'defeated'; side: Side };
 
 export type BattleState = 'player_turn' | 'victory' | 'defeat' | 'fled';
@@ -84,6 +89,9 @@ export class Battle {
   rewardScale = 1;
   /** Telegraphed attack the enemy will use on its next turn. */
   charging: MonsterAttack | null = null;
+  /** Pips left on the enemy's shell (0 = none or broken). */
+  shell = 0;
+  private shellReformed = false;
   private defending = false;
   private readonly cooldowns = new Map<string, number>();
   private readonly effects: Record<Side, ActiveStatus[]> = { player: [], enemy: [] };
@@ -94,6 +102,7 @@ export class Battle {
     private readonly rng: Rng = defaultRng,
   ) {
     this.enemy = { def: monster, hp: monster.hp, maxHp: monster.hp };
+    this.shell = monster.shell?.hits ?? 0;
   }
 
   get isOver(): boolean {
@@ -152,6 +161,7 @@ export class Battle {
     const skill = db.skill(skillId);
     const p = this.player;
     p.spendMp(skill.mpCost);
+    p.data.freshSkills = p.data.freshSkills.filter((id) => id !== skill.id);
     // +1 because the end of this turn already counts down once; then it's locked for `cooldown` turns.
     if (skill.cooldown > 0) this.cooldowns.set(skill.id, skill.cooldown + 1);
 
@@ -376,6 +386,12 @@ export class Battle {
   /** A boss's second form kicks in once its HP falls to the threshold (only once, and not on the killing blow). */
   private checkPhase(events: BattleEvent[]): void {
     const { def, hp, maxHp } = this.enemy;
+    const shell = def.shell;
+    if (shell?.reformAt && !this.shellReformed && hp > 0 && hp <= maxHp * shell.reformAt) {
+      this.shellReformed = true;
+      this.shell = shell.hits;
+      events.push({ kind: 'shell', left: shell.hits, text: `The ${shell.name} grows back over ${def.name.replace(/^The /, 'the ')}!` });
+    }
     const phase = def.phase;
     if (!phase || hp <= 0 || hp > maxHp * phase.at) return;
     // A wind-up started in the old form still lands in the old element.
@@ -494,24 +510,36 @@ export class Battle {
     damage *= mult * Math.max(0, 1 + this.mod(source, 'damageDealt')) * Math.max(0, 1 + this.mod(target, 'damageTaken'));
     if (target === 'player' && this.defending) damage *= BALANCE.defendDamage;
     if (source === 'player') damage *= 1 + this.grit;
+    const shell = this.enemy.def.shell;
+    const shielded = target === 'enemy' && shell !== undefined && this.shell > 0;
+    if (shielded) damage *= 1 - shell.reduction;
 
     let final = mult > 0 ? Math.max(1, Math.round(damage)) : 0;
     if (cheats.god && target === 'player') final = 0;
     if (cheats.oneHit && target === 'enemy') final = Math.max(final, this.enemy.hp);
     this.damage(target, final);
+    // A landed hit of the shell's element knocks off a pip.
+    if (shielded && element === shell.element) {
+      this.shell--;
+      return { kind: 'hit', ...base, damage: final, crit, effect, shellLeft: this.shell };
+    }
     return { kind: 'hit', ...base, damage: final, crit, effect };
   }
 
   private rollRewards(): Rewards {
     const m = this.enemy.def;
-    const source = m.boss ? 'boss' : m.elite ? 'elite' : 'mob';
+    const source = m.boss ? 'boss' : m.elite ? 'elite' : m.chestLoot ? 'chest' : 'mob';
+    // Materials, Sigils and mods only drop once their chapter has unlocked them.
+    const materials = featureOn(this.player, 'materials');
+    const extras = featureOn(this.player, 'sigils');
     const items = m.drops
+      .filter((d) => materials || db.item(d.itemId).type !== 'material')
       .filter((d) => chance(this.rng, d.chance))
-      .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source)));
+      .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source, extras)));
     // Gear: one cascading tier roll (Elites and bosses always drop something). Missing a Rare builds up luck.
     if (m.loot) {
       const pity = this.player.data.lootPity;
-      const gear = rollLoot(m.loot, source, this.rng, pity[m.loot] ?? 0);
+      const gear = rollLoot(m.loot, source, this.rng, pity[m.loot] ?? 0, extras);
       if (gear?.tier === 'rare') delete pity[m.loot];
       else pity[m.loot] = (pity[m.loot] ?? 0) + 1;
       if (gear) items.push(gear.grant);

@@ -54,7 +54,7 @@ export interface StatusDef {
 
 /** How a character is drawn: art if it exists, otherwise placeholder shapes. */
 export interface Look {
-  shape: 'humanoid' | 'blob' | 'beast' | 'imp';
+  shape: 'humanoid' | 'blob' | 'beast' | 'imp' | 'chest';
   color: number;
   accent: number;
   /** 1 = player-sized. */
@@ -244,10 +244,26 @@ export interface MonsterDef {
   boss?: boolean;
   /** Stronger than its level suggests; tagged "Tough" so players bring the counter its weaknesses ask for. */
   tough?: boolean;
+  /** Pays out like a treasure chest (mimics): gear uses `BALANCE.loot.chest` odds. */
+  chestLoot?: boolean;
   /** Only on Elite copies made by `makeElite` (src/game/Elites.ts), never in monsters.ts. */
   elite?: EliteInfo;
   /** Changes once, the first time its HP drops to `at` (share of max HP) or below. */
   phase?: MonsterPhase;
+  /** A shield that soaks up most damage until enough hits of one element break it. */
+  shell?: MonsterShell;
+}
+
+/**
+ * Boss shield, shown as pips on the battle panel: takes `reduction` less damage while up; each landed hit of
+ * `element` removes a pip (it takes `hits`). With `reformAt`, it grows back once when HP drops to that share.
+ */
+export interface MonsterShell {
+  name: string;
+  element: Element;
+  hits: number;
+  reduction: number;
+  reformAt?: number;
 }
 
 /** A boss's second form: new element and resistances (and optionally attacks), announced in battle. */
@@ -301,7 +317,7 @@ export type ArtRef = string | string[];
 
 /** Procedural scenery used when there's no background art. */
 export interface Backdrop {
-  kind: 'town' | 'forest' | 'marsh' | 'outpost';
+  kind: 'town' | 'forest' | 'marsh' | 'outpost' | 'snow' | 'village' | 'cave';
   /** Darken the whole scene, 0-1. */
   shade?: number;
 }
@@ -318,6 +334,16 @@ export interface ZoneDef {
 
 export type NpcRole = { kind: 'talk' } | { kind: 'shop'; stock: string[] } | { kind: 'inn' } | { kind: 'forge'; recipes: string[] };
 
+/** A system that opens up later in the game (src/data/features.ts). */
+export interface FeatureDef {
+  id: string;
+  name: string;
+  /** One or two lines for the "New!" popup. */
+  text: string;
+  /** Turning in this quest unlocks it. */
+  unlockedBy: string;
+}
+
 export interface NpcDef {
   id: string;
   name: string;
@@ -327,6 +353,8 @@ export interface NpcDef {
   y: number;
   look: Look;
   role: NpcRole;
+  /** Only there once this feature is unlocked (src/data/features.ts). */
+  feature?: string;
   /** Shown when the dialog opens. Several lines are paged with "Next". */
   dialogue: string[];
 }
@@ -336,6 +364,8 @@ export interface RoomExit {
   side: 'left' | 'right' | 'back';
   /** Back exits: screen x of the doorway (it sits at the top of the walkable strip). */
   x?: number;
+  /** Back exits: draw a gate or cave mouth there, for rooms whose art doesn't show one (yet). */
+  frame?: 'gate' | 'cave';
   to: string;
   /** Shown on the arrow at the screen edge. */
   label: string;
@@ -347,7 +377,7 @@ export interface RoomExit {
 
 export type Blocker = 'thorns' | 'barricade' | 'reeds' | 'snowdrift';
 
-export type Ambient = 'dust' | 'leaves' | 'fireflies' | 'rain' | 'mist';
+export type Ambient = 'dust' | 'leaves' | 'fireflies' | 'rain' | 'mist' | 'snow' | 'embers';
 
 /** One walkable screen. Walk off a side with an exit to enter the next room. */
 export interface RoomDef {

@@ -31,11 +31,11 @@ export function rollLootTier(tableId: string, source: LootSource, rng: Rng = def
 }
 
 /** One kill's gear: the tier that hit (if any) and the rolled item (quality, Sigil, mods). */
-export function rollLoot(tableId: string, source: LootSource, rng: Rng = defaultRng, misses = 0): { tier: LootTier; grant: ItemGrant } | null {
+export function rollLoot(tableId: string, source: LootSource, rng: Rng = defaultRng, misses = 0, extras = true): { tier: LootTier; grant: ItemGrant } | null {
   const tier = rollLootTier(tableId, source, rng, misses);
   if (!tier) return null;
   const entry = weightedPick(rng, db.lootTable(tableId).tiers[tier], (e) => e.weight ?? 1);
-  return { tier, grant: grantFor(entry.itemId, rng, source) };
+  return { tier, grant: grantFor(entry.itemId, rng, source, extras) };
 }
 
 /** Exact chance per kill of each tier (and of nothing). Shown in battle and printed by the sim. */

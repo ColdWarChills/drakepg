@@ -1,4 +1,4 @@
-# Art queue: 75 images
+# Art queue: 130 images
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
@@ -8,13 +8,16 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 
 ## Checklist
 
-**1. NPCs** (4)
+**1. NPCs** (7)
 - [ ] `npc_hulda` (the smith, Brindlemoor)
 - [ ] `npc_captain_hale` (Reedwatch captain, quest giver)
 - [ ] `npc_wren` (Reedwatch quartermaster (shop))
 - [ ] `npc_ottilie` (Reedwatch healer (inn))
+- [ ] `npc_ranger_sabine` (Ch3, Hearthold quest giver)
+- [ ] `npc_gunnar` (Ch3, Hearthold trader (shop))
+- [ ] `npc_hearthkeeper_moll` (Ch3, Hearthold innkeeper)
 
-**2. Monsters** (8)
+**2. Monsters** (17)
 - [ ] `mon_barkshell_beetle` (Ch1, tough)
 - [ ] `mon_mire_toad` (Ch2)
 - [ ] `mon_spark_wisp` (Ch2)
@@ -23,15 +26,30 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `mon_stormscale_drakeling` (Ch2, tough)
 - [ ] `mon_bogmother` (Ch2 mini-boss)
 - [ ] `mon_stormcoil` (Ch2 boss)
+- [ ] `mon_drift_wolf` (Ch3)
+- [ ] `mon_crag_ram` (Ch3)
+- [ ] `mon_gust_sprite` (Ch3)
+- [ ] `mon_rime_acolyte` (Ch3)
+- [ ] `mon_glacier_golem` (Ch3, tough)
+- [ ] `mon_ember_salamander` (Ch3)
+- [ ] `mon_vent_wyrmling` (Ch3, tough)
+- [ ] `mon_old_snowmaw` (Ch3 mini-boss)
+- [ ] `mon_frostbinder` (Ch3 boss)
 
-**3. Backgrounds** (5)
+**3. Backgrounds** (11)
 - [ ] `bg_fen_road` (Ch2 monster area)
 - [ ] `bg_reedwatch` (Ch2 outpost town)
 - [ ] `bg_sunken_causeway` (Ch2 monster area)
 - [ ] `bg_bog_hollow` (mini-boss arena)
 - [ ] `bg_drowned_shrine` (final boss arena)
+- [ ] `bg_frostfang_pass` (Ch3 monster area)
+- [ ] `bg_hearthold` (Ch3 village)
+- [ ] `bg_windscour_ridge` (Ch3 monster area; keep the cave mouth in the middle)
+- [ ] `bg_steamvent_caves` (Ch3 side cave)
+- [ ] `bg_snowmaw_den` (Ch3 mini-boss arena)
+- [ ] `bg_frozen_roost` (Ch3 boss arena)
 
-**4. Weapons** (14)
+**4. Weapons** (29)
 - [ ] `wpn_heartwood_staff` (Thornheart drop)
 - [ ] `wpn_briar_fang` (Thornheart drop)
 - [ ] `wpn_steel_broadsword` (Ch2)
@@ -46,8 +64,23 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `wpn_thunderhead_maul` (Ch2)
 - [ ] `wpn_stormcoil_scepter` (Ch2)
 - [ ] `wpn_coilfang` (Ch2)
+- [ ] `wpn_tempered_longsword` (Ch3 shop)
+- [ ] `wpn_larchwood_staff` (Ch3 shop)
+- [ ] `wpn_ridgerunner_kris` (Ch3 shop)
+- [ ] `wpn_frostbite` (Ch3 Ice)
+- [ ] `wpn_hoarfrost_staff` (Ch3 Ice)
+- [ ] `wpn_icicle_kris` (Ch3 Ice)
+- [ ] `wpn_hearthfire_blade` (Ch3 Fire)
+- [ ] `wpn_kindling_rod` (Ch3 Fire)
+- [ ] `wpn_salamander_kris` (Ch3 Fire)
+- [ ] `wpn_snowmaw_cleaver` (Snowmaw drop)
+- [ ] `wpn_mawtooth_staff` (Snowmaw drop)
+- [ ] `wpn_snowmaw_claw` (Snowmaw drop)
+- [ ] `wpn_whiteout` (Frostbinder drop)
+- [ ] `wpn_squall_stave` (Frostbinder drop)
+- [ ] `wpn_galecutter` (Frostbinder drop)
 
-**5. Item icons** (26)
+**5. Item icons** (36)
 - [ ] `icon_travel_garb`
 - [ ] `icon_novice_robe`
 - [ ] `icon_leather_armor`
@@ -66,6 +99,16 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `icon_boar_tusk`
 - [ ] `icon_fen_hide`
 - [ ] `icon_storm_scale`
+- [ ] `icon_superior_health_potion`
+- [ ] `icon_superior_mana_potion`
+- [ ] `icon_ridgeplate`
+- [ ] `icon_fleecewool_robe`
+- [ ] `icon_frostpelt_vest`
+- [ ] `icon_galeweave_robe`
+- [ ] `icon_frost_pelt`
+- [ ] `icon_ram_horn`
+- [ ] `icon_rime_shard`
+- [ ] `icon_salamander_scale`
 - [ ] `icon_essence_fire`
 - [ ] `icon_essence_water`
 - [ ] `icon_essence_ice`
@@ -75,25 +118,37 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `icon_essence_light`
 - [ ] `icon_essence_dark`
 
-**6. Armor outfits (lowest priority)** (18)
+**6. Armor outfits (lowest priority)** (30)
 - [ ] `char_warrior_leather_armor`
 - [ ] `char_warrior_apprentice_robe`
 - [ ] `char_warrior_scale_mail`
 - [ ] `char_warrior_reedweave_robe`
 - [ ] `char_warrior_marshhide_vest`
 - [ ] `char_warrior_stormweave_robe`
+- [ ] `char_warrior_ridgeplate`
+- [ ] `char_warrior_fleecewool_robe`
+- [ ] `char_warrior_frostpelt_vest`
+- [ ] `char_warrior_galeweave_robe`
 - [ ] `char_mage_leather_armor`
 - [ ] `char_mage_apprentice_robe`
 - [ ] `char_mage_scale_mail`
 - [ ] `char_mage_reedweave_robe`
 - [ ] `char_mage_marshhide_vest`
 - [ ] `char_mage_stormweave_robe`
+- [ ] `char_mage_ridgeplate`
+- [ ] `char_mage_fleecewool_robe`
+- [ ] `char_mage_frostpelt_vest`
+- [ ] `char_mage_galeweave_robe`
 - [ ] `char_rogue_leather_armor`
 - [ ] `char_rogue_apprentice_robe`
 - [ ] `char_rogue_scale_mail`
 - [ ] `char_rogue_reedweave_robe`
 - [ ] `char_rogue_marshhide_vest`
 - [ ] `char_rogue_stormweave_robe`
+- [ ] `char_rogue_ridgeplate`
+- [ ] `char_rogue_fleecewool_robe`
+- [ ] `char_rogue_frostpelt_vest`
+- [ ] `char_rogue_galeweave_robe`
 
 ---
 
@@ -119,6 +174,21 @@ A young, wiry quartermaster woman, short brown hair under a flat cap, freckles, 
 ### `npc_ottilie` · 3:4 · Reedwatch healer (inn)
 ```
 A kind elderly healer, round gentle face, long white and pale blue robes, a sea-blue headscarf, a pouch of herbs and a small lantern at her belt, holding a wooden bowl of steaming broth. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### `npc_ranger_sabine` · 3:4 · Ch3, Hearthold quest giver
+```
+A tough mountain ranger woman in her thirties, a short dark braid, a weathered face with a confident half-smile, a green fur-lined hooded cloak over brown leather, a longbow on her back and snowshoes tied at her belt. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `npc_gunnar` · 3:4 · Ch3, Hearthold trader (shop)
+```
+A big cheerful mountain trader with a bushy red-blond beard, a thick fur hat and a brown fur coat, a heavy pack of goods on his back, holding a ledger. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `npc_hearthkeeper_moll` · 3:4 · Ch3, Hearthold innkeeper
+```
+A plump grandmotherly innkeeper with rosy cheeks and grey hair in a bun, a red knitted shawl over a cream dress and apron, holding a steaming mug. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
 
 ---
@@ -167,6 +237,51 @@ A huge, grotesque swamp matriarch boss monster: a massive bloated toad-like body
 A colossal sea serpent boss monster coiled upright, deep blue scales with glowing yellow lightning patterns, a fin-like crest crackling with electricity, glowing white eyes, lightning arcing between its coils, a dull grey giant scale tangled in its coils, menacing pose. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
 ```
 
+### `mon_drift_wolf` · 4:3 · Ch3
+```
+A lean white winter wolf with frost-tipped fur and icy blue eyes, breath steaming, snarling in a low hunting stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_crag_ram` · 4:3 · Ch3
+```
+A sturdy mountain ram with huge curled stone-grey horns and shaggy grey-brown wool with snow on its back, stamping a hoof. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_gust_sprite` · 1:1 · Ch3
+```
+A small mischievous wind spirit made of swirling pale teal air with a cute grinning face, leaves and snowflakes caught in its spiraling body, floating. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, floating, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_rime_acolyte` · 3:4 · Ch3
+```
+A cultist in pale blue hooded robes edged with frost, face hidden in shadow except two glowing icy eyes, holding up a glowing crystal of ice. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_glacier_golem` · 3:4 · Ch3, tough
+```
+A hulking golem made of blocks of translucent blue glacier ice, glowing runes carved into its chest, huge fists, snow piled on its shoulders. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_ember_salamander` · 4:3 · Ch3
+```
+A fat orange salamander with glowing ember spots along its back, smoke curling from its nostrils, shiny wet skin. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_vent_wyrmling` · 4:3 · Ch3, tough
+```
+A young fire wyrm with a long body and small wings, red-orange scales cracked with glowing lava lines, steam rising from it, snarling. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_old_snowmaw` · 1:1 · Ch3 mini-boss
+```
+A huge ancient shaggy mountain beast like a giant snow bear crossed with a yak, white fur matted with ice, a thick crust of packed ice armor over its back and shoulders, small tired eyes, enormous jaws with two tusks. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, menacing stance, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_frostbinder` · 3:4 · Ch3 boss
+```
+An elegant ice sorceress in flowing white and pale blue robes, long silver hair blowing in the wind, a crown of ice shards, holding a tall stave topped with a swirling blue crystal, a cold calm smile, snowflakes swirling around her. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
 ---
 
 ## 3. Backgrounds
@@ -196,6 +311,36 @@ A gloomy hollow deep in a swamp: a large murky green pool at the back, twisted m
 ### `bg_drowned_shrine` · 16:9 · final boss arena
 ```
 A drowned ancient shrine in a storm: tilted stone columns and a broken dome rising from dark water, a huge dull grey dragon scale set into the altar at the back, crackling lightning in purple-black clouds, rain. The bottom 30% of the image is flat, wet stone floor running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
+```
+
+### `bg_frostfang_pass` · 16:9 · Ch3 monster area
+```
+A snowy mountain pass: a trail of packed snow winding between tall snow-covered pines, jagged white peaks behind under a pale winter sky. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt; the bottom third is open, flat ground for characters to walk on. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_hearthold` · 16:9 · Ch3 village
+```
+A small snowy mountain village: three log cabins with snow-covered roofs and warm glowing windows spread left, middle and right (a ranger's lodge, a trading post with furs hanging outside, a cozy inn with a smoking chimney), a packed snow road in front, peaks behind. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt; the bottom third is open, flat ground for characters to walk on. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_windscour_ridge` · 16:9 · Ch3 monster area; keep the cave mouth in the middle
+```
+A wind-blasted ridge high in the mountains: snow streaming off the rocks, bare icy boulders, stormy grey sky, and in the exact middle of the image a dark cave mouth in the cliff face with faint orange steam glowing inside, at the back edge of the walkable ground. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt; the bottom third is open, flat ground for characters to walk on. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_steamvent_caves` · 16:9 · Ch3 side cave
+```
+Inside a warm volcanic cave: dark rock walls, glowing orange hot spring pools, steam rising, stalactites and a few red crystals. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt; the bottom third is open, flat ground for characters to walk on. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_snowmaw_den` · 16:9 · Ch3 mini-boss arena
+```
+A deep snowy hollow between cliffs: huge gnawed bones half buried in snow, a giant flattened nest of snow and fur, icicles hanging from the rocks, grey light. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt; the bottom third is open, flat ground for characters to walk on. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_frozen_roost` · 16:9 · Ch3 boss arena
+```
+A mountaintop dragon roost: a vast frozen plateau, and in the background an enormous sleeping dragon with dark red scales trapped inside a towering wall of blue ice, ice pillars with glowing runes, blizzard sky. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt; the bottom third is open, flat ground for characters to walk on. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
 ```
 
 ---
@@ -272,6 +417,81 @@ A single silver scepter whose top is a cage of coiled silver serpents holding a 
 ### `wpn_coilfang` · 9:16 · Ch2
 ```
 A single long curved serpent-fang dagger, deep blue with glowing yellow veins, a hilt wrapped in blue scaled leather, sparks at the tip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_tempered_longsword` · 9:16 · Ch3 shop
+```
+A single long straight steel sword with a polished blade showing a faint blue temper line, a plain iron crossguard and a fur-wrapped grip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_larchwood_staff` · 9:16 · Ch3 shop
+```
+A single tall pale larchwood staff banded with dark iron rings, topped with a small glowing amber stone, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_ridgerunner_kris` · 9:16 · Ch3 shop
+```
+A single dagger with a wavy steel blade and a bone grip wrapped in leather, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_frostbite` · 9:16 · Ch3 Ice
+```
+A single sword with a pale icy-blue blade covered in frost crystals, a silver snowflake-shaped crossguard and a white leather grip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_hoarfrost_staff` · 9:16 · Ch3 Ice
+```
+A single staff of frosted white wood with ice crystals growing along it, topped with a cluster of glowing blue ice crystals, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_icicle_kris` · 9:16 · Ch3 Ice
+```
+A single dagger whose blade is a single sharp translucent icicle, with a silver grip set with a blue gem, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_hearthfire_blade` · 9:16 · Ch3 Fire
+```
+A single sword with a dark steel blade glowing orange-red along its edge like hot metal, a brass crossguard and a red leather grip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_kindling_rod` · 9:16 · Ch3 Fire
+```
+A single short rod of charred black wood with glowing orange cracks, a burning ember held in iron claws at the top, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_salamander_kris` · 9:16 · Ch3 Fire
+```
+A single dagger with a wavy orange-red blade, the grip wrapped in shiny salamander scale, a small flame flickering at the guard, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_snowmaw_cleaver` · 9:16 · Snowmaw drop
+```
+A single huge heavy cleaver made from a curved white ice-hard tusk bound to a thick wooden handle with fur and rope, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_mawtooth_staff` · 9:16 · Snowmaw drop
+```
+A single gnarled pale staff wrapped in white fur, topped with one huge curved frosty fang, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_snowmaw_claw` · 9:16 · Snowmaw drop
+```
+A single curved dagger made of a big white beast claw set into a bone grip bound with leather, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_whiteout` · 9:16 · Frostbinder drop
+```
+A single large greatsword with a pale silver-white blade streaked with swirling wind and snow, a wing-shaped crossguard and a teal grip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_squall_stave` · 9:16 · Frostbinder drop
+```
+A single elegant tall stave of white wood spiraling upward around a swirling orb of pale teal wind, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `wpn_galecutter` · 9:16 · Frostbinder drop
+```
+A single slim curved dagger with a pale teal blade so thin it looks almost transparent, small feathers tied to the pommel, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
 
 ---
@@ -370,6 +590,56 @@ A single rolled piece of slick dark green marsh-creature hide tied with twine, g
 A single single large blue reptile scale with crackling yellow lightning sparks across it, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
 
+### `icon_superior_health_potion` · 1:1
+```
+A single tall elegant crystal potion bottle with a gold stopper shaped like a heart, filled with glowing crimson liquid, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_superior_mana_potion` · 1:1
+```
+A single tall elegant crystal potion bottle with a silver stopper shaped like a star, filled with glowing deep blue liquid, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_ridgeplate` · 1:1
+```
+A single empty set of thick steel plate armor over a white fur lining, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_fleecewool_robe` · 1:1
+```
+A single empty thick cream wool robe with blue stitched warding runes and a fur collar, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_frostpelt_vest` · 1:1
+```
+A single empty vest of white wolf pelt over boiled leather, frost on the fur, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_galeweave_robe` · 1:1
+```
+A single empty pale green robe woven so light it ripples as if in wind, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_frost_pelt` · 1:1
+```
+A single folded thick white wolf fur, stiff with frost, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_ram_horn` · 1:1
+```
+A single single curled grey-brown ram horn, scarred and ridged, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_rime_shard` · 1:1
+```
+A single jagged splinter of glowing pale blue glacier ice, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_salamander_scale` · 1:1
+```
+A single single orange salamander scale glowing faintly at its edges, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
 ### `icon_essence_fire` · 1:1
 ```
 A single small teardrop-shaped glass vial with a silver cap, holding a swirling glowing essence of flickering orange-red flames, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
@@ -446,6 +716,26 @@ Edit this image (image 1). Change only the clothing: the hero now wears a dark g
 Edit this image (image 1). Change only the clothing: the hero now wears a pale silver-blue robe of shimmering silk with tiny yellow lightning sparks along the seams. Keep everything else exactly the same: the same young warrior hero with short messy brown hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
 ```
 
+### `char_warrior_ridgeplate` · 3:4 · reference: `char_warrior_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears thick steel plate armor with a white fur lining showing at the collar and edges. Keep everything else exactly the same: the same young warrior hero with short messy brown hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
+```
+
+### `char_warrior_fleecewool_robe` · 3:4 · reference: `char_warrior_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a thick cream wool robe with blue stitched warding runes and a fur collar. Keep everything else exactly the same: the same young warrior hero with short messy brown hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
+```
+
+### `char_warrior_frostpelt_vest` · 3:4 · reference: `char_warrior_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a vest of white wolf pelt over boiled leather with frost on the fur, with leather bracers. Keep everything else exactly the same: the same young warrior hero with short messy brown hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
+```
+
+### `char_warrior_galeweave_robe` · 3:4 · reference: `char_warrior_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a pale green robe woven so light it ripples as if in a breeze. Keep everything else exactly the same: the same young warrior hero with short messy brown hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
+```
+
 ### `char_mage_leather_armor` · 3:4 · reference: `char_mage_bare`
 ```
 Edit this image (image 1). Change only the clothing: the hero now wears a brown leather cuirass with stitched panels, leather shoulder guards and brass buckles over a simple shirt, with leather bracers. Keep everything else exactly the same: the same young mage hero with shoulder-length dark hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat bright green background. No weapon anywhere in the image. No text.
@@ -476,6 +766,26 @@ Edit this image (image 1). Change only the clothing: the hero now wears a dark g
 Edit this image (image 1). Change only the clothing: the hero now wears a pale silver-blue robe of shimmering silk with tiny yellow lightning sparks along the seams. Keep everything else exactly the same: the same young mage hero with shoulder-length dark hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat bright green background. No weapon anywhere in the image. No text.
 ```
 
+### `char_mage_ridgeplate` · 3:4 · reference: `char_mage_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears thick steel plate armor with a white fur lining showing at the collar and edges. Keep everything else exactly the same: the same young mage hero with shoulder-length dark hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat bright green background. No weapon anywhere in the image. No text.
+```
+
+### `char_mage_fleecewool_robe` · 3:4 · reference: `char_mage_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a thick cream wool robe with blue stitched warding runes and a fur collar. Keep everything else exactly the same: the same young mage hero with shoulder-length dark hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat bright green background. No weapon anywhere in the image. No text.
+```
+
+### `char_mage_frostpelt_vest` · 3:4 · reference: `char_mage_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a vest of white wolf pelt over boiled leather with frost on the fur, with leather bracers. Keep everything else exactly the same: the same young mage hero with shoulder-length dark hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat bright green background. No weapon anywhere in the image. No text.
+```
+
+### `char_mage_galeweave_robe` · 3:4 · reference: `char_mage_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a pale green robe woven so light it ripples as if in a breeze. Keep everything else exactly the same: the same young mage hero with shoulder-length dark hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat bright green background. No weapon anywhere in the image. No text.
+```
+
 ### `char_rogue_leather_armor` · 3:4 · reference: `char_rogue_bare`
 ```
 Edit this image (image 1). Change only the clothing: the hero now wears a brown leather cuirass with stitched panels, leather shoulder guards and brass buckles over a simple shirt, with leather bracers. Keep everything else exactly the same: the same young rogue hero with messy auburn hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
@@ -504,4 +814,24 @@ Edit this image (image 1). Change only the clothing: the hero now wears a dark g
 ### `char_rogue_stormweave_robe` · 3:4 · reference: `char_rogue_bare`
 ```
 Edit this image (image 1). Change only the clothing: the hero now wears a pale silver-blue robe of shimmering silk with tiny yellow lightning sparks along the seams. Keep everything else exactly the same: the same young rogue hero with messy auburn hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
+```
+
+### `char_rogue_ridgeplate` · 3:4 · reference: `char_rogue_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears thick steel plate armor with a white fur lining showing at the collar and edges. Keep everything else exactly the same: the same young rogue hero with messy auburn hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
+```
+
+### `char_rogue_fleecewool_robe` · 3:4 · reference: `char_rogue_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a thick cream wool robe with blue stitched warding runes and a fur collar. Keep everything else exactly the same: the same young rogue hero with messy auburn hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
+```
+
+### `char_rogue_frostpelt_vest` · 3:4 · reference: `char_rogue_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a vest of white wolf pelt over boiled leather with frost on the fur, with leather bracers. Keep everything else exactly the same: the same young rogue hero with messy auburn hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
+```
+
+### `char_rogue_galeweave_robe` · 3:4 · reference: `char_rogue_bare`
+```
+Edit this image (image 1). Change only the clothing: the hero now wears a pale green robe woven so light it ripples as if in a breeze. Keep everything else exactly the same: the same young rogue hero with messy auburn hair, the same face, body, pose and proportions, both empty clenched fists in exactly the same place, the bold outline style and the plain flat magenta background. No weapon anywhere in the image. No text.
 ```

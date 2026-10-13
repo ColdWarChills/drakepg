@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { session } from '../game/session';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { ITEMS } from '../data/items';
@@ -138,6 +139,7 @@ export function openCheatMenu(scene: Phaser.Scene, player: Player, hooks: CheatH
     toggle(40, 'God mode', 'god', 'You take no damage.');
     toggle(290, 'One-hit kills', 'oneHit', 'Any hit that lands finishes the enemy.');
     toggle(540, 'Elites everywhere', 'elites', 'Every roaming monster spawns as an Elite (re-enter a room or Respawn).');
+    toggle(790, 'All unlocks', 'allFeatures', 'Forge, Sigils, chests and the rest without finishing chapters.');
 
     button(40, 600, 'Reset character...', () => confirmReset(), 220, DANGER);
   };
@@ -237,7 +239,7 @@ export function openCheatMenu(scene: Phaser.Scene, player: Player, hooks: CheatH
       button(x, y, r.name, () => (modal.close(), hooks.travel(r.id)), 180);
     });
     const loc = player.data.location;
-    button(800, 180, 'Respawn monsters', () => (modal.close(), hooks.travel(loc.roomId, loc.x, loc.y)), 220);
+    button(800, 180, 'Respawn monsters', () => (modal.close(), session.forgetRooms(), hooks.travel(loc.roomId, loc.x, loc.y)), 220);
 
     const top = 180 + Math.ceil(ROOMS.length / 4) * 46 + 30;
     label(40, top, 'Quests (click one to mark it and everything before it done)');

@@ -1,6 +1,6 @@
 # Chapter 3 spec: The Frozen Roost
 
-**Draft.** Direction chosen 2026-10-13: frozen north; Boss grit, Back exits and Collect quests; the dragon is seen asleep. Numbers are starting points: `npm run sim` decides the final ones (all live in `BALANCE` or `src/data/`). Names are placeholders.
+**Built 2026-10-13** (PR 2 content). Direction chosen 2026-10-13: frozen north; Boss grit, Back exits and Collect quests; the dragon is seen asleep. Numbers are starting points: `npm run sim` decides the final ones (all live in `BALANCE` or `src/data/`). Names are placeholders.
 
 Ships in two PRs: **1. Systems** (boss grit, back exits, collect quests; they also help Chapters 1-2), **2. Chapter 3 content**.
 
@@ -92,6 +92,13 @@ About 31 images; the game runs before any of it lands. Prompts get added to `art
 - Brindlemoor background: a version with a visible north gate in the back (or the gate is drawn over the current art)
 - 9 monsters, 3 NPCs
 - 15 weapons: 3 shop, 6 Ice/Fire, 3 Snowmaw, 3 Frostbinder
+
+## Tuning result (`npm run sim`)
+
+- Trash at its level, tier-3 shop gear: 100% wins, 67-89% HP left, 4-9 turns.
+- Glacier Golem with shop steel: ~15 turns and half HP for Warrior/Rogue; with Fire or the Stormcoil's Energy weapon about 7 turns and 70%+ HP. Vent Wyrmling: 9 turns vs 5 with Ice.
+- Old Snowmaw: the shell takes 60% off (80% made Fire mandatory for Warrior/Rogue: 0% wins). Without Fire ~50 turns and 84-99% wins; with Fire 15-18 turns, 100%. Mages bring their own fire spells.
+- The Frostbinder at 14: 100% wins, 55-70% HP left, 12-23 turns; Fire and Earth weapons shave a few turns.
 
 ## Open questions
 

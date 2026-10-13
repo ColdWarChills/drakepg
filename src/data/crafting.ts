@@ -24,6 +24,10 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'boar_tusk', type: 'material', name: 'Boar Tusk', description: 'Hard as bone and twice as sharp.', price: 6, iconColor: 0xe8dcc0 },
   { id: 'fen_hide', type: 'material', name: 'Fen Hide', description: 'Slick, waterproof hide from the Mirewater Fen.', price: 10, iconColor: 0x4a6b4a },
   { id: 'storm_scale', type: 'material', name: 'Storm Scale', description: 'A drakeling scale that still crackles.', price: 14, iconColor: 0x7ab8ff },
+  { id: 'frost_pelt', type: 'material', name: 'Frost Pelt', description: 'Thick white wolf fur, stiff with ice.', price: 16, iconColor: 0xeceff1 },
+  { id: 'ram_horn', type: 'material', name: 'Ram Horn', description: 'A curled horn, scarred from a hundred head-butts.', price: 16, iconColor: 0xbcaaa4 },
+  { id: 'rime_shard', type: 'material', name: 'Rime Shard', description: 'A splinter of glacier ice that never melts.', price: 20, iconColor: 0xb3e5fc },
+  { id: 'salamander_scale', type: 'material', name: 'Salamander Scale', description: 'Still warm, and faintly glowing.', price: 20, iconColor: 0xff8a50 },
   ...ELEMENTS.map(
     (e): MaterialDef => ({
       id: essenceId(e),
@@ -60,4 +64,13 @@ export const RECIPES: RecipeDef[] = [
   r('stormcleaver', 150, ['essence_energy', 5], ['storm_scale', 2], ['scrap', 4]),
   r('sparkglass_wand', 130, ['essence_energy', 5], ['scrap', 2]),
   r('sparkfang', 130, ['essence_energy', 4], ['storm_scale', 2], ['scrap', 3]),
+  // Chapter 3: Ice from the mountain, Fire from the Steamvent Caves.
+  r('frostbite', 240, ['essence_ice', 5], ['rime_shard', 2], ['scrap', 4]),
+  r('hoarfrost_staff', 230, ['essence_ice', 6], ['rime_shard', 1], ['scrap', 2]),
+  r('icicle_kris', 230, ['essence_ice', 5], ['frost_pelt', 2], ['scrap', 3]),
+  r('hearthfire_blade', 240, ['essence_fire', 5], ['salamander_scale', 2], ['scrap', 4]),
+  r('kindling_rod', 230, ['essence_fire', 6], ['salamander_scale', 1], ['scrap', 2]),
+  r('salamander_kris', 230, ['essence_fire', 5], ['salamander_scale', 2], ['scrap', 3]),
+  r('frostpelt_vest', 200, ['frost_pelt', 4], ['ram_horn', 1], ['scrap', 2]),
+  r('galeweave_robe', 200, ['essence_wind', 4], ['frost_pelt', 2], ['scrap', 1]),
 ];

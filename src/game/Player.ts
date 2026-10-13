@@ -92,6 +92,10 @@ export interface PlayerData {
   lootPity: Record<string, number>;
   /** Boss grit: losses to each boss (monster id) since last beating it. Added in save version 8. */
   bossGrit: Record<string, number>;
+  /** Announced unlocks and skills ('feature:<id>', 'skill:<id>'). Added in save version 9. */
+  seen: string[];
+  /** Skills learned but not used yet: tagged NEW in battle. */
+  freshSkills: string[];
 }
 
 export interface Rewards {
@@ -135,6 +139,8 @@ export class Player {
       quests: {},
       lootPity: {},
       bossGrit: {},
+      seen: [],
+      freshSkills: [],
     });
     player.data.equipment.weapon = player.makeGear(cls.weapon);
     player.data.equipment.armor = player.makeGear(cls.armor);
