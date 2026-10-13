@@ -14,7 +14,9 @@ import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { Hud } from '../ui/Hud';
 import { Modal } from '../ui/Modal';
-import { openCharacterPanel, openDialogue, openShop, type DialogueAction } from '../ui/panels';
+import { openInventory, openShop } from '../ui/inventory';
+import { lootName } from '../ui/itemUi';
+import { openCharacterPanel, openDialogue, type DialogueAction } from '../ui/panels';
 import { addText, toast } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type BattleSceneData, type RoomSceneData } from './keys';
 
@@ -67,6 +69,8 @@ export class RoomScene extends Phaser.Scene {
   private hud!: Hud;
   private soundBtn!: Button;
   private charBtn!: Button;
+  private invBtn!: Button;
+  private inventory: Modal | null = null;
   private tracker!: Phaser.GameObjects.Container;
   private markers = new Map<Npc, Phaser.GameObjects.Text>();
   private boss: (Actor & { def: MonsterDef; label: Phaser.GameObjects.Text }) | null = null;
@@ -93,6 +97,7 @@ export class RoomScene extends Phaser.Scene {
     this.mobs = [];
     this.markers = new Map();
     this.boss = null;
+    this.inventory = null;
     this.wallBumpAt = 0;
     this.bossAsked = false;
     this.moveTarget = null;
@@ -121,6 +126,7 @@ export class RoomScene extends Phaser.Scene {
     this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT') as Keys;
     kb.on('keydown-ESC', () => this.closeTopModal());
     kb.on('keydown-C', () => this.openCharacter());
+    kb.on('keydown-I', () => this.toggleInventory());
     kb.on('keydown-M', () => this.toggleSound());
     const talk = () => {
       if (this.modalOpen() || this.leaving) return;
@@ -155,7 +161,7 @@ export class RoomScene extends Phaser.Scene {
     const look = session.player.classDef.look;
     const fig = drawFigure(this, x, y, look, 1, session.player.weapon);
     this.player = this.makeActor(fig, x, y, look.scale);
-    this.playerWeapon = session.player.data.equipment.weapon;
+    this.playerWeapon = session.player.data.equipment.weapon?.uid ?? null;
     if (data.via === 'exit') this.player.facing = data.side === 'left' ? 1 : -1;
     this.clampToWalk(this.player);
     this.place(this.player);
@@ -214,7 +220,7 @@ export class RoomScene extends Phaser.Scene {
 
   /** The hero holds the equipped weapon, so redraw them after a weapon swap. */
   private redrawPlayerIfRearmed(): void {
-    const weapon = session.player.data.equipment.weapon;
+    const weapon = session.player.data.equipment.weapon?.uid ?? null;
     if (weapon === this.playerWeapon) return;
     this.playerWeapon = weapon;
     const old = this.player.fig;
@@ -368,7 +374,8 @@ export class RoomScene extends Phaser.Scene {
     btn(40, 'Title', () => this.saveAndQuit());
     btn(98, 'Save', () => this.save(true));
     this.charBtn = btn(156, 'Character', () => this.openCharacter());
-    this.soundBtn = new Button(this, right - 70, 214, sfx.isMuted() ? 'Sound: off' : 'Sound: on', () => this.toggleSound(), {
+    this.invBtn = btn(214, 'Inventory', () => this.toggleInventory());
+    this.soundBtn = new Button(this, right - 70, 272, sfx.isMuted() ? 'Sound: off' : 'Sound: on', () => this.toggleSound(), {
       width: 140,
       height: 48,
       fontSize: 17,
@@ -760,7 +767,19 @@ export class RoomScene extends Phaser.Scene {
 
   private openCharacter(): void {
     if (this.modalOpen() || this.leaving) return;
-    openCharacterPanel(this, session.player, this.refresh);
+    openCharacterPanel(this, session.player, this.refresh, () => this.toggleInventory());
+  }
+
+  /** I opens the inventory, and closes it again. */
+  private toggleInventory(): void {
+    if (this.inventory) {
+      this.inventory.close();
+      return;
+    }
+    if (this.modalOpen() || this.leaving) return;
+    this.moveTarget = null;
+    this.inventory = openInventory(this, session.player, this.refresh);
+    this.inventory.once(Phaser.GameObjects.Events.DESTROY, () => (this.inventory = null));
   }
 
   private interact(npc: Npc, intro = false): void {
@@ -871,6 +890,8 @@ export class RoomScene extends Phaser.Scene {
 
     const points = player.data.statPoints;
     this.charBtn.setLabel(points > 0 ? `Character (${points})` : 'Character');
+    const fresh = player.data.gear.filter((g) => g.isNew).length;
+    this.invBtn.setLabel(fresh > 0 ? `Inventory (${fresh})` : 'Inventory');
     this.tweens.killTweensOf(this.charBtn);
     this.charBtn.setScale(1);
     if (points > 0) this.tweens.add({ targets: this.charBtn, scale: 1.07, duration: 500, yoyo: true, repeat: -1 });
@@ -887,7 +908,7 @@ export class RoomScene extends Phaser.Scene {
     sfx.play(this, 'quest');
     const { rewards, levelsGained, newSkills } = result;
     toast(this, `Quest complete: ${quest.name}`, COLORS.textGold);
-    const items = rewards.items.map((id) => db.item(id).name);
+    const items = rewards.items.map((g) => lootName(db.item(g.itemId), g.rolls));
     toast(this, [`+${rewards.xp} XP`, `+${rewards.gold} gold`, ...items].join('   '), COLORS.textGood);
     void fx.coinShower(this, { x: npc.x, y: npc.y - 120 }, { x: 320, y: 40 }, Math.ceil(rewards.gold / 6), () => sfx.play(this, 'coin'));
     if (levelsGained > 0) {

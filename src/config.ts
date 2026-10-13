@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -33,6 +33,22 @@ export const BALANCE = {
   maxPlayerResist: 80,
   /** Monsters can go from -100 (double damage) to 100 (immune). */
   minResist: -100,
+
+  // Gear
+  /**
+   * Rolled gear: each line of a weapon or armor rolls a quality from 0 to 100%. Shop gear is always 0%.
+   * These are the bonuses at 100%: damage/defense/hp are a share of the base, crit is added to crit chance,
+   * proc multiplies the weapon special's chance.
+   */
+  gearRolls: { damage: 0.15, crit: 0.05, proc: 0.5, defense: 0.15, hp: 0.08 },
+  /** Dropped line quality = random ^ rollCurve. 1.5: median ~35%, ~7% of lines roll 90%+. */
+  rollCurve: 1.5,
+  /** Bag slots. Each gear piece or potion stack takes one; equipped gear doesn't count. */
+  bagSlots: 30,
+  /** Selling gives this share of the shop price... */
+  sellRate: 0.3,
+  /** ...times (1 + grade * this): a 100% item sells for 3x a 0% one. */
+  sellGradeBonus: 2,
 
   // Exploration
   /** Player walk speed in px/s (horizontal; vertical is 70% of this). */

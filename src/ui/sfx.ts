@@ -26,7 +26,9 @@ export type Sfx =
   | 'defeat'
   | 'quest'
   | 'warning'
-  | 'denied';
+  | 'denied'
+  | 'equip'
+  | 'rare';
 
 const MUTE_KEY = 'drakepg.muted';
 const VOLUME = 0.45;
@@ -198,6 +200,16 @@ export function play(scene: Phaser.Scene, name: Sfx): void {
       break;
     case 'denied':
       tone(ctx, t, 'square', 220, 180, 0.12, 0.1);
+      break;
+    case 'equip':
+      // Buckle click plus a short metal ring.
+      tone(ctx, t, 'square', 900, 500, 0.04, 0.08);
+      tone(ctx, t + 0.04, 'triangle', 1400, 1350, 0.25, 0.12);
+      break;
+    case 'rare':
+      // Shimmer up for a high-grade drop.
+      arpeggio(ctx, t, [784, 988, 1175, 1568, 1976], 0.06, 'sine', 0.22, 0.5);
+      tone(ctx, t + 0.3, 'triangle', 2637, 2637, 0.6, 0.06);
       break;
   }
 }

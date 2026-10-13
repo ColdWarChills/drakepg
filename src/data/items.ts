@@ -8,6 +8,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Health Potion',
     description: 'Restores 40 HP.',
     price: 15,
+    iconColor: 0xd64541,
     restore: { hp: 40 },
   },
   {
@@ -16,6 +17,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Mana Potion',
     description: 'Restores 20 MP.',
     price: 15,
+    iconColor: 0x3b7ddd,
     restore: { mp: 20 },
   },
 
@@ -211,6 +213,7 @@ export const ITEMS: ItemDef[] = [
     name: "Traveler's Garb",
     description: 'Simple cloth. Better than nothing.',
     price: 10,
+    iconColor: 0xa3845c,
     defense: { melee: 3, pierce: 3, magic: 3 },
   },
   {
@@ -219,6 +222,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Novice Robe',
     description: 'Thin cloth with a few protective stitches.',
     price: 15,
+    iconColor: 0x6c5ba7,
     defense: { melee: 2, pierce: 2, magic: 6 },
   },
   {
@@ -227,6 +231,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Leather Armor',
     description: 'Good against claws and blades.',
     price: 80,
+    iconColor: 0x8a5a32,
     defense: { melee: 9, pierce: 10, magic: 4 },
     stats: { end: 1 },
   },
@@ -236,6 +241,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Apprentice Robe',
     description: 'Woven with warding runes. Shrugs off a little fire.',
     price: 90,
+    iconColor: 0x4b3f9e,
     defense: { melee: 4, pierce: 4, magic: 12 },
     resists: { fire: 15 },
     stats: { int: 2 },

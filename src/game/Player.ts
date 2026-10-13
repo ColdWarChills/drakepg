@@ -1,6 +1,18 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import { START } from '../data/world';
+import {
+  gearDef,
+  isGearDef,
+  rollBonus,
+  rolledDamage,
+  rolledDefense,
+  rolledProcChance,
+  sellValue,
+  type Gear,
+  type ItemGrant,
+  type Rolls,
+} from './Items';
 import type {
   ArmorDef,
   ClassDef,
@@ -42,6 +54,7 @@ export interface QuestState {
   count: number;
 }
 
+/** A stack of consumables in the bag. */
 export interface InventoryEntry {
   itemId: string;
   qty: number;
@@ -56,8 +69,14 @@ export interface PlayerData {
   baseStats: Stats;
   hp: number;
   mp: number;
-  equipment: Record<EquipSlot, string | null>;
+  /** Equipped gear. Changed from item ids to rolled gear in save version 4. */
+  equipment: Record<EquipSlot, Gear | null>;
+  /** Consumable stacks. */
   inventory: InventoryEntry[];
+  /** Unequipped weapons and armor, each with its own rolls. Added in save version 4. */
+  gear: Gear[];
+  /** Counter for gear uids. */
+  nextUid: number;
   /** Where the player stands. Added in save version 2. */
   location: Location;
   /** Added in save version 3. */
@@ -70,8 +89,10 @@ export interface PlayerData {
 export interface Rewards {
   xp: number;
   gold: number;
-  items: string[];
+  items: ItemGrant[];
 }
+
+export type BuyResult = 'ok' | 'gold' | 'full';
 
 /** XP needed to go from `level` to `level + 1`. */
 export function xpToNext(level: number): number {
@@ -93,16 +114,20 @@ export class Player {
       baseStats: { ...cls.stats },
       hp: 1,
       mp: 1,
-      equipment: { weapon: cls.weapon, armor: cls.armor },
+      equipment: { weapon: null, armor: null },
       inventory: [
         { itemId: 'health_potion', qty: 2 },
         { itemId: 'mana_potion', qty: 1 },
       ],
+      gear: [],
+      nextUid: 1,
       location: { ...START },
       classId,
       statPoints: 0,
       quests: {},
     });
+    player.data.equipment.weapon = player.makeGear(cls.weapon, {});
+    player.data.equipment.armor = player.makeGear(cls.armor, {});
     player.restoreFull();
     return player;
   }
@@ -127,13 +152,17 @@ export class Player {
   }
 
   get weapon(): WeaponDef | null {
-    const id = this.data.equipment.weapon;
-    return id ? (db.item(id) as WeaponDef) : null;
+    const g = this.data.equipment.weapon;
+    return g ? (gearDef(g) as WeaponDef) : null;
   }
 
   get armor(): ArmorDef | null {
-    const id = this.data.equipment.armor;
-    return id ? (db.item(id) as ArmorDef) : null;
+    const g = this.data.equipment.armor;
+    return g ? (gearDef(g) as ArmorDef) : null;
+  }
+
+  private rollsOf(slot: EquipSlot): Rolls {
+    return this.data.equipment[slot]?.rolls ?? {};
   }
 
   /** Base stats plus equipment bonuses. */
@@ -147,7 +176,7 @@ export class Player {
   }
 
   get maxHp(): number {
-    return 40 + this.level * 10 + this.stats.end * 4;
+    return Math.round((40 + this.level * 10 + this.stats.end * 4) * (1 + rollBonus('hp', this.rollsOf('armor'))));
   }
 
   get maxMp(): number {
@@ -155,7 +184,8 @@ export class Player {
   }
 
   defenseFor(type: DamageType): number {
-    return this.armor?.defense[type] ?? 0;
+    const armor = this.armor;
+    return armor ? rolledDefense(armor, this.rollsOf('armor'), type) : 0;
   }
 
   /** Elemental resistances from gear (before buffs and the cap, which Battle applies). */
@@ -173,7 +203,24 @@ export class Player {
   }
 
   get weaponDamage(): [number, number] {
-    return this.weapon?.damage ?? UNARMED;
+    const weapon = this.weapon;
+    return weapon ? rolledDamage(weapon, this.rollsOf('weapon')) : UNARMED;
+  }
+
+  /** Chance the weapon special triggers on a landed Attack (0 without one). */
+  get procChance(): number {
+    const weapon = this.weapon;
+    return weapon ? rolledProcChance(weapon, this.rollsOf('weapon')) : 0;
+  }
+
+  /** Crit chance added by the weapon's rolls. */
+  get critBonus(): number {
+    return rollBonus('crit', this.rollsOf('weapon'));
+  }
+
+  /** Crit chance before battle buffs. For UI; Battle works it out the same way. */
+  get critChance(): number {
+    return BALANCE.baseCritChance + this.stats.dex * BALANCE.critPerDex + this.critBonus;
   }
 
   statFor(type: DamageType): number {
@@ -275,20 +322,57 @@ export class Player {
     return gained;
   }
 
-  /** Returns the number of levels gained. */
-  grantRewards(rewards: Rewards): number {
+  /**
+   * Gold, XP and items. Items that don't fit in the bag are returned in `lost`;
+   * `force` lets them overflow the bag instead (quest rewards are never lost).
+   */
+  grantRewards(rewards: Rewards, force = false): { levels: number; lost: ItemGrant[] } {
     this.data.gold += rewards.gold;
-    for (const id of rewards.items) this.addItem(id);
-    return this.addXp(rewards.xp);
+    const lost = rewards.items.filter((grant) => !this.receive(grant, force));
+    return { levels: this.addXp(rewards.xp), lost };
   }
 
   // --- Inventory ---
 
-  countItem(itemId: string): number {
-    return this.data.inventory.find((e) => e.itemId === itemId)?.qty ?? 0;
+  /** Bag slots in use: one per gear piece and one per consumable stack. */
+  get usedSlots(): number {
+    return this.data.gear.length + this.data.inventory.length;
   }
 
+  get freeSlots(): number {
+    return Math.max(0, BALANCE.bagSlots - this.usedSlots);
+  }
+
+  /** A new gear instance (not yet placed anywhere). */
+  makeGear(itemId: string, rolls: Rolls, isNew = false): Gear {
+    const gear: Gear = { uid: `g${this.data.nextUid++}`, itemId, rolls: { ...rolls } };
+    if (isNew) gear.isNew = true;
+    return gear;
+  }
+
+  /** Put an item in the bag. False if it doesn't fit (unless forced). */
+  receive(grant: ItemGrant, force = false): boolean {
+    const def = db.item(grant.itemId);
+    const stacks = !isGearDef(def) && this.data.inventory.some((e) => e.itemId === grant.itemId);
+    if (!stacks && !force && this.freeSlots === 0) return false;
+    if (isGearDef(def)) this.data.gear.push(this.makeGear(grant.itemId, grant.rolls ?? {}, true));
+    else this.addItem(grant.itemId);
+    return true;
+  }
+
+  /** Consumables in the bag plus gear owned (bag and equipped). */
+  countItem(itemId: string): number {
+    if (!isGearDef(db.item(itemId))) return this.data.inventory.find((e) => e.itemId === itemId)?.qty ?? 0;
+    const equipped = Object.values(this.data.equipment).filter((g) => g?.itemId === itemId).length;
+    return equipped + this.data.gear.filter((g) => g.itemId === itemId).length;
+  }
+
+  /** Add consumables, or 0% gear. Ignores the bag limit; use `receive` for loot. */
   addItem(itemId: string, qty = 1): void {
+    if (isGearDef(db.item(itemId))) {
+      for (let i = 0; i < qty; i++) this.data.gear.push(this.makeGear(itemId, {}));
+      return;
+    }
     const entry = this.data.inventory.find((e) => e.itemId === itemId);
     if (entry) entry.qty += qty;
     else this.data.inventory.push({ itemId, qty });
@@ -302,34 +386,74 @@ export class Player {
     return true;
   }
 
-  buy(itemId: string): boolean {
+  /** Shop gear is always Standard (0%). */
+  buy(itemId: string): BuyResult {
     const item = db.item(itemId);
-    if (this.data.gold < item.price) return false;
+    if (this.data.gold < item.price) return 'gold';
+    if (!this.receive({ itemId, rolls: {} })) return 'full';
     this.data.gold -= item.price;
-    this.addItem(itemId);
-    return true;
+    return 'ok';
   }
 
-  /** Equip an item from the bag. The previously equipped item goes back to the bag. */
-  equip(itemId: string): boolean {
-    const item = db.item(itemId);
-    if (item.type === 'consumable') return false;
-    if (!this.removeItem(itemId)) return false;
-    const slot: EquipSlot = item.type;
+  /** Gear in the bag or equipped. */
+  findGear(uid: string): Gear | null {
+    return this.data.gear.find((g) => g.uid === uid) ?? Object.values(this.data.equipment).find((g) => g?.uid === uid) ?? null;
+  }
+
+  equippedSlot(uid: string): EquipSlot | null {
+    for (const slot of ['weapon', 'armor'] as const) if (this.data.equipment[slot]?.uid === uid) return slot;
+    return null;
+  }
+
+  /** Equip gear from the bag. The previously equipped piece takes its place in the bag. */
+  equip(uid: string): boolean {
+    const index = this.data.gear.findIndex((g) => g.uid === uid);
+    if (index < 0) return false;
+    const gear = this.data.gear[index];
+    const slot: EquipSlot = gearDef(gear).type;
     const previous = this.data.equipment[slot];
-    if (previous) this.addItem(previous);
-    this.data.equipment[slot] = itemId;
+    delete gear.isNew;
+    this.data.equipment[slot] = gear;
+    if (previous) this.data.gear.splice(index, 1, previous);
+    else this.data.gear.splice(index, 1);
     this.clampVitals();
     return true;
   }
 
+  /** Needs a free bag slot. */
   unequip(slot: EquipSlot): boolean {
     const current = this.data.equipment[slot];
-    if (!current) return false;
-    this.addItem(current);
+    if (!current || this.freeSlots === 0) return false;
+    this.data.gear.push(current);
     this.data.equipment[slot] = null;
     this.clampVitals();
     return true;
+  }
+
+  toggleLock(uid: string): void {
+    const gear = this.findGear(uid);
+    if (!gear) return;
+    if (gear.locked) delete gear.locked;
+    else gear.locked = true;
+  }
+
+  /** Sell unequipped, unlocked gear. Returns the gold earned (0 = not sold). */
+  sellGear(uid: string): number {
+    const index = this.data.gear.findIndex((g) => g.uid === uid);
+    const gear = this.data.gear[index];
+    if (!gear || gear.locked) return 0;
+    const gold = sellValue(gearDef(gear), gear.rolls);
+    this.data.gear.splice(index, 1);
+    this.data.gold += gold;
+    return gold;
+  }
+
+  /** Sell one consumable. Returns the gold earned (0 = none left). */
+  sellItem(itemId: string): number {
+    if (!this.removeItem(itemId)) return 0;
+    const gold = sellValue(db.item(itemId));
+    this.data.gold += gold;
+    return gold;
   }
 
   /** Use a consumable from the bag. Returns what was restored, or null if it would do nothing. */

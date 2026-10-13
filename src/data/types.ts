@@ -125,6 +125,8 @@ interface ItemBase {
   description: string;
   /** Shop price in gold. */
   price: number;
+  /** Color of the drawn inventory icon when the item has no art. */
+  iconColor?: number;
 }
 
 /** Weapon special: may trigger after a normal Attack lands. */

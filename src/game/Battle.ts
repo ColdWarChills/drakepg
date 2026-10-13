@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, StatusDef, Stats } from '../data/types';
+import { grantFor } from './Items';
 import { statFor, type Player, type Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
 
@@ -120,7 +121,7 @@ export class Battle {
     const hit = this.strike('player', 'Attack', 'attack', p.weaponDamageType, p.weaponElement, 1);
     events.push(hit);
     const proc = p.weapon?.proc;
-    if (hit.kind === 'hit' && proc && this.enemy.hp > 0 && chance(this.rng, proc.chance)) {
+    if (hit.kind === 'hit' && proc && this.enemy.hp > 0 && chance(this.rng, p.procChance)) {
       const element = proc.element ?? p.weaponElement;
       for (let i = 0; i < (proc.hits ?? 1) && proc.power > 0 && this.enemy.hp > 0; i++) {
         events.push(this.strike('player', proc.name, 'proc', p.weaponDamageType, element, proc.power));
@@ -442,7 +443,8 @@ export class Battle {
     let damage = randInt(this.rng, min, max) + Math.floor(statFor(atk, damageType) * BALANCE.statDamageScale);
     damage *= power;
 
-    const critChance = BALANCE.baseCritChance + atk.dex * BALANCE.critPerDex + this.mod(source, 'critChance') + critBonus;
+    const gearCrit = source === 'player' ? this.player.critBonus : 0;
+    const critChance = BALANCE.baseCritChance + atk.dex * BALANCE.critPerDex + this.mod(source, 'critChance') + critBonus + gearCrit;
     const crit = chance(this.rng, critChance);
     if (crit) damage *= BALANCE.critMultiplier;
 
@@ -461,7 +463,7 @@ export class Battle {
     return {
       xp: m.xp,
       gold: randInt(this.rng, m.gold[0], m.gold[1]),
-      items: m.drops.filter((d) => chance(this.rng, d.chance)).map((d) => d.itemId),
+      items: m.drops.filter((d) => chance(this.rng, d.chance)).map((d) => grantFor(d.itemId, this.rng)),
     };
   }
 }

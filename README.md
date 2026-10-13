@@ -33,7 +33,10 @@ npm run preview  # serve the dist/ build locally
 - **Leveling**: each level gives **stat points** (spend with **+** in the Character panel) and unlocks class skills at set levels (12 per class, up to level 20).
 - **Gear you can see**: the equipped weapon is drawn in the hero's hands.
 - **Result**: XP and gold count-up, loot, quest progress, level-up. Losing wakes you at the inn with no penalty.
-- **Character panel** (button or **C**): stats, stat points, skills, equipment, bag. **M** toggles sound. **Esc** closes windows.
+- **Rolled gear**: every weapon and armor piece rolls a quality per line (Damage, Crit, Special chance / Defense, Max HP), 0-100%. Shop gear is always **Standard (0%)**; monster drops and quest rewards roll, and high rolls are rare. The average is the item's **grade**: Standard (grey), Fair (white), Fine (green, 40%+), Superior (blue, 70%+), Masterwork (gold, 90%+). Superior and Masterwork drops sparkle on the result screen.
+- **Inventory** (button or **I**): 30-slot grid with tabs (All / Weapons / Armor / Potions) and sorting. Hover or tap an item for its card: rolls with quality bars, and a comparison with what you wear. Equip by double-click, the Equip button, or dragging onto the hero; drag worn gear back to the grid to take it off. **Lock** keeps an item from being sold. Loot that doesn't fit a full bag is left behind (quest rewards always fit).
+- **Shop**: Buy (Standard gear and potions) and Sell (better grades sell for more; **Sell junk** sells unlocked Standard/Fair gear).
+- **Character panel** (button or **C**): stats, stat points, skills, what you have equipped. **M** toggles sound. **Esc** closes windows.
 - **Sound**: all effects are synthesized in code (WebAudio), no audio files.
 
 ## Where things live
@@ -42,7 +45,7 @@ npm run preview  # serve the dist/ build locally
 | --- | --- |
 | `src/config.ts` | Screen size, colors, **`BALANCE`** design knobs |
 | `src/data/` | Content: classes, items, skills, monsters, quests, zones, rooms and NPCs. Edit these to add content. |
-| `src/game/` | Rules, no Phaser: `Player`, `Battle`, `Quests`, `SaveSystem`, `rng` |
+| `src/game/` | Rules, no Phaser: `Player`, `Battle`, `Items` (rolled gear), `Quests`, `SaveSystem`, `rng` |
 | `src/scenes/` | Screens: Boot, Title, Create, Room (exploration), Battle, Result |
 | `src/ui/` | Buttons, bars, modals, panels, figures, scenery, `fx.ts` (particles and effects), `sfx.ts` (sounds) |
 
@@ -58,7 +61,7 @@ Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editin
 
 - **Room**: add to `ROOMS` in `src/data/world.ts` with its walkable strip (`walk`), `exits` (left/right to another room), `npcs`, and optionally a `zoneId` + `monsterCount` for roaming monsters. Link it from a neighbor's `exits`.
 - **Monster**: add to `src/data/monsters.ts` (with an `element`, `resists` in percent, `defense` per attack type, and `immune` statuses if any), then add it to a zone's `encounters` in `src/data/world.ts`. An attack can `applies` statuses; `power: 0` makes it a pure buff.
-- **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`.
+- **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`. Items without art get a drawn icon tinted with `iconColor`. Roll ranges, drop curve, bag size and sell prices are in `BALANCE` (`gearRolls`, `rollCurve`, `bagSlots`, `sellRate`, `sellGradeBonus`); roll rules live in `src/game/Items.ts`.
 - **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. Set `cooldown`, and `element`/`damageType` if it shouldn't use the weapon's. `applies` adds statuses (`self: true` for buffs). `fx: 'heavy'` gives a leap (or a big spell).
 - **Status**: add to `src/data/statuses.ts` (damage over time, regen, stun, damage/defense/resist/hit/crit modifiers).
 - **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look) and to `ClassId` in `src/data/types.ts`.
@@ -73,7 +76,7 @@ Broken references (e.g. a drop pointing at a missing item) throw at startup in `
 
 ### Saves
 
-Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
+Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors; pre-v4 gear becomes Standard). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
 
 ## Playing on GitHub Pages
 

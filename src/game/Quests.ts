@@ -1,5 +1,6 @@
 import { db } from '../data/db';
 import type { QuestDef, SkillDef } from '../data/types';
+import { grantFor } from './Items';
 import type { Player, Rewards } from './Player';
 
 /**
@@ -83,9 +84,10 @@ export function turnInQuest(player: Player, quest: QuestDef): TurnInResult | nul
   const rewards: Rewards = {
     xp: quest.rewards.xp,
     gold: quest.rewards.gold,
-    items: [...(quest.rewards.items ?? []), ...(classItem ? [classItem] : [])],
+    items: [...(quest.rewards.items ?? []), ...(classItem ? [classItem] : [])].map((id) => grantFor(id)),
   };
   const levelBefore = player.level;
-  const levelsGained = player.grantRewards(rewards);
+  // Quest rewards may overflow a full bag rather than be lost.
+  const levelsGained = player.grantRewards(rewards, true).levels;
   return { rewards, levelsGained, newSkills: player.skillsLearnedSince(levelBefore) };
 }

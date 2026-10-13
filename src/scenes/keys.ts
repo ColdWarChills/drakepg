@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import type { ItemGrant } from '../game/Items';
 import type { Rewards } from '../game/Player';
 
 export const SceneKeys = {
@@ -35,6 +36,8 @@ export type ResultSceneData =
       outcome: 'victory';
       monsterName: string;
       rewards: Rewards;
+      /** Loot that didn't fit in the bag. */
+      lost: ItemGrant[];
       levelsGained: number;
       /** Names of skills unlocked by this level up. */
       newSkills: string[];

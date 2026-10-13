@@ -2,9 +2,11 @@ import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { INN_SPAWN } from '../data/world';
+import type { ItemGrant } from '../game/Items';
 import { session } from '../game/session';
 import { Button } from '../ui/Button';
 import { drawFigure } from '../ui/figures';
+import { gradeInfo, lootName } from '../ui/itemUi';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
@@ -62,11 +64,10 @@ export class ResultScene extends Phaser.Scene {
       sfx.play(this, 'victory');
 
       // Count-up rows.
-      const loot = rewards.items.length ? rewards.items.map((id) => db.item(id).name).join(', ') : 'nothing';
       addText(this, cx, 245, `You defeated ${the(data.monsterName)}.`, { size: 24 }).setOrigin(0.5);
       const xpText = addText(this, cx, 300, '+0 XP', { size: 30, bold: true, color: COLORS.textGood }).setOrigin(0.5);
       const goldText = addText(this, cx, 345, '+0 gold', { size: 30, bold: true, color: COLORS.textGold }).setOrigin(0.5);
-      const lootText = addText(this, cx, 390, `Loot: ${loot}`, { size: 24 }).setOrigin(0.5).setAlpha(0);
+      const lootRow = this.lootRow(cx, 390, data.rewards.items, data.lost);
       data.quests.forEach((q, i) => {
         const done = q.count >= q.target;
         const line = addText(this, cx, 428 + i * 28, `${q.name}: ${q.goal} ${q.count}/${q.target}${done ? '  ✔ Return to the quest giver' : ''}`, {
@@ -82,11 +83,8 @@ export class ResultScene extends Phaser.Scene {
       const shift = data.quests.length * 28;
       this.countUp(xpText, rewards.xp, ' XP', 400);
       this.countUp(goldText, rewards.gold, ' gold', 650);
-      this.tweens.add({ targets: lootText, alpha: 1, delay: 1000, duration: 300 });
-      if (rewards.items.length) {
-        lootText.setColor(COLORS.textGold);
-        this.tweens.add({ targets: lootText, scale: 1.15, delay: 1300, duration: 160, yoyo: true, repeat: 1 });
-      }
+      this.tweens.add({ targets: lootRow, alpha: 1, delay: 1000, duration: 300 });
+      if (rewards.items.length) this.tweens.add({ targets: lootRow, scale: lootRow.scale * 1.12, delay: 1300, duration: 160, yoyo: true, repeat: 1 });
 
       if (levelsGained > 0) {
         const hero = drawFigure(this, cx - 280, 470 + shift, player.classDef.look, 1, player.weapon).setScale(0.55);
@@ -124,6 +122,55 @@ export class ResultScene extends Phaser.Scene {
       addText(this, cx, 330, lines.join('\n'), { size: 26, align: 'center' }).setOrigin(0.5).setLineSpacing(6);
       this.continueButton('Wake up', { ...INN_SPAWN, via: 'spawn' }, 520);
     }
+  }
+
+  /** "Loot: Cinder Fang (Fine 52%), Health Potion", each name in its grade color. Good rolls sparkle. */
+  private lootRow(cx: number, y: number, items: ItemGrant[], lost: ItemGrant[]): Phaser.GameObjects.Container {
+    const row = this.add.container(cx, y).setAlpha(0);
+    const parts: Phaser.GameObjects.Text[] = [addText(this, 0, 0, items.length ? 'Loot: ' : 'Loot: nothing', { size: 24 })];
+    const sparkles: { text: Phaser.GameObjects.Text; tier: string }[] = [];
+    items.forEach((g, i) => {
+      const def = db.item(g.itemId);
+      const info = gradeInfo(def, g.rolls);
+      const isLost = lost.includes(g);
+      const t = addText(this, 0, 0, `${lootName(def, g.rolls)}${i < items.length - 1 ? ', ' : ''}`, {
+        size: 24,
+        bold: info.tier !== 'standard',
+        color: isLost ? COLORS.textDim : info.tier === 'standard' && def.type !== 'consumable' ? COLORS.text : info.css,
+      });
+      if (isLost) t.setAlpha(0.6);
+      parts.push(t);
+      if (!isLost && (info.tier === 'superior' || info.tier === 'masterwork')) sparkles.push({ text: t, tier: info.tier });
+    });
+    if (lost.length) parts.push(addText(this, 0, 0, `   Bag full! ${lost.length} left behind`, { size: 20, bold: true, color: COLORS.textBad }));
+    let x = 0;
+    for (const p of parts) {
+      p.setOrigin(0, 0.5).setX(x);
+      x += p.width;
+    }
+    for (const p of parts) p.x -= x / 2;
+    row.add(parts);
+    // Keep long loot lists inside the panel.
+    row.setScale(Math.min(1, 680 / x));
+
+    if (sparkles.length) {
+      this.time.delayedCall(1100, () => {
+        sfx.play(this, 'rare');
+        for (const s of sparkles) {
+          const b = s.text.getBounds();
+          const master = s.tier === 'masterwork';
+          fx.burst(this, b.centerX, b.centerY, 'fx_star', master ? 36 : 16, {
+            speed: { min: 60, max: master ? 320 : 200 },
+            scale: { start: master ? 1 : 0.7, end: 0 },
+            lifespan: master ? 1000 : 700,
+            tint: master ? 0xffd34d : 0x7fb8ff,
+            blendMode: 'ADD',
+          });
+          if (master) this.cameras.main.flash(250, 255, 230, 140);
+        }
+      });
+    }
+    return row;
   }
 
   private countUp(text: Phaser.GameObjects.Text, to: number, suffix: string, delay: number): void {

@@ -13,7 +13,7 @@ import { Button } from '../ui/Button';
 import { drawFigure } from '../ui/figures';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
-import { restoreText } from '../ui/panels';
+import { restoreText } from '../ui/itemUi';
 import { addText, floatText } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type BattleSceneData, type ResultSceneData, type RoomSceneData } from './keys';
 
@@ -725,7 +725,7 @@ export class BattleScene extends Phaser.Scene {
       case 'victory': {
         const rewards = this.battle.rewards ?? { xp: 0, gold: 0, items: [] };
         const levelBefore = player.level;
-        const levelsGained = player.grantRewards(rewards);
+        const { levels: levelsGained, lost } = player.grantRewards(rewards);
         const quests = recordKill(player, this.monster.id).map((q) => ({
           name: q.quest.name,
           goal: q.quest.goal,
@@ -735,7 +735,7 @@ export class BattleScene extends Phaser.Scene {
         if (BALANCE.restoreAfterBattle) player.restoreFull();
         SaveSystem.save(player);
         const newSkills = player.skillsLearnedSince(levelBefore).map((s) => s.name);
-        const data: ResultSceneData = { outcome: 'victory', monsterName, rewards, levelsGained, newSkills, quests, back };
+        const data: ResultSceneData = { outcome: 'victory', monsterName, rewards, lost, levelsGained, newSkills, quests, back };
         goTo(this, SceneKeys.Result, data);
         break;
       }

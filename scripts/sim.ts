@@ -6,6 +6,7 @@ import { db, validateData } from '../src/data/db';
 import { ELEMENTS } from '../src/data/elements';
 import type { ClassId, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
+import { rollGear, type GearDef } from '../src/game/Items';
 import { Player, xpToNext } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
 
@@ -22,6 +23,8 @@ interface Loadout {
   label: string;
   weapon: Record<ClassId, string>;
   armor: Record<ClassId, string>;
+  /** Roll quality of every line, 0-100. Shop gear is 0. */
+  quality?: number;
 }
 
 const STARTER: Loadout = {
@@ -39,6 +42,9 @@ const FIRE: Loadout = {
   weapon: { warrior: 'emberbrand', mage: 'ember_wand', rogue: 'cinder_fang' },
   armor: SHOP.armor,
 };
+/** Best possible rolls: the top of the power range drops can give. */
+const SHOP_100: Loadout = { ...SHOP, label: 'shop100', quality: 100 };
+const FIRE_100: Loadout = { ...FIRE, label: 'fire100', quality: 100 };
 
 function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number): Player {
   const p = Player.createNew('Sim', classId);
@@ -47,9 +53,11 @@ function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: num
   for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
   p.data.inventory = [];
   for (const id of [gear.weapon[classId], gear.armor[classId]]) {
-    p.addItem(id);
-    p.equip(id);
+    const piece = p.makeGear(id, rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0));
+    p.data.gear.push(piece);
+    p.equip(piece.uid);
   }
+  p.data.gear = [];
   if (potions > 0) p.addItem('health_potion', potions);
   p.restoreFull();
   return p;
@@ -169,4 +177,7 @@ table('Thornheart (boss, 3 potions)', [
   { monster: 'thornheart', level: 5, gear: SHOP, potions: 3 },
   { monster: 'thornheart', level: 5, gear: FIRE, potions: 3 },
   { monster: 'thornheart', level: 6, gear: SHOP, potions: 3 },
+  { monster: 'thornheart', level: 4, gear: SHOP_100, potions: 3 },
+  { monster: 'thornheart', level: 5, gear: SHOP_100, potions: 3 },
+  { monster: 'thornheart', level: 5, gear: FIRE_100, potions: 3 },
 ]);
