@@ -47,7 +47,7 @@ export type ResultSceneData =
       quests: { name: string; goal: string; count: number; target: number }[];
       back: RoomSceneData;
     }
-  | { outcome: 'defeat'; monsterName: string };
+  | { outcome: 'defeat'; monsterName: string; /** Where you wake up. */ wake: { roomId: string; x: number; y: number } };
 
 /** Fade out, then start another scene. */
 export function goTo(scene: Phaser.Scene, key: string, data?: object, duration = 250): void {

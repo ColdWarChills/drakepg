@@ -144,3 +144,157 @@ Edit this image (image 1). Remove the <weapon> completely. Keep everything else 
 ```
 
 Then re-measure the fist positions in `look.bare.hands` (src/data/classes.ts).
+
+---
+
+# Chapter 2: Rising Waters
+
+27 images: 3 NPCs, 7 monsters, 5 backgrounds, 12 weapons. Same rules as above (Nano Banana, Unlimited ON, a finished character as the style reference). The game already runs without them: missing art falls back to drawn shapes and the procedural marsh. Paste them in any order and say which is which.
+
+## Characters
+
+### 15. `npc_captain_hale` · 3:4
+```
+A weathered middle-aged outpost captain, short grey beard, a scar over one eyebrow, dark green padded coat under a steel breastplate, high muddy boots, a brass spyglass on his belt, one hand resting on his sword hilt, steady confident stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 16. `npc_wren` · 3:4
+```
+A young, wiry quartermaster woman, short brown hair under a flat cap, freckles, rolled-up sleeves, a brown leather apron full of tools, a coil of rope over one shoulder, holding a clipboard. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 17. `npc_ottilie` · 3:4
+```
+A kind elderly healer, round gentle face, long white and pale blue robes, a sea-blue headscarf, a pouch of herbs and a small lantern at her belt, holding a wooden bowl of steaming broth. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+
+## Monsters
+
+### 18. `mon_mire_toad` · 1:1
+```
+A fat, warty swamp toad monster the size of a pony, mottled dark green and brown skin, glowing yellow eyes, a long sticky pink tongue curling out of its wide mouth, small water lilies and algae growing on its back. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 19. `mon_spark_wisp` · 1:1
+```
+A floating ball of living lightning: a crackling bright yellow-white core with a small mischievous face, violet sparks and electric tendrils trailing below it like a tail, tiny arcs of lightning around it. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 20. `mon_bog_lurker` · 4:3
+```
+A hulking swamp beast on four legs, part crocodile and part bear, matted hide dripping dark green moss and mud, glowing teal eyes, broad clawed paws, reeds stuck in its fur, a heavy lumbering stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 21. `mon_sunken_revenant` · 3:4
+```
+A drowned undead knight: rusted, barnacle-crusted armor, a tattered dark cloak dripping water, pale blue-grey skin, glowing violet eyes under a broken helmet, seaweed tangled on the shoulders, holding a rusted short sword. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 22. `mon_stormscale_drakeling` · 4:3
+```
+A young dragon-like lizard the size of a large dog, deep blue scales with bright yellow lightning-stripe markings, a crest of yellow spines, small folded wings, sparks crackling at its jaws, alert crouching pose. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 23. `mon_bogmother` · 1:1 (mini-boss)
+```
+A huge, grotesque swamp matriarch boss monster: a massive bloated toad-like body of mud and moss rising out of a puddle, many small glowing yellow eyes, a wide drooping mouth with hanging roots, tiny frogs and leeches clinging to her sides, a crown of reeds and lily pads, menacing pose. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 24. `mon_stormcoil` · 1:1 (Chapter 2 boss)
+```
+A colossal sea serpent boss monster coiled upright, deep blue scales with glowing yellow lightning patterns, a fin-like crest crackling with electricity, glowing white eyes, lightning arcing between its coils, a dull grey giant scale tangled in its coils, menacing pose. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+
+## Backgrounds
+
+### 25. `bg_fen_road` · 16:9
+```
+A misty road at the edge of a fen: a muddy dirt road with old wooden planks laid over puddles, tall reeds and cattails, a few gnarled dead trees, still pools reflecting a grey-green overcast sky. The bottom 30% of the image is flat, open, muddy ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
+```
+
+### 26. `bg_reedwatch` · 16:9
+```
+A small wooden outpost on stilts in a marsh. From left to right: a watch hut with a green banner, a supply hut with crates and barrels on its porch, a healer's hut with hanging herbs and a lantern, and at the far right a tall wooden watchtower. Reeds and mist, grey-green sky. The bottom 20% of the image is a wide, empty, flat wooden boardwalk running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
+```
+
+### 27. `bg_sunken_causeway` · 16:9
+```
+An ancient stone causeway half sunk into a stormy fen: broken stone pillars and arches, dark water on both sides, reeds, slanting rain, distant lightning in a dark grey sky. The bottom 30% of the image is flat, wet, cracked stone causeway running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
+```
+
+### 28. `bg_bog_hollow` · 16:9 (mini-boss arena)
+```
+A gloomy hollow deep in a swamp: a large murky green pool at the back, twisted mangrove roots, hanging moss, bubbling mud, drifting pale will-o-wisp lights, dim greenish light. The bottom 30% of the image is flat, muddy ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
+```
+
+### 29. `bg_drowned_shrine` · 16:9 (boss arena)
+```
+A drowned ancient shrine in a storm: tilted stone columns and a broken dome rising from dark water, a huge dull grey dragon scale set into the altar at the back, crackling lightning in purple-black clouds, rain. The bottom 30% of the image is flat, wet stone floor running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI.
+```
+
+
+## Weapons
+
+Aspect **9:16**, file name as listed. Each line is the `<weapon description>` for the weapon prompt above; the full prompt is written out so you can copy it in one piece.
+
+### 30. `wpn_steel_broadsword`
+```
+A single steel broadsword with a wide polished blade, a simple brass crossguard and a leather-wrapped grip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 31. `wpn_yew_staff`
+```
+A single tall dark yew wood staff, smooth and slightly twisted, the top curling around a pale blue glass orb, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 32. `wpn_fenwatch_stiletto`
+```
+A single slim steel stiletto dagger with a needle-thin blade, a small round guard and a dark green wrapped grip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 33. `wpn_tidebreaker`
+```
+A single sea-green steel sword with a wavy edge like a breaking wave, a coral-shaped crossguard and droplets of water floating around the blade, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 34. `wpn_stormcleaver`
+```
+A single heavy one-handed cleaver sword with a dark steel blade etched with glowing yellow lightning runes, small sparks jumping off the edge, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 35. `wpn_tidecaller_rod`
+```
+A single short driftwood rod wrapped in seaweed, a large white pearl at the top inside a swirl of water, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 36. `wpn_sparkglass_wand`
+```
+A single slender wand of fused yellow glass with jagged lightning shapes trapped inside, a copper handle, crackling at the tip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 37. `wpn_brinefang`
+```
+A single wavy-bladed kris dagger, blue-green steel crusted with white sea salt, a shell-shaped guard, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 38. `wpn_sparkfang`
+```
+A single dagger made from a curved blue-and-yellow drake fang on a copper hilt, tiny sparks at the tip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 39. `wpn_thunderhead_maul`
+```
+A single huge war maul with a block-shaped head of storm-grey metal set with a glowing yellow scale, lightning crackling around the head, a long leather-wrapped handle, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 40. `wpn_stormcoil_scepter`
+```
+A single silver scepter whose top is a cage of coiled silver serpents holding a ball of crackling lightning, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### 41. `wpn_coilfang`
+```
+A single long curved serpent-fang dagger, deep blue with glowing yellow veins, a hilt wrapped in blue scaled leather, sparks at the tip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```

@@ -52,8 +52,24 @@ const FIRE_100: Loadout = { ...FIRE, label: 'fire100', quality: 100 };
 const SHOP_DAWN: Loadout = { ...SHOP, label: 'dawn50', quality: 50, sigil: 'dawn' };
 const SHOP_ECLIPSE: Loadout = { ...SHOP, label: 'ecl50', quality: 50, sigil: 'eclipse' };
 const SHOP_ECLIPSE_100: Loadout = { ...SHOP, label: 'ecl100', quality: 100, sigil: 'eclipse' };
+/** What a player likely carries into Chapter 2: the Thornheart's weapon (Earth, neutral in the fen). */
+const HEART: Loadout = {
+  label: 'heart',
+  weapon: { warrior: 'thornheart_blade', mage: 'heartwood_staff', rogue: 'briar_fang' },
+  armor: SHOP.armor,
+};
+/** Reedwatch shop gear (tier 2), and the fen drops of each element. */
+const SHOP2: Loadout = {
+  label: 'shop2',
+  weapon: { warrior: 'steel_broadsword', mage: 'yew_staff', rogue: 'fenwatch_stiletto' },
+  armor: { warrior: 'scale_mail', mage: 'reedweave_robe', rogue: 'scale_mail' },
+};
+const WATER2: Loadout = { label: 'water2', weapon: { warrior: 'tidebreaker', mage: 'tidecaller_rod', rogue: 'brinefang' }, armor: SHOP2.armor };
+const ENERGY2: Loadout = { label: 'energy2', weapon: { warrior: 'stormcleaver', mage: 'sparkglass_wand', rogue: 'sparkfang' }, armor: SHOP2.armor };
+const SHOP2_100: Loadout = { ...SHOP2, label: 'shop2_100', quality: 100 };
+const GREATER = 'greater_health_potion';
 
-function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number): Player {
+function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number, potion: string): Player {
   const p = Player.createNew('Sim', classId);
   while (p.level < level) p.addXp(xpToNext(p.level));
   const plan = STAT_PLAN[classId];
@@ -65,7 +81,7 @@ function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: num
     p.equip(piece.uid);
   }
   p.data.gear = [];
-  if (potions > 0) p.addItem('health_potion', potions);
+  if (potions > 0) p.addItem(potion, potions);
   p.restoreFull();
   return p;
 }
@@ -95,7 +111,8 @@ function act(b: Battle): void {
   }
   if (hpPct < 0.35) {
     if (heal) return void b.useSkill(heal.id);
-    if (b.canUseItem('health_potion')) return void b.useItem('health_potion');
+    const potion = b.player.data.inventory[0]?.itemId;
+    if (potion && b.canUseItem(potion)) return void b.useItem(potion);
   }
   const enemyHpPct = b.enemy.hp / b.enemy.maxHp;
   const longFight = b.enemy.maxHp > p.maxHp;
@@ -127,11 +144,13 @@ interface Result {
   potions: number;
 }
 
-function fight(classId: ClassId, level: number, monsterId: string, elite: string | undefined, gear: Loadout, potions: number, rng: Rng): Result {
+function fight(row: Row, classId: ClassId, rng: Rng): Result {
+  const { level, monster: monsterId, elite, gear, potions } = row;
+  const potion = row.potion ?? 'health_potion';
   const res: Result = { wins: 0, turns: 0, hpLeft: 0, potions: 0 };
   const monster = elite ? makeElite(db.monster(monsterId), elite) : db.monster(monsterId);
   for (let i = 0; i < RUNS; i++) {
-    const p = makePlayer(classId, level, gear, potions);
+    const p = makePlayer(classId, level, gear, potions, potion);
     const b = new Battle(p, monster, rng);
     let turns = 0;
     while (!b.isOver && turns < 60) {
@@ -143,7 +162,7 @@ function fight(classId: ClassId, level: number, monsterId: string, elite: string
       res.hpLeft += p.hp / p.maxHp;
     }
     res.turns += turns;
-    res.potions += potions - p.countItem('health_potion');
+    res.potions += potions - p.countItem(potion);
   }
   return res;
 }
@@ -159,6 +178,8 @@ interface Row {
   level: number;
   gear: Loadout;
   potions: number;
+  /** Default health_potion. */
+  potion?: string;
 }
 
 function table(title: string, rows: Row[]): void {
@@ -167,7 +188,7 @@ function table(title: string, rows: Row[]): void {
   console.log(`${'monster'.padEnd(20)} lv gear     | ` + ['warrior', 'mage', 'rogue'].map((c) => c.padEnd(26)).join(' | '));
   for (const row of rows) {
     const cells = (['warrior', 'mage', 'rogue'] as ClassId[]).map((c) => {
-      const r = fight(c, row.level, row.monster, row.elite, row.gear, row.potions, rng);
+      const r = fight(row, c, rng);
       const hp = r.wins ? r.hpLeft / r.wins : 0;
       return `win${pct(r.wins / RUNS)} hp${pct(hp)} t${(r.turns / RUNS).toFixed(1).padStart(4)} pot${(r.potions / RUNS).toFixed(1)}`;
     });
@@ -212,4 +233,42 @@ table('Chapter 1 Elites (2 potions)', [
   { monster: 'bramble_bandit', elite: 'warded', level: 4, gear: SHOP, potions: 2 },
   { monster: 'bramble_bandit', elite: 'venomous', level: 4, gear: SHOP, potions: 2 },
   { monster: 'bramble_bandit', elite: 'ironhide', level: 4, gear: SHOP, potions: 2 },
+]);
+
+table('Chapter 2 trash (full HP each fight, 1 potion)', [
+  { monster: 'mire_toad', level: 6, gear: HEART, potions: 1, potion: GREATER },
+  { monster: 'mire_toad', level: 6, gear: SHOP2, potions: 1, potion: GREATER },
+  { monster: 'spark_wisp', level: 7, gear: HEART, potions: 1, potion: GREATER },
+  { monster: 'spark_wisp', level: 7, gear: SHOP2, potions: 1, potion: GREATER },
+  { monster: 'spark_wisp', level: 7, gear: WATER2, potions: 1, potion: GREATER },
+  { monster: 'bog_lurker', level: 7, gear: SHOP2, potions: 1, potion: GREATER },
+  { monster: 'bog_lurker', level: 7, gear: ENERGY2, potions: 1, potion: GREATER },
+  { monster: 'sunken_revenant', level: 8, gear: SHOP2, potions: 1, potion: GREATER },
+  { monster: 'stormscale_drakeling', level: 9, gear: SHOP2, potions: 1, potion: GREATER },
+  { monster: 'stormscale_drakeling', level: 9, gear: WATER2, potions: 1, potion: GREATER },
+]);
+
+table('Chapter 2 Elites (2 potions)', [
+  { monster: 'mire_toad', elite: 'hulking', level: 7, gear: SHOP2, potions: 2, potion: GREATER },
+  { monster: 'spark_wisp', elite: 'warded', level: 8, gear: SHOP2, potions: 2, potion: GREATER },
+  { monster: 'bog_lurker', elite: 'frenzied', level: 8, gear: SHOP2, potions: 2, potion: GREATER },
+  { monster: 'stormscale_drakeling', elite: 'ironhide', level: 10, gear: SHOP2, potions: 2, potion: GREATER },
+]);
+
+table('Bogmother (mini-boss, 3 potions)', [
+  { monster: 'bogmother', level: 7, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'bogmother', level: 8, gear: HEART, potions: 3, potion: GREATER },
+  { monster: 'bogmother', level: 8, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'bogmother', level: 8, gear: ENERGY2, potions: 3, potion: GREATER },
+  { monster: 'bogmother', level: 9, gear: SHOP2, potions: 3, potion: GREATER },
+]);
+
+table('Stormcoil (boss, changes Energy -> Water at half HP, 3 potions)', [
+  { monster: 'stormcoil', level: 9, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: HEART, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: WATER2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: ENERGY2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 11, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: SHOP2_100, potions: 3, potion: GREATER },
 ]);

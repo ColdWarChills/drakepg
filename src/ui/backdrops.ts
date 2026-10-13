@@ -10,6 +10,8 @@ import { addText } from './text';
 export function drawScenery(scene: Phaser.Scene, art: ArtRef | undefined, backdrop: Backdrop, groundY: number): void {
   if (!addBackground(scene, art)) {
     if (backdrop.kind === 'town') drawTown(scene, groundY);
+    else if (backdrop.kind === 'marsh') drawMarsh(scene, groundY);
+    else if (backdrop.kind === 'outpost') drawOutpost(scene, groundY);
     else drawForest(scene, groundY);
   }
   if (backdrop.shade) {
@@ -91,4 +93,79 @@ function drawForest(scene: Phaser.Scene, groundY: number): void {
     const y = groundY + 20 + ((i * 47) % (height - groundY - 30));
     grass.fillTriangle(x - 6, y, x, y - 14, x + 6, y);
   }
+}
+
+function drawMarsh(scene: Phaser.Scene, groundY: number): void {
+  const { width, height } = scene.scale;
+  // Overcast sky fading into mist.
+  scene.add.rectangle(0, 0, width, height, 0x52666b).setOrigin(0);
+  scene.add.rectangle(0, groundY - 260, width, 260, 0x6c8180).setOrigin(0);
+  scene.add.rectangle(0, groundY - 120, width, 120, 0x7d918d).setOrigin(0);
+  // Far dead trees.
+  const far = scene.add.graphics();
+  for (let i = 0; i < 12; i++) {
+    const x = i * 115 + ((i * 41) % 60);
+    const h = 180 + ((i * 53) % 120);
+    far.fillStyle(0x3d4d4c, 1).fillRect(x, groundY - h, 12, h);
+    far.lineStyle(6, 0x3d4d4c, 1);
+    far.beginPath();
+    far.moveTo(x + 6, groundY - h * 0.7);
+    far.lineTo(x + 40, groundY - h * 0.9);
+    far.moveTo(x + 6, groundY - h * 0.5);
+    far.lineTo(x - 30, groundY - h * 0.75);
+    far.strokePath();
+  }
+  // Muddy ground with still pools.
+  scene.add.rectangle(0, groundY, width, height - groundY, 0x3b4630).setOrigin(0);
+  scene.add.rectangle(0, groundY, width, 8, 0x2c3524).setOrigin(0);
+  const pools = scene.add.graphics();
+  for (let i = 0; i < 6; i++) {
+    const x = 90 + i * 230 + ((i * 37) % 80);
+    const y = groundY + 40 + ((i * 61) % (height - groundY - 70));
+    pools.fillStyle(0x2f5260, 0.9).fillEllipse(x, y, 200 + ((i * 29) % 90), 34);
+    pools.fillStyle(0x8fb3bd, 0.25).fillEllipse(x - 20, y - 4, 90, 6);
+  }
+  // Reeds.
+  const reeds = scene.add.graphics();
+  for (let i = 0; i < 46; i++) {
+    const x = (i * 89) % width;
+    const base = groundY + 6 + ((i * 31) % 26);
+    const h = 40 + ((i * 47) % 70);
+    reeds.lineStyle(3, i % 2 ? 0x6b7f3a : 0x55682d, 1);
+    reeds.beginPath();
+    reeds.moveTo(x, base);
+    reeds.lineTo(x + ((i * 7) % 12) - 6, base - h);
+    reeds.strokePath();
+    if (i % 4 === 0) reeds.fillStyle(0x5d3a1e, 1).fillEllipse(x + ((i * 7) % 12) - 6, base - h + 8, 7, 18);
+  }
+}
+
+function drawOutpost(scene: Phaser.Scene, groundY: number): void {
+  drawMarsh(scene, groundY);
+  // A boardwalk and huts on stilts.
+  scene.add.rectangle(0, groundY - 6, scene.scale.width, 14, 0x6d4c33).setOrigin(0);
+  stiltHut(scene, groundY, 200, 230, 'Watch');
+  stiltHut(scene, groundY, 560, 250, 'Supplies');
+  stiltHut(scene, groundY, 900, 230, 'Healer');
+  // Watchtower at the far right.
+  const g = scene.add.graphics();
+  g.fillStyle(0x4e3524, 1).fillRect(1150, groundY - 330, 14, 330).fillRect(1220, groundY - 330, 14, 330);
+  g.fillStyle(0x6d4c33, 1).fillRect(1135, groundY - 360, 115, 40);
+  g.fillStyle(0x3e2723, 1).fillTriangle(1125, groundY - 360, 1192, groundY - 420, 1260, groundY - 360);
+  g.fillStyle(0xf9e79f, 1).fillCircle(1192, groundY - 340, 8);
+}
+
+function stiltHut(scene: Phaser.Scene, groundY: number, x: number, w: number, sign: string): void {
+  const g = scene.add.graphics();
+  const floor = groundY - 60;
+  g.fillStyle(0x4e3524, 1);
+  for (const sx of [-w / 2 + 12, -w / 6, w / 6, w / 2 - 24]) g.fillRect(x + sx, floor, 12, 66);
+  g.fillStyle(0x7b5a3c, 1).fillRect(x - w / 2, floor - 150, w, 150);
+  g.lineStyle(2, 0x4e3524, 1);
+  for (let i = 1; i < 6; i++) g.lineBetween(x - w / 2, floor - i * 25, x + w / 2, floor - i * 25);
+  g.fillStyle(0x8a7a4a, 1).fillTriangle(x - w / 2 - 24, floor - 150, x, floor - 235, x + w / 2 + 24, floor - 150);
+  g.fillStyle(0xf9e79f, 1).fillRect(x - w / 4 - 22, floor - 110, 44, 36).fillRect(x + w / 4 - 22, floor - 110, 44, 36);
+  g.fillStyle(0x3e2723, 1).fillRect(x - 24, floor - 80, 48, 80);
+  scene.add.rectangle(x, floor - 175, 110, 28, 0x3e2723).setStrokeStyle(2, 0xc9a66b);
+  addText(scene, x, floor - 175, sign, { size: 16, bold: true, color: '#f3e9d2' }).setOrigin(0.5);
 }

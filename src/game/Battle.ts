@@ -42,6 +42,8 @@ export type BattleEvent =
   | { kind: 'defend'; mp: number }
   /** Enemy is winding up a telegraphed attack that lands next turn. */
   | { kind: 'windup'; move: string; text: string }
+  /** A boss changes form (new element and resistances). */
+  | { kind: 'phase'; text: string; element: Element }
   | { kind: 'defeated'; side: Side };
 
 export type BattleState = 'player_turn' | 'victory' | 'defeat' | 'fled';
@@ -331,6 +333,7 @@ export class Battle {
   }
 
   private checkOver(events: BattleEvent[]): boolean {
+    this.checkPhase(events);
     if (this.enemy.hp <= 0) {
       events.push({ kind: 'defeated', side: 'enemy' });
       this.state = 'victory';
@@ -343,6 +346,17 @@ export class Battle {
       return true;
     }
     return false;
+  }
+
+  /** A boss's second form kicks in once its HP falls to the threshold (only once, and not on the killing blow). */
+  private checkPhase(events: BattleEvent[]): void {
+    const { def, hp, maxHp } = this.enemy;
+    const phase = def.phase;
+    if (!phase || hp <= 0 || hp > maxHp * phase.at) return;
+    // A wind-up started in the old form still lands in the old element.
+    if (this.charging) this.charging = { ...this.charging, element: this.charging.element ?? def.element };
+    this.enemy.def = { ...def, element: phase.element, resists: phase.resists, attacks: phase.attacks ?? def.attacks, phase: undefined };
+    events.push({ kind: 'phase', text: phase.text, element: phase.element });
   }
 
   // --- Statuses ---

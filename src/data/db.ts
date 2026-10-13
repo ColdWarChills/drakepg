@@ -59,6 +59,7 @@ export function validateData(): void {
     for (const d of m.drops) db.item(d.itemId);
     if (m.attacks.length === 0) throw new Error(`Monster ${m.id} has no attacks`);
     m.attacks.forEach((a) => checkApplies(a.applies));
+    m.phase?.attacks?.forEach((a) => checkApplies(a.applies));
     m.immune?.forEach((id) => db.status(id));
   }
   for (const s of SKILLS) checkApplies(s.applies);

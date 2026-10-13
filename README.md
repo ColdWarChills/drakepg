@@ -15,7 +15,7 @@ npm run preview  # serve the dist/ build locally
 
 ## What's in the game
 
-**Chapter 1: The Restless Thornwood**
+**Chapter 1: The Restless Thornwood** and **Chapter 2: Rising Waters**
 
 - **Title**: New Game / Continue (save in browser localStorage, including where you're standing).
 - **Create**: type a name (or Random) and pick a class: **Warrior**, **Mage** or **Rogue** (click or **1-3**). Each has its own stats, gear and skills.
@@ -24,7 +24,9 @@ npm run preview  # serve the dist/ build locally
   - **Thornwood Path** and **Deep Thornwood**: monsters roam and chase you when you get close. Touch one to fight it. Label color = level vs yours.
   - **Elites**: now and then (8% per roaming monster, at most one per room) a monster spawns as an Elite: bigger, glowing gold, tagged **ELITE**, one level higher, with 2x HP, 1.25x damage and one affix in its name (**Hulking** +50% HP, **Frenzied** +25% damage, **Warded** +25 all resistances, **Venomous** attacks may poison, **Ironhide** +50% defense; the battle panel spells it out). They give 3x XP and gold, always drop a piece of the area's gear, and roll Sigils far more often than normal monsters. An Elite still counts as its base monster for quests.
   - **Thornheart Hollow**: sealed by thorns until the Elder sends you there. Home of the chapter boss, who stays for **rematches** after its quest (half XP and gold, full loot; bosses drop Sigils far more often).
-- **Quests**: a 4-quest chain (tracker on the left). Kill counts, then turn in for XP, gold and items. The last one ends the chapter.
+  - **Chapter 2** (level 6-10) runs west of Brindlemoor once the Elder asks: **Fen Road** (Mire Toads, Spark Wisps), the outpost **Reedwatch** (Captain Hale's quests, Wren's tier-2 shop with Greater potions, Sister Ottilie the healer), the rainy **Sunken Causeway** (Bog Lurkers, Sunken Revenants, Stormscale Drakelings), **Bog Hollow** (mini-boss: the Bogmother) and the **Drowned Shrine** (the Stormcoil). Water monsters drop Water weapons and Energy monsters Energy ones; each is the other's weakness. Lose past Reedwatch and you wake at its healer.
+  - **The Stormcoil changes form** at half HP: Energy becomes Water, its resistances flip, and the battle panel and log say so. Bring a neutral weapon, or one of each.
+- **Quests**: a quest chain per chapter (tracker on the left). Kill counts (one asks for any Elite), then turn in for XP, gold and items. The last one ends the chapter.
 - **Battle**: turn-based. Attack / Skills / Items / **Defend** (-60% damage, regain MP) / Flee (mouse or keys **1-6**). The boss winds up big attacks a turn ahead: defend or heal.
   - **Elements**: Fire, Water, Ice, Wind, Earth, Energy, Light, Dark. Weapons, spells and monster attacks carry one (or none: neutral). Every monster's weaknesses and resistances are shown under its name; hits show **WEAK!** / **Resisted**. Rule of thumb: a creature resists its own element and is weak to the opposite (Fire/Ice, Water/Energy, Earth/Wind, Light/Dark).
   - **Attack types**: Melee (STR), Pierce (DEX), Magic (INT). Each has its own defense on armor and monsters.
@@ -71,15 +73,15 @@ Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editin
 
 ### Adding content
 
-- **Room**: add to `ROOMS` in `src/data/world.ts` with its walkable strip (`walk`), `exits` (left/right to another room), `npcs`, and optionally a `zoneId` + `monsterCount` for roaming monsters. Link it from a neighbor's `exits`.
+- **Room**: add to `ROOMS` in `src/data/world.ts` with its walkable strip (`walk`), `exits` (left/right to another room), `npcs`, and optionally a `zoneId` + `monsterCount` for roaming monsters, `ambient` particles (dust, leaves, fireflies, rain, mist) and `wakeAt` (where you wake after losing there; default the Brindlemoor inn). Link it from a neighbor's `exits`. Without art, `backdrop.kind` draws a town, forest, marsh or outpost.
 - **Monster**: add to `src/data/monsters.ts` (with an `element`, `resists` in percent, `defense` per attack type, and `immune` statuses if any), then add it to a zone's `encounters` in `src/data/world.ts`. An attack can `applies` statuses; `power: 0` makes it a pure buff.
 - **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`. Items without art get a drawn icon tinted with `iconColor`. Roll ranges, drop curve, bag size and sell prices are in `BALANCE` (`gearRolls`, `rollCurve`, `bagSlots`, `sellRate`, `sellGradeBonus`), and so are Sigils and mods (`sigils`, `sigilChance`, `modChance`, `modRanges`); roll rules and the mod pools live in `src/game/Items.ts`. Drops from a `boss: true` monster use the boss Sigil chances.
 - **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. Set `cooldown`, and `element`/`damageType` if it shouldn't use the weapon's. `applies` adds statuses (`self: true` for buffs). `fx: 'heavy'` gives a leap (or a big spell).
 - **Status**: add to `src/data/statuses.ts` (damage over time, regen, stun, damage/defense/resist/hit/crit modifiers).
 - **Elite affix**: add to `src/data/elites.ts` (`hp`, `damage`, `defense` multipliers, `resists`, `applies` added to every attack) with a `description` the battle panel shows. Spawn chance, stat and reward multipliers are in `BALANCE.elite`; Elite Sigil odds in `BALANCE.sigilChance.elite`. Any monster can become an Elite; its guaranteed drop comes from the gear its zone's monsters drop.
 - **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look) and to `ClassId` in `src/data/types.ts`.
-- **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, the objective kills a `monsterId` or any Elite (`elite: true`, which also makes Elites spawn more often while it's active), `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked by thorns until that quest is accepted; a room `boss` appears once its quest is accepted and stays for rematches (`BALANCE.bossRepeatRewards` XP and gold).
-- **Boss**: a monster with `boss: true` (can't flee). An attack with `windup` text is telegraphed one turn before it hits.
+- **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, the objective kills a `monsterId` or any Elite (`elite: true`, which also makes Elites spawn more often while it's active), `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked (by thorns, or its `blocker`: barricade or reeds) until that quest is accepted; a room `boss` appears once its quest is accepted and stays for rematches (`BALANCE.bossRepeatRewards` XP and gold).
+- **Boss**: a monster with `boss: true` (can't flee). An attack with `windup` text is telegraphed one turn before it hits. A `phase` changes its element, resistances and attacks once its HP drops below a share (the Stormcoil at 50%). The room's `boss.intro` is the line shown before the fight.
 
 Broken references (e.g. a drop pointing at a missing item) throw at startup in `validateData()`.
 

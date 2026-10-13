@@ -1,6 +1,6 @@
 import type { QuestDef } from './types';
 
-/** Chapter 1: The Restless Thornwood. Each quest unlocks the next. */
+/** Each quest unlocks the next. Chapter 1: The Restless Thornwood. Chapter 2: Rising Waters. */
 export const QUESTS: QuestDef[] = [
   {
     id: 'moss_problem',
@@ -70,5 +70,101 @@ export const QUESTS: QuestDef[] = [
       classItems: { warrior: 'thornheart_blade', mage: 'heartwood_staff', rogue: 'briar_fang' },
     },
     endsChapter: 'Chapter 1: The Restless Thornwood',
+  },
+
+
+  // Chapter 2: Rising Waters
+  {
+    id: 'rising_waters',
+    name: 'Rising Waters',
+    giver: 'elder_maren',
+    requires: 'heart_of_thorns',
+    objective: { kind: 'kill', monsterId: 'mire_toad', count: 4 },
+    goal: 'Mire Toads defeated',
+    offer: [
+      'The Thornheart is gone, yet the land is still uneasy. Last night the river west of town burst its banks.',
+      'The Mirewater Fen is creeping toward our fields, and folk say it crackles like a storm that never breaks.',
+      "I've told Garrick to take down the barricade on the west road. Clear the Mire Toads off the Fen Road, four of them, then come back to me.",
+    ],
+    reminder: 'Four Mire Toads on the Fen Road, west of town. Mind their tongues.',
+    complete: [
+      'Good. The road is passable again.',
+      'Past the Fen Road stands Reedwatch, an old outpost. Captain Hale holds it. Tell him I sent you, and take these: the fen is no place to run dry.',
+    ],
+    rewards: { xp: 150, gold: 80, items: ['greater_health_potion', 'greater_health_potion'] },
+  },
+  {
+    id: 'sparks_in_the_reeds',
+    name: 'Sparks in the Reeds',
+    giver: 'captain_hale',
+    requires: 'rising_waters',
+    objective: { kind: 'kill', monsterId: 'spark_wisp', count: 4 },
+    goal: 'Spark Wisps defeated',
+    offer: [
+      "Maren's champion? Good. I need someone who can hit things.",
+      'Spark Wisps. Balls of living lightning. They never strayed from the deep fen before, now they set the reeds alight every night.',
+      'Steel bites them just fine; spells barely sting. Put out four.',
+    ],
+    reminder: 'Four Spark Wisps. Water works on them, if you have it.',
+    complete: ['The reeds are quiet tonight. First time in a week.', 'My scouts found these on a wisp-burned body. Better in your hands.'],
+    rewards: { xp: 220, gold: 100, items: ['greater_mana_potion', 'greater_mana_potion'] },
+  },
+  {
+    id: 'a_worthy_foe',
+    name: 'A Worthy Foe',
+    giver: 'captain_hale',
+    requires: 'sparks_in_the_reeds',
+    objective: { kind: 'kill', elite: true, count: 1 },
+    goal: 'Elite defeated',
+    offer: [
+      'Something out there is feeding the beasts. Some of them come back bigger, meaner, glowing gold. Elites, my scouts call them.',
+      "Bring one down, any one, anywhere. Then I'll know you're ready for what's in the hollow.",
+      'Keep your eyes open: they show up more often while you hunt them.',
+    ],
+    reminder: 'Any Elite will do. Look for the gold glow.',
+    complete: ['Ha! I watched that from the tower. You are ready.', 'Take this armor from the stores. You will want it where you are going.'],
+    rewards: { xp: 300, gold: 150, classItems: { warrior: 'scale_mail', mage: 'reedweave_robe', rogue: 'scale_mail' } },
+  },
+  {
+    id: 'mother_of_the_mire',
+    name: 'Mother of the Mire',
+    giver: 'captain_hale',
+    requires: 'a_worthy_foe',
+    objective: { kind: 'kill', monsterId: 'bogmother', count: 1 },
+    goal: 'Defeat the Bogmother',
+    offer: [
+      'The toads, the lurkers... they all crawl out of Bog Hollow, past the causeway. Something huge lives in that pool. We call her the Bogmother.',
+      "My men will cut a path through the reeds for you. She'll sink into the mud before a big strike: brace yourself.",
+    ],
+    reminder: 'Bog Hollow is past the Sunken Causeway. When she sinks into the mire, defend or heal.',
+    complete: [
+      'The Bogmother, dead? The whole outpost will drink to you tonight.',
+      'But my scouts saw what lies beyond the hollow. An old shrine, half drowned... and lightning crawling over it.',
+    ],
+    rewards: { xp: 400, gold: 200, items: ['greater_health_potion', 'greater_health_potion', 'greater_health_potion'] },
+  },
+  {
+    id: 'eye_of_the_storm',
+    name: 'Eye of the Storm',
+    giver: 'captain_hale',
+    requires: 'mother_of_the_mire',
+    objective: { kind: 'kill', monsterId: 'stormcoil', count: 1 },
+    goal: 'Defeat the Stormcoil',
+    offer: [
+      'The storms, the wisps, the flood: it all comes from the Drowned Shrine. A great serpent coils there, around something that glows.',
+      "We'll clear the reeds past Bog Hollow. Be warned: my scouts swear it changed color while they watched. Bring more than one trick.",
+    ],
+    reminder: 'The Drowned Shrine lies past Bog Hollow. Lightning first, then water. Bring both, or something neutral.',
+    complete: [
+      'The rain has stopped. For the first time in a month, I can see the stars over the fen.',
+      'And this... a scale as big as a shield, dull and cold. That is no serpent scale. That is a dragon\'s.',
+      'Take this, forged in our smithy around a piece of the Stormcoil. Then go tell Maren what you found. She will want to know about that scale.',
+    ],
+    rewards: {
+      xp: 600,
+      gold: 300,
+      classItems: { warrior: 'thunderhead_maul', mage: 'stormcoil_scepter', rogue: 'coilfang' },
+    },
+    endsChapter: 'Chapter 2: Rising Waters',
   },
 ];

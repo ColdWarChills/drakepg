@@ -33,7 +33,52 @@ export const ZONES: ZoneDef[] = [
     backdrop: { kind: 'forest', shade: 0.5 },
     encounters: [],
   },
+
+  // Chapter 2: the Mirewater Fen, west of Brindlemoor.
+  {
+    id: 'fen',
+    name: 'Mirewater Fen',
+    recommendedLevel: [6, 7],
+    background: 'bg_fen_road',
+    backdrop: { kind: 'marsh' },
+    encounters: [
+      { monsterId: 'mire_toad', weight: 5 },
+      { monsterId: 'spark_wisp', weight: 3 },
+    ],
+  },
+  {
+    id: 'causeway',
+    name: 'Sunken Causeway',
+    recommendedLevel: [7, 9],
+    background: ['bg_sunken_causeway', 'bg_fen_road'],
+    backdrop: { kind: 'marsh', shade: 0.25 },
+    encounters: [
+      { monsterId: 'spark_wisp', weight: 2 },
+      { monsterId: 'bog_lurker', weight: 4 },
+      { monsterId: 'sunken_revenant', weight: 3 },
+      { monsterId: 'stormscale_drakeling', weight: 2 },
+    ],
+  },
+  {
+    id: 'bog_hollow',
+    name: 'Bog Hollow',
+    recommendedLevel: [8, 9],
+    background: ['bg_bog_hollow', 'bg_sunken_causeway', 'bg_fen_road'],
+    backdrop: { kind: 'marsh', shade: 0.35 },
+    encounters: [],
+  },
+  {
+    id: 'drowned_shrine',
+    name: 'Drowned Shrine',
+    recommendedLevel: [9, 11],
+    background: ['bg_drowned_shrine', 'bg_sunken_causeway', 'bg_fen_road'],
+    backdrop: { kind: 'marsh', shade: 0.45 },
+    encounters: [],
+  },
 ];
+
+/** After a loss in the fen beyond Reedwatch you wake at its healer instead of walking back from Brindlemoor. */
+const REEDWATCH_WAKE = { roomId: 'reedwatch', x: 840, y: 650 };
 
 export const ROOMS: RoomDef[] = [
   {
@@ -43,7 +88,10 @@ export const ROOMS: RoomDef[] = [
     backdrop: { kind: 'town' },
     walk: [590, 700],
     ambient: ['dust'],
-    exits: [{ side: 'right', to: 'thornwood_path', label: 'Thornwood' }],
+    exits: [
+      { side: 'left', to: 'fen_road', label: 'Mirewater Fen', requiresQuest: 'rising_waters', blocker: 'barricade' },
+      { side: 'right', to: 'thornwood_path', label: 'Thornwood' },
+    ],
     npcs: [
       {
         id: 'elder_maren',
@@ -137,7 +185,142 @@ export const ROOMS: RoomDef[] = [
     exits: [{ side: 'left', to: 'thornwood_deep', label: 'Deep Thornwood' }],
     npcs: [],
     zoneId: 'thornheart_hollow',
-    boss: { monsterId: 'thornheart', x: 930, y: 630, questId: 'heart_of_thorns' },
+    boss: { monsterId: 'thornheart', x: 930, y: 630, questId: 'heart_of_thorns', intro: 'Ancient bark creaks as it turns toward you.' },
+  },
+
+  // Chapter 2 runs west (left) from Brindlemoor.
+  {
+    id: 'fen_road',
+    name: 'Fen Road',
+    background: 'bg_fen_road',
+    backdrop: { kind: 'marsh' },
+    walk: [540, 700],
+    ambient: ['mist', 'fireflies'],
+    exits: [
+      { side: 'right', to: 'brindlemoor', label: 'Brindlemoor' },
+      { side: 'left', to: 'reedwatch', label: 'Reedwatch' },
+    ],
+    npcs: [],
+    zoneId: 'fen',
+    monsterCount: 3,
+  },
+  {
+    id: 'reedwatch',
+    name: 'Reedwatch',
+    background: 'bg_reedwatch',
+    backdrop: { kind: 'outpost' },
+    walk: [590, 700],
+    ambient: ['mist'],
+    exits: [
+      { side: 'right', to: 'fen_road', label: 'Fen Road' },
+      { side: 'left', to: 'sunken_causeway', label: 'Sunken Causeway' },
+    ],
+    npcs: [
+      {
+        id: 'captain_hale',
+        name: 'Captain Hale',
+        title: 'Reedwatch Captain',
+        x: 210,
+        y: 615,
+        look: { shape: 'humanoid', color: 0x2e5e4e, accent: 0xb0bec5, scale: 1.05, art: 'npc_captain_hale' },
+        role: { kind: 'talk' },
+        dialogue: [
+          "Reedwatch holds the only dry ground for a day's walk. My scouts and I keep it that way.",
+          'Past the causeway the water gets deep and the storms get strange. Watch your footing.',
+        ],
+      },
+      {
+        id: 'wren',
+        name: 'Wren',
+        title: 'Quartermaster',
+        x: 560,
+        y: 605,
+        look: { shape: 'humanoid', color: 0x8d6e63, accent: 0x3e2723, scale: 0.95, art: 'npc_wren' },
+        role: {
+          kind: 'shop',
+          stock: [
+            'health_potion',
+            'mana_potion',
+            'greater_health_potion',
+            'greater_mana_potion',
+            'steel_broadsword',
+            'yew_staff',
+            'fenwatch_stiletto',
+            'scale_mail',
+            'reedweave_robe',
+          ],
+        },
+        dialogue: ['Steel from the city, potions from the Sister. Dry goods, mostly. Mostly dry.'],
+      },
+      {
+        id: 'ottilie',
+        name: 'Sister Ottilie',
+        title: 'Healer',
+        x: 900,
+        y: 610,
+        look: { shape: 'humanoid', color: 0xe8e2d0, accent: 0x5c7a8a, scale: 1, art: 'npc_ottilie' },
+        role: { kind: 'inn' },
+        dialogue: ['Sit, rest, dry your boots. The fen takes its toll on everyone.'],
+      },
+    ],
+  },
+  {
+    id: 'sunken_causeway',
+    name: 'Sunken Causeway',
+    background: ['bg_sunken_causeway', 'bg_fen_road'],
+    backdrop: { kind: 'marsh', shade: 0.25 },
+    walk: [540, 700],
+    ambient: ['rain', 'mist'],
+    exits: [
+      { side: 'right', to: 'reedwatch', label: 'Reedwatch' },
+      { side: 'left', to: 'bog_hollow', label: 'Bog Hollow', requiresQuest: 'mother_of_the_mire', blocker: 'reeds' },
+    ],
+    npcs: [],
+    zoneId: 'causeway',
+    monsterCount: 4,
+    wakeAt: REEDWATCH_WAKE,
+  },
+  {
+    id: 'bog_hollow',
+    name: 'Bog Hollow',
+    background: ['bg_bog_hollow', 'bg_sunken_causeway', 'bg_fen_road'],
+    backdrop: { kind: 'marsh', shade: 0.35 },
+    walk: [540, 700],
+    ambient: ['mist', 'fireflies'],
+    exits: [
+      { side: 'right', to: 'sunken_causeway', label: 'Sunken Causeway' },
+      { side: 'left', to: 'drowned_shrine', label: 'Drowned Shrine', requiresQuest: 'eye_of_the_storm', blocker: 'reeds' },
+    ],
+    npcs: [],
+    zoneId: 'bog_hollow',
+    // She wallows at the back of the pool, off the path, so walking past doesn't start a fight.
+    boss: {
+      monsterId: 'bogmother',
+      x: 360,
+      y: 548,
+      questId: 'mother_of_the_mire',
+      intro: 'The pool bubbles, and something enormous heaves itself out of the mud.',
+    },
+    wakeAt: REEDWATCH_WAKE,
+  },
+  {
+    id: 'drowned_shrine',
+    name: 'Drowned Shrine',
+    background: ['bg_drowned_shrine', 'bg_sunken_causeway', 'bg_fen_road'],
+    backdrop: { kind: 'marsh', shade: 0.45 },
+    walk: [540, 700],
+    ambient: ['rain', 'mist'],
+    exits: [{ side: 'right', to: 'bog_hollow', label: 'Bog Hollow' }],
+    npcs: [],
+    zoneId: 'drowned_shrine',
+    boss: {
+      monsterId: 'stormcoil',
+      x: 330,
+      y: 630,
+      questId: 'eye_of_the_storm',
+      intro: 'Lightning crawls over the drowned stones. The Stormcoil uncoils from around a great, dull scale.',
+    },
+    wakeAt: REEDWATCH_WAKE,
   },
 ];
 

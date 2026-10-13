@@ -45,7 +45,11 @@ export function makeElite(def: MonsterDef, affixId: string, zone?: ZoneDef): Mon
     damage: range(def.damage, e.damage * (1 + (a.damage ?? 0))),
     defense,
     resists,
-    attacks: def.attacks.map((atk) => (a.applies && atk.power > 0 ? { ...atk, applies: [...(atk.applies ?? []), ...a.applies] } : atk)),
+    attacks: def.attacks.map((atk) => {
+      // Add the affix's statuses to damaging attacks that don't already apply them.
+      const extra = (a.applies ?? []).filter((x) => !atk.applies?.some((y) => y.status === x.status));
+      return atk.power > 0 && extra.length ? { ...atk, applies: [...(atk.applies ?? []), ...extra] } : atk;
+    }),
     xp: Math.round(def.xp * e.rewards),
     gold: range(def.gold, e.rewards),
     elite: { affix: a.id, loot: zone ? zoneLoot(zone) : [] },

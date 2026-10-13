@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { ROOMS } from '../data/world';
-import type { MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
+import type { Blocker, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
 import { makeElite, rollElite } from '../game/Elites';
 import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questStarted, questWantsElite, turnInQuest } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
@@ -26,6 +26,8 @@ const MAP_SCALE = 0.85;
 const EDGE = 36;
 const TALK_RANGE = { x: 130, y: 80 };
 const TOUCH_RANGE = { x: 62, y: 34 };
+/** Roaming monsters keep at least this far apart (x), unless they are on clearly different rows (y), so labels stay readable. */
+const MOB_GAP = { x: 150, y: 70 };
 const UI_DEPTH = 3000;
 /** Gold glow around Elites. */
 const ELITE_GLOW = 0xffc23d;
@@ -115,7 +117,7 @@ export class RoomScene extends Phaser.Scene {
 
     const [top] = this.room.walk;
     drawScenery(this, this.room.background, this.room.backdrop, top - 10);
-    for (const kind of this.room.ambient ?? []) fx.ambient(this, [kind], kind === 'dust' ? 1 : 1500);
+    for (const kind of this.room.ambient ?? []) fx.ambient(this, [kind], kind === 'dust' || kind === 'mist' ? 1 : 1500);
     this.drawExits();
 
     for (const def of this.room.npcs) this.addNpc(def);
@@ -205,7 +207,7 @@ export class RoomScene extends Phaser.Scene {
       let elites = 0;
       roaming = [];
       for (let i = 0; i < (room.monsterCount ?? 0); i++) {
-        const pos = this.findSpawnPoint();
+        const pos = this.findSpawnPoint(roaming);
         // Monsters are visible, so tougher ones can appear; their level label warns you.
         const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
         const elite = elites < BALANCE.elite.maxPerRoom ? rollElite(defaultRng, wantsElite) : undefined;
@@ -216,17 +218,40 @@ export class RoomScene extends Phaser.Scene {
     for (const r of roaming) this.addMob(r);
   }
 
-  private findSpawnPoint(): { x: number; y: number } {
+  /** A spot away from the player and from `taken` (monsters placed so far). Falls back to the roomiest try. */
+  private findSpawnPoint(taken: { x: number; y: number }[]): { x: number; y: number } {
     const [top, bottom] = this.room.walk;
     let best = { x: 640, y: (top + bottom) / 2 };
-    for (let i = 0; i < 30; i++) {
+    let bestScore = -Infinity;
+    for (let i = 0; i < 40; i++) {
       const p = { x: Phaser.Math.Between(180, this.scale.width - 140), y: Phaser.Math.Between(top + 10, bottom - 10) };
-      const farFromPlayer = Math.abs(p.x - this.player.x) > 320;
-      const farFromOthers = this.mobs.every((m) => Math.abs(m.x - p.x) > 140);
-      best = p;
-      if (farFromPlayer && farFromOthers) break;
+      const fromPlayer = Math.abs(p.x - this.player.x);
+      const fromOthers = Math.min(Infinity, ...taken.map((m) => Math.abs(m.x - p.x)));
+      if (fromPlayer > 320 && fromOthers > MOB_GAP.x) return p;
+      const score = Math.min(fromPlayer, 320) + Math.min(fromOthers, MOB_GAP.x * 2);
+      if (score > bestScore) {
+        best = p;
+        bestScore = score;
+      }
     }
     return best;
+  }
+
+  /** Push roaming monsters that crowd each other apart, a little each frame. */
+  private separateMobs(dt: number): void {
+    const push = 90 * dt;
+    for (let i = 0; i < this.mobs.length; i++) {
+      for (let j = i + 1; j < this.mobs.length; j++) {
+        const a = this.mobs[i];
+        const b = this.mobs[j];
+        const dx = b.x - a.x;
+        if (Math.abs(dx) >= MOB_GAP.x || Math.abs(b.y - a.y) >= MOB_GAP.y) continue;
+        const dir = dx === 0 ? (a.uid < b.uid ? 1 : -1) : Math.sign(dx);
+        // Chasers keep their pace; only the calmer one yields.
+        if (a.state !== 'chase') a.x -= dir * push;
+        if (b.state !== 'chase') b.x += dir * push;
+      }
+    }
   }
 
   /** The hero holds the equipped weapon, so redraw them after a weapon swap. */
@@ -309,7 +334,7 @@ export class RoomScene extends Phaser.Scene {
       const dir = exit.side === 'right' ? 1 : -1;
       const x = exit.side === 'right' ? width - 46 : 46;
       if (!this.exitOpen(exit)) {
-        this.drawThornWall(exit.side);
+        this.drawBlocker(exit.side, exit.blocker ?? 'thorns');
         continue;
       }
       const c = this.add.container(x, y).setDepth(UI_DEPTH - 1);
@@ -336,40 +361,84 @@ export class RoomScene extends Phaser.Scene {
     return !exit.requiresQuest || questStarted(session.player, exit.requiresQuest);
   }
 
-  /** Brambles blocking a locked exit. */
-  private drawThornWall(side: 'left' | 'right'): void {
+  /** Thorns, a barricade or flooded reeds across a locked exit. */
+  private drawBlocker(side: 'left' | 'right', kind: Blocker): void {
     const { width } = this.scale;
     const [top, bottom] = this.room.walk;
     const x0 = side === 'right' ? width - 90 : 0;
     const g = this.add.graphics().setDepth(bottom + 1);
-    for (let i = 0; i < 70; i++) {
-      const x = x0 + ((i * 37) % 90);
-      const y = top - 260 + ((i * 53) % (bottom - top + 280));
-      g.lineStyle(6, i % 3 ? 0x2b1d14 : 0x1f3a1c, 1);
-      g.beginPath();
-      g.moveTo(x, y);
-      g.lineTo(x + ((i * 29) % 50) - 25, y + 40);
-      g.strokePath();
-      g.fillStyle(0x4a3426, 1).fillTriangle(x - 4, y + 10, x + 4, y + 10, x + (i % 2 ? 12 : -12), y + 2);
+    if (kind === 'thorns') {
+      for (let i = 0; i < 70; i++) {
+        const x = x0 + ((i * 37) % 90);
+        const y = top - 260 + ((i * 53) % (bottom - top + 280));
+        g.lineStyle(6, i % 3 ? 0x2b1d14 : 0x1f3a1c, 1);
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + ((i * 29) % 50) - 25, y + 40);
+        g.strokePath();
+        g.fillStyle(0x4a3426, 1).fillTriangle(x - 4, y + 10, x + 4, y + 10, x + (i % 2 ? 12 : -12), y + 2);
+      }
+    } else if (kind === 'barricade') {
+      // Posts, then planks nailed across them.
+      for (let i = 0; i < 3; i++) {
+        g.fillStyle(0x4e342e, 1).fillRect(x0 + 10 + i * 30, top - 230, 18, bottom - top + 250);
+        g.fillStyle(0x3e2723, 1).fillTriangle(x0 + 10 + i * 30, top - 230, x0 + 19 + i * 30, top - 250, x0 + 28 + i * 30, top - 230);
+      }
+      for (let i = 0; i < 7; i++) {
+        const y = top - 200 + i * ((bottom - top + 200) / 7);
+        const tilt = i % 2 ? 14 : -14;
+        g.fillStyle(i % 2 ? 0x8d6e63 : 0x795548, 1);
+        g.fillPoints([
+          new Phaser.Math.Vector2(x0 - 4, y + tilt),
+          new Phaser.Math.Vector2(x0 + 94, y - tilt),
+          new Phaser.Math.Vector2(x0 + 94, y - tilt + 22),
+          new Phaser.Math.Vector2(x0 - 4, y + tilt + 22),
+        ], true);
+        g.lineStyle(2, 0x3e2723, 1).strokeRect(x0 + 2, y - 6, 86, 2);
+      }
+    } else {
+      // Deep water with tall reeds and cattails.
+      g.fillStyle(0x24485a, 0.85).fillRect(x0, top - 20, 90, bottom - top + 40);
+      for (let i = 0; i < 40; i++) {
+        const x = x0 + ((i * 41) % 90);
+        const base = bottom + 10 - ((i * 23) % 60);
+        const h = 160 + ((i * 67) % 220);
+        g.lineStyle(4, i % 3 ? 0x5d7a3a : 0x47602b, 1);
+        g.beginPath();
+        g.moveTo(x, base);
+        g.lineTo(x + ((i * 13) % 20) - 10, base - h);
+        g.strokePath();
+        if (i % 3 === 0) g.fillStyle(0x5d3a1e, 1).fillEllipse(x + ((i * 13) % 20) - 10, base - h + 16, 10, 30);
+      }
     }
-    addText(this, side === 'right' ? width - 50 : 50, top - 290, 'Blocked by\nthorns', { size: 15, bold: true, align: 'center', color: COLORS.textDim, stroke: true })
+    const label = kind === 'thorns' ? 'Blocked by\nthorns' : kind === 'barricade' ? 'Barricaded' : 'Flooded';
+    addText(this, side === 'right' ? width - 50 : 50, top - 290, label, { size: 15, bold: true, align: 'center', color: COLORS.textDim, stroke: true })
       .setOrigin(0.5)
       .setDepth(UI_DEPTH - 1);
   }
 
-  private bumpWall(): void {
+  private bumpWall(side: 'left' | 'right'): void {
     if (this.time.now < this.wallBumpAt) return;
     this.wallBumpAt = this.time.now + 2000;
     sfx.play(this, 'denied');
     this.cameras.main.shake(120, 0.004);
-    toast(this, 'A wall of thorns blocks the way.', COLORS.textDim);
+    const kind = this.room.exits.find((e) => e.side === side)?.blocker ?? 'thorns';
+    const text =
+      kind === 'barricade'
+        ? 'The road is barricaded. The Elder will know why.'
+        : kind === 'reeds'
+          ? 'Deep water and thick reeds block the way.'
+          : 'A wall of thorns blocks the way.';
+    toast(this, text, COLORS.textDim);
   }
 
   private spawnBoss(): void {
     const b = this.room.boss;
     if (!b || !questStarted(session.player, b.questId)) return;
     const def = db.monster(b.monsterId);
-    const fig = drawFigure(this, b.x, b.y, def.look, -1);
+    // Bosses face the middle of the room, where the player comes from.
+    const faceLeft = b.x > this.scale.width / 2;
+    const fig = drawFigure(this, b.x, b.y, def.look, faceLeft ? -1 : 1);
     const actor = this.makeActor(fig, b.x, b.y, def.look.scale);
     actor.facing = 1;
     const label = addText(this, b.x, 0, `${def.name}  ·  Boss`, { size: 18, bold: true, color: COLORS.textBad, stroke: true }).setOrigin(0.5, 1);
@@ -384,7 +453,7 @@ export class RoomScene extends Phaser.Scene {
     hit.on('pointerup', () => {
       if (this.modalOpen() || this.leaving) return;
       if (this.nearestTarget() === 'boss') this.confirmBoss();
-      else this.moveTarget = { x: b.x - 170, y: b.y };
+      else this.moveTarget = { x: b.x + (faceLeft ? -170 : 170), y: b.y };
     });
   }
 
@@ -458,6 +527,7 @@ export class RoomScene extends Phaser.Scene {
 
     this.movePlayer(dt, time, blocked);
     for (const npc of this.npcs) this.updateNpc(npc, time);
+    if (!blocked) this.separateMobs(dt);
     for (const mob of [...this.mobs]) this.updateMob(mob, dt, time, blocked);
     this.updatePrompt(blocked);
   }
@@ -514,7 +584,8 @@ export class RoomScene extends Phaser.Scene {
     const wallL = !exitL && this.room.exits.some((e) => e.side === 'left');
     const maxX = exitR ? width : wallR ? width - 110 : width - EDGE;
     const minX = exitL ? 0 : wallL ? 110 : EDGE;
-    if ((wallR && p.x >= maxX && vx > 0) || (wallL && p.x <= minX && vx < 0)) this.bumpWall();
+    if (wallR && p.x >= maxX && vx > 0) this.bumpWall('right');
+    if (wallL && p.x <= minX && vx < 0) this.bumpWall('left');
     this.clampToWalk(p, minX, maxX);
     this.place(p, time);
     if (this.boss) {
@@ -571,10 +642,15 @@ export class RoomScene extends Phaser.Scene {
           m.timer -= dt;
           if (m.timer <= 0) {
             const [top, bottom] = this.room.walk;
-            m.target = {
-              x: Phaser.Math.Clamp(m.x + Phaser.Math.Between(-220, 220), 120, this.scale.width - 120),
-              y: Phaser.Math.Between(top + 5, bottom - 5),
-            };
+            // Wander somewhere no other monster is standing.
+            for (let i = 0; i < 6; i++) {
+              m.target = {
+                x: Phaser.Math.Clamp(m.x + Phaser.Math.Between(-220, 220), 120, this.scale.width - 120),
+                y: Phaser.Math.Between(top + 5, bottom - 5),
+              };
+              const t = m.target;
+              if (this.mobs.every((o) => o === m || Math.abs(o.x - t.x) >= MOB_GAP.x || Math.abs(o.y - t.y) >= MOB_GAP.y)) break;
+            }
             m.state = 'wander';
           }
           break;
@@ -985,9 +1061,10 @@ export class RoomScene extends Phaser.Scene {
     const def = this.boss.def;
     const rematch = !questNeedsKill(session.player, def.id);
     const modal = new Modal(this, 700, 300, rematch ? `${def.name} (rematch)` : def.name);
+    const intro = this.room.boss?.intro ?? 'It turns toward you.';
     const text = rematch
-      ? `It has grown back. There is no running from this fight.\nRematch: ${Math.round(BALANCE.bossRepeatRewards * 100)}% XP and gold, full loot (Sigils drop more often from bosses).`
-      : 'Ancient bark creaks as it turns toward you.\nThere is no running from this fight.';
+      ? `It is back. There is no running from this fight.\nRematch: ${Math.round(BALANCE.bossRepeatRewards * 100)}% XP and gold, full loot (Sigils drop more often from bosses).`
+      : `${intro}\nThere is no running from this fight.`;
     modal.content.add(addText(this, 350, 110, text, { size: rematch ? 19 : 22, align: 'center', wrap: 640 }).setOrigin(0.5));
     modal.content.add(new Button(this, 230, 230, 'Fight', () => (modal.close(), this.startBossBattle()), { width: 220 }));
     modal.content.add(new Button(this, 470, 230, 'Not yet', () => modal.close(), { width: 220 }));

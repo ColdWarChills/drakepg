@@ -34,7 +34,7 @@ Water, Energy, Dark. Chapter 1's Earth boss weapons are neutral here, so the new
 | Bog Lurker | 7 | Water | melee | heavy, Clammy Grip may Chill |
 | Sunken Revenant | 8 | Dark | pierce | Grave Touch may Shadow Rot; weak to Light |
 | Stormscale Drakeling | 9 | Energy | pierce | Skitter: Evasive buff |
-| **The Bogmother** (mini-boss) | 8 | Water | | Weaken spit, **Drag Under** telegraphed a turn ahead |
+| **The Bogmother** (mini-boss) | 8 | Water | | Bile Spit may Weaken, Wallow regenerates, **Drag Under** telegraphed a turn ahead |
 | **The Stormcoil** (boss) | 10 | Energy | | **Thunderhead** telegraphed; **at 50% HP sheds its skin and turns Water** (resists flip, shown in the battle UI) |
 
 Bosses stay for rematches (half XP/gold, boss Sigil odds).
@@ -60,34 +60,42 @@ Bosses stay for rematches (half XP/gold, boss Sigil odds).
 
 Kill quests, each unlocks the next.
 
-1. [ ] **Rising Waters** (Elder Maren): 4 Mire Toads. Accepting opens the west road.
-2. [ ] **Sparks in the Reeds** (Captain Hale): 4 Spark Wisps.
-3. [ ] **A Worthy Foe** (Captain Hale): defeat any Elite.
-4. [ ] **Mother of the Mire** (Captain Hale): the Bogmother. Opens Bog Hollow.
-5. [ ] **Eye of the Storm** (Captain Hale): the Stormcoil. Class reward, ends Chapter 2.
+1. [x] **Rising Waters** (Elder Maren): 4 Mire Toads. Accepting opens the west road.
+2. [x] **Sparks in the Reeds** (Captain Hale): 4 Spark Wisps.
+3. [x] **A Worthy Foe** (Captain Hale): defeat any Elite.
+4. [x] **Mother of the Mire** (Captain Hale): the Bogmother. Opens Bog Hollow.
+5. [x] **Eye of the Storm** (Captain Hale): the Stormcoil. Class reward, ends Chapter 2.
 
 ## Gear (PR 2)
 
 Tiers are about x1.5 apart; items in one tier are sidegrades.
 
-- [ ] Reedwatch shop, tier 2 Standard: Steel Broadsword, Yew Staff, Fenwatch Stiletto, Scale Mail, Reedweave Robe, plus Greater Health/Mana Potions (old potions heal too little by now).
-- [ ] Monster drops, tier 2 elemental (one Water and one Energy weapon per class) with weapon specials, plus 2 armors with Water/Energy resists.
-- [ ] Bogmother drops the 3 Water weapons at 15% each (boss Sigil odds).
-- [ ] Stormcoil drops 3 tier-3 Energy weapons at 15% each; the quest gives your class's one.
+- [x] Reedwatch shop, tier 2 Standard: Steel Broadsword, Yew Staff, Fenwatch Stiletto, Scale Mail, Reedweave Robe, plus Greater Health/Mana Potions (old potions heal too little by now).
+- [x] Monster drops, tier 2 elemental (one Water and one Energy weapon per class) with weapon specials, plus 2 armors with Water/Energy resists.
+- [x] Bogmother drops the 3 Water weapons at 15% each (boss Sigil odds).
+- [x] Stormcoil drops 3 tier-3 Energy weapons at 15% each; the quest gives your class's one.
 
 ## Code (PR 2)
 
-- [ ] Boss phase: `phase` on `MonsterDef` (HP threshold, new element/resists, message).
-- [ ] Exit blockers other than thorns (barricade, reeds), per-boss intro text.
-- [ ] `marsh` procedural backdrop until the art lands.
-- [ ] Title shows v0.7 · Chapter 2. Sim rows for every new monster and boss.
-- [ ] No `SAVE_VERSION` bump: quest state is keyed by id, Elites aren't saved.
+- [x] Boss phase: `phase` on `MonsterDef` (HP threshold, new element/resists, message).
+- [x] Exit blockers other than thorns (barricade, reeds), per-boss intro text.
+- [x] `marsh` procedural backdrop until the art lands.
+- [x] Title shows v0.7 · Chapter 2. Sim rows for every new monster and boss.
+- [x] No `SAVE_VERSION` bump: quest state is keyed by id, Elites aren't saved.
 
 ## Pacing
 
 Chapter 1 ends around level 5-6 (estimate from the XP curve). Level 6 to 10 is 4,140 XP; Chapter 2 monsters give about 2.5-3x Chapter 1 XP, so roughly 50 fights plus quests, close to Chapter 1's length.
 
 Sim targets (level-appropriate tier-2 shop gear, full HP, 1 potion): trash wins 100% with 55-75% HP left in 4-6 turns. Bosses (3 potions): 85-100% win at their level.
+
+### Tuning result (`npm run sim`)
+
+- Trash at its level, tier-2 shop gear: 100% wins, 59-84% HP left, 4-9 turns.
+- Bogmother at 8, shop gear: 100% wins, about 55-60% HP left, 11-17 turns (8 with Energy weapons).
+- Stormcoil at 10, shop gear: 99-100% wins, about 50-60% HP left, 15-24 turns. Its own-element resist is 50 in both forms, so a single-element weapon costs about a third more turns instead of doubling the fight.
+- Both bosses resist spells more than steel (like the Thornheart), so Mages don't steamroll them.
+- Elites at level +1: mostly 88-100% wins; an Ironhide Drakeling is the Warrior's worst case (about 60%).
 
 ## Art (Higgsfield, free mode)
 
