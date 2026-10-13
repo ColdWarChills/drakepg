@@ -33,10 +33,12 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
     c.add(addText(scene, 40, 64, player.name, { size: 26, bold: true }));
     c.add(addText(scene, 40, 98, `Level ${player.level} ${player.classDef.name}   ·   ${player.xp} / ${player.xpNeeded} XP`, { size: 18, color: COLORS.textDim }));
     c.add(addText(scene, 40, 130, `HP  ${player.hp} / ${player.maxHp}      MP  ${player.mp} / ${player.maxMp}`, { size: 20 }));
+    const rage = player.classDef.mpOnHit;
+    if (rage) c.add(addText(scene, 40, 152, `Rage: +${rage} MP whenever an enemy hit lands on you`, { size: 15, color: COLORS.textMagic }));
 
     const points = player.data.statPoints;
     if (points > 0) {
-      const label = addText(scene, 40, 168, `${points} stat point${points > 1 ? 's' : ''} to spend`, { size: 19, bold: true, color: COLORS.textGold });
+      const label = addText(scene, 40, 176, `${points} stat point${points > 1 ? 's' : ''} to spend`, { size: 19, bold: true, color: COLORS.textGold });
       scene.tweens.add({ targets: label, alpha: 0.55, duration: 600, yoyo: true, repeat: -1 });
       c.add(label);
     }
