@@ -47,8 +47,13 @@ npm run preview  # serve the dist/ build locally
   | Sigil of Eclipse (crimson) | +60% | 3 | 0.05% | 0.3% | 1.5% |
 
   The chance is per gear drop. The Sigil raises the base first, then the white rolls apply on top (a 100% Eclipse Iron Sword hits 17-26 vs 7-11 for a shop one). Sigil drops arrive locked, sort first, sell for 3x/6x/12x, and get a fanfare on the result screen. Quest rewards and shop gear never have Sigils or mods.
-- **Inventory** (button or **I**): 30-slot grid with tabs (All / Weapons / Armor / Potions) and sorting. Hover or tap an item for its card: rolls with quality bars, and a comparison with what you wear. Equip by double-click, the Equip button, or dragging onto the hero; drag worn gear back to the grid to take it off. **Lock** keeps an item from being sold. Loot that doesn't fit a full bag is left behind (quest rewards always fit).
-- **Shop**: Buy (Standard gear and potions) and Sell (better grades sell for more; **Sell junk** sells unlocked Standard/Fair gear, never Sigils).
+- **Inventory** (button or **I**): 30-slot grid with tabs (All / Weapons / Armor / Potions / Materials) and sorting. Materials sit in their own pouch and take no bag slots. Hover or tap an item for its card: rolls with quality bars, and a comparison with what you wear. Equip by double-click, the Equip button, or dragging onto the hero; drag worn gear back to the grid to take it off. **Lock** keeps an item from being sold. Loot that doesn't fit a full bag is left behind (quest rewards always fit).
+- **Shop**: Buy (Standard gear and potions) and Sell (better grades sell for more; **Sell junk** sells unlocked Standard/Fair gear, never Sigils or reinforced gear).
+- **Materials and the forge**: monsters drop parts (Moss Clump, Boar Tusk, Fen Hide, Storm Scale), elemental **essences**, Iron Scrap and Honing Dust. **Hulda** the smith in Brindlemoor:
+  - **Craft** gear from recipes: every line rolls at least 25%. Boss weapons stay drop-only.
+  - **Reinforce** to +10: each + adds 5% base damage/defense (stacks with Sigils). Odds fall from +3; from +4 a failure drops a +.
+  - **Hone** one quality line by 8-15%; 35% chance another line slips 3-8%.
+  - **Salvage** bag gear into scrap, dust (more for better grades and Sigils) and its element's essence. Fine-or-better, Sigil or reinforced gear asks twice.
 - **Phones and tablets** (landscape): tap the ground to walk and tap people to talk; **hold** a battle button (or a skill in the Character panel) to read its description without using it. Names in rooms grow on small screens, a **Fullscreen** button appears where the browser supports it (not on iPhone Safari), and holding the device upright shows a "turn sideways" screen.
 - **Character panel** (button or **C**): stats, stat points, skills, what you have equipped. **M** toggles sound. **Esc** closes windows.
 - **Gear you can see**: the weapon is drawn in the hero's hands, and armor changes the hero's outfit once its art exists (`char_<class>_<armor id>`; see the Art section).
@@ -85,6 +90,7 @@ Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editin
 
 - **Room**: add to `ROOMS` in `src/data/world.ts` with its walkable strip (`walk`), `exits` (left/right to another room), `npcs`, and optionally a `zoneId` + `monsterCount` for roaming monsters, `ambient` particles (dust, leaves, fireflies, rain, mist) and `wakeAt` (where you wake after losing there; default the Brindlemoor inn). Link it from a neighbor's `exits`. Without art, `backdrop.kind` draws a town, forest, marsh or outpost.
 - **Monster**: add to `src/data/monsters.ts` (with an `element`, `resists` in percent, `defense` per attack type, and `immune` statuses if any), then add it to a zone's `encounters` in `src/data/world.ts`. An attack can `applies` statuses; `power: 0` makes it a pure buff.
+- **Material / recipe**: add to `MATERIALS` / `RECIPES` in `src/data/crafting.ts` (Hulda lists every recipe); forge numbers are in `BALANCE.forge`, rules in `src/game/Forge.ts`.
 - **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`. Items without art get a drawn icon tinted with `iconColor`. Roll ranges, drop curve, bag size and sell prices are in `BALANCE` (`gearRolls`, `rollCurve`, `bagSlots`, `sellRate`, `sellGradeBonus`), and so are Sigils and mods (`sigils`, `sigilChance`, `modChance`, `modRanges`); roll rules and the mod pools live in `src/game/Items.ts`. Drops from a `boss: true` monster use the boss Sigil chances.
 - **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. Set `cooldown`, and `element`/`damageType` if it shouldn't use the weapon's. `applies` adds statuses (`self: true` for buffs). `fx: 'heavy'` gives a leap (or a big spell).
 - **Status**: add to `src/data/statuses.ts` (damage over time, regen, stun, damage/defense/resist/hit/crit modifiers).
@@ -101,7 +107,7 @@ Broken references (e.g. a drop pointing at a missing item) throw at startup in `
 
 ### Saves
 
-Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors; pre-v4 gear becomes Standard; v5 added Sigils and mods, which old gear simply doesn't have). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
+Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors; pre-v4 gear becomes Standard; v5 added Sigils and mods, which old gear simply doesn't have; v6 added the smith's + and materials). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
 
 ## Playing on GitHub Pages
 

@@ -22,7 +22,7 @@ export const MONSTERS: MonsterDef[] = [
     ],
     xp: 14,
     gold: [3, 7],
-    drops: [{ itemId: 'health_potion', chance: 0.2 }],
+    drops: [{ itemId: 'health_potion', chance: 0.2 }, { itemId: 'moss_clump', chance: 0.6 }, { itemId: 'essence_earth', chance: 0.15 }],
   },
   {
     id: 'thornback_boar',
@@ -44,6 +44,8 @@ export const MONSTERS: MonsterDef[] = [
     drops: [
       { itemId: 'tusk_dagger', chance: 0.08 },
       { itemId: 'health_potion', chance: 0.15 },
+      { itemId: 'boar_tusk', chance: 0.5 },
+      { itemId: 'essence_earth', chance: 0.2 },
     ],
   },
   {
@@ -68,6 +70,7 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'cinder_fang', chance: 0.05 },
       { itemId: 'emberbrand', chance: 0.05 },
       { itemId: 'ember_wand', chance: 0.05 },
+      { itemId: 'essence_fire', chance: 0.5 },
     ],
   },
   {
@@ -90,6 +93,9 @@ export const MONSTERS: MonsterDef[] = [
     drops: [
       { itemId: 'health_potion', chance: 0.3 },
       { itemId: 'leather_armor', chance: 0.05 },
+      { itemId: 'scrap', chance: 0.5, qty: 2 },
+      { itemId: 'dust', chance: 0.2 },
+      { itemId: 'essence_dark', chance: 0.3 },
     ],
   },
   {
@@ -125,6 +131,8 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'thornheart_blade', chance: 0.15 },
       { itemId: 'heartwood_staff', chance: 0.15 },
       { itemId: 'briar_fang', chance: 0.15 },
+      { itemId: 'essence_earth', chance: 1, qty: 3 },
+      { itemId: 'dust', chance: 1, qty: 2 },
     ],
   },
 
@@ -150,6 +158,8 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'health_potion', chance: 0.2 },
       { itemId: 'tidebreaker', chance: 0.04 },
       { itemId: 'brinefang', chance: 0.04 },
+      { itemId: 'fen_hide', chance: 0.5 },
+      { itemId: 'essence_water', chance: 0.3 },
     ],
   },
   {
@@ -174,6 +184,7 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'mana_potion', chance: 0.25 },
       { itemId: 'sparkglass_wand', chance: 0.05 },
       { itemId: 'stormweave_robe', chance: 0.04 },
+      { itemId: 'essence_energy', chance: 0.5 },
     ],
   },
   {
@@ -197,6 +208,8 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'health_potion', chance: 0.2 },
       { itemId: 'tidecaller_rod', chance: 0.05 },
       { itemId: 'marshhide_vest', chance: 0.05 },
+      { itemId: 'fen_hide', chance: 0.6 },
+      { itemId: 'essence_water', chance: 0.4 },
     ],
   },
   {
@@ -220,6 +233,9 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'greater_health_potion', chance: 0.08 },
       { itemId: 'mana_potion', chance: 0.2 },
       { itemId: 'marshhide_vest', chance: 0.03 },
+      { itemId: 'scrap', chance: 0.4, qty: 2 },
+      { itemId: 'dust', chance: 0.3 },
+      { itemId: 'essence_dark', chance: 0.3 },
     ],
   },
   {
@@ -244,6 +260,8 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'stormcleaver', chance: 0.05 },
       { itemId: 'sparkfang', chance: 0.05 },
       { itemId: 'greater_health_potion', chance: 0.08 },
+      { itemId: 'storm_scale', chance: 0.5 },
+      { itemId: 'essence_energy', chance: 0.3 },
     ],
   },
   {
@@ -278,6 +296,9 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'tidebreaker', chance: 0.15 },
       { itemId: 'tidecaller_rod', chance: 0.15 },
       { itemId: 'brinefang', chance: 0.15 },
+      { itemId: 'essence_water', chance: 1, qty: 3 },
+      { itemId: 'fen_hide', chance: 1, qty: 2 },
+      { itemId: 'dust', chance: 1, qty: 2 },
     ],
   },
   {
@@ -329,6 +350,9 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'thunderhead_maul', chance: 0.15 },
       { itemId: 'stormcoil_scepter', chance: 0.15 },
       { itemId: 'coilfang', chance: 0.15 },
+      { itemId: 'essence_energy', chance: 1, qty: 4 },
+      { itemId: 'storm_scale', chance: 1, qty: 3 },
+      { itemId: 'dust', chance: 1, qty: 3 },
     ],
   },
 ];

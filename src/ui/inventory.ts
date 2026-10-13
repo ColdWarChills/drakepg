@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
-import type { ConsumableDef, DamageType, EquipSlot, ItemDef } from '../data/types';
+import type { ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef } from '../data/types';
 import { gearDef, grade, gradeTier, isGearDef, sellValue, SIGIL_TIERS, type Gear, type GearDef } from '../game/Items';
 import type { Player } from '../game/Player';
 import { Button } from './Button';
@@ -16,6 +16,7 @@ import {
   gradeInfo,
   gradeLabel,
   itemLines,
+  itemName,
   MOD_CSS,
   modLines,
   restoreText,
@@ -33,12 +34,12 @@ import { addText, toast } from './text';
  * - shop: Buy (the merchant's stock, always Standard) and Sell (your bag) on the left.
  */
 type Mode = 'bag' | 'buy' | 'sell';
-type Tab = 'all' | 'weapon' | 'armor' | 'consumable';
+type Tab = 'all' | 'weapon' | 'armor' | 'consumable' | 'material';
 type SortMode = 'newest' | 'grade' | 'type' | 'value';
 
 type Entry =
   | { kind: 'gear'; key: string; gear: Gear; def: GearDef; slot: EquipSlot | null }
-  | { kind: 'stack'; key: string; def: ConsumableDef; qty: number }
+  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef; qty: number }
   | { kind: 'stock'; key: string; def: ItemDef };
 
 const W = 1240;
@@ -63,6 +64,7 @@ const TABS: { tab: Tab; label: string }[] = [
   { tab: 'weapon', label: 'Weapons' },
   { tab: 'armor', label: 'Armor' },
   { tab: 'consumable', label: 'Potions' },
+  { tab: 'material', label: 'Materials' },
 ];
 const SORTS: { sort: SortMode; label: string }[] = [
   { sort: 'newest', label: 'Newest' },
@@ -70,7 +72,7 @@ const SORTS: { sort: SortMode; label: string }[] = [
   { sort: 'type', label: 'Type' },
   { sort: 'value', label: 'Value' },
 ];
-const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, consumable: 2 };
+const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, consumable: 2, material: 3 };
 /** Grades below this are offered by "Sell junk" (Standard and Fair). */
 const JUNK_BELOW = 40;
 
@@ -126,7 +128,7 @@ class InventoryView {
   private bagEntries(): Entry[] {
     const p = this.player;
     const gear: Entry[] = p.data.gear.map((g) => ({ kind: 'gear', key: g.uid, gear: g, def: gearDef(g), slot: null }));
-    const stacks: Entry[] = p.data.inventory.map((e) => ({ kind: 'stack', key: `stack:${e.itemId}`, def: db.item(e.itemId) as ConsumableDef, qty: e.qty }));
+    const stacks: Entry[] = p.data.inventory.map((e) => ({ kind: 'stack', key: `stack:${e.itemId}`, def: db.item(e.itemId) as ConsumableDef | MaterialDef, qty: e.qty }));
     // Newest first; uids count up.
     gear.reverse();
     return [...gear, ...stacks];
@@ -140,7 +142,8 @@ class InventoryView {
   private shown(): Entry[] {
     const all: Entry[] =
       this.mode === 'buy' ? this.stock.map((id) => ({ kind: 'stock', key: `stock:${id}`, def: db.item(id) })) : this.bagEntries();
-    const filtered = remembered.tab === 'all' ? all : all.filter((e) => e.def.type === remembered.tab);
+    // Materials live in their own pouch (no bag slots), so only their tab shows them.
+    const filtered = remembered.tab === 'all' ? all.filter((e) => e.def.type !== 'material') : all.filter((e) => e.def.type === remembered.tab);
     // Sigils rank above every grade: Eclipse 300+, Dusk 200+, Dawn 100+.
     const sigilRank = (e: Entry) => (e.kind === 'gear' && e.gear.sigil ? (SIGIL_TIERS.indexOf(e.gear.sigil) + 1) * 100 : 0);
     const gradeOf = (e: Entry) => (e.kind === 'gear' ? sigilRank(e) + grade(e.def, e.gear.rolls) : -1);
@@ -179,11 +182,11 @@ class InventoryView {
     // Tabs
     TABS.forEach((t, i) => {
       const active = remembered.tab === t.tab;
-      const b = new Button(scene, GRID_X + 60 + i * 128, 96, t.label, () => {
+      const b = new Button(scene, GRID_X + 48 + i * 106, 96, t.label, () => {
         remembered.tab = t.tab;
         this.page = 0;
         this.render();
-      }, { width: 120, height: 40, fontSize: 17, color: active ? 0x6b5320 : COLORS.button });
+      }, { width: 98, height: 40, fontSize: 15, color: active ? 0x6b5320 : COLORS.button });
       c.add(b);
     });
 
@@ -274,7 +277,7 @@ class InventoryView {
     c.add(addText(scene, 30, 196, hint, { size: 16, color: COLORS.textDim, wrap: 260 }));
 
     if (this.mode === 'sell') {
-      const junk = player.data.gear.filter((g) => !g.locked && !g.sigil && grade(gearDef(g), g.rolls) < JUNK_BELOW);
+      const junk = player.data.gear.filter((g) => !g.locked && !g.sigil && !g.plus && grade(gearDef(g), g.rolls) < JUNK_BELOW);
       const value = junk.reduce((sum, g) => sum + sellValue(gearDef(g), g), 0);
       const btn = new Button(scene, 150, 310, 'Sell junk', () => {
         let gold = 0;
@@ -401,7 +404,7 @@ class InventoryView {
     if (entry.kind === 'gear') {
       if (entry.slot) this.unequip(entry.slot);
       else this.equip(entry);
-    } else if (entry.kind === 'stack') this.use(entry.def);
+    } else if (entry.kind === 'stack' && entry.def.type === 'consumable') this.use(entry.def);
   }
 
   // --- Actions ---
@@ -483,7 +486,7 @@ class InventoryView {
     const icon = drawItemIcon(scene, entry.def, 58).setPosition(left + 38, CARD_Y + 56);
     card.add([iconBg, icon]);
     if (info.sigil) addSigilGlow(scene, icon, info.sigil);
-    const name = addText(scene, left + 92, CARD_Y + 18, entry.def.name, { size: 22, bold: true, color: info.nameCss, wrap: CARD_W - 120 });
+    const name = addText(scene, left + 92, CARD_Y + 18, itemName(entry.def, entry.kind === 'gear' ? entry.gear : undefined), { size: 22, bold: true, color: info.nameCss, wrap: CARD_W - 120 });
     card.add(name);
     let headY = name.y + name.height + 2;
     if (info.sigil) {
@@ -491,7 +494,7 @@ class InventoryView {
       card.add(sig);
       headY += sig.height + 2;
     }
-    const kind = entry.def.type === 'weapon' ? 'Weapon' : entry.def.type === 'armor' ? 'Armor' : 'Potion';
+    const kind = entry.def.type === 'weapon' ? 'Weapon' : entry.def.type === 'armor' ? 'Armor' : entry.def.type === 'material' ? 'Material' : 'Potion';
     const sub = entry.kind === 'gear' ? `${kind} · ${gradeLabel(info)}${entry.slot ? ' · Equipped' : ''}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : kind;
     const subText = addText(scene, left + 92, headY, sub, { size: 15, color: COLORS.textDim });
     card.add(subText);
@@ -552,7 +555,10 @@ class InventoryView {
     if (this.mode === 'bag') {
       if (entry.kind === 'gear') {
         buttons.push(entry.slot ? { label: 'Unequip', run: () => this.unequip(entry.slot!) } : { label: 'Equip', run: () => this.equip(entry) });
-      } else if (entry.kind === 'stack') buttons.push({ label: 'Use', run: () => this.use(entry.def) });
+      } else if (entry.kind === 'stack' && entry.def.type === 'consumable') {
+        const def = entry.def;
+        buttons.push({ label: 'Use', run: () => this.use(def) });
+      }
     } else if (this.mode === 'buy' && entry.kind === 'stock') {
       buttons.push({ label: `Buy ${entry.def.price} g`, run: () => this.buy(entry.def), enabled: this.player.gold >= entry.def.price });
     } else if (this.mode === 'sell' && entry.kind !== 'stock') {

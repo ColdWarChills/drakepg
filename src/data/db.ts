@@ -1,4 +1,5 @@
 import { CLASSES } from './classes';
+import { RECIPES } from './crafting';
 import { ELITE_AFFIXES } from './elites';
 import { ITEMS } from './items';
 import { MONSTERS } from './monsters';
@@ -6,7 +7,7 @@ import { QUESTS } from './quests';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, EliteAffixDef, ItemDef, MonsterDef, QuestDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, EliteAffixDef, ItemDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -27,6 +28,7 @@ const classes = index('class', CLASSES);
 const quests = index('quest', QUESTS);
 const statuses = index('status', STATUSES);
 const affixes = index('elite affix', ELITE_AFFIXES);
+const recipes = index('recipe', RECIPES);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -44,6 +46,7 @@ export const db = {
   quest: (id: string): QuestDef => get('quest', quests, id),
   status: (id: string): StatusDef => get('status', statuses, id),
   affix: (id: string): EliteAffixDef => get('elite affix', affixes, id),
+  recipe: (id: string): RecipeDef => get('recipe', recipes, id),
   affixes: (): readonly EliteAffixDef[] => ELITE_AFFIXES,
   hasClass: (id: string) => classes.has(id),
   quests: (): readonly QuestDef[] => QUESTS,
@@ -63,6 +66,11 @@ export function validateData(): void {
     m.immune?.forEach((id) => db.status(id));
   }
   for (const s of SKILLS) checkApplies(s.applies);
+  for (const rec of RECIPES) {
+    const result = db.item(rec.result);
+    if (result.type !== 'weapon' && result.type !== 'armor') throw new Error(`Recipe ${rec.id}: result must be gear`);
+    rec.materials.forEach((m) => db.item(m.itemId));
+  }
   for (const a of ELITE_AFFIXES) checkApplies(a.applies);
   for (const item of ITEMS) if (item.type === 'weapon') checkApplies(item.proc?.applies);
   for (const z of ZONES) for (const e of z.encounters) db.monster(e.monsterId);
@@ -92,6 +100,7 @@ export function validateData(): void {
     }
     for (const npc of r.npcs) {
       if (npc.role.kind === 'shop') npc.role.stock.forEach((id) => db.item(id));
+      if (npc.role.kind === 'forge') npc.role.recipes.forEach((id) => db.recipe(id));
     }
   }
 }

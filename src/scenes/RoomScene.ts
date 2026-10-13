@@ -18,6 +18,7 @@ import * as sfx from '../ui/sfx';
 import { Hud } from '../ui/Hud';
 import { Modal } from '../ui/Modal';
 import { openCheatMenu } from '../ui/cheatMenu';
+import { openForge } from '../ui/forge';
 import { openInventory, openShop } from '../ui/inventory';
 import { lootName } from '../ui/itemUi';
 import { openCharacterPanel, openDialogue, type DialogueAction } from '../ui/panels';
@@ -728,7 +729,7 @@ export class RoomScene extends Phaser.Scene {
     }
     const q = questForNpc(session.player, near.def.id);
     const verb =
-      q?.status === 'ready' ? 'Turn in' : q?.status === 'available' ? 'Quest' : near.def.role.kind === 'shop' ? 'Shop' : near.def.role.kind === 'inn' ? 'Rest' : 'Talk';
+      q?.status === 'ready' ? 'Turn in' : q?.status === 'available' ? 'Quest' : near.def.role.kind === 'shop' ? 'Shop' : near.def.role.kind === 'forge' ? 'Forge' : near.def.role.kind === 'inn' ? 'Rest' : 'Talk';
     this.promptText.setText(`${this.keyHint}${verb}`);
     const marker = this.markers.get(near);
     const above = marker?.visible ? marker.y - 46 : near.label.y - near.label.height - 22;
@@ -984,6 +985,14 @@ export class RoomScene extends Phaser.Scene {
         run: (close) => {
           close();
           openShop(this, player, `${npc.def.name}'s Shop`, role.stock, this.refresh);
+        },
+      });
+    } else if (role.kind === 'forge') {
+      actions.push({
+        label: 'Use the forge',
+        run: (close) => {
+          close();
+          openForge(this, player, `${npc.def.name}'s Forge`, role.recipes, this.refresh);
         },
       });
     } else if (role.kind === 'inn') {

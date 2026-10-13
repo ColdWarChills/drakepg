@@ -46,6 +46,8 @@ export interface GearTraits {
   rolls: Rolls;
   sigil?: SigilTier;
   mods?: Mod[];
+  /** Smith reinforcement, 0 to `BALANCE.forge.maxPlus`. Missing = 0. */
+  plus?: number;
 }
 
 /** A weapon or armor piece the player owns. Plain JSON: it is saved as is. */
@@ -152,9 +154,9 @@ export function modTotal(pieces: (GearTraits | null | undefined)[], key: ModKey,
   return total;
 }
 
-/** Base multiplier from a Sigil: 1 without one. */
+/** Base multiplier from a Sigil and reinforcement (+): 1 without either. */
 export function sigilBoost(g: GearTraits): number {
-  return 1 + (g.sigil ? BALANCE.sigils[g.sigil].boost : 0);
+  return (1 + (g.sigil ? BALANCE.sigils[g.sigil].boost : 0)) * (1 + (g.plus ?? 0) * BALANCE.forge.plusPower);
 }
 
 /** Average line quality, 0-100. */
@@ -201,7 +203,8 @@ export function rolledDefense(def: ArmorDef, g: GearTraits, type: keyof ArmorDef
 export function sellValue(def: ItemDef, g?: GearTraits): number {
   const gr = isGearDef(def) && g ? grade(def, g.rolls) : 0;
   const sigil = g?.sigil ? BALANCE.sigils[g.sigil].sell : 1;
-  return Math.max(1, Math.floor(def.price * BALANCE.sellRate * (1 + (gr / 100) * BALANCE.sellGradeBonus) * sigil));
+  const plus = 1 + 0.15 * (g?.plus ?? 0);
+  return Math.max(1, Math.floor(def.price * BALANCE.sellRate * (1 + (gr / 100) * BALANCE.sellGradeBonus) * sigil * plus));
 }
 
 /** Keep only known lines, as whole percents in 0-100. For loading saves. */
@@ -221,6 +224,7 @@ const isSigil = (v: unknown): v is SigilTier => typeof v === 'string' && (SIGIL_
 export function sanitizeTraits(def: GearDef, raw: Partial<Record<keyof GearTraits, unknown>>): GearTraits {
   const out: GearTraits = { rolls: sanitizeRolls(def, raw.rolls) };
   if (isSigil(raw.sigil)) out.sigil = raw.sigil;
+  if (typeof raw.plus === 'number' && raw.plus >= 1) out.plus = Math.min(BALANCE.forge.maxPlus, Math.floor(raw.plus));
   const mods: Mod[] = [];
   for (const m of Array.isArray(raw.mods) ? (raw.mods as Partial<Mod>[]) : []) {
     if (!m || !MOD_POOLS[def.type].includes(m.key as ModKey) || mods.some((x) => x.key === m.key)) continue;

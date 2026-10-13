@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -43,7 +43,7 @@ export const BALANCE = {
   gearRolls: { damage: 0.5, crit: 0.05, proc: 0.5, defense: 0.5, hp: 0.15 },
   /** Dropped line quality = random ^ rollCurve. 1.5: median ~35%, ~7% of lines roll 90%+. */
   rollCurve: 1.5,
-  /** Bag slots. Each gear piece or potion stack takes one; equipped gear doesn't count. */
+  /** Bag slots. Each gear piece or potion stack takes one; equipped gear and materials don't count. */
   bagSlots: 30,
   /** Selling gives this share of the shop price... */
   sellRate: 0.3,
@@ -77,6 +77,22 @@ export const BALANCE = {
     mp: [5, 20],
     resist: [5, 20],
   } as Record<'str' | 'int' | 'dex' | 'end' | 'crit' | 'hp' | 'mp' | 'resist', [number, number]>,
+  /**
+   * The smith (src/game/Forge.ts). Crafted gear rolls every line at least `craftFloor`%.
+   * Reinforcing: each + adds `plusPower` to base damage/defense, up to `maxPlus`; `reinforceChance[plus]` is the
+   * odds of the next one; failing from `reinforceRiskFrom` up drops a +. Honing raises one line by `honeGain`;
+   * with `honeDriftChance` another line slips by `honeDrift`.
+   */
+  forge: {
+    craftFloor: 25,
+    plusPower: 0.05,
+    maxPlus: 10,
+    reinforceChance: [1, 1, 1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+    reinforceRiskFrom: 4,
+    honeGain: [8, 15] as [number, number],
+    honeDriftChance: 0.35,
+    honeDrift: [3, 8] as [number, number],
+  },
   /** XP and gold from beating a boss again after its quest no longer needs it. */
   bossRepeatRewards: 0.5,
   /**

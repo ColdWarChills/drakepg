@@ -1,3 +1,4 @@
+import { MATERIALS } from './crafting';
 import type { ItemDef } from './types';
 
 export const ITEMS: ItemDef[] = [
@@ -498,4 +499,6 @@ export const ITEMS: ItemDef[] = [
     resists: { energy: 15 },
     stats: { int: 2 },
   },
+  // Materials (src/data/crafting.ts)
+  ...MATERIALS,
 ];

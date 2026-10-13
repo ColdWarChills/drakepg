@@ -188,7 +188,21 @@ export interface ConsumableDef extends ItemBase {
   restore: { hp?: number; mp?: number };
 }
 
-export type ItemDef = WeaponDef | ArmorDef | ConsumableDef;
+/** Crafting material: monster parts, essences, scrap and dust. Stacks in the bag. */
+export interface MaterialDef extends ItemBase {
+  type: 'material';
+}
+
+export type ItemDef = WeaponDef | ArmorDef | ConsumableDef | MaterialDef;
+
+/** A smith recipe: materials and gold in, one rolled piece of gear out. */
+export interface RecipeDef {
+  /** Same as the result's item id. */
+  id: string;
+  result: string;
+  materials: { itemId: string; qty: number }[];
+  gold: number;
+}
 export type EquipSlot = 'weapon' | 'armor';
 
 export interface MonsterAttack {
@@ -222,7 +236,8 @@ export interface MonsterDef {
   attacks: MonsterAttack[];
   xp: number;
   gold: [number, number];
-  drops: { itemId: string; chance: number }[];
+  /** `qty` (default 1) is for stacking items like materials. */
+  drops: { itemId: string; chance: number; qty?: number }[];
   /** Bosses can't be fled from and get a bigger presence on screen. */
   boss?: boolean;
   /** Only on Elite copies made by `makeElite` (src/game/Elites.ts), never in monsters.ts. */
@@ -285,7 +300,7 @@ export interface ZoneDef {
   encounters: { monsterId: string; weight: number }[];
 }
 
-export type NpcRole = { kind: 'talk' } | { kind: 'shop'; stock: string[] } | { kind: 'inn' };
+export type NpcRole = { kind: 'talk' } | { kind: 'shop'; stock: string[] } | { kind: 'inn' } | { kind: 'forge'; recipes: string[] };
 
 export interface NpcDef {
   id: string;

@@ -78,11 +78,16 @@ export function gradeLabel(info: GradeInfo): string {
   return info.tier === 'standard' ? 'Standard' : `${info.name} ${info.grade}%`;
 }
 
+/** "+3 Iron Sword" for reinforced gear, else just the name. */
+export function itemName(def: ItemDef, g?: Partial<GearTraits>): string {
+  return g?.plus ? `+${g.plus} ${def.name}` : def.name;
+}
+
 /** Item name plus its Sigil and grade, e.g. "Cinder Fang (Sigil of Dusk, Fine 52%)"; consumables are just the name. */
 export function lootName(def: ItemDef, g?: Partial<GearTraits>): string {
   if (!isGearDef(def) || !g) return def.name;
   const info = gradeInfo(def, g);
-  return `${def.name} (${info.sigil ? `${SIGIL_NAMES[info.sigil]}, ` : ''}${gradeLabel(info)})`;
+  return `${itemName(def, g)} (${info.sigil ? `${SIGIL_NAMES[info.sigil]}, ` : ''}${gradeLabel(info)})`;
 }
 
 /** "✦ Sigil of Dusk" */
@@ -137,6 +142,13 @@ export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): P
     g.lineStyle(2, shade(color, 0.5)).strokePoints(pts, true);
     g.fillStyle(shade(color, 0.6)).fillRect(-16 * s, 6 * s, 32 * s, 5 * s);
     g.fillStyle(0xffffff, 0.18).fillRect(-12 * s, -14 * s, 6 * s, 18 * s);
+  } else if (def.type === 'material') {
+    // A faceted chunk.
+    const pts = [[0, -24], [20, -8], [14, 20], [-14, 20], [-20, -8]].map(([x, y]) => new Phaser.Math.Vector2(x * s, y * s));
+    g.fillStyle(color).fillPoints(pts, true);
+    g.lineStyle(2, shade(color, 0.5)).strokePoints(pts, true);
+    g.fillStyle(0xffffff, 0.35).fillTriangle(0, -24 * s, -20 * s, -8 * s, -4 * s, -4 * s);
+    g.fillStyle(shade(color, 0.7)).fillTriangle(14 * s, 20 * s, 20 * s, -8 * s, 2 * s, 4 * s);
   } else {
     g.fillStyle(0xdfe8f0, 0.55).fillRect(-6 * s, -24 * s, 12 * s, 14 * s);
     g.fillStyle(0x8a6d3b).fillRect(-7 * s, -28 * s, 14 * s, 6 * s);
@@ -194,6 +206,7 @@ export function itemLines(def: ItemDef, g: GearTraits = { rolls: {} }): string[]
       return lines;
     }
     case 'consumable':
+    case 'material':
       return [def.description];
   }
 }

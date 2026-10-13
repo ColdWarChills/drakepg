@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
-import { SIGIL_NAMES, SIGIL_TIERS, type ItemGrant, type SigilTier } from '../game/Items';
+import { isGearDef, SIGIL_NAMES, SIGIL_TIERS, type ItemGrant, type SigilTier } from '../game/Items';
 import { session } from '../game/session';
 import { Button } from '../ui/Button';
 import { drawFigure } from '../ui/figures';
@@ -132,14 +132,21 @@ export class ResultScene extends Phaser.Scene {
     const parts: Phaser.GameObjects.Text[] = [addText(this, 0, 0, items.length ? 'Loot: ' : 'Loot: nothing', { size: 24 })];
     const sparkles: { text: Phaser.GameObjects.Text; tier: string }[] = [];
     const sigils: { text: Phaser.GameObjects.Text; tier: SigilTier }[] = [];
-    items.forEach((g, i) => {
+    // Gear is listed one by one; stacking items (potions, materials) as "Iron Scrap x2".
+    const shown: { g: ItemGrant; qty: number; isLost: boolean }[] = [];
+    for (const g of items) {
+      const isLost = lost.includes(g);
+      const same = isGearDef(db.item(g.itemId)) ? undefined : shown.find((e) => e.g.itemId === g.itemId && e.isLost === isLost);
+      if (same) same.qty++;
+      else shown.push({ g, qty: 1, isLost });
+    }
+    shown.forEach(({ g, qty, isLost }, i) => {
       const def = db.item(g.itemId);
       const info = gradeInfo(def, g);
-      const isLost = lost.includes(g);
-      const t = addText(this, 0, 0, `${lootName(def, g)}${i < items.length - 1 ? ', ' : ''}`, {
+      const t = addText(this, 0, 0, `${lootName(def, g)}${qty > 1 ? ` x${qty}` : ''}${i < shown.length - 1 ? ', ' : ''}`, {
         size: 24,
         bold: info.tier !== 'standard' || !!info.sigil,
-        color: isLost ? COLORS.textDim : info.sigil ? info.nameCss : info.tier === 'standard' && def.type !== 'consumable' ? COLORS.text : info.css,
+        color: isLost ? COLORS.textDim : info.sigil ? info.nameCss : info.tier === 'standard' && isGearDef(def) ? COLORS.text : info.css,
       });
       if (isLost) t.setAlpha(0.6);
       parts.push(t);

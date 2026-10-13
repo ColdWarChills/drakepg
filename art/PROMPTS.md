@@ -53,6 +53,11 @@ A tall, sturdy town guard, steel helmet and chainmail, dark blue tabard, holding
 
 ## Monsters
 
+### 5b. `npc_hulda` · 3:4 (the smith)
+```
+A broad-shouldered blacksmith woman in her forties, braided auburn hair, soot on her cheeks, rolled-up sleeves showing strong forearms, thick leather apron over a brown shirt, heavy gloves, a smithing hammer resting on her shoulder. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
 ### 6. `mon_mossling` · 1:1
 ```
 A small, cute but mischievous moss creature monster: a round blob of green moss and lichen with two big glowing yellow eyes, tiny mushrooms and leaves growing on top, stubby root-like feet. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.

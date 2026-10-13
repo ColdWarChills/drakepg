@@ -369,8 +369,9 @@ export class Player {
   // --- Inventory ---
 
   /** Bag slots in use: one per gear piece and one per consumable stack. */
+  /** Materials ride in a pouch and take no bag slots. */
   get usedSlots(): number {
-    return this.data.gear.length + this.data.inventory.length;
+    return this.data.gear.length + this.data.inventory.filter((e) => db.item(e.itemId).type !== 'material').length;
   }
 
   get freeSlots(): number {
@@ -391,7 +392,7 @@ export class Player {
   /** Put an item in the bag. False if it doesn't fit (unless forced). */
   receive(grant: ItemGrant, force = false): boolean {
     const def = db.item(grant.itemId);
-    const stacks = !isGearDef(def) && this.data.inventory.some((e) => e.itemId === grant.itemId);
+    const stacks = def.type === 'material' || (!isGearDef(def) && this.data.inventory.some((e) => e.itemId === grant.itemId));
     if (!stacks && !force && this.freeSlots === 0) return false;
     if (isGearDef(def)) this.data.gear.push(this.makeGear(grant.itemId, grant, true));
     else this.addItem(grant.itemId);

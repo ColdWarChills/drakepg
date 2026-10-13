@@ -491,7 +491,9 @@ export class Battle {
   private rollRewards(): Rewards {
     const m = this.enemy.def;
     const source = m.boss ? 'boss' : m.elite ? 'elite' : 'mob';
-    const items = m.drops.filter((d) => chance(this.rng, d.chance)).map((d) => grantFor(d.itemId, this.rng, source));
+    const items = m.drops
+      .filter((d) => chance(this.rng, d.chance))
+      .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source)));
     // Elites always drop one piece of their zone's gear.
     const loot = m.elite?.loot ?? [];
     if (loot.length) items.push(grantFor(loot[randInt(this.rng, 0, loot.length - 1)], this.rng, 'elite'));

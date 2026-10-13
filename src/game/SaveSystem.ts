@@ -63,6 +63,7 @@ export const SaveSystem = {
  * v3 -> v4: rolled gear. Equipment held item ids, and weapons/armor stacked in `inventory`; they become
  *           Standard (0%) gear instances in `equipment` and `gear`.
  * v4 -> v5: gear can carry a `sigil` and `mods`. Both are optional, so old gear simply has neither.
+ * v5 -> v6: gear can carry a smith `plus`, and the bag can hold materials. Both need nothing from old saves.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -86,6 +87,7 @@ function migrate(file: SaveFile): SaveFile | null {
     file.version = 4;
   }
   if (file.version < 5) file.version = 5;
+  if (file.version < 6) file.version = 6;
   return file;
 }
 
