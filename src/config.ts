@@ -89,7 +89,8 @@ export const BALANCE = {
    * Modifier lines a piece of gear can carry, by tier (index = tier; higher tiers use the last entry).
    * Rolled lines fill first (Damage, then Crit, then Special / Defense, then Max HP); slots left over can hold mods.
    */
-  modifierSlots: [0, 1, 2, 4, 4, 4, 6],
+  // Kept simple for now: at most 2 everywhere. The plan for later: T3-T5 4, T6+ 6.
+  modifierSlots: [0, 1, 2, 2, 2, 2, 2],
   /** Chance a normal (non-Sigil) gear drop has one mod. */
   modChance: 0.1,
   /** Mod value at 0% and at 100% quality. Stats/resist/HP/MP are points, crit is percent. */

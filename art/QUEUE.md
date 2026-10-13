@@ -11,7 +11,7 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 **1. NPCs** (7)
 - [x] `npc_hulda` (the smith, Brindlemoor)
 - [x] `npc_captain_hale` (Reedwatch captain, quest giver)
-- [ ] `npc_wren` (Reedwatch quartermaster (shop))
+- [x] `npc_wren` (Reedwatch quartermaster (shop))
 - [ ] `npc_ottilie` (Reedwatch healer (inn))
 - [ ] `npc_ranger_sabine` (Ch3, Hearthold quest giver)
 - [ ] `npc_gunnar` (Ch3, Hearthold trader (shop))
