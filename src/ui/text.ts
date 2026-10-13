@@ -10,6 +10,20 @@ export interface TextOptions {
   stroke?: boolean;
 }
 
+/** Phones and tablets: the main pointer is a finger. */
+export function isTouchScreen(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches === true;
+}
+
+/**
+ * Names and labels in the world grow when the game is shown small (a phone in landscape shows the
+ * 1280-wide design at about half size), so they stay readable.
+ */
+export function labelScale(scene: Phaser.Scene): number {
+  const w = scene.scale.displaySize.width;
+  return w < 900 ? 1.5 : w < 1100 ? 1.25 : 1;
+}
+
 export function textStyle(opts: TextOptions = {}): Phaser.Types.GameObjects.Text.TextStyle {
   return {
     fontFamily: FONT,
