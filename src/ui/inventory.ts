@@ -498,7 +498,9 @@ class InventoryView {
       headY += sig.height + 2;
     }
     const kind = entry.def.type === 'weapon' ? 'Weapon' : entry.def.type === 'armor' ? 'Armor' : entry.def.type === 'material' ? 'Material' : 'Potion';
-    const sub = entry.kind === 'gear' ? `${kind} · ${gradeLabel(info)}${entry.slot ? ' · Equipped' : ''}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : kind;
+    // Gear shows its tier, which also sets how many modifier lines it can carry.
+    const tiered = isGearDef(entry.def) ? `Tier ${entry.def.tier} ${kind}` : kind;
+    const sub = entry.kind === 'gear' ? `${tiered} · ${gradeLabel(info)}${entry.slot ? ' · Equipped' : ''}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : tiered;
     const subText = addText(scene, left + 92, headY, sub, { size: 15, color: COLORS.textDim });
     card.add(subText);
 

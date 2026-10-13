@@ -85,6 +85,11 @@ export const BALANCE = {
     elite: { dawn: 0.08, dusk: 0.02, eclipse: 0.003 },
     chest: { dawn: 0.05, dusk: 0.01, eclipse: 0.001 },
   },
+  /**
+   * Modifier lines a piece of gear can carry, by tier (index = tier; higher tiers use the last entry).
+   * Rolled lines fill first (Damage, then Crit, then Special / Defense, then Max HP); slots left over can hold mods.
+   */
+  modifierSlots: [0, 1, 2, 4, 4, 4, 6],
   /** Chance a normal (non-Sigil) gear drop has one mod. */
   modChance: 0.1,
   /** Mod value at 0% and at 100% quality. Stats/resist/HP/MP are points, crit is percent. */

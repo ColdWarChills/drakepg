@@ -1,7 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { ClassId, QuestDef, StatKey } from '../data/types';
-import { isGearDef, rollGear, rollMods, type ItemGrant, type SigilTier } from './Items';
+import { isGearDef, modSlots, rollGear, rollMods, type ItemGrant, type SigilTier } from './Items';
 import { xpToNext, type Player } from './Player';
 import { defaultRng, type Rng } from './rng';
 
@@ -49,7 +49,7 @@ export function cheatGrant(itemId: string, opts: CheatItemOptions, rng: Rng = de
   const grant: ItemGrant = { itemId, rolls: rollGear(def, rng, fixed) };
   if (opts.sigil) grant.sigil = opts.sigil;
   if (opts.mods > 0) {
-    grant.mods = rollMods(def, opts.mods, rng);
+    grant.mods = rollMods(def, Math.min(opts.mods, modSlots(def)), rng);
     if (fixed !== undefined) for (const m of grant.mods) m.roll = fixed;
   }
   return grant;

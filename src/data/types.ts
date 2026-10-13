@@ -156,6 +156,8 @@ export interface ProcDef {
 
 export interface WeaponDef extends ItemBase {
   type: 'weapon';
+  /** Power band (about x1.5 per tier) and how many modifier lines it can carry (`BALANCE.modifierSlots`). */
+  tier: number;
   damage: [number, number];
   /** Melee scales with STR, pierce with DEX, magic with INT. */
   damageType: DamageType;
@@ -173,6 +175,8 @@ export interface WeaponDef extends ItemBase {
 
 export interface ArmorDef extends ItemBase {
   type: 'armor';
+  /** Power band and how many modifier lines it can carry (`BALANCE.modifierSlots`). */
+  tier: number;
   defense: Defenses;
   resists?: Resists;
   stats?: Partial<Stats>;

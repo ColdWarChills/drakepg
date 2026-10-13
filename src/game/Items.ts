@@ -86,8 +86,19 @@ export function gearDef(gear: Gear): GearDef {
 
 /** The lines this item rolls, in display order. */
 export function rollKeys(def: GearDef): RollKey[] {
-  if (def.type === 'armor') return ['defense', 'hp'];
-  return def.proc ? ['damage', 'crit', 'proc'] : ['damage', 'crit'];
+  const all: RollKey[] = def.type === 'armor' ? ['defense', 'hp'] : def.proc ? ['damage', 'crit', 'proc'] : ['damage', 'crit'];
+  return all.slice(0, modifierSlots(def));
+}
+
+/** Modifier lines this item can have in total (rolled lines + mods), from its tier. */
+export function modifierSlots(def: GearDef): number {
+  const slots = BALANCE.modifierSlots;
+  return slots[Math.min(def.tier, slots.length - 1)];
+}
+
+/** How many mods fit after the rolled lines (0 on low tiers). */
+export function modSlots(def: GearDef): number {
+  return Math.max(0, modifierSlots(def) - rollKeys(def).length);
 }
 
 /** One drop line: random ^ curve, so most lines land low and 90%+ is rare. */
@@ -110,7 +121,9 @@ export function grantFor(itemId: string, rng: Rng = defaultRng, source: DropSour
   // `extras` off: no Sigils or mods yet (they unlock in a later chapter).
   if (source === 'quest' || !extras) return grant;
   const sigil = rollSigil(rng, source);
-  const modCount = sigil ? BALANCE.sigils[sigil].mods : chance(rng, BALANCE.modChance) ? 1 : 0;
+  const wanted = sigil ? BALANCE.sigils[sigil].mods : chance(rng, BALANCE.modChance) ? 1 : 0;
+  // Low tiers have no room for mods; a Sigil there only raises the base.
+  const modCount = Math.min(wanted, modSlots(def));
   if (sigil) grant.sigil = sigil;
   if (modCount) grant.mods = rollMods(def, modCount, rng);
   return grant;
@@ -228,6 +241,7 @@ export function sanitizeTraits(def: GearDef, raw: Partial<Record<keyof GearTrait
   if (typeof raw.plus === 'number' && raw.plus >= 1) out.plus = Math.min(BALANCE.forge.maxPlus, Math.floor(raw.plus));
   const mods: Mod[] = [];
   for (const m of Array.isArray(raw.mods) ? (raw.mods as Partial<Mod>[]) : []) {
+    if (mods.length >= modSlots(def)) break;
     if (!m || !MOD_POOLS[def.type].includes(m.key as ModKey) || mods.some((x) => x.key === m.key)) continue;
     if (typeof m.roll !== 'number' || !Number.isFinite(m.roll)) continue;
     const mod: Mod = { key: m.key as ModKey, roll: Math.min(100, Math.max(0, Math.round(m.roll))) };

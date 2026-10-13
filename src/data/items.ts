@@ -44,6 +44,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'training_sword',
     type: 'weapon',
+    tier: 1,
     name: 'Training Sword',
     description: 'Dull, but it beats fists.',
     price: 10,
@@ -56,6 +57,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'worn_staff',
     type: 'weapon',
+    tier: 1,
     name: 'Worn Staff',
     description: 'An apprentice staff. Hits with magic.',
     price: 15,
@@ -68,6 +70,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'rusty_dagger',
     type: 'weapon',
+    tier: 1,
     name: 'Rusty Dagger',
     description: 'Short, quick, a bit rusty.',
     price: 15,
@@ -83,6 +86,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'iron_sword',
     type: 'weapon',
+    tier: 1,
     name: 'Iron Sword',
     description: 'A sturdy blade from the town forge.',
     price: 120,
@@ -95,6 +99,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'oak_staff',
     type: 'weapon',
+    tier: 1,
     name: 'Oak Staff',
     description: 'Hits with magic. Scales with INT.',
     price: 100,
@@ -108,6 +113,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'tusk_dagger',
     type: 'weapon',
+    tier: 1,
     name: 'Tusk Dagger',
     description: 'Carved from a boar tusk. Quick and sharp.',
     price: 90,
@@ -122,6 +128,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'hunting_knife',
     type: 'weapon',
+    tier: 1,
     name: 'Hunting Knife',
     description: "A trapper's knife. Quick in the hand.",
     price: 110,
@@ -137,6 +144,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'cinder_fang',
     type: 'weapon',
+    tier: 1,
     name: 'Cinder Fang',
     description: 'A dagger of black glass, warm to the touch.',
     price: 140,
@@ -152,6 +160,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'emberbrand',
     type: 'weapon',
+    tier: 1,
     name: 'Emberbrand',
     description: 'Its edge never quite stops glowing.',
     price: 160,
@@ -166,6 +175,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'ember_wand',
     type: 'weapon',
+    tier: 1,
     name: 'Ember Wand',
     description: 'A charred wand with a coal for a heart.',
     price: 150,
@@ -182,6 +192,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'thornheart_blade',
     type: 'weapon',
+    tier: 2,
     name: 'Thornheart Blade',
     description: 'Carved from the Thornheart. Still smells of spring rain.',
     price: 400,
@@ -197,6 +208,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'heartwood_staff',
     type: 'weapon',
+    tier: 2,
     name: 'Heartwood Staff',
     description: 'A living staff that hums with old magic.',
     price: 400,
@@ -212,6 +224,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'briar_fang',
     type: 'weapon',
+    tier: 2,
     name: 'Briar Fang',
     description: 'A dagger grown from a single great thorn.',
     price: 400,
@@ -229,6 +242,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'steel_broadsword',
     type: 'weapon',
+    tier: 2,
     name: 'Steel Broadsword',
     description: 'Reedwatch steel. Heavy, honest and sharp.',
     price: 320,
@@ -242,6 +256,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'yew_staff',
     type: 'weapon',
+    tier: 2,
     name: 'Yew Staff',
     description: 'Hits with magic. Scales with INT.',
     price: 300,
@@ -256,6 +271,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'fenwatch_stiletto',
     type: 'weapon',
+    tier: 2,
     name: 'Fenwatch Stiletto',
     description: 'A scout\'s blade, thin enough to slip through mail.',
     price: 310,
@@ -272,6 +288,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'tidebreaker',
     type: 'weapon',
+    tier: 2,
     name: 'Tidebreaker',
     description: 'A sea-green blade that drags at whatever it cuts.',
     price: 340,
@@ -288,6 +305,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'stormcleaver',
     type: 'weapon',
+    tier: 2,
     name: 'Stormcleaver',
     description: 'Sparks jump from its edge on every swing.',
     price: 360,
@@ -303,6 +321,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'tidecaller_rod',
     type: 'weapon',
+    tier: 2,
     name: 'Tidecaller Rod',
     description: 'Driftwood and pearl. The air around it is always damp.',
     price: 340,
@@ -319,6 +338,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'sparkglass_wand',
     type: 'weapon',
+    tier: 2,
     name: 'Sparkglass Wand',
     description: 'A wand of fused lightning-glass. It crackles in damp air.',
     price: 350,
@@ -335,6 +355,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'brinefang',
     type: 'weapon',
+    tier: 2,
     name: 'Brinefang',
     description: 'A kris with a salt-crusted wavy blade. Its cuts sting.',
     price: 330,
@@ -351,6 +372,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'sparkfang',
     type: 'weapon',
+    tier: 2,
     name: 'Sparkfang',
     description: 'A drakeling fang on a copper hilt. It bites twice.',
     price: 350,
@@ -369,6 +391,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'thunderhead_maul',
     type: 'weapon',
+    tier: 3,
     name: 'Thunderhead Maul',
     description: 'Forged around a Stormcoil scale. Every blow rumbles.',
     price: 750,
@@ -385,6 +408,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'stormcoil_scepter',
     type: 'weapon',
+    tier: 3,
     name: 'Stormcoil Scepter',
     description: 'A coil of living lightning caged in silver.',
     price: 750,
@@ -401,6 +425,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'coilfang',
     type: 'weapon',
+    tier: 3,
     name: 'Coilfang',
     description: 'A serpent fang that still hums with stored lightning.',
     price: 750,
@@ -419,6 +444,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'travel_garb',
     type: 'armor',
+    tier: 1,
     name: "Traveler's Garb",
     description: 'Simple cloth. Better than nothing.',
     price: 10,
@@ -428,6 +454,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'novice_robe',
     type: 'armor',
+    tier: 1,
     name: 'Novice Robe',
     description: 'Thin cloth with a few protective stitches.',
     price: 15,
@@ -437,6 +464,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'leather_armor',
     type: 'armor',
+    tier: 1,
     name: 'Leather Armor',
     description: 'Good against claws and blades.',
     price: 80,
@@ -447,6 +475,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'apprentice_robe',
     type: 'armor',
+    tier: 1,
     name: 'Apprentice Robe',
     description: 'Woven with warding runes. Shrugs off a little fire.',
     price: 90,
@@ -460,6 +489,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'scale_mail',
     type: 'armor',
+    tier: 2,
     name: 'Scale Mail',
     description: 'Overlapping steel scales. Heavy, but it stops a lot.',
     price: 260,
@@ -470,6 +500,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'reedweave_robe',
     type: 'armor',
+    tier: 2,
     name: 'Reedweave Robe',
     description: 'Woven from warded marsh reeds. Turns spells aside.',
     price: 270,
@@ -480,6 +511,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'marshhide_vest',
     type: 'armor',
+    tier: 2,
     name: 'Marshhide Vest',
     description: 'Oiled lurker hide. Water runs right off it.',
     price: 300,
@@ -491,6 +523,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'stormweave_robe',
     type: 'armor',
+    tier: 2,
     name: 'Stormweave Robe',
     description: 'Threads of wisp-silk ground the lightning.',
     price: 300,
@@ -522,6 +555,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'tempered_longsword',
     type: 'weapon',
+    tier: 3,
     name: 'Tempered Longsword',
     description: 'Hearthold steel, quenched in snowmelt.',
     price: 700,
@@ -535,6 +569,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'larchwood_staff',
     type: 'weapon',
+    tier: 3,
     name: 'Larchwood Staff',
     description: 'Mountain larch, banded in iron and warm to the touch.',
     price: 650,
@@ -549,6 +584,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'ridgerunner_kris',
     type: 'weapon',
+    tier: 3,
     name: 'Ridgerunner Kris',
     description: 'A wavy blade for climbers who fight light.',
     price: 680,
@@ -563,6 +599,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'ridgeplate',
     type: 'armor',
+    tier: 3,
     name: 'Ridgeplate',
     description: 'Thick plates over a fur lining. Keeps out claws and cold.',
     price: 620,
@@ -573,6 +610,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'fleecewool_robe',
     type: 'armor',
+    tier: 3,
     name: 'Fleecewool Robe',
     description: 'Mountain wool stitched with warding runes.',
     price: 620,
@@ -584,6 +622,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'frostbite',
     type: 'weapon',
+    tier: 3,
     name: 'Frostbite',
     description: 'A pale blade rimed with frost that never melts.',
     price: 760,
@@ -600,6 +639,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'hoarfrost_staff',
     type: 'weapon',
+    tier: 3,
     name: 'Hoarfrost Staff',
     description: 'Ice crystals grow along it overnight.',
     price: 740,
@@ -615,6 +655,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'icicle_kris',
     type: 'weapon',
+    tier: 3,
     name: 'Icicle Kris',
     description: 'Sharp, cold and a little too eager.',
     price: 750,
@@ -632,6 +673,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'hearthfire_blade',
     type: 'weapon',
+    tier: 3,
     name: 'Hearthfire Blade',
     description: 'Forged over the Hearthold fire. It smells of pine smoke.',
     price: 760,
@@ -648,6 +690,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'kindling_rod',
     type: 'weapon',
+    tier: 3,
     name: 'Kindling Rod',
     description: 'A rod of charred wood with an ember that will not go out.',
     price: 740,
@@ -663,6 +706,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'salamander_kris',
     type: 'weapon',
+    tier: 3,
     name: 'Salamander Kris',
     description: 'Scale-hilted and always warm.',
     price: 750,
@@ -679,6 +723,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'frostpelt_vest',
     type: 'armor',
+    tier: 3,
     name: 'Frostpelt Vest',
     description: 'Wolf pelt over boiled leather. Cold slides right off.',
     price: 700,
@@ -690,6 +735,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'galeweave_robe',
     type: 'armor',
+    tier: 3,
     name: 'Galeweave Robe',
     description: 'Woven on the windiest ridge in the Frostfangs.',
     price: 700,
@@ -702,6 +748,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'snowmaw_cleaver',
     type: 'weapon',
+    tier: 3,
     name: 'Snowmaw Cleaver',
     description: 'Hewn from the old beast\'s ice-hard tusk.',
     price: 1100,
@@ -718,6 +765,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'mawtooth_staff',
     type: 'weapon',
+    tier: 3,
     name: 'Mawtooth Staff',
     description: 'A staff crowned with one of Snowmaw\'s teeth.',
     price: 1100,
@@ -734,6 +782,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'snowmaw_claw',
     type: 'weapon',
+    tier: 3,
     name: 'Snowmaw Claw',
     description: 'A curved claw set in a bone grip.',
     price: 1100,
@@ -751,6 +800,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'whiteout',
     type: 'weapon',
+    tier: 4,
     name: 'Whiteout',
     description: 'A greatsword that howls like a blizzard when swung.',
     price: 1600,
@@ -767,6 +817,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'squall_stave',
     type: 'weapon',
+    tier: 4,
     name: 'Squall Stave',
     description: 'The Frostbinder\'s own stave. The wind still answers it.',
     price: 1600,
@@ -783,6 +834,7 @@ export const ITEMS: ItemDef[] = [
   {
     id: 'galecutter',
     type: 'weapon',
+    tier: 4,
     name: 'Galecutter',
     description: 'So light it seems to cut before you swing.',
     price: 1600,
