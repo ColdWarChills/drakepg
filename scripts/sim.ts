@@ -6,6 +6,7 @@ import { db, validateData } from '../src/data/db';
 import { ELEMENTS } from '../src/data/elements';
 import type { ClassId, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
+import { makeElite } from '../src/game/Elites';
 import { rollGear, type GearDef, type SigilTier } from '../src/game/Items';
 import { Player, xpToNext } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
@@ -126,11 +127,12 @@ interface Result {
   potions: number;
 }
 
-function fight(classId: ClassId, level: number, monsterId: string, gear: Loadout, potions: number, rng: Rng): Result {
+function fight(classId: ClassId, level: number, monsterId: string, elite: string | undefined, gear: Loadout, potions: number, rng: Rng): Result {
   const res: Result = { wins: 0, turns: 0, hpLeft: 0, potions: 0 };
+  const monster = elite ? makeElite(db.monster(monsterId), elite) : db.monster(monsterId);
   for (let i = 0; i < RUNS; i++) {
     const p = makePlayer(classId, level, gear, potions);
-    const b = new Battle(p, db.monster(monsterId), rng);
+    const b = new Battle(p, monster, rng);
     let turns = 0;
     while (!b.isOver && turns < 60) {
       act(b);
@@ -150,17 +152,27 @@ function pct(n: number): string {
   return `${Math.round(n * 100)}%`.padStart(5);
 }
 
-function table(title: string, rows: { monster: string; level: number; gear: Loadout; potions: number }[]): void {
+interface Row {
+  monster: string;
+  /** Elite affix id: fight the Elite version. */
+  elite?: string;
+  level: number;
+  gear: Loadout;
+  potions: number;
+}
+
+function table(title: string, rows: Row[]): void {
   const rng = seeded(12345);
   console.log(`\n${title}`);
-  console.log('monster            lv gear     | ' + ['warrior', 'mage', 'rogue'].map((c) => c.padEnd(26)).join(' | '));
+  console.log(`${'monster'.padEnd(20)} lv gear     | ` + ['warrior', 'mage', 'rogue'].map((c) => c.padEnd(26)).join(' | '));
   for (const row of rows) {
     const cells = (['warrior', 'mage', 'rogue'] as ClassId[]).map((c) => {
-      const r = fight(c, row.level, row.monster, row.gear, row.potions, rng);
+      const r = fight(c, row.level, row.monster, row.elite, row.gear, row.potions, rng);
       const hp = r.wins ? r.hpLeft / r.wins : 0;
       return `win${pct(r.wins / RUNS)} hp${pct(hp)} t${(r.turns / RUNS).toFixed(1).padStart(4)} pot${(r.potions / RUNS).toFixed(1)}`;
     });
-    console.log(`${row.monster.padEnd(18)} ${String(row.level).padStart(2)} ${row.gear.label.padEnd(8)} | ${cells.join(' | ')}`);
+    const name = row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.monster;
+    console.log(`${name.padEnd(20)} ${String(row.level).padStart(2)} ${row.gear.label.padEnd(8)} | ${cells.join(' | ')}`);
   }
 }
 
@@ -189,4 +201,15 @@ table('Thornheart (boss, 3 potions)', [
   { monster: 'thornheart', level: 5, gear: SHOP_DAWN, potions: 3 },
   { monster: 'thornheart', level: 5, gear: SHOP_ECLIPSE, potions: 3 },
   { monster: 'thornheart', level: 5, gear: SHOP_ECLIPSE_100, potions: 3 },
+]);
+
+table('Chapter 1 Elites (2 potions)', [
+  { monster: 'mossling', elite: 'venomous', level: 2, gear: STARTER, potions: 2 },
+  { monster: 'thornback_boar', elite: 'hulking', level: 3, gear: STARTER, potions: 2 },
+  { monster: 'ash_imp', elite: 'frenzied', level: 3, gear: STARTER, potions: 2 },
+  { monster: 'bramble_bandit', elite: 'hulking', level: 4, gear: SHOP, potions: 2 },
+  { monster: 'bramble_bandit', elite: 'frenzied', level: 4, gear: SHOP, potions: 2 },
+  { monster: 'bramble_bandit', elite: 'warded', level: 4, gear: SHOP, potions: 2 },
+  { monster: 'bramble_bandit', elite: 'venomous', level: 4, gear: SHOP, potions: 2 },
+  { monster: 'bramble_bandit', elite: 'ironhide', level: 4, gear: SHOP, potions: 2 },
 ]);

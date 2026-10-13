@@ -64,7 +64,7 @@ export interface ItemGrant extends Partial<GearTraits> {
 }
 
 /** Where loot comes from. Quest rewards roll white lines only. */
-export type DropSource = 'mob' | 'boss' | 'quest';
+export type DropSource = 'mob' | 'elite' | 'boss' | 'quest';
 
 export const ROLL_LABELS: Record<RollKey, string> = {
   damage: 'Damage',
@@ -114,7 +114,7 @@ export function grantFor(itemId: string, rng: Rng = defaultRng, source: DropSour
 }
 
 /** Rarest tier is checked first, so each chance in `BALANCE.sigilChance` is its own. */
-export function rollSigil(rng: Rng, source: 'mob' | 'boss'): SigilTier | undefined {
+export function rollSigil(rng: Rng, source: Exclude<DropSource, 'quest'>): SigilTier | undefined {
   const table = BALANCE.sigilChance[source];
   const r = rng.next();
   let edge = 0;
