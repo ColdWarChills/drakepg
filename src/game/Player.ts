@@ -24,6 +24,7 @@ import type {
   DamageType,
   Element,
   EquipSlot,
+  Look,
   Resists,
   SkillDef,
   StatKey,
@@ -167,6 +168,21 @@ export class Player {
   get armor(): ArmorDef | null {
     const g = this.data.equipment.armor;
     return g ? (gearDef(g) as ArmorDef) : null;
+  }
+
+  /**
+   * How the hero is drawn: the class look, dressed in the armor's outfit (`char_<class>_<armor id>`) when that art
+   * exists. Missing art falls back to the class's own pictures, so armors without art just keep the default look.
+   */
+  get look(): Look {
+    const cls = this.classDef.look;
+    const armor = this.armor;
+    if (!armor) return cls;
+    const art = `char_${this.data.classId}_${armor.id}`;
+    const classBare = cls.bare === undefined ? [] : Array.isArray(cls.bare) ? cls.bare : [cls.bare];
+    const hands = armor.hands?.[this.data.classId] ?? classBare[0]?.hands ?? [];
+    const classArt = cls.art === undefined ? [] : Array.isArray(cls.art) ? cls.art : [cls.art];
+    return { ...cls, art: [art, ...classArt], bare: [{ art, hands }, ...classBare] };
   }
 
   private traitsOf(slot: EquipSlot): GearTraits {

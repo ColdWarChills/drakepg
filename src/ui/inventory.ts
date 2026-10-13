@@ -227,7 +227,7 @@ class InventoryView {
   private renderHero(): void {
     const { scene, player } = this;
     const c = this.modal.content;
-    const look = player.classDef.look;
+    const look = player.look;
     const hero = drawFigure(scene, 150, 330, look, 1, player.weapon, player.weaponSigil);
     hero.setScale(hero.scaleX * 0.82, hero.scaleY * 0.82);
     c.add(hero);

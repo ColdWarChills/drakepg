@@ -69,7 +69,7 @@ export class BattleScene extends Phaser.Scene {
   private shown: Record<Side, Map<string, number>> = { player: new Map(), enemy: new Map() };
 
   private get playerLook() {
-    return this.battle.player.classDef.look;
+    return this.battle.player.look;
   }
 
   constructor() {

@@ -86,7 +86,7 @@ export class ResultScene extends Phaser.Scene {
       if (rewards.items.length) this.tweens.add({ targets: lootRow, scale: lootRow.scale * 1.12, delay: 1300, duration: 160, yoyo: true, repeat: 1 });
 
       if (levelsGained > 0) {
-        const hero = drawFigure(this, cx - 280, 470 + shift, player.classDef.look, 1, player.weapon, player.weaponSigil).setScale(0.55);
+        const hero = drawFigure(this, cx - 280, 470 + shift, player.look, 1, player.weapon, player.weaponSigil).setScale(0.55);
         this.time.delayedCall(1200, () => {
           fx.levelUpBurst(this, hero.x, hero.y);
           sfx.play(this, 'levelup');

@@ -34,7 +34,6 @@ npm run preview  # serve the dist/ build locally
   - **Statuses**: burn, poison, bleed, stun, weaken, expose, buffs and more, shown as chips under each status panel with turns left.
   - **Weapon specials**: some weapons have a chance to trigger an extra effect when an Attack lands (shown in the item line).
 - **Leveling**: each level gives **stat points** (spend with **+** in the Character panel) and unlocks class skills at set levels (12 per class, up to level 20).
-- **Gear you can see**: the equipped weapon is drawn in the hero's hands.
 - **Result**: XP and gold count-up, loot, quest progress, level-up. Losing wakes you at the inn with no penalty.
 - **Rolled gear**: every weapon and armor piece rolls a quality per line (Damage, Crit, Special chance / Defense, Max HP), 0-100%. Shop gear is always **Standard (0%)**; monster drops and quest rewards roll, and high rolls are rare. A 100% Damage or Defense line adds +50%, so a perfect roll is about as strong as the next tier's 0% item (each weapon tier is about x1.5 the one before; items in the same tier are sidegrades). The average is the item's **grade**: Standard (grey), Fair (white), Fine (green, 40%+), Superior (blue, 70%+), Masterwork (gold, 90%+). Superior and Masterwork drops sparkle on the result screen.
 - **Mods** (blue lines): extra lines like +STR, +Crit chance, +Max HP/MP or +resist to one element, each with its own 0-100% quality. About 1 in 10 normal gear drops has one.
@@ -50,6 +49,13 @@ npm run preview  # serve the dist/ build locally
 - **Inventory** (button or **I**): 30-slot grid with tabs (All / Weapons / Armor / Potions) and sorting. Hover or tap an item for its card: rolls with quality bars, and a comparison with what you wear. Equip by double-click, the Equip button, or dragging onto the hero; drag worn gear back to the grid to take it off. **Lock** keeps an item from being sold. Loot that doesn't fit a full bag is left behind (quest rewards always fit).
 - **Shop**: Buy (Standard gear and potions) and Sell (better grades sell for more; **Sell junk** sells unlocked Standard/Fair gear, never Sigils).
 - **Character panel** (button or **C**): stats, stat points, skills, what you have equipped. **M** toggles sound. **Esc** closes windows.
+- **Gear you can see**: the weapon is drawn in the hero's hands, and armor changes the hero's outfit once its art exists (`char_<class>_<armor id>`; see the Art section).
+- **Cheats** (for testing; hidden): in any room press **`** (backtick), or tap the room name 5 times on a touch screen.
+  - **Hero**: levels (+1, +5, to 5/10/15/20), gold, full heal, refund stat points, clear the bag, and toggles for god mode, one-hit kills and Elites everywhere (toggles last until the page reloads).
+  - **Give item**: any item with a chosen quality, Sigil and number of mods (potions in fives).
+  - **Wardrobe**: try on every weapon and armor and see it on the hero right away (faded = no art yet).
+  - **World**: teleport to any room, respawn monsters, mark quests done (with everything before them), finish active quests, reset quests, and reset the character.
+  - Everything except the toggles changes your real save.
 - **Sound**: all effects are synthesized in code (WebAudio), no audio files.
 
 ## Where things live
@@ -68,6 +74,8 @@ npm run preview  # serve the dist/ build locally
 1. Generate images with the prompts in [`art/PROMPTS.md`](art/PROMPTS.md) and put them in `art/raw/`, named by key (e.g. `mon_mossling.png`).
 2. Run `python3 scripts/prepare_art.py` (needs Pillow + numpy). It removes flat backgrounds from sprites, trims, resizes, and writes WebP files to `src/assets/art/`.
 3. Every file in `src/assets/art/` is loaded at boot by its file name. Point data at it with `look.art`, `zone.background` or `room.background`.
+
+Armor outfits: wearing an armor, a hero is drawn from `char_<class>_<armor id>` (empty-handed like the bare art) when it exists, else the default look. Its fists default to the class's `bare.hands`; if they moved, set `hands` per class on the armor in `items.ts`. Prompts are at the end of `art/PROMPTS.md`.
 
 Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editing the hero image to empty fists). `look.bare.hands` in `classes.ts` holds each fist's pixel position in that processed image and the weapon's idle angle; **re-measure them if the bare art is regenerated**. Weapon images are `wpn_<id>`, drawn upright with the handle at the bottom (the script makes them 320px tall); a weapon's `art`, `grip` (0 = top, 1 = bottom of the image: where the fist holds it) and `size` (length relative to the hero) are set in `items.ts`. Weapons are drawn behind the body so the fist covers the grip. A weapon without art falls back to the hero's original picture.
 

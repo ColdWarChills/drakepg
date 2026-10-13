@@ -24,8 +24,9 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
   const c = scene.add.container(x, y);
   const { color, accent } = look;
 
-  const bare = look.bare;
-  if (bare && weapon?.art && hasArt(scene, bare.art) && hasArt(scene, weapon.art)) {
+  const bares = look.bare === undefined ? [] : Array.isArray(look.bare) ? look.bare : [look.bare];
+  const bare = bares.find((b) => hasArt(scene, b.art));
+  if (bare && weapon?.art && hasArt(scene, weapon.art)) {
     const img = scene.add.image(0, 0, bare.art).setOrigin(0.5, 1);
     const s = Math.min(ART_HEIGHT / img.height, ART_MAX_WIDTH / img.width);
     img.setScale(s);

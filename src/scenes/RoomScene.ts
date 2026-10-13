@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
-import { ROOMS } from '../data/world';
+import { ROOMS, START } from '../data/world';
 import type { Blocker, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
+import { cheats } from '../game/cheats';
 import { makeElite, rollElite } from '../game/Elites';
+import { Player } from '../game/Player';
 import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questStarted, questWantsElite, turnInQuest } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { defaultRng, weightedPick } from '../game/rng';
@@ -15,6 +17,7 @@ import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { Hud } from '../ui/Hud';
 import { Modal } from '../ui/Modal';
+import { openCheatMenu } from '../ui/cheatMenu';
 import { openInventory, openShop } from '../ui/inventory';
 import { lootName } from '../ui/itemUi';
 import { openCharacterPanel, openDialogue, type DialogueAction } from '../ui/panels';
@@ -70,8 +73,8 @@ let showedControls = false;
 export class RoomScene extends Phaser.Scene {
   private room!: RoomDef;
   private player!: Actor;
-  /** Weapon id the player figure was drawn with. */
-  private playerWeapon: string | null = null;
+  /** Weapon and armor uids the player figure was drawn with. */
+  private playerGear = '';
   private npcs: Npc[] = [];
   private mobs: Mob[] = [];
   private keys!: Keys;
@@ -137,6 +140,8 @@ export class RoomScene extends Phaser.Scene {
     kb.on('keydown-C', () => this.openCharacter());
     kb.on('keydown-I', () => this.toggleInventory());
     kb.on('keydown-M', () => this.toggleSound());
+    // Hidden testing menu. On touch screens: tap the room name 5 times.
+    kb.on('keydown-BACKTICK', () => this.openCheats());
     const talk = () => {
       if (this.modalOpen() || this.leaving) return;
       const target = this.nearestTarget();
@@ -167,10 +172,10 @@ export class RoomScene extends Phaser.Scene {
       x = data.x;
       y = data.y;
     }
-    const look = session.player.classDef.look;
+    const look = session.player.look;
     const fig = drawFigure(this, x, y, look, 1, session.player.weapon, session.player.weaponSigil);
     this.player = this.makeActor(fig, x, y, look.scale);
-    this.playerWeapon = session.player.data.equipment.weapon?.uid ?? null;
+    this.playerGear = this.gearKey();
     if (data.via === 'exit') this.player.facing = data.side === 'left' ? 1 : -1;
     this.clampToWalk(this.player);
     this.place(this.player);
@@ -210,7 +215,7 @@ export class RoomScene extends Phaser.Scene {
         const pos = this.findSpawnPoint(roaming);
         // Monsters are visible, so tougher ones can appear; their level label warns you.
         const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
-        const elite = elites < BALANCE.elite.maxPerRoom ? rollElite(defaultRng, wantsElite) : undefined;
+        const elite = elites < BALANCE.elite.maxPerRoom || cheats.elites ? rollElite(defaultRng, wantsElite) : undefined;
         if (elite) elites++;
         roaming.push({ uid: this.nextUid++, monsterId, elite, ...pos });
       }
@@ -254,13 +259,18 @@ export class RoomScene extends Phaser.Scene {
     }
   }
 
-  /** The hero holds the equipped weapon, so redraw them after a weapon swap. */
+  private gearKey(): string {
+    const { weapon, armor } = session.player.data.equipment;
+    return `${weapon?.uid ?? ''}|${armor?.uid ?? ''}`;
+  }
+
+  /** The hero holds the equipped weapon and wears the armor's outfit, so redraw them after a gear swap. */
   private redrawPlayerIfRearmed(): void {
-    const weapon = session.player.data.equipment.weapon?.uid ?? null;
-    if (weapon === this.playerWeapon) return;
-    this.playerWeapon = weapon;
+    const key = this.gearKey();
+    if (key === this.playerGear) return;
+    this.playerGear = key;
     const old = this.player.fig;
-    this.player.fig = drawFigure(this, this.player.x, this.player.y, session.player.classDef.look, 1, session.player.weapon, session.player.weaponSigil);
+    this.player.fig = drawFigure(this, this.player.x, this.player.y, session.player.look, 1, session.player.weapon, session.player.weaponSigil);
     old.destroy();
     this.place(this.player);
   }
@@ -475,9 +485,19 @@ export class RoomScene extends Phaser.Scene {
       fontSize: 17,
     }).setDepth(UI_DEPTH);
 
-    addText(this, width / 2, 36, this.room.name, { size: 30, bold: true, color: COLORS.textGold, stroke: true })
+    const title = addText(this, width / 2, 36, this.room.name, { size: 30, bold: true, color: COLORS.textGold, stroke: true })
       .setOrigin(0.5)
-      .setDepth(UI_DEPTH);
+      .setDepth(UI_DEPTH)
+      .setInteractive();
+    let taps: number[] = [];
+    title.on('pointerup', () => {
+      const now = this.time.now;
+      taps = [...taps.filter((t) => now - t < 2500), now];
+      if (taps.length >= 5) {
+        taps = [];
+        this.openCheats();
+      }
+    });
 
     if (titleCard) this.titleCard();
 
@@ -870,6 +890,28 @@ export class RoomScene extends Phaser.Scene {
   private openCharacter(): void {
     if (this.modalOpen() || this.leaving) return;
     openCharacterPanel(this, session.player, this.refresh, () => this.toggleInventory());
+  }
+
+  private openCheats(): void {
+    if (this.modalOpen() || this.leaving) return;
+    this.moveTarget = null;
+    openCheatMenu(this, session.player, {
+      onChange: this.refresh,
+      travel: (roomId, x, y) => {
+        const [top, bottom] = db.room(roomId).walk;
+        this.leaving = true;
+        this.save(false);
+        goTo(this, SceneKeys.Room, { roomId, via: 'spawn', x: x ?? 640, y: y ?? (top + bottom) / 2 } satisfies RoomSceneData);
+      },
+      resetCharacter: () => {
+        const old = session.player;
+        const fresh = Player.createNew(old.name, old.data.classId);
+        session.start(fresh);
+        SaveSystem.save(fresh);
+        this.leaving = true;
+        goTo(this, SceneKeys.Room, { roomId: START.roomId, via: 'spawn', x: START.x, y: START.y } satisfies RoomSceneData);
+      },
+    });
   }
 
   /** I opens the inventory, and closes it again. */
