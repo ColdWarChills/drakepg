@@ -22,6 +22,7 @@ npm run preview  # serve the dist/ build locally
 - **Rooms** (DragonFable-style screens): walk with **WASD / arrows** or **click to walk**. Walk off an edge to change room.
   - **Brindlemoor** (town): talk with **E / Space** or click. Elder Maren and Garrick give quests (**!** = new, **?** = ready to turn in), Tobin runs the shop, Ilsa the inn.
   - **Thornwood Path** and **Deep Thornwood**: monsters roam and chase you when you get close. Touch one to fight it. Label color = level vs yours.
+  - **Elites**: now and then (8% per roaming monster, at most one per room) a monster spawns as an Elite: bigger, glowing gold, tagged **ELITE**, one level higher, with 2x HP, 1.25x damage and one affix in its name (**Hulking** +50% HP, **Frenzied** +25% damage, **Warded** +25 all resistances, **Venomous** attacks may poison, **Ironhide** +50% defense; the battle panel spells it out). They give 3x XP and gold, always drop a piece of the area's gear, and roll Sigils far more often than normal monsters. An Elite still counts as its base monster for quests.
   - **Thornheart Hollow**: sealed by thorns until the Elder sends you there. Home of the chapter boss, who stays for **rematches** after its quest (half XP and gold, full loot; bosses drop Sigils far more often).
 - **Quests**: a 4-quest chain (tracker on the left). Kill counts, then turn in for XP, gold and items. The last one ends the chapter.
 - **Battle**: turn-based. Attack / Skills / Items / **Defend** (-60% damage, regain MP) / Flee (mouse or keys **1-6**). The boss winds up big attacks a turn ahead: defend or heal.
@@ -37,11 +38,11 @@ npm run preview  # serve the dist/ build locally
 - **Mods** (blue lines): extra lines like +STR, +Crit chance, +Max HP/MP or +resist to one element, each with its own 0-100% quality. About 1 in 10 normal gear drops has one.
 - **Sigils**: rare versions of any dropped weapon or armor, shown with a **✦ Sigil of ...** line under the name, a glowing icon and a glow on the weapon in hand.
 
-  | Tier | Base damage/defense | Mods | Normal monster | Boss |
-  | --- | --- | --- | --- | --- |
-  | Sigil of Dawn (orange) | +20% | 1 | 2% | 20% |
-  | Sigil of Dusk (violet) | +35% | 2 | 0.5% | 7% |
-  | Sigil of Eclipse (crimson) | +60% | 3 | 0.05% | 1.5% |
+  | Tier | Base damage/defense | Mods | Normal monster | Elite | Boss |
+  | --- | --- | --- | --- | --- | --- |
+  | Sigil of Dawn (orange) | +20% | 1 | 2% | 8% | 20% |
+  | Sigil of Dusk (violet) | +35% | 2 | 0.5% | 2% | 7% |
+  | Sigil of Eclipse (crimson) | +60% | 3 | 0.05% | 0.3% | 1.5% |
 
   The chance is per gear drop. The Sigil raises the base first, then the white rolls apply on top (a 100% Eclipse Iron Sword hits 17-26 vs 7-11 for a shop one). Sigil drops arrive locked, sort first, sell for 3x/6x/12x, and get a fanfare on the result screen. Quest rewards and shop gear never have Sigils or mods.
 - **Inventory** (button or **I**): 30-slot grid with tabs (All / Weapons / Armor / Potions) and sorting. Hover or tap an item for its card: rolls with quality bars, and a comparison with what you wear. Equip by double-click, the Equip button, or dragging onto the hero; drag worn gear back to the grid to take it off. **Lock** keeps an item from being sold. Loot that doesn't fit a full bag is left behind (quest rewards always fit).
@@ -54,8 +55,9 @@ npm run preview  # serve the dist/ build locally
 | Path | What |
 | --- | --- |
 | `src/config.ts` | Screen size, colors, **`BALANCE`** design knobs |
-| `src/data/` | Content: classes, items, skills, monsters, quests, zones, rooms and NPCs. Edit these to add content. |
-| `src/game/` | Rules, no Phaser: `Player`, `Battle`, `Items` (rolled gear), `Quests`, `SaveSystem`, `rng` |
+| `src/data/` | Content: classes, items, skills, monsters, Elite affixes, quests, zones, rooms and NPCs. Edit these to add content. |
+| `src/game/` | Rules, no Phaser: `Player`, `Battle`, `Items` (rolled gear), `Elites`, `Quests`, `SaveSystem`, `rng` |
+| `docs/` | Design specs, e.g. [`CHAPTER2_SPEC.md`](docs/CHAPTER2_SPEC.md) |
 | `src/scenes/` | Screens: Boot, Title, Create, Room (exploration), Battle, Result |
 | `src/ui/` | Buttons, bars, modals, panels, figures, scenery, `fx.ts` (particles and effects), `sfx.ts` (sounds) |
 
@@ -74,8 +76,9 @@ Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editin
 - **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`. Items without art get a drawn icon tinted with `iconColor`. Roll ranges, drop curve, bag size and sell prices are in `BALANCE` (`gearRolls`, `rollCurve`, `bagSlots`, `sellRate`, `sellGradeBonus`), and so are Sigils and mods (`sigils`, `sigilChance`, `modChance`, `modRanges`); roll rules and the mod pools live in `src/game/Items.ts`. Drops from a `boss: true` monster use the boss Sigil chances.
 - **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. Set `cooldown`, and `element`/`damageType` if it shouldn't use the weapon's. `applies` adds statuses (`self: true` for buffs). `fx: 'heavy'` gives a leap (or a big spell).
 - **Status**: add to `src/data/statuses.ts` (damage over time, regen, stun, damage/defense/resist/hit/crit modifiers).
+- **Elite affix**: add to `src/data/elites.ts` (`hp`, `damage`, `defense` multipliers, `resists`, `applies` added to every attack) with a `description` the battle panel shows. Spawn chance, stat and reward multipliers are in `BALANCE.elite`; Elite Sigil odds in `BALANCE.sigilChance.elite`. Any monster can become an Elite; its guaranteed drop comes from the gear its zone's monsters drop.
 - **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look) and to `ClassId` in `src/data/types.ts`.
-- **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked by thorns until that quest is accepted; a room `boss` appears once its quest is accepted and stays for rematches (`BALANCE.bossRepeatRewards` XP and gold).
+- **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, the objective kills a `monsterId` or any Elite (`elite: true`, which also makes Elites spawn more often while it's active), `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked by thorns until that quest is accepted; a room `boss` appears once its quest is accepted and stays for rematches (`BALANCE.bossRepeatRewards` XP and gold).
 - **Boss**: a monster with `boss: true` (can't flee). An attack with `windup` text is telegraphed one turn before it hits.
 
 Broken references (e.g. a drop pointing at a missing item) throw at startup in `validateData()`.

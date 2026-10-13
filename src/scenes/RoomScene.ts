@@ -3,7 +3,8 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { ROOMS } from '../data/world';
 import type { MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
-import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questStarted, turnInQuest } from '../game/Quests';
+import { makeElite, rollElite } from '../game/Elites';
+import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questStarted, questWantsElite, turnInQuest } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { defaultRng, weightedPick } from '../game/rng';
 import { session, type RoamingMonster } from '../game/session';
@@ -26,6 +27,8 @@ const EDGE = 36;
 const TALK_RANGE = { x: 130, y: 80 };
 const TOUCH_RANGE = { x: 62, y: 34 };
 const UI_DEPTH = 3000;
+/** Gold glow around Elites. */
+const ELITE_GLOW = 0xffc23d;
 
 interface Actor {
   fig: Phaser.GameObjects.Container;
@@ -48,6 +51,10 @@ interface Mob extends Actor {
   uid: number;
   def: MonsterDef;
   label: Phaser.GameObjects.Text;
+  /** Elite affix id, with its gold aura and "ELITE" tag. */
+  elite?: string;
+  aura?: Phaser.GameObjects.Image;
+  tag?: Phaser.GameObjects.Text;
   state: 'idle' | 'wander' | 'alert' | 'chase';
   timer: number;
   target: { x: number; y: number } | null;
@@ -194,12 +201,16 @@ export class RoomScene extends Phaser.Scene {
 
     if (!roaming) {
       const zone = db.zone(room.zoneId);
+      const wantsElite = questWantsElite(session.player);
+      let elites = 0;
       roaming = [];
       for (let i = 0; i < (room.monsterCount ?? 0); i++) {
         const pos = this.findSpawnPoint();
         // Monsters are visible, so tougher ones can appear; their level label warns you.
         const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
-        roaming.push({ uid: this.nextUid++, monsterId, ...pos });
+        const elite = elites < BALANCE.elite.maxPerRoom ? rollElite(defaultRng, wantsElite) : undefined;
+        if (elite) elites++;
+        roaming.push({ uid: this.nextUid++, monsterId, elite, ...pos });
       }
     }
     for (const r of roaming) this.addMob(r);
@@ -261,7 +272,8 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private addMob(r: RoamingMonster): void {
-    const def = db.monster(r.monsterId);
+    const base = db.monster(r.monsterId);
+    const def = r.elite ? makeElite(base, r.elite, db.zone(this.room.zoneId!)) : base;
     const fig = drawFigure(this, r.x, r.y, def.look, 1);
     const actor = this.makeActor(fig, r.x, r.y, def.look.scale * 0.85);
     const diff = def.level - session.player.level;
@@ -269,11 +281,24 @@ export class RoomScene extends Phaser.Scene {
     const label = addText(this, r.x, 0, `${def.name}  Lv ${def.level}`, { size: 15, bold: true, color, stroke: true }).setOrigin(0.5, 1);
     const mob: Mob = { ...actor, uid: r.uid, def, label, state: 'idle', timer: Phaser.Math.FloatBetween(0.3, 1.5), target: null };
     mob.facing = r.x > this.player.x ? -1 : 1;
+    if (r.elite) {
+      mob.elite = r.elite;
+      mob.aura = this.add.image(r.x, r.y, 'fx_soft').setTint(ELITE_GLOW).setBlendMode('ADD').setScale(5).setAlpha(0.3);
+      this.tweens.add({ targets: mob.aura, alpha: 0.55, scale: 5.8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      mob.tag = addText(this, r.x, 0, 'ELITE', { size: 14, bold: true, color: COLORS.textGold, stroke: true }).setOrigin(0.5, 1);
+    }
     this.mobs.push(mob);
     this.place(mob);
+    this.placeEliteMarks(mob);
     // Pop in.
     fig.setAlpha(0);
     this.tweens.add({ targets: fig, alpha: 1, duration: 300, delay: 150 });
+  }
+
+  /** Keep an Elite's aura and tag with it. */
+  private placeEliteMarks(m: Mob): void {
+    m.aura?.setPosition(m.x, m.y - m.height * m.scale * 0.45).setDepth(m.y - 1);
+    m.tag?.setPosition(m.x, m.label.y - m.label.height).setDepth(m.y + 0.5);
   }
 
   private drawExits(): void {
@@ -581,6 +606,7 @@ export class RoomScene extends Phaser.Scene {
     }
     this.clampToWalk(m, 60, this.scale.width - 60);
     this.place(m, time);
+    this.placeEliteMarks(m);
 
     if (!blocked && !safe && Math.abs(dx) < TOUCH_RANGE.x && Math.abs(dy) < TOUCH_RANGE.y) this.startBattle(m);
   }
@@ -717,11 +743,11 @@ export class RoomScene extends Phaser.Scene {
     session.saveRoom({
       roomId: this.room.id,
       fightingUid: m.uid,
-      monsters: this.mobs.map((x) => ({ uid: x.uid, monsterId: x.def.id, x: x.x, y: x.y })),
+      monsters: this.mobs.map((x) => ({ uid: x.uid, monsterId: x.def.id, elite: x.elite, x: x.x, y: x.y })),
     });
     this.saveLocation();
 
-    sfx.play(this, 'encounter');
+    sfx.play(this, m.elite ? 'warning' : 'encounter');
     fx.whiteFlash(this, m.fig, 140);
     fx.hitSparks(this, (m.x + this.player.x) / 2, m.y - 80, false, true);
     const cam = this.cameras.main;
@@ -730,7 +756,7 @@ export class RoomScene extends Phaser.Scene {
     cam.pan((m.x + this.player.x) / 2, m.y - 120, 450, 'Cubic.easeIn');
     cam.zoomTo(1.6, 450, 'Cubic.easeIn');
     cam.rotateTo(0.08, false, 450);
-    const data: BattleSceneData = { zoneId, monsterId: m.def.id, roomId: this.room.id, x: this.player.x, y: this.player.y };
+    const data: BattleSceneData = { zoneId, monsterId: m.def.id, elite: m.elite, roomId: this.room.id, x: this.player.x, y: this.player.y };
     this.time.delayedCall(380, () => goTo(this, SceneKeys.Battle, data, 200));
   }
 

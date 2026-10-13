@@ -1,5 +1,5 @@
 import { db } from '../data/db';
-import type { QuestDef, SkillDef } from '../data/types';
+import type { MonsterDef, QuestDef, SkillDef } from '../data/types';
 import { grantFor } from './Items';
 import type { Player, Rewards } from './Player';
 
@@ -28,6 +28,17 @@ export function questStarted(player: Player, questId: string): boolean {
 /** True while an active quest still needs this monster killed. */
 export function questNeedsKill(player: Player, monsterId: string): boolean {
   return db.quests().some((q) => q.objective.monsterId === monsterId && questStatus(player, q) === 'active');
+}
+
+/** True while an active quest wants any Elite (they spawn more often then). */
+export function questWantsElite(player: Player): boolean {
+  return db.quests().some((q) => q.objective.elite && !q.objective.monsterId && questStatus(player, q) === 'active');
+}
+
+/** Does killing this monster count for the quest? Elites keep their base monster's id. */
+function objectiveMatches(quest: QuestDef, monster: MonsterDef): boolean {
+  const o = quest.objective;
+  return (!o.monsterId || o.monsterId === monster.id) && (!o.elite || monster.elite !== undefined);
 }
 
 export function questDone(player: Player, questId: string): boolean {
@@ -64,11 +75,11 @@ export interface QuestProgress {
 }
 
 /** Count a defeated monster toward every active quest that wants it. */
-export function recordKill(player: Player, monsterId: string): QuestProgress[] {
+export function recordKill(player: Player, monster: MonsterDef): QuestProgress[] {
   const updates: QuestProgress[] = [];
   for (const quest of db.quests()) {
     const state = player.data.quests[quest.id];
-    if (state?.status !== 'active' || quest.objective.monsterId !== monsterId) continue;
+    if (state?.status !== 'active' || !objectiveMatches(quest, monster)) continue;
     if (state.count >= quest.objective.count) continue;
     state.count += 1;
     updates.push({ quest, count: state.count, target: quest.objective.count });

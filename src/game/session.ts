@@ -4,6 +4,8 @@ import { Player } from './Player';
 export interface RoamingMonster {
   uid: number;
   monsterId: string;
+  /** Elite affix id, if it's an Elite. */
+  elite?: string;
   x: number;
   y: number;
 }

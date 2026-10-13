@@ -1,11 +1,12 @@
 import { CLASSES } from './classes';
+import { ELITE_AFFIXES } from './elites';
 import { ITEMS } from './items';
 import { MONSTERS } from './monsters';
 import { QUESTS } from './quests';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, ItemDef, MonsterDef, QuestDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, EliteAffixDef, ItemDef, MonsterDef, QuestDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -25,6 +26,7 @@ const rooms = index('room', ROOMS);
 const classes = index('class', CLASSES);
 const quests = index('quest', QUESTS);
 const statuses = index('status', STATUSES);
+const affixes = index('elite affix', ELITE_AFFIXES);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -41,6 +43,8 @@ export const db = {
   class: (id: ClassId): ClassDef => get('class', classes, id),
   quest: (id: string): QuestDef => get('quest', quests, id),
   status: (id: string): StatusDef => get('status', statuses, id),
+  affix: (id: string): EliteAffixDef => get('elite affix', affixes, id),
+  affixes: (): readonly EliteAffixDef[] => ELITE_AFFIXES,
   hasClass: (id: string) => classes.has(id),
   quests: (): readonly QuestDef[] => QUESTS,
   hasRoom: (id: string) => rooms.has(id),
@@ -58,6 +62,7 @@ export function validateData(): void {
     m.immune?.forEach((id) => db.status(id));
   }
   for (const s of SKILLS) checkApplies(s.applies);
+  for (const a of ELITE_AFFIXES) checkApplies(a.applies);
   for (const item of ITEMS) if (item.type === 'weapon') checkApplies(item.proc?.applies);
   for (const z of ZONES) for (const e of z.encounters) db.monster(e.monsterId);
   for (const c of CLASSES) {
@@ -69,7 +74,8 @@ export function validateData(): void {
   for (const q of QUESTS) {
     if (!npcIds.has(q.giver)) throw new Error(`Quest ${q.id}: unknown giver ${q.giver}`);
     if (q.requires) db.quest(q.requires);
-    db.monster(q.objective.monsterId);
+    if (q.objective.monsterId) db.monster(q.objective.monsterId);
+    else if (!q.objective.elite) throw new Error(`Quest ${q.id}: objective needs a monsterId or elite`);
     q.rewards.items?.forEach((id) => db.item(id));
     Object.values(q.rewards.classItems ?? {}).forEach((id) => db.item(id));
   }

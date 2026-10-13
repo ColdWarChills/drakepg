@@ -25,6 +25,8 @@ export type RoomSceneData =
 export interface BattleSceneData {
   zoneId: string;
   monsterId: string;
+  /** Elite affix id: fight the Elite version. */
+  elite?: string;
   /** Where to go back to afterwards. */
   roomId: string;
   x: number;

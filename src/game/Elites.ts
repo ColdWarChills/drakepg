@@ -1,0 +1,53 @@
+import { BALANCE } from '../config';
+import { db } from '../data/db';
+import type { Defenses, MonsterDef, Resists, ZoneDef } from '../data/types';
+import { isGearDef } from './Items';
+import { chance, defaultRng, randInt, type Rng } from './rng';
+
+/**
+ * Elites: rare, tougher versions of roaming monsters. An Elite is a plain MonsterDef copy with
+ * boosted numbers and `elite` set, so battles, quests and the UI treat it like any monster.
+ * It keeps the base monster's id, so it also counts for "defeat N of X" quests.
+ */
+
+/** An affix id if this roaming spawn should be an Elite, else undefined. */
+export function rollElite(rng: Rng = defaultRng, questWantsOne = false): string | undefined {
+  const odds = questWantsOne ? BALANCE.elite.questChance : BALANCE.elite.chance;
+  if (!chance(rng, odds)) return undefined;
+  const list = db.affixes();
+  return list[randInt(rng, 0, list.length - 1)].id;
+}
+
+/** Gear the zone's monsters can drop: the pool an Elite's guaranteed drop comes from. */
+export function zoneLoot(zone: ZoneDef): string[] {
+  const ids = new Set<string>();
+  for (const e of zone.encounters) {
+    for (const d of db.monster(e.monsterId).drops) if (isGearDef(db.item(d.itemId))) ids.add(d.itemId);
+  }
+  return [...ids];
+}
+
+/** The Elite version of `def` with the given affix. `zone` decides its bonus loot. */
+export function makeElite(def: MonsterDef, affixId: string, zone?: ZoneDef): MonsterDef {
+  const a = db.affix(affixId);
+  const e = BALANCE.elite;
+  const range = (r: [number, number], m: number): [number, number] => [Math.round(r[0] * m), Math.round(r[1] * m)];
+  const defense: Defenses = {};
+  for (const [type, v] of Object.entries(def.defense) as [keyof Defenses, number][]) defense[type] = Math.round(v * (1 + (a.defense ?? 0)));
+  const resists: Resists = { ...def.resists };
+  for (const [key, v] of Object.entries(a.resists ?? {}) as [keyof Resists, number][]) resists[key] = (resists[key] ?? 0) + v;
+  return {
+    ...def,
+    name: `${a.name} ${def.name}`,
+    level: def.level + e.levels,
+    look: { ...def.look, scale: def.look.scale * e.size },
+    hp: Math.round(def.hp * e.hp * (1 + (a.hp ?? 0))),
+    damage: range(def.damage, e.damage * (1 + (a.damage ?? 0))),
+    defense,
+    resists,
+    attacks: def.attacks.map((atk) => (a.applies && atk.power > 0 ? { ...atk, applies: [...(atk.applies ?? []), ...a.applies] } : atk)),
+    xp: Math.round(def.xp * e.rewards),
+    gold: range(def.gold, e.rewards),
+    elite: { affix: a.id, loot: zone ? zoneLoot(zone) : [] },
+  };
+}

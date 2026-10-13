@@ -210,6 +210,31 @@ export interface MonsterDef {
   drops: { itemId: string; chance: number }[];
   /** Bosses can't be fled from and get a bigger presence on screen. */
   boss?: boolean;
+  /** Only on Elite copies made by `makeElite` (src/game/Elites.ts), never in monsters.ts. */
+  elite?: EliteInfo;
+}
+
+/** What makes a monster an Elite: its affix, and the gear pool its guaranteed drop comes from. */
+export interface EliteInfo {
+  affix: string;
+  loot: string[];
+}
+
+/** One Elite affix. Lives in elites.ts; every effect shows in the battle UI through `description`. */
+export interface EliteAffixDef {
+  id: string;
+  /** Prefixed to the monster's name: "Frenzied Ash Imp". */
+  name: string;
+  description: string;
+  /** +0.5 = 50% more HP (on top of the Elite HP multiplier). */
+  hp?: number;
+  /** +0.25 = 25% more damage. */
+  damage?: number;
+  /** +0.5 = 50% more defense of every type. */
+  defense?: number;
+  resists?: Resists;
+  /** Added to every damaging attack. */
+  applies?: Apply[];
 }
 
 /** Painted background image key(s); the first one that exists is used. */
@@ -283,7 +308,8 @@ export interface QuestDef {
   giver: string;
   /** Quest that must be completed first. */
   requires?: string;
-  objective: { kind: 'kill'; monsterId: string; count: number };
+  /** Kill `count` of `monsterId`, or of any Elite with `elite` (both: Elites of that monster). */
+  objective: { kind: 'kill'; monsterId?: string; elite?: boolean; count: number };
   /** Short tracker text, e.g. "Mosslings defeated". */
   goal: string;
   offer: string[];

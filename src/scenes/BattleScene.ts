@@ -4,6 +4,7 @@ import { db } from '../data/db';
 import { ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS } from '../data/elements';
 import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, ZoneDef } from '../data/types';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
+import { makeElite } from '../game/Elites';
 import { questNeedsKill, recordKill } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
@@ -37,6 +38,7 @@ interface Style {
 }
 
 const EFFECT_TAGS: Record<Effect, string> = { weak: 'WEAK!', resisted: 'Resisted', immune: 'Immune' };
+const ELITE_GLOW = 0xffc23d;
 
 export class BattleScene extends Phaser.Scene {
   private battle!: Battle;
@@ -75,7 +77,8 @@ export class BattleScene extends Phaser.Scene {
     enterScene(this, 350);
     this.back = data;
     this.zone = db.zone(data.zoneId);
-    this.monster = db.monster(data.monsterId);
+    const base = db.monster(data.monsterId);
+    this.monster = data.elite ? makeElite(base, data.elite, this.zone) : base;
     this.battle = new Battle(session.player, this.monster);
     if (this.monster.boss && !questNeedsKill(session.player, this.monster.id)) this.battle.rewardScale = BALANCE.bossRepeatRewards;
     this.log = [];
@@ -87,15 +90,23 @@ export class BattleScene extends Phaser.Scene {
 
     drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
     this.playerFig = drawFigure(this, -200, GROUND_Y, this.playerLook, 1, session.player.weapon, session.player.weaponSigil);
+    if (this.monster.elite) {
+      const glow = this.add.image(ENEMY_X, GROUND_Y - 110, 'fx_soft').setTint(ELITE_GLOW).setBlendMode('ADD').setScale(7).setAlpha(0);
+      this.tweens.add({ targets: glow, alpha: 0.4, duration: 600, delay: 400 });
+      this.tweens.add({ targets: glow, scale: 8, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
     this.enemyFig = drawFigure(this, this.scale.width + 200, GROUND_Y, this.monster.look, -1);
 
     this.drawStatus();
     this.drawBottomPanel();
     this.refreshBars(false);
+    const elite = this.monster.elite ? db.affix(this.monster.elite.affix) : null;
     this.pushLog(
       this.monster.boss
         ? `${this.monster.name} awakens! There is no running from this fight.`
-        : `A wild ${this.monster.name} (Lv ${this.monster.level}) appears in the ${this.zone.name}!`,
+        : elite
+          ? `An Elite ${this.monster.name} (Lv ${this.monster.level}) blocks your path! ${elite.name}: ${elite.description}`
+          : `A wild ${this.monster.name} (Lv ${this.monster.level}) appears in the ${this.zone.name}!`,
     );
 
     ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX'].forEach((key, i) => {
@@ -149,24 +160,31 @@ export class BattleScene extends Phaser.Scene {
     this.playerMp = new Bar(this, 32, 108, 388, 22, COLORS.mp, 'MP ');
 
     const ex = this.scale.width - 436;
-    this.statusPanel(ex, 16, 420, 120);
-    addText(this, ex + 16, 26, `${m.name}  ·  Lv ${m.level}${m.boss ? '  ·  BOSS' : ''}`, {
+    // Elites get an extra line explaining their affix.
+    const affix = m.elite ? db.affix(m.elite.affix) : null;
+    this.statusPanel(ex, 16, 420, affix ? 148 : 120);
+    const head = addText(this, ex + 16, 26, `${m.name}  ·  Lv ${m.level}${m.boss ? '  ·  BOSS' : affix ? '  ·  ELITE' : ''}`, {
       size: 22,
       bold: true,
-      color: m.boss ? COLORS.textBad : COLORS.text,
+      color: m.boss ? COLORS.textBad : affix ? COLORS.textGold : COLORS.text,
     });
+    // Long Elite names shrink to fit the panel.
+    if (head.width > 388) head.setScale(388 / head.width);
     this.enemyHp = new Bar(this, ex + 16, 68, 388, 26, COLORS.hp, 'HP ');
     this.drawAffinities(ex + 16, 108);
+    if (affix) addText(this, ex + 16, 136, `${affix.name}: ${affix.description}`, { size: 15, bold: true, color: COLORS.textGold }).setOrigin(0, 0.5);
 
-    this.statusRows = { player: this.add.container(16, 152), enemy: this.add.container(ex, 152) };
+    this.statusRows = { player: this.add.container(16, 152), enemy: this.add.container(ex, affix ? 180 : 152) };
   }
 
   /** "Earth · Weak: Fire Wind · Resists: Earth Water", each element in its color. */
   private drawAffinities(x: number, y: number): void {
     const m = this.monster;
     const resists = m.resists ?? {};
-    const weak = ELEMENTS.filter((e) => (resists[e] ?? 0) <= -25);
-    const strong = ELEMENTS.filter((e) => (resists[e] ?? 0) >= 25);
+    // A bonus to every element (Warded Elites) is shown once as "All +25" instead of listing all eight.
+    const all = resists.all ?? 0;
+    const weak = ELEMENTS.filter((e) => (resists[e] ?? 0) + all <= -25);
+    const strong = ELEMENTS.filter((e) => (resists[e] ?? 0) + all >= 25 && (resists[e] ?? 0) > 0);
     const parts: { text: string; color: string }[] = [];
     if (m.element) parts.push({ text: ELEMENT_LABELS[m.element], color: ELEMENT_TEXT[m.element] });
     const group = (label: string, list: Element[]) => {
@@ -176,6 +194,7 @@ export class BattleScene extends Phaser.Scene {
     };
     group('Weak:', weak);
     group('Resists:', strong);
+    if (all) parts.push({ text: `${parts.length ? '  ·  ' : ''}All ${all > 0 ? '+' : ''}${all}`, color: COLORS.textGold });
     let cx = x;
     for (const part of parts) {
       const t = addText(this, cx, y, part.text, { size: 15, bold: true, color: part.color }).setOrigin(0, 0.5);
@@ -727,7 +746,7 @@ export class BattleScene extends Phaser.Scene {
         const rewards = this.battle.rewards ?? { xp: 0, gold: 0, items: [] };
         const levelBefore = player.level;
         const { levels: levelsGained, lost } = player.grantRewards(rewards);
-        const quests = recordKill(player, this.monster.id).map((q) => ({
+        const quests = recordKill(player, this.monster).map((q) => ({
           name: q.quest.name,
           goal: q.quest.goal,
           count: q.count,

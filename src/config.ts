@@ -62,6 +62,7 @@ export const BALANCE = {
   sigilChance: {
     mob: { dawn: 0.02, dusk: 0.005, eclipse: 0.0005 },
     boss: { dawn: 0.2, dusk: 0.07, eclipse: 0.015 },
+    elite: { dawn: 0.08, dusk: 0.02, eclipse: 0.003 },
   },
   /** Chance a normal (non-Sigil) gear drop has one mod. */
   modChance: 0.1,
@@ -78,6 +79,22 @@ export const BALANCE = {
   } as Record<'str' | 'int' | 'dex' | 'end' | 'crit' | 'hp' | 'mp' | 'resist', [number, number]>,
   /** XP and gold from beating a boss again after its quest no longer needs it. */
   bossRepeatRewards: 0.5,
+  /**
+   * Elites: tougher roaming monsters with one affix (src/data/elites.ts). `chance` per roaming spawn
+   * (`questChance` while a quest wants an Elite), at most `maxPerRoom`. `levels` is added to the shown level;
+   * hp/damage/rewards multiply the base monster; `size` scales the figure. Every Elite also drops one
+   * gear piece from its zone's loot. Their Sigil odds are `sigilChance.elite`.
+   */
+  elite: {
+    chance: 0.08,
+    questChance: 0.25,
+    maxPerRoom: 1,
+    levels: 1,
+    hp: 2,
+    damage: 1.25,
+    rewards: 3,
+    size: 1.2,
+  },
 
   // Exploration
   /** Player walk speed in px/s (horizontal; vertical is 70% of this). */
