@@ -26,6 +26,8 @@ const MAP_SCALE = 0.85;
 const EDGE = 36;
 const TALK_RANGE = { x: 130, y: 80 };
 const TOUCH_RANGE = { x: 62, y: 34 };
+/** Roaming monsters keep at least this far apart (x), unless they are on clearly different rows (y), so labels stay readable. */
+const MOB_GAP = { x: 150, y: 70 };
 const UI_DEPTH = 3000;
 /** Gold glow around Elites. */
 const ELITE_GLOW = 0xffc23d;
@@ -205,7 +207,7 @@ export class RoomScene extends Phaser.Scene {
       let elites = 0;
       roaming = [];
       for (let i = 0; i < (room.monsterCount ?? 0); i++) {
-        const pos = this.findSpawnPoint();
+        const pos = this.findSpawnPoint(roaming);
         // Monsters are visible, so tougher ones can appear; their level label warns you.
         const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
         const elite = elites < BALANCE.elite.maxPerRoom ? rollElite(defaultRng, wantsElite) : undefined;
@@ -216,17 +218,40 @@ export class RoomScene extends Phaser.Scene {
     for (const r of roaming) this.addMob(r);
   }
 
-  private findSpawnPoint(): { x: number; y: number } {
+  /** A spot away from the player and from `taken` (monsters placed so far). Falls back to the roomiest try. */
+  private findSpawnPoint(taken: { x: number; y: number }[]): { x: number; y: number } {
     const [top, bottom] = this.room.walk;
     let best = { x: 640, y: (top + bottom) / 2 };
-    for (let i = 0; i < 30; i++) {
+    let bestScore = -Infinity;
+    for (let i = 0; i < 40; i++) {
       const p = { x: Phaser.Math.Between(180, this.scale.width - 140), y: Phaser.Math.Between(top + 10, bottom - 10) };
-      const farFromPlayer = Math.abs(p.x - this.player.x) > 320;
-      const farFromOthers = this.mobs.every((m) => Math.abs(m.x - p.x) > 140);
-      best = p;
-      if (farFromPlayer && farFromOthers) break;
+      const fromPlayer = Math.abs(p.x - this.player.x);
+      const fromOthers = Math.min(Infinity, ...taken.map((m) => Math.abs(m.x - p.x)));
+      if (fromPlayer > 320 && fromOthers > MOB_GAP.x) return p;
+      const score = Math.min(fromPlayer, 320) + Math.min(fromOthers, MOB_GAP.x * 2);
+      if (score > bestScore) {
+        best = p;
+        bestScore = score;
+      }
     }
     return best;
+  }
+
+  /** Push roaming monsters that crowd each other apart, a little each frame. */
+  private separateMobs(dt: number): void {
+    const push = 90 * dt;
+    for (let i = 0; i < this.mobs.length; i++) {
+      for (let j = i + 1; j < this.mobs.length; j++) {
+        const a = this.mobs[i];
+        const b = this.mobs[j];
+        const dx = b.x - a.x;
+        if (Math.abs(dx) >= MOB_GAP.x || Math.abs(b.y - a.y) >= MOB_GAP.y) continue;
+        const dir = dx === 0 ? (a.uid < b.uid ? 1 : -1) : Math.sign(dx);
+        // Chasers keep their pace; only the calmer one yields.
+        if (a.state !== 'chase') a.x -= dir * push;
+        if (b.state !== 'chase') b.x += dir * push;
+      }
+    }
   }
 
   /** The hero holds the equipped weapon, so redraw them after a weapon swap. */
@@ -502,6 +527,7 @@ export class RoomScene extends Phaser.Scene {
 
     this.movePlayer(dt, time, blocked);
     for (const npc of this.npcs) this.updateNpc(npc, time);
+    if (!blocked) this.separateMobs(dt);
     for (const mob of [...this.mobs]) this.updateMob(mob, dt, time, blocked);
     this.updatePrompt(blocked);
   }
@@ -616,10 +642,15 @@ export class RoomScene extends Phaser.Scene {
           m.timer -= dt;
           if (m.timer <= 0) {
             const [top, bottom] = this.room.walk;
-            m.target = {
-              x: Phaser.Math.Clamp(m.x + Phaser.Math.Between(-220, 220), 120, this.scale.width - 120),
-              y: Phaser.Math.Between(top + 5, bottom - 5),
-            };
+            // Wander somewhere no other monster is standing.
+            for (let i = 0; i < 6; i++) {
+              m.target = {
+                x: Phaser.Math.Clamp(m.x + Phaser.Math.Between(-220, 220), 120, this.scale.width - 120),
+                y: Phaser.Math.Between(top + 5, bottom - 5),
+              };
+              const t = m.target;
+              if (this.mobs.every((o) => o === m || Math.abs(o.x - t.x) >= MOB_GAP.x || Math.abs(o.y - t.y) >= MOB_GAP.y)) break;
+            }
             m.state = 'wander';
           }
           break;
