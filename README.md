@@ -22,7 +22,7 @@ npm run preview  # serve the dist/ build locally
 - **Rooms** (DragonFable-style screens): walk with **WASD / arrows** or **click to walk**. Walk off an edge to change room.
   - **Brindlemoor** (town): talk with **E / Space** or click. Elder Maren and Garrick give quests (**!** = new, **?** = ready to turn in), Tobin runs the shop, Ilsa the inn.
   - **Thornwood Path** and **Deep Thornwood**: monsters roam and chase you when you get close. Touch one to fight it. Label color = level vs yours.
-  - **Thornheart Hollow**: sealed by thorns until the Elder sends you there. Home of the chapter boss.
+  - **Thornheart Hollow**: sealed by thorns until the Elder sends you there. Home of the chapter boss, who stays for **rematches** after its quest (half XP and gold, full loot; bosses drop Sigils far more often).
 - **Quests**: a 4-quest chain (tracker on the left). Kill counts, then turn in for XP, gold and items. The last one ends the chapter.
 - **Battle**: turn-based. Attack / Skills / Items / **Defend** (-60% damage, regain MP) / Flee (mouse or keys **1-6**). The boss winds up big attacks a turn ahead: defend or heal.
   - **Elements**: Fire, Water, Ice, Wind, Earth, Energy, Light, Dark. Weapons, spells and monster attacks carry one (or none: neutral). Every monster's weaknesses and resistances are shown under its name; hits show **WEAK!** / **Resisted**. Rule of thumb: a creature resists its own element and is weak to the opposite (Fire/Ice, Water/Energy, Earth/Wind, Light/Dark).
@@ -33,9 +33,19 @@ npm run preview  # serve the dist/ build locally
 - **Leveling**: each level gives **stat points** (spend with **+** in the Character panel) and unlocks class skills at set levels (12 per class, up to level 20).
 - **Gear you can see**: the equipped weapon is drawn in the hero's hands.
 - **Result**: XP and gold count-up, loot, quest progress, level-up. Losing wakes you at the inn with no penalty.
-- **Rolled gear**: every weapon and armor piece rolls a quality per line (Damage, Crit, Special chance / Defense, Max HP), 0-100%. Shop gear is always **Standard (0%)**; monster drops and quest rewards roll, and high rolls are rare. The average is the item's **grade**: Standard (grey), Fair (white), Fine (green, 40%+), Superior (blue, 70%+), Masterwork (gold, 90%+). Superior and Masterwork drops sparkle on the result screen.
+- **Rolled gear**: every weapon and armor piece rolls a quality per line (Damage, Crit, Special chance / Defense, Max HP), 0-100%. Shop gear is always **Standard (0%)**; monster drops and quest rewards roll, and high rolls are rare. A 100% Damage or Defense line adds +50%, so a perfect roll is about as strong as the next tier's 0% item (each weapon tier is about x1.5 the one before; items in the same tier are sidegrades). The average is the item's **grade**: Standard (grey), Fair (white), Fine (green, 40%+), Superior (blue, 70%+), Masterwork (gold, 90%+). Superior and Masterwork drops sparkle on the result screen.
+- **Mods** (blue lines): extra lines like +STR, +Crit chance, +Max HP/MP or +resist to one element, each with its own 0-100% quality. About 1 in 10 normal gear drops has one.
+- **Sigils**: rare versions of any dropped weapon or armor, shown with a **✦ Sigil of ...** line under the name, a glowing icon and a glow on the weapon in hand.
+
+  | Tier | Base damage/defense | Mods | Normal monster | Boss |
+  | --- | --- | --- | --- | --- |
+  | Sigil of Dawn (orange) | +20% | 1 | 2% | 20% |
+  | Sigil of Dusk (violet) | +35% | 2 | 0.5% | 7% |
+  | Sigil of Eclipse (crimson) | +60% | 3 | 0.05% | 1.5% |
+
+  The chance is per gear drop. The Sigil raises the base first, then the white rolls apply on top (a 100% Eclipse Iron Sword hits 17-26 vs 7-11 for a shop one). Sigil drops arrive locked, sort first, sell for 3x/6x/12x, and get a fanfare on the result screen. Quest rewards and shop gear never have Sigils or mods.
 - **Inventory** (button or **I**): 30-slot grid with tabs (All / Weapons / Armor / Potions) and sorting. Hover or tap an item for its card: rolls with quality bars, and a comparison with what you wear. Equip by double-click, the Equip button, or dragging onto the hero; drag worn gear back to the grid to take it off. **Lock** keeps an item from being sold. Loot that doesn't fit a full bag is left behind (quest rewards always fit).
-- **Shop**: Buy (Standard gear and potions) and Sell (better grades sell for more; **Sell junk** sells unlocked Standard/Fair gear).
+- **Shop**: Buy (Standard gear and potions) and Sell (better grades sell for more; **Sell junk** sells unlocked Standard/Fair gear, never Sigils).
 - **Character panel** (button or **C**): stats, stat points, skills, what you have equipped. **M** toggles sound. **Esc** closes windows.
 - **Sound**: all effects are synthesized in code (WebAudio), no audio files.
 
@@ -61,11 +71,11 @@ Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editin
 
 - **Room**: add to `ROOMS` in `src/data/world.ts` with its walkable strip (`walk`), `exits` (left/right to another room), `npcs`, and optionally a `zoneId` + `monsterCount` for roaming monsters. Link it from a neighbor's `exits`.
 - **Monster**: add to `src/data/monsters.ts` (with an `element`, `resists` in percent, `defense` per attack type, and `immune` statuses if any), then add it to a zone's `encounters` in `src/data/world.ts`. An attack can `applies` statuses; `power: 0` makes it a pure buff.
-- **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`. Items without art get a drawn icon tinted with `iconColor`. Roll ranges, drop curve, bag size and sell prices are in `BALANCE` (`gearRolls`, `rollCurve`, `bagSlots`, `sellRate`, `sellGradeBonus`); roll rules live in `src/game/Items.ts`.
+- **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`. Items without art get a drawn icon tinted with `iconColor`. Roll ranges, drop curve, bag size and sell prices are in `BALANCE` (`gearRolls`, `rollCurve`, `bagSlots`, `sellRate`, `sellGradeBonus`), and so are Sigils and mods (`sigils`, `sigilChance`, `modChance`, `modRanges`); roll rules and the mod pools live in `src/game/Items.ts`. Drops from a `boss: true` monster use the boss Sigil chances.
 - **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. Set `cooldown`, and `element`/`damageType` if it shouldn't use the weapon's. `applies` adds statuses (`self: true` for buffs). `fx: 'heavy'` gives a leap (or a big spell).
 - **Status**: add to `src/data/statuses.ts` (damage over time, regen, stun, damage/defense/resist/hit/crit modifiers).
 - **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look) and to `ClassId` in `src/data/types.ts`.
-- **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked by thorns until that quest is accepted; a room `boss` appears while its quest is active.
+- **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked by thorns until that quest is accepted; a room `boss` appears once its quest is accepted and stays for rematches (`BALANCE.bossRepeatRewards` XP and gold).
 - **Boss**: a monster with `boss: true` (can't flee). An attack with `windup` text is telegraphed one turn before it hits.
 
 Broken references (e.g. a drop pointing at a missing item) throw at startup in `validateData()`.
@@ -76,7 +86,7 @@ Broken references (e.g. a drop pointing at a missing item) throw at startup in `
 
 ### Saves
 
-Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors; pre-v4 gear becomes Standard). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
+Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors; pre-v4 gear becomes Standard; v5 added Sigils and mods, which old gear simply doesn't have). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
 
 ## Playing on GitHub Pages
 

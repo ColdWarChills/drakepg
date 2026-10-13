@@ -1,7 +1,8 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
-import type { ArmorDef, ItemDef, WeaponDef } from '../data/types';
-import { defaultRng, type Rng } from './rng';
+import { ELEMENTS } from '../data/elements';
+import type { ArmorDef, Element, ItemDef, StatKey, WeaponDef } from '../data/types';
+import { chance, defaultRng, type Rng } from './rng';
 
 /**
  * Rolled gear. Every weapon and armor piece is a unique instance with a quality per line (0-100%).
@@ -14,11 +15,43 @@ export type Rolls = Partial<Record<RollKey, number>>;
 
 export type GearDef = WeaponDef | ArmorDef;
 
+/** Rare variants, weakest first. A Sigil raises the item's base and brings extra mods. */
+export type SigilTier = 'dawn' | 'dusk' | 'eclipse';
+export const SIGIL_TIERS: SigilTier[] = ['dawn', 'dusk', 'eclipse'];
+
+export const SIGIL_NAMES: Record<SigilTier, string> = {
+  dawn: 'Sigil of Dawn',
+  dusk: 'Sigil of Dusk',
+  eclipse: 'Sigil of Eclipse',
+};
+
+/** Extra ("blue") lines. Stats and resist are flat points, crit is percent, hp/mp are flat. */
+export type ModKey = StatKey | 'crit' | 'hp' | 'mp' | 'resist';
+
+export interface Mod {
+  key: ModKey;
+  /** Quality 0-100, like a white line. */
+  roll: number;
+  /** Which element a `resist` mod covers. */
+  element?: Element;
+}
+
+export const MOD_POOLS: Record<GearDef['type'], ModKey[]> = {
+  weapon: ['str', 'int', 'dex', 'end', 'crit', 'mp'],
+  armor: ['str', 'int', 'dex', 'end', 'hp', 'mp', 'resist'],
+};
+
+/** What makes one piece unique. Owned gear and loot grants both carry it. */
+export interface GearTraits {
+  rolls: Rolls;
+  sigil?: SigilTier;
+  mods?: Mod[];
+}
+
 /** A weapon or armor piece the player owns. Plain JSON: it is saved as is. */
-export interface Gear {
+export interface Gear extends GearTraits {
   uid: string;
   itemId: string;
-  rolls: Rolls;
   /** Locked gear can't be sold. */
   locked?: boolean;
   /** Not looked at in the inventory yet. */
@@ -26,10 +59,12 @@ export interface Gear {
 }
 
 /** Something handed to the player: a consumable, or gear with its rolls already decided. */
-export interface ItemGrant {
+export interface ItemGrant extends Partial<GearTraits> {
   itemId: string;
-  rolls?: Rolls;
 }
+
+/** Where loot comes from. Quest rewards roll white lines only. */
+export type DropSource = 'mob' | 'boss' | 'quest';
 
 export const ROLL_LABELS: Record<RollKey, string> = {
   damage: 'Damage',
@@ -65,10 +100,61 @@ export function rollGear(def: GearDef, rng: Rng = defaultRng, quality?: number):
   return rolls;
 }
 
-/** Item grant for a dropped or rewarded item: gear gets rolled, consumables don't. */
-export function grantFor(itemId: string, rng: Rng = defaultRng): ItemGrant {
+/** Item grant for a dropped or rewarded item: gear gets rolled (and maybe a Sigil and mods), consumables don't. */
+export function grantFor(itemId: string, rng: Rng = defaultRng, source: DropSource = 'quest'): ItemGrant {
   const def = db.item(itemId);
-  return isGearDef(def) ? { itemId, rolls: rollGear(def, rng) } : { itemId };
+  if (!isGearDef(def)) return { itemId };
+  const grant: ItemGrant = { itemId, rolls: rollGear(def, rng) };
+  if (source === 'quest') return grant;
+  const sigil = rollSigil(rng, source);
+  const modCount = sigil ? BALANCE.sigils[sigil].mods : chance(rng, BALANCE.modChance) ? 1 : 0;
+  if (sigil) grant.sigil = sigil;
+  if (modCount) grant.mods = rollMods(def, modCount, rng);
+  return grant;
+}
+
+/** Rarest tier is checked first, so each chance in `BALANCE.sigilChance` is its own. */
+export function rollSigil(rng: Rng, source: 'mob' | 'boss'): SigilTier | undefined {
+  const table = BALANCE.sigilChance[source];
+  const r = rng.next();
+  let edge = 0;
+  for (const tier of [...SIGIL_TIERS].reverse()) {
+    edge += table[tier];
+    if (r < edge) return tier;
+  }
+  return undefined;
+}
+
+/** `count` different mods from the item's pool. */
+export function rollMods(def: GearDef, count: number, rng: Rng = defaultRng): Mod[] {
+  const pool = [...MOD_POOLS[def.type]];
+  const mods: Mod[] = [];
+  while (mods.length < count && pool.length) {
+    const key = pool.splice(Math.floor(rng.next() * pool.length), 1)[0];
+    const mod: Mod = { key, roll: rollQuality(rng) };
+    if (key === 'resist') mod.element = ELEMENTS[Math.floor(rng.next() * ELEMENTS.length)];
+    mods.push(mod);
+  }
+  return mods;
+}
+
+/** A mod's value at its quality: stat points, crit percent, HP, MP or resist points. */
+export function modValue(mod: Mod): number {
+  const [min, max] = BALANCE.modRanges[mod.key];
+  const v = min + ((max - min) * mod.roll) / 100;
+  return mod.key === 'crit' ? Math.round(v * 10) / 10 : Math.round(v);
+}
+
+/** Sum of one mod key over some gear. Resist mods count only for `element`. */
+export function modTotal(pieces: (GearTraits | null | undefined)[], key: ModKey, element?: Element): number {
+  let total = 0;
+  for (const g of pieces) for (const m of g?.mods ?? []) if (m.key === key && (key !== 'resist' || m.element === element)) total += modValue(m);
+  return total;
+}
+
+/** Base multiplier from a Sigil: 1 without one. */
+export function sigilBoost(g: GearTraits): number {
+  return 1 + (g.sigil ? BALANCE.sigils[g.sigil].boost : 0);
 }
 
 /** Average line quality, 0-100. */
@@ -97,23 +183,25 @@ export function rollBonus(key: RollKey, rolls: Rolls): number {
   return ((rolls[key] ?? 0) / 100) * BALANCE.gearRolls[key];
 }
 
-export function rolledDamage(def: WeaponDef, rolls: Rolls): [number, number] {
-  const m = 1 + rollBonus('damage', rolls);
+/** The Sigil raises the base first, then the Damage line applies on top. */
+export function rolledDamage(def: WeaponDef, g: GearTraits): [number, number] {
+  const m = sigilBoost(g) * (1 + rollBonus('damage', g.rolls));
   return [Math.round(def.damage[0] * m), Math.round(def.damage[1] * m)];
 }
 
-export function rolledProcChance(def: WeaponDef, rolls: Rolls): number {
-  return def.proc ? Math.min(1, def.proc.chance * (1 + rollBonus('proc', rolls))) : 0;
+export function rolledProcChance(def: WeaponDef, g: GearTraits): number {
+  return def.proc ? Math.min(1, def.proc.chance * (1 + rollBonus('proc', g.rolls))) : 0;
 }
 
-export function rolledDefense(def: ArmorDef, rolls: Rolls, type: keyof ArmorDef['defense']): number {
-  return Math.round((def.defense[type] ?? 0) * (1 + rollBonus('defense', rolls)));
+export function rolledDefense(def: ArmorDef, g: GearTraits, type: keyof ArmorDef['defense']): number {
+  return Math.round((def.defense[type] ?? 0) * sigilBoost(g) * (1 + rollBonus('defense', g.rolls)));
 }
 
-/** Gold the shop pays. Better grades sell for more. */
-export function sellValue(def: ItemDef, rolls?: Rolls): number {
-  const g = isGearDef(def) && rolls ? grade(def, rolls) : 0;
-  return Math.max(1, Math.floor(def.price * BALANCE.sellRate * (1 + (g / 100) * BALANCE.sellGradeBonus)));
+/** Gold the shop pays. Better grades sell for more, Sigils a lot more. */
+export function sellValue(def: ItemDef, g?: GearTraits): number {
+  const gr = isGearDef(def) && g ? grade(def, g.rolls) : 0;
+  const sigil = g?.sigil ? BALANCE.sigils[g.sigil].sell : 1;
+  return Math.max(1, Math.floor(def.price * BALANCE.sellRate * (1 + (gr / 100) * BALANCE.sellGradeBonus) * sigil));
 }
 
 /** Keep only known lines, as whole percents in 0-100. For loading saves. */
@@ -124,5 +212,26 @@ export function sanitizeRolls(def: GearDef, raw: unknown): Rolls {
     const v = (raw as Record<string, unknown>)[key];
     if (typeof v === 'number' && Number.isFinite(v)) out[key] = Math.min(100, Math.max(0, Math.round(v)));
   }
+  return out;
+}
+
+const isSigil = (v: unknown): v is SigilTier => typeof v === 'string' && (SIGIL_TIERS as string[]).includes(v);
+
+/** Sigil, mods and rolls of a saved piece, keeping only what this item can have. For loading saves. */
+export function sanitizeTraits(def: GearDef, raw: Partial<Record<keyof GearTraits, unknown>>): GearTraits {
+  const out: GearTraits = { rolls: sanitizeRolls(def, raw.rolls) };
+  if (isSigil(raw.sigil)) out.sigil = raw.sigil;
+  const mods: Mod[] = [];
+  for (const m of Array.isArray(raw.mods) ? (raw.mods as Partial<Mod>[]) : []) {
+    if (!m || !MOD_POOLS[def.type].includes(m.key as ModKey) || mods.some((x) => x.key === m.key)) continue;
+    if (typeof m.roll !== 'number' || !Number.isFinite(m.roll)) continue;
+    const mod: Mod = { key: m.key as ModKey, roll: Math.min(100, Math.max(0, Math.round(m.roll))) };
+    if (mod.key === 'resist') {
+      if (!(ELEMENTS as unknown[]).includes(m.element)) continue;
+      mod.element = m.element;
+    }
+    mods.push(mod);
+  }
+  if (mods.length) out.mods = mods;
   return out;
 }

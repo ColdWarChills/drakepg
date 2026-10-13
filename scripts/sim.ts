@@ -6,7 +6,7 @@ import { db, validateData } from '../src/data/db';
 import { ELEMENTS } from '../src/data/elements';
 import type { ClassId, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
-import { rollGear, type GearDef } from '../src/game/Items';
+import { rollGear, type GearDef, type SigilTier } from '../src/game/Items';
 import { Player, xpToNext } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
 
@@ -25,6 +25,8 @@ interface Loadout {
   armor: Record<ClassId, string>;
   /** Roll quality of every line, 0-100. Shop gear is 0. */
   quality?: number;
+  /** Sigil on both pieces (no mods: this measures the base boost). */
+  sigil?: SigilTier;
 }
 
 const STARTER: Loadout = {
@@ -45,6 +47,10 @@ const FIRE: Loadout = {
 /** Best possible rolls: the top of the power range drops can give. */
 const SHOP_100: Loadout = { ...SHOP, label: 'shop100', quality: 100 };
 const FIRE_100: Loadout = { ...FIRE, label: 'fire100', quality: 100 };
+/** Sigil gear at a middling roll, and the very best a drop can be. */
+const SHOP_DAWN: Loadout = { ...SHOP, label: 'dawn50', quality: 50, sigil: 'dawn' };
+const SHOP_ECLIPSE: Loadout = { ...SHOP, label: 'ecl50', quality: 50, sigil: 'eclipse' };
+const SHOP_ECLIPSE_100: Loadout = { ...SHOP, label: 'ecl100', quality: 100, sigil: 'eclipse' };
 
 function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number): Player {
   const p = Player.createNew('Sim', classId);
@@ -53,7 +59,7 @@ function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: num
   for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
   p.data.inventory = [];
   for (const id of [gear.weapon[classId], gear.armor[classId]]) {
-    const piece = p.makeGear(id, rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0));
+    const piece = p.makeGear(id, { rolls: rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0), sigil: gear.sigil });
     p.data.gear.push(piece);
     p.equip(piece.uid);
   }
@@ -180,4 +186,7 @@ table('Thornheart (boss, 3 potions)', [
   { monster: 'thornheart', level: 4, gear: SHOP_100, potions: 3 },
   { monster: 'thornheart', level: 5, gear: SHOP_100, potions: 3 },
   { monster: 'thornheart', level: 5, gear: FIRE_100, potions: 3 },
+  { monster: 'thornheart', level: 5, gear: SHOP_DAWN, potions: 3 },
+  { monster: 'thornheart', level: 5, gear: SHOP_ECLIPSE, potions: 3 },
+  { monster: 'thornheart', level: 5, gear: SHOP_ECLIPSE_100, potions: 3 },
 ]);

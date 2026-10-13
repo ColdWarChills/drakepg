@@ -3,11 +3,26 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
 import type { ConsumableDef, DamageType, EquipSlot, ItemDef } from '../data/types';
-import { gearDef, grade, gradeTier, isGearDef, sellValue, type Gear, type GearDef } from '../game/Items';
+import { gearDef, grade, gradeTier, isGearDef, sellValue, SIGIL_TIERS, type Gear, type GearDef } from '../game/Items';
 import type { Player } from '../game/Player';
 import { Button } from './Button';
 import { drawFigure } from './figures';
-import { compareGear, defenseText, drawItemIcon, GRADE_COLORS, gradeInfo, gradeLabel, itemLines, restoreText, rollLines } from './itemUi';
+import {
+  addSigilGlow,
+  compareGear,
+  defenseText,
+  drawItemIcon,
+  GRADE_COLORS,
+  gradeInfo,
+  gradeLabel,
+  itemLines,
+  MOD_CSS,
+  modLines,
+  restoreText,
+  rollLines,
+  SIGIL_COLORS,
+  sigilLabel,
+} from './itemUi';
 import { Modal } from './Modal';
 import { play } from './sfx';
 import { addText, toast } from './text';
@@ -126,8 +141,10 @@ class InventoryView {
     const all: Entry[] =
       this.mode === 'buy' ? this.stock.map((id) => ({ kind: 'stock', key: `stock:${id}`, def: db.item(id) })) : this.bagEntries();
     const filtered = remembered.tab === 'all' ? all : all.filter((e) => e.def.type === remembered.tab);
-    const gradeOf = (e: Entry) => (e.kind === 'gear' ? grade(e.def, e.gear.rolls) : -1);
-    const valueOf = (e: Entry) => (e.kind === 'gear' ? sellValue(e.def, e.gear.rolls) : e.kind === 'stack' ? sellValue(e.def) : e.def.price);
+    // Sigils rank above every grade: Eclipse 300+, Dusk 200+, Dawn 100+.
+    const sigilRank = (e: Entry) => (e.kind === 'gear' && e.gear.sigil ? (SIGIL_TIERS.indexOf(e.gear.sigil) + 1) * 100 : 0);
+    const gradeOf = (e: Entry) => (e.kind === 'gear' ? sigilRank(e) + grade(e.def, e.gear.rolls) : -1);
+    const valueOf = (e: Entry) => (e.kind === 'gear' ? sellValue(e.def, e.gear) : e.kind === 'stack' ? sellValue(e.def) : e.def.price);
     const byType = (a: Entry, b: Entry) => TYPE_ORDER[a.def.type] - TYPE_ORDER[b.def.type];
     switch (remembered.sort) {
       case 'grade':
@@ -211,7 +228,7 @@ class InventoryView {
     const { scene, player } = this;
     const c = this.modal.content;
     const look = player.classDef.look;
-    const hero = drawFigure(scene, 150, 330, look, 1, player.weapon);
+    const hero = drawFigure(scene, 150, 330, look, 1, player.weapon, player.weaponSigil);
     hero.setScale(hero.scaleX * 0.82, hero.scaleY * 0.82);
     c.add(hero);
 
@@ -230,7 +247,7 @@ class InventoryView {
       `Attack ${min}-${max} ${DAMAGE_TYPE_LABELS[player.weaponDamageType]} · ${element ? ELEMENT_LABELS[element] : 'Neutral'}`,
       `Crit ${(player.critChance * 100).toFixed(1)}%`,
       defenseText(d),
-      `Max HP ${player.maxHp}`,
+      `Max HP ${player.maxHp} · Max MP ${player.maxMp}`,
       `Gold ${player.gold}`,
     ];
     c.add(addText(scene, 26, 482, lines.join('\n'), { size: 15, wrap: 280 }).setLineSpacing(6));
@@ -253,12 +270,12 @@ class InventoryView {
     const hint =
       this.mode === 'buy'
         ? 'Shop gear is always Standard (0%). Gear from monsters can roll better.'
-        : 'Better grades sell for more. Locked items are never sold.';
+        : 'Better grades sell for more, Sigils far more. Locked items are never sold.';
     c.add(addText(scene, 30, 196, hint, { size: 16, color: COLORS.textDim, wrap: 260 }));
 
     if (this.mode === 'sell') {
-      const junk = player.data.gear.filter((g) => !g.locked && grade(gearDef(g), g.rolls) < JUNK_BELOW);
-      const value = junk.reduce((sum, g) => sum + sellValue(gearDef(g), g.rolls), 0);
+      const junk = player.data.gear.filter((g) => !g.locked && !g.sigil && grade(gearDef(g), g.rolls) < JUNK_BELOW);
+      const value = junk.reduce((sum, g) => sum + sellValue(gearDef(g), g), 0);
       const btn = new Button(scene, 150, 310, 'Sell junk', () => {
         let gold = 0;
         for (const g of junk) gold += player.sellGear(g.uid);
@@ -275,11 +292,11 @@ class InventoryView {
   private slot(x: number, y: number, entry: Entry | null, equipSlot?: EquipSlot): Phaser.GameObjects.Container {
     const { scene } = this;
     const s = scene.add.container(x, y);
-    const info = entry ? gradeInfo(entry.def, entry.kind === 'gear' ? entry.gear.rolls : undefined) : null;
+    const info = entry ? gradeInfo(entry.def, entry.kind === 'gear' ? entry.gear : undefined) : null;
     const bg = scene.add
       .rectangle(0, 0, CELL, CELL, SLOT_BG)
       .setRounded(8)
-      .setStrokeStyle(entry ? 3 : 2, info ? info.color : EMPTY_BORDER);
+      .setStrokeStyle(entry ? 3 : 2, info ? info.frame : EMPTY_BORDER);
     s.add(bg);
     if (equipSlot) this.equipSlots.push({ slot: equipSlot, bg });
     if (!entry) {
@@ -288,7 +305,12 @@ class InventoryView {
     }
 
     if (entry.key === this.selected) s.add(scene.add.rectangle(0, 0, CELL + 8, CELL + 8).setRounded(11).setStrokeStyle(3, 0xffffff));
-    s.add(drawItemIcon(scene, entry.def, 60));
+    const icon = drawItemIcon(scene, entry.def, 60);
+    s.add(icon);
+    if (info?.sigil) {
+      addSigilGlow(scene, icon, info.sigil, 0.8);
+      s.add(addText(scene, -CELL / 2 + 5, CELL / 2 - 2, '✦', { size: 16, bold: true, color: SIGIL_COLORS[info.sigil].css, stroke: true }).setOrigin(0, 1));
+    }
     if (entry.kind === 'stack' && entry.qty > 1) {
       s.add(addText(scene, CELL / 2 - 6, CELL / 2 - 4, `${entry.qty}`, { size: 17, bold: true, stroke: true }).setOrigin(1, 1));
     }
@@ -442,13 +464,13 @@ class InventoryView {
     const card = this.card;
     if (!card?.scene) return;
     card.removeAll(true);
-    const info = entry ? gradeInfo(entry.def, entry.kind === 'gear' ? entry.gear.rolls : undefined) : null;
+    const info = entry ? gradeInfo(entry.def, entry.kind === 'gear' ? entry.gear : undefined) : null;
     card.add(
       scene.add
         .rectangle(CARD_X, CARD_Y, CARD_W, CARD_H, 0x241d30)
         .setOrigin(0)
         .setRounded(12)
-        .setStrokeStyle(2, info && info.tier !== 'standard' ? info.color : COLORS.panelBorder),
+        .setStrokeStyle(info?.sigil ? 3 : 2, info && (info.sigil || info.tier !== 'standard') ? info.frame : COLORS.panelBorder),
     );
     if (!entry || !info) {
       const hint = this.mode === 'bag' ? 'Hover or tap an item.\n\nDouble-click or drag gear\nonto the hero to equip it.' : 'Hover or tap an item.';
@@ -457,33 +479,51 @@ class InventoryView {
     }
 
     const left = CARD_X + 20;
-    const iconBg = scene.add.rectangle(left + 38, CARD_Y + 56, 76, 76, SLOT_BG).setRounded(8).setStrokeStyle(3, info.color);
-    card.add([iconBg, drawItemIcon(scene, entry.def, 58).setPosition(left + 38, CARD_Y + 56)]);
-    const name = addText(scene, left + 92, CARD_Y + 22, entry.def.name, { size: 22, bold: true, color: info.css, wrap: CARD_W - 120 });
+    const iconBg = scene.add.rectangle(left + 38, CARD_Y + 56, 76, 76, SLOT_BG).setRounded(8).setStrokeStyle(3, info.frame);
+    const icon = drawItemIcon(scene, entry.def, 58).setPosition(left + 38, CARD_Y + 56);
+    card.add([iconBg, icon]);
+    if (info.sigil) addSigilGlow(scene, icon, info.sigil);
+    const name = addText(scene, left + 92, CARD_Y + 18, entry.def.name, { size: 22, bold: true, color: info.nameCss, wrap: CARD_W - 120 });
     card.add(name);
+    let headY = name.y + name.height + 2;
+    if (info.sigil) {
+      const sig = addText(scene, left + 92, headY, sigilLabel(info.sigil), { size: 17, bold: true, color: SIGIL_COLORS[info.sigil].css });
+      card.add(sig);
+      headY += sig.height + 2;
+    }
     const kind = entry.def.type === 'weapon' ? 'Weapon' : entry.def.type === 'armor' ? 'Armor' : 'Potion';
     const sub = entry.kind === 'gear' ? `${kind} · ${gradeLabel(info)}${entry.slot ? ' · Equipped' : ''}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : kind;
-    card.add(addText(scene, left + 92, name.y + name.height + 4, sub, { size: 15, color: COLORS.textDim }));
+    const subText = addText(scene, left + 92, headY, sub, { size: 15, color: COLORS.textDim });
+    card.add(subText);
 
-    let y = CARD_Y + 112;
+    let y = Math.max(CARD_Y + 112, subText.y + subText.height + 10);
     const line = (text: string, color: string = COLORS.text, size = 16) => {
       const t = addText(scene, left, y, text, { size, color, wrap: CARD_W - 40 });
       card.add(t);
       y += t.height + 4;
     };
 
-    const rolls = entry.kind === 'gear' ? entry.gear.rolls : {};
-    for (const l of itemLines(entry.def, rolls)) line(l);
+    const traits = entry.kind === 'gear' ? entry.gear : { rolls: {} };
+    for (const l of itemLines(entry.def, traits)) line(l);
 
     if (isGearDef(entry.def)) {
       y += 6;
-      for (const r of rollLines(entry.def, rolls)) {
+      for (const r of rollLines(entry.def, traits.rolls)) {
         card.add(addText(scene, left, y, r.label, { size: 15, color: COLORS.textDim }));
         card.add(addText(scene, left + 118, y, r.effect, { size: 15, bold: true }));
         const barX = left + 178;
         card.add(scene.add.rectangle(barX, y + 9, 100, 8, 0x111111).setOrigin(0, 0.5));
         if (r.quality > 0) card.add(scene.add.rectangle(barX, y + 9, r.quality, 8, GRADE_COLORS[gradeTier(r.quality).tier].color).setOrigin(0, 0.5));
         card.add(addText(scene, CARD_X + CARD_W - 20, y, `${r.quality}%`, { size: 15, color: COLORS.textDim }).setOrigin(1, 0));
+        y += 24;
+      }
+      // Mods: the blue lines.
+      for (const m of modLines(traits)) {
+        card.add(addText(scene, left, y, m.text, { size: 15, bold: true, color: MOD_CSS }));
+        const barX = left + 178;
+        card.add(scene.add.rectangle(barX, y + 9, 100, 8, 0x111111).setOrigin(0, 0.5));
+        if (m.quality > 0) card.add(scene.add.rectangle(barX, y + 9, m.quality, 8, 0x4a9cf0).setOrigin(0, 0.5));
+        card.add(addText(scene, CARD_X + CARD_W - 20, y, `${m.quality}%`, { size: 15, color: COLORS.textDim }).setOrigin(1, 0));
         y += 24;
       }
     }
@@ -495,16 +535,18 @@ class InventoryView {
     if (entry.kind !== 'stack' && isGearDef(entry.def) && !(entry.kind === 'gear' && entry.slot)) {
       const worn = this.player.data.equipment[entry.def.type];
       const statBonus = (t: DamageType) => Math.floor(this.player.statFor(t) * BALANCE.statDamageScale);
-      const diff = compareGear(entry.def, rolls, worn ? { def: gearDef(worn), rolls: worn.rolls } : null, statBonus);
+      const diff = compareGear(entry.def, traits, worn ? { def: gearDef(worn), gear: worn } : null, statBonus);
       y += 6;
       line(worn ? `Compared to your ${gearDef(worn).name}:` : 'Nothing equipped in that slot.', COLORS.textGold, 15);
-      const shown = diff.slice(0, 6);
+      // As many lines as fit above the price.
+      const room = Math.max(1, Math.floor((CARD_Y + CARD_H - 100 - y) / 20));
+      const shown = diff.slice(0, Math.min(6, room));
       if (worn && shown.length === 0) line('Same as equipped.', COLORS.textDim, 15);
       for (const d of shown) line(d.text, d.tone === 'good' ? COLORS.textGood : d.tone === 'bad' ? COLORS.textBad : COLORS.textMagic, 15);
     }
 
     // Value and buttons.
-    const value = entry.kind === 'stock' ? `Price ${entry.def.price} g` : `Sells for ${entry.kind === 'gear' ? sellValue(entry.def, entry.gear.rolls) : sellValue(entry.def)} g`;
+    const value = entry.kind === 'stock' ? `Price ${entry.def.price} g` : `Sells for ${entry.kind === 'gear' ? sellValue(entry.def, entry.gear) : sellValue(entry.def)} g`;
     card.add(addText(scene, left, CARD_Y + CARD_H - 92, value, { size: 16, color: COLORS.textGold }));
     const buttons: { label: string; run: () => void; enabled?: boolean }[] = [];
     if (this.mode === 'bag') {

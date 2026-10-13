@@ -1,7 +1,7 @@
 import { SAVE_KEY, SAVE_VERSION } from '../config';
 import { db } from '../data/db';
 import type { EquipSlot } from '../data/types';
-import { isGearDef, sanitizeRolls, type Gear } from './Items';
+import { isGearDef, sanitizeTraits, type Gear } from './Items';
 import { Player, STAT_KEYS, type PlayerData } from './Player';
 
 interface SaveFile {
@@ -62,6 +62,7 @@ export const SaveSystem = {
  *           (skills now come from the class and level).
  * v3 -> v4: rolled gear. Equipment held item ids, and weapons/armor stacked in `inventory`; they become
  *           Standard (0%) gear instances in `equipment` and `gear`.
+ * v4 -> v5: gear can carry a `sigil` and `mods`. Both are optional, so old gear simply has neither.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -84,6 +85,7 @@ function migrate(file: SaveFile): SaveFile | null {
     file.player = { ...file.player, equipment, inventory, gear, nextUid: uid } as PlayerData;
     file.version = 4;
   }
+  if (file.version < 5) file.version = 5;
   return file;
 }
 
@@ -94,7 +96,7 @@ function sanitizeGear(raw: unknown, slot?: EquipSlot): Gear | null {
   if (typeof g.itemId !== 'string' || !db.hasItem(g.itemId) || typeof g.uid !== 'string') return null;
   const def = db.item(g.itemId);
   if (!isGearDef(def) || (slot && def.type !== slot)) return null;
-  const gear: Gear = { uid: g.uid, itemId: g.itemId, rolls: sanitizeRolls(def, g.rolls) };
+  const gear: Gear = { uid: g.uid, itemId: g.itemId, ...sanitizeTraits(def, g) };
   if (g.locked === true) gear.locked = true;
   if (g.isNew === true) gear.isNew = true;
   return gear;

@@ -28,7 +28,9 @@ export type Sfx =
   | 'warning'
   | 'denied'
   | 'equip'
-  | 'rare';
+  | 'rare'
+  | 'sigil'
+  | 'eclipse';
 
 const MUTE_KEY = 'drakepg.muted';
 const VOLUME = 0.45;
@@ -210,6 +212,20 @@ export function play(scene: Phaser.Scene, name: Sfx): void {
       // Shimmer up for a high-grade drop.
       arpeggio(ctx, t, [784, 988, 1175, 1568, 1976], 0.06, 'sine', 0.22, 0.5);
       tone(ctx, t + 0.3, 'triangle', 2637, 2637, 0.6, 0.06);
+      break;
+    case 'sigil':
+      // Bell chord, then a rising shimmer: a Sigil of Dawn or Dusk dropped.
+      [523, 659, 784, 1047].forEach((n) => tone(ctx, t, 'sine', n, n, 1.2, 0.09));
+      arpeggio(ctx, t + 0.25, [1047, 1319, 1568, 2093, 2637], 0.07, 'triangle', 0.1, 0.5);
+      hiss(ctx, t + 0.2, 0.9, 0.05, 'highpass', 4000, 9000);
+      break;
+    case 'eclipse':
+      // Deep boom, dark chord swelling up, then the shimmer.
+      tone(ctx, t, 'sine', 110, 40, 1.1, 0.4);
+      hiss(ctx, t, 0.6, 0.18, 'lowpass', 900, 80);
+      [220, 262, 330, 415].forEach((n, i) => tone(ctx, t + 0.15 + i * 0.05, 'sawtooth', n, n * 2, 1.4, 0.05));
+      arpeggio(ctx, t + 0.7, [880, 1047, 1319, 1661, 2093, 2637], 0.08, 'sine', 0.14, 0.7);
+      hiss(ctx, t + 0.7, 1.4, 0.06, 'highpass', 5000, 11000);
       break;
   }
 }

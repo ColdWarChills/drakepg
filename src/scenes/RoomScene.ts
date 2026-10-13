@@ -3,7 +3,7 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { ROOMS } from '../data/world';
 import type { MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
-import { acceptQuest, activeQuests, questForNpc, questStarted, questStatus, turnInQuest } from '../game/Quests';
+import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questStarted, turnInQuest } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { defaultRng, weightedPick } from '../game/rng';
 import { session, type RoamingMonster } from '../game/session';
@@ -159,7 +159,7 @@ export class RoomScene extends Phaser.Scene {
       y = data.y;
     }
     const look = session.player.classDef.look;
-    const fig = drawFigure(this, x, y, look, 1, session.player.weapon);
+    const fig = drawFigure(this, x, y, look, 1, session.player.weapon, session.player.weaponSigil);
     this.player = this.makeActor(fig, x, y, look.scale);
     this.playerWeapon = session.player.data.equipment.weapon?.uid ?? null;
     if (data.via === 'exit') this.player.facing = data.side === 'left' ? 1 : -1;
@@ -224,7 +224,7 @@ export class RoomScene extends Phaser.Scene {
     if (weapon === this.playerWeapon) return;
     this.playerWeapon = weapon;
     const old = this.player.fig;
-    this.player.fig = drawFigure(this, this.player.x, this.player.y, session.player.classDef.look, 1, session.player.weapon);
+    this.player.fig = drawFigure(this, this.player.x, this.player.y, session.player.classDef.look, 1, session.player.weapon, session.player.weaponSigil);
     old.destroy();
     this.place(this.player);
   }
@@ -342,7 +342,7 @@ export class RoomScene extends Phaser.Scene {
 
   private spawnBoss(): void {
     const b = this.room.boss;
-    if (!b || questStatus(session.player, db.quest(b.questId)) !== 'active') return;
+    if (!b || !questStarted(session.player, b.questId)) return;
     const def = db.monster(b.monsterId);
     const fig = drawFigure(this, b.x, b.y, def.look, -1);
     const actor = this.makeActor(fig, b.x, b.y, def.look.scale);
@@ -908,7 +908,7 @@ export class RoomScene extends Phaser.Scene {
     sfx.play(this, 'quest');
     const { rewards, levelsGained, newSkills } = result;
     toast(this, `Quest complete: ${quest.name}`, COLORS.textGold);
-    const items = rewards.items.map((g) => lootName(db.item(g.itemId), g.rolls));
+    const items = rewards.items.map((g) => lootName(db.item(g.itemId), g));
     toast(this, [`+${rewards.xp} XP`, `+${rewards.gold} gold`, ...items].join('   '), COLORS.textGood);
     void fx.coinShower(this, { x: npc.x, y: npc.y - 120 }, { x: 320, y: 40 }, Math.ceil(rewards.gold / 6), () => sfx.play(this, 'coin'));
     if (levelsGained > 0) {
@@ -957,10 +957,12 @@ export class RoomScene extends Phaser.Scene {
   private confirmBoss(): void {
     if (!this.boss || this.modalOpen()) return;
     const def = this.boss.def;
-    const modal = new Modal(this, 700, 300, def.name);
-    modal.content.add(
-      addText(this, 350, 110, 'Ancient bark creaks as it turns toward you.\nThere is no running from this fight.', { size: 22, align: 'center' }).setOrigin(0.5),
-    );
+    const rematch = !questNeedsKill(session.player, def.id);
+    const modal = new Modal(this, 700, 300, rematch ? `${def.name} (rematch)` : def.name);
+    const text = rematch
+      ? `It has grown back. There is no running from this fight.\nRematch: ${Math.round(BALANCE.bossRepeatRewards * 100)}% XP and gold, full loot (Sigils drop more often from bosses).`
+      : 'Ancient bark creaks as it turns toward you.\nThere is no running from this fight.';
+    modal.content.add(addText(this, 350, 110, text, { size: rematch ? 19 : 22, align: 'center', wrap: 640 }).setOrigin(0.5));
     modal.content.add(new Button(this, 230, 230, 'Fight', () => (modal.close(), this.startBossBattle()), { width: 220 }));
     modal.content.add(new Button(this, 470, 230, 'Not yet', () => modal.close(), { width: 220 }));
   }

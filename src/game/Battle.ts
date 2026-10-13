@@ -74,6 +74,8 @@ export class Battle {
   readonly enemy: Enemy;
   state: BattleState = 'player_turn';
   rewards: Rewards | null = null;
+  /** XP and gold multiplier (repeat boss fights give less). Set before the battle ends. */
+  rewardScale = 1;
   /** Telegraphed attack the enemy will use on its next turn. */
   charging: MonsterAttack | null = null;
   private defending = false;
@@ -461,9 +463,9 @@ export class Battle {
   private rollRewards(): Rewards {
     const m = this.enemy.def;
     return {
-      xp: m.xp,
-      gold: randInt(this.rng, m.gold[0], m.gold[1]),
-      items: m.drops.filter((d) => chance(this.rng, d.chance)).map((d) => grantFor(d.itemId, this.rng)),
+      xp: Math.round(m.xp * this.rewardScale),
+      gold: Math.round(randInt(this.rng, m.gold[0], m.gold[1]) * this.rewardScale),
+      items: m.drops.filter((d) => chance(this.rng, d.chance)).map((d) => grantFor(d.itemId, this.rng, m.boss ? 'boss' : 'mob')),
     };
   }
 }

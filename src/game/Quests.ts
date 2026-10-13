@@ -25,6 +25,11 @@ export function questStarted(player: Player, questId: string): boolean {
   return player.data.quests[questId] !== undefined;
 }
 
+/** True while an active quest still needs this monster killed. */
+export function questNeedsKill(player: Player, monsterId: string): boolean {
+  return db.quests().some((q) => q.objective.monsterId === monsterId && questStatus(player, q) === 'active');
+}
+
 export function questDone(player: Player, questId: string): boolean {
   return player.data.quests[questId]?.status === 'done';
 }

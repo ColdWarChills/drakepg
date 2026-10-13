@@ -6,7 +6,7 @@ import type { EquipSlot, NpcDef } from '../data/types';
 import { gearDef } from '../game/Items';
 import { STAT_KEYS, STAT_LABELS, type Player } from '../game/Player';
 import { Button } from './Button';
-import { defenseText, gradeInfo, gradeLabel, resistText } from './itemUi';
+import { defenseText, gradeInfo, lootName, resistText } from './itemUi';
 import { Modal } from './Modal';
 import { addText } from './text';
 
@@ -78,8 +78,8 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
         return;
       }
       const def = gearDef(g);
-      const gi = gradeInfo(def, g.rolls);
-      c.add(addText(scene, 470, y, `${def.name}  (${gradeLabel(gi)})`, { size: 17, bold: true, color: gi.css }));
+      const gi = gradeInfo(def, g);
+      c.add(addText(scene, 470, y, lootName(def, g), { size: 17, bold: true, color: gi.nameCss }));
     });
     c.add(new Button(scene, 960, 122, 'Inventory (I)', () => modal.close(openInventory), { width: 190, height: 48, fontSize: 19 }));
 

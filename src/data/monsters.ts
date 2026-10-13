@@ -120,6 +120,11 @@ export const MONSTERS: MonsterDef[] = [
     ],
     xp: 120,
     gold: [60, 80],
-    drops: [],
+    // Boss drops roll Sigils far more often than normal monsters.
+    drops: [
+      { itemId: 'thornheart_blade', chance: 0.15 },
+      { itemId: 'heartwood_staff', chance: 0.15 },
+      { itemId: 'briar_fang', chance: 0.15 },
+    ],
   },
 ];
