@@ -90,6 +90,8 @@ export interface PlayerData {
   quests: Record<string, QuestState>;
   /** Bad-luck protection: kills since the last Rare, per loot table id. Added in save version 7. */
   lootPity: Record<string, number>;
+  /** Boss grit: losses to each boss (monster id) since last beating it. Added in save version 8. */
+  bossGrit: Record<string, number>;
 }
 
 export interface Rewards {
@@ -132,6 +134,7 @@ export class Player {
       statPoints: 0,
       quests: {},
       lootPity: {},
+      bossGrit: {},
     });
     player.data.equipment.weapon = player.makeGear(cls.weapon);
     player.data.equipment.armor = player.makeGear(cls.armor);

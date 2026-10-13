@@ -71,12 +71,12 @@ Tiers stay about x1.5 apart; items in one tier are sidegrades.
 - Loot table `snowmaw`: rare = 3 Ice weapons of its own (one per class).
 - New materials: Frost Pelt (wolf), Ram Horn (ram), Rime Shard (golem), Salamander Scale (salamander, wyrmling). Hulda gets recipes for the Ice and Fire weapons and both armors.
 
-## New systems (PR 1)
+## New systems (PR 1, built 2026-10-13)
 
-- **Boss grit** (from the AQ review's "copy" list): every loss to a boss adds +5% damage against that boss, up to +25%, shown on the battle panel ("Grit +10%"). Saved per boss; resets when you win. Works for the Thornheart, Bogmother and Stormcoil too.
-- **Back exits**: a door, gate or cave mouth in the room art (`side: 'back'` with an x position and a label). Walk up to it and press E (or tap it). Can be blocked by a quest like side exits (new blocker: snowdrift).
-- **Collect quests**: `objective.kind: 'collect'` (bring N of an item; taken on turn-in). The quest tracker and NPC reminders show "3/5", counting what is in the bag.
-- Save version bump for grit counters.
+- [x] **Boss grit** (from the AQ review's "copy" list): every loss to a boss adds +5% damage against that boss, up to +25%, shown on the battle panel ("Grit +10%"). Saved per boss; resets when you win. Works for the Thornheart, Bogmother and Stormcoil too.
+- [x] **Back exits**: a door, gate or cave mouth in the room art (`side: 'back'` with an x position and a label). Walk up to it and press E (or tap it). Can be blocked by a quest like side exits (new blocker: snowdrift).
+- [x] **Collect quests**: `objective.kind: 'collect'` (bring N of an item; taken on turn-in). The quest tracker and NPC reminders show "3/5", counting what is in the bag.
+- [x] Save version bump for grit counters (v8).
 
 ## Pacing
 

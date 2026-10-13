@@ -154,6 +154,7 @@ function fight(row: Row, classId: ClassId, rng: Rng): Result {
   const monster = elite ? makeElite(db.monster(monsterId), elite) : db.monster(monsterId);
   for (let i = 0; i < RUNS; i++) {
     const p = makePlayer(classId, level, gear, potions, potion);
+    if (row.losses) p.data.bossGrit[monster.id] = row.losses;
     const b = new Battle(p, monster, rng);
     let turns = 0;
     while (!b.isOver && turns < 60) {
@@ -183,6 +184,8 @@ interface Row {
   potions: number;
   /** Default health_potion. */
   potion?: string;
+  /** Earlier losses to this boss (boss grit). */
+  losses?: number;
 }
 
 function table(title: string, rows: Row[]): void {
@@ -195,7 +198,7 @@ function table(title: string, rows: Row[]): void {
       const hp = r.wins ? r.hpLeft / r.wins : 0;
       return `win${pct(r.wins / RUNS)} hp${pct(hp)} t${(r.turns / RUNS).toFixed(1).padStart(4)} pot${(r.potions / RUNS).toFixed(1)}`;
     });
-    const name = row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.monster;
+    const name = row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.losses ? `${row.monster} grit${row.losses}` : row.monster;
     console.log(`${name.padEnd(20)} ${String(row.level).padStart(2)} ${row.gear.label.padEnd(8)} | ${cells.join(' | ')}`);
   }
 }
@@ -266,6 +269,14 @@ table('Thornheart (boss, 3 potions)', [
   { monster: 'thornheart', level: 5, gear: SHOP_DAWN, potions: 3 },
   { monster: 'thornheart', level: 5, gear: SHOP_ECLIPSE, potions: 3 },
   { monster: 'thornheart', level: 5, gear: SHOP_ECLIPSE_100, potions: 3 },
+]);
+
+table('Boss grit: losses before this try (+5% damage each, max +25%), 3 potions', [
+  { monster: 'thornheart', level: 4, gear: STARTER, potions: 3 },
+  { monster: 'thornheart', level: 4, gear: STARTER, potions: 3, losses: 3 },
+  { monster: 'thornheart', level: 4, gear: STARTER, potions: 3, losses: 5 },
+  { monster: 'stormcoil', level: 9, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 9, gear: SHOP2, potions: 3, potion: GREATER, losses: 5 },
 ]);
 
 table('Chapter 1 Elites (2 potions)', [

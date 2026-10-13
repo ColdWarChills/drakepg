@@ -60,13 +60,21 @@ export function completeQuestChain(player: Player, quest: QuestDef): void {
   }
 }
 
-/** Fill the kill counts of every active quest, so it can be turned in. */
+/** Fill the kill counts (or hand over the items) of every active quest, so it can be turned in. */
 export function finishActiveQuests(player: Player): number {
   let n = 0;
   for (const q of db.quests()) {
     const state = player.data.quests[q.id];
-    if (state?.status === 'active' && state.count < q.objective.count) {
-      state.count = q.objective.count;
+    if (state?.status !== 'active') continue;
+    const o = q.objective;
+    if (o.kind === 'collect') {
+      const missing = o.count - player.countItem(o.itemId);
+      if (missing > 0) {
+        player.addItem(o.itemId, missing);
+        n++;
+      }
+    } else if (state.count < o.count) {
+      state.count = o.count;
       n++;
     }
   }

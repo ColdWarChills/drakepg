@@ -332,7 +332,10 @@ export interface NpcDef {
 }
 
 export interface RoomExit {
-  side: 'left' | 'right';
+  /** left/right: walk off the screen edge. back: a door, gate or cave mouth in the art at `x`; walk up into it. */
+  side: 'left' | 'right' | 'back';
+  /** Back exits: screen x of the doorway (it sits at the top of the walkable strip). */
+  x?: number;
   to: string;
   /** Shown on the arrow at the screen edge. */
   label: string;
@@ -342,7 +345,7 @@ export interface RoomExit {
   blocker?: Blocker;
 }
 
-export type Blocker = 'thorns' | 'barricade' | 'reeds';
+export type Blocker = 'thorns' | 'barricade' | 'reeds' | 'snowdrift';
 
 export type Ambient = 'dust' | 'leaves' | 'fireflies' | 'rain' | 'mist';
 
@@ -366,6 +369,14 @@ export interface RoomDef {
   wakeAt?: { roomId: string; x: number; y: number };
 }
 
+/**
+ * kill: defeat `count` of `monsterId`, or of any Elite with `elite` (both: Elites of that monster).
+ * collect: have `count` of `itemId` (a potion or material) when you talk to the giver; they are taken on turn-in.
+ */
+export type QuestObjective =
+  | { kind: 'kill'; monsterId?: string; elite?: boolean; count: number }
+  | { kind: 'collect'; itemId: string; count: number };
+
 export interface QuestDef {
   id: string;
   name: string;
@@ -373,8 +384,7 @@ export interface QuestDef {
   giver: string;
   /** Quest that must be completed first. */
   requires?: string;
-  /** Kill `count` of `monsterId`, or of any Elite with `elite` (both: Elites of that monster). */
-  objective: { kind: 'kill'; monsterId?: string; elite?: boolean; count: number };
+  objective: QuestObjective;
   /** Short tracker text, e.g. "Mosslings defeated". */
   goal: string;
   offer: string[];

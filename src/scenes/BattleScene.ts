@@ -112,7 +112,7 @@ export class BattleScene extends Phaser.Scene {
     const elite = this.monster.elite ? db.affix(this.monster.elite.affix) : null;
     this.pushLog(
       this.monster.boss
-        ? `${this.monster.name} awakens! There is no running from this fight.`
+        ? `${this.monster.name} awakens! There is no running from this fight.${this.battle.grit > 0 ? ` Your grit from earlier tries: +${Math.round(this.battle.grit * 100)}% damage.` : ''}`
         : elite
           ? `An Elite ${this.monster.name} (Lv ${this.monster.level}) blocks your path! ${elite.name}: ${elite.description}`
           : this.monster.tough
@@ -162,11 +162,16 @@ export class BattleScene extends Phaser.Scene {
     this.statusPanel(16, 16, 420, 120);
     addText(this, 32, 26, `${p.name}  ·  Lv ${p.level}`, { size: 22, bold: true });
     const weaponEl = p.weaponElement;
-    addText(this, 420, 30, weaponEl ? ELEMENT_LABELS[weaponEl] : 'Neutral', {
+    const elText = addText(this, 420, 30, weaponEl ? ELEMENT_LABELS[weaponEl] : 'Neutral', {
       size: 16,
       bold: true,
       color: weaponEl ? ELEMENT_TEXT[weaponEl] : COLORS.textDim,
     }).setOrigin(1, 0);
+    // Boss grit from earlier losses, left of the weapon element.
+    const grit = this.battle.grit;
+    if (grit > 0) {
+      addText(this, 420 - elText.width - 14, 30, `Grit +${Math.round(grit * 100)}%`, { size: 16, bold: true, color: COLORS.textGold }).setOrigin(1, 0);
+    }
     this.playerHp = new Bar(this, 32, 74, 388, 26, COLORS.hp, 'HP ');
     this.playerMp = new Bar(this, 32, 108, 388, 22, COLORS.mp, 'MP ');
 
@@ -841,7 +846,12 @@ export class BattleScene extends Phaser.Scene {
         // No penalty: wake up at the nearest inn.
         player.restoreFull();
         SaveSystem.save(player);
-        const data: ResultSceneData = { outcome: 'defeat', monsterName, wake: db.room(this.back.roomId).wakeAt ?? INN_SPAWN };
+        const data: ResultSceneData = {
+          outcome: 'defeat',
+          monsterName,
+          wake: db.room(this.back.roomId).wakeAt ?? INN_SPAWN,
+          grit: this.monster.boss ? this.battle.grit : undefined,
+        };
         goTo(this, SceneKeys.Result, data);
         break;
       }
