@@ -51,6 +51,11 @@ A friendly innkeeper woman in her thirties, red hair tied up in a bun, rosy chee
 A tall, sturdy town guard, steel helmet and chainmail, dark blue tabard, holding a long spear upright, stern but honest face, short black beard. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
 ```
 
+### 5b. `npc_hulda` · 3:4 (the smith)
+```
+A broad-shouldered blacksmith woman in her forties, braided auburn hair, soot on her cheeks, rolled-up sleeves showing strong forearms, thick leather apron over a brown shirt, heavy gloves, a smithing hammer resting on her shoulder. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
 ## Monsters
 
 ### 6. `mon_mossling` · 1:1
@@ -71,6 +76,11 @@ A small winged fire imp demon, charcoal-grey skin with glowing orange ember crac
 ### 9. `mon_bramble_bandit` · 3:4
 ```
 A sneaky forest bandit, dark purple hooded cloak, face half-covered by a cloth mask, leather armor with thorny bramble vines wrapped around the arms, holding a curved dagger in a crouched, ready stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+```
+
+### 9a. `mon_barkshell_beetle` · 4:3 (tough)
+```
+A big armored forest beetle, its domed shell made of thick cracked dark bark with moss in the cracks, dry and brittle-looking, strong curved mandibles, six stubby legs, small glowing amber eyes, sturdy low stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
 ```
 
 ### 9b. `mon_thornheart` · 1:1 (Chapter 1 boss)

@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import { START } from '../data/world';
+import { gearDef, isGear, resolveGear, rollGear, sellPrice, itemSellPrice, type GearInstance } from './Gear';
 import type {
   ArmorDef,
   ClassDef,
@@ -56,8 +57,13 @@ export interface PlayerData {
   baseStats: Stats;
   hp: number;
   mp: number;
-  equipment: Record<EquipSlot, string | null>;
+  /** Uid of the equipped gear (an entry in `gear`). */
+  equipment: Record<EquipSlot, number | null>;
+  /** Potions and materials (stackable). */
   inventory: InventoryEntry[];
+  /** Every weapon and armor piece owned, equipped or not. Added in save version 4. */
+  gear: GearInstance[];
+  nextUid: number;
   /** Where the player stands. Added in save version 2. */
   location: Location;
   /** Added in save version 3. */
@@ -70,7 +76,10 @@ export interface PlayerData {
 export interface Rewards {
   xp: number;
   gold: number;
+  /** Stackable item ids (one entry per item). */
   items: string[];
+  /** Rolled gear. */
+  gear: GearInstance[];
 }
 
 /** XP needed to go from `level` to `level + 1`. */
@@ -93,16 +102,19 @@ export class Player {
       baseStats: { ...cls.stats },
       hp: 1,
       mp: 1,
-      equipment: { weapon: cls.weapon, armor: cls.armor },
+      equipment: { weapon: null, armor: null },
       inventory: [
         { itemId: 'health_potion', qty: 2 },
         { itemId: 'mana_potion', qty: 1 },
       ],
+      gear: [],
+      nextUid: 1,
       location: { ...START },
       classId,
       statPoints: 0,
       quests: {},
     });
+    for (const id of [cls.weapon, cls.armor]) player.equip(player.addGear(rollGear(id, 'shop')).uid);
     player.restoreFull();
     return player;
   }
@@ -126,14 +138,45 @@ export class Player {
     return this.data.gold;
   }
 
+  /** Equipped gear instance in a slot. */
+  equipped(slot: EquipSlot): GearInstance | null {
+    const uid = this.data.equipment[slot];
+    return uid === null ? null : (this.gearByUid(uid) ?? null);
+  }
+
+  /** The equipped weapon with its rolls applied. */
   get weapon(): WeaponDef | null {
-    const id = this.data.equipment.weapon;
-    return id ? (db.item(id) as WeaponDef) : null;
+    const g = this.equipped('weapon');
+    return g ? (resolveGear(g) as WeaponDef) : null;
   }
 
   get armor(): ArmorDef | null {
-    const id = this.data.equipment.armor;
-    return id ? (db.item(id) as ArmorDef) : null;
+    const g = this.equipped('armor');
+    return g ? (resolveGear(g) as ArmorDef) : null;
+  }
+
+  /** Added to hit chance by gear. */
+  get hitBonus(): number {
+    return this.weapon?.hit ?? 0;
+  }
+
+  get critBonus(): number {
+    return this.weapon?.crit ?? 0;
+  }
+
+  /** Subtracted from enemies' hit chance by gear. */
+  get evasion(): number {
+    return this.armor?.evasion ?? 0;
+  }
+
+  /** Room walk speed change from armor (0.2 = 20% faster). */
+  get walkBonus(): number {
+    return this.armor?.walk ?? 0;
+  }
+
+  /** MP a skill costs with the current armor (plate costs more, cloth less). */
+  skillCost(skill: SkillDef): number {
+    return Math.max(0, Math.round(skill.mpCost * (1 + (this.armor?.mpCost ?? 0))));
   }
 
   /** Base stats plus equipment bonuses. */
@@ -279,6 +322,7 @@ export class Player {
   grantRewards(rewards: Rewards): number {
     this.data.gold += rewards.gold;
     for (const id of rewards.items) this.addItem(id);
+    for (const g of rewards.gear) this.addGear(g);
     return this.addXp(rewards.xp);
   }
 
@@ -288,7 +332,12 @@ export class Player {
     return this.data.inventory.find((e) => e.itemId === itemId)?.qty ?? 0;
   }
 
+  /** Stackables go in the bag; gear ids become fresh 0% instances (use addGear for rolled gear). */
   addItem(itemId: string, qty = 1): void {
+    if (isGear(db.item(itemId))) {
+      for (let i = 0; i < qty; i++) this.addGear(rollGear(itemId, 'shop'));
+      return;
+    }
     const entry = this.data.inventory.find((e) => e.itemId === itemId);
     if (entry) entry.qty += qty;
     else this.data.inventory.push({ itemId, qty });
@@ -310,26 +359,69 @@ export class Player {
     return true;
   }
 
-  /** Equip an item from the bag. The previously equipped item goes back to the bag. */
-  equip(itemId: string): boolean {
-    const item = db.item(itemId);
-    if (item.type === 'consumable') return false;
-    if (!this.removeItem(itemId)) return false;
-    const slot: EquipSlot = item.type;
-    const previous = this.data.equipment[slot];
-    if (previous) this.addItem(previous);
-    this.data.equipment[slot] = itemId;
+  // --- Gear ---
+
+  gearByUid(uid: number): GearInstance | undefined {
+    return this.data.gear.find((g) => g.uid === uid);
+  }
+
+  isEquipped(uid: number): boolean {
+    return this.data.equipment.weapon === uid || this.data.equipment.armor === uid;
+  }
+
+  /** Gear not currently worn. */
+  get bagGear(): GearInstance[] {
+    return this.data.gear.filter((g) => !this.isEquipped(g.uid));
+  }
+
+  /** Take ownership of a rolled instance. Returns it with its new uid. */
+  addGear(inst: GearInstance): GearInstance {
+    const owned = { ...inst, q: [...inst.q], traits: inst.traits.map((t) => ({ ...t })), uid: this.data.nextUid++ };
+    this.data.gear.push(owned);
+    return owned;
+  }
+
+  /** Remove unequipped gear (sold or salvaged). */
+  removeGear(uid: number): boolean {
+    if (this.isEquipped(uid) || !this.gearByUid(uid)) return false;
+    this.data.gear = this.data.gear.filter((g) => g.uid !== uid);
+    return true;
+  }
+
+  canEquip(inst: GearInstance): boolean {
+    return this.level >= gearDef(inst.baseId).level;
+  }
+
+  /** Wear a piece of owned gear. The previous one stays in the bag. */
+  equip(uid: number): boolean {
+    const inst = this.gearByUid(uid);
+    if (!inst || !this.canEquip(inst)) return false;
+    this.data.equipment[gearDef(inst.baseId).type] = uid;
     this.clampVitals();
     return true;
   }
 
   unequip(slot: EquipSlot): boolean {
-    const current = this.data.equipment[slot];
-    if (!current) return false;
-    this.addItem(current);
+    if (this.data.equipment[slot] === null) return false;
     this.data.equipment[slot] = null;
     this.clampVitals();
     return true;
+  }
+
+  sellGear(uid: number): number {
+    const inst = this.gearByUid(uid);
+    if (!inst || !this.removeGear(uid)) return 0;
+    const gold = sellPrice(inst);
+    this.data.gold += gold;
+    return gold;
+  }
+
+  /** Sell one of a stackable item. */
+  sellItem(itemId: string): number {
+    if (!this.removeItem(itemId)) return 0;
+    const gold = itemSellPrice(itemId);
+    this.data.gold += gold;
+    return gold;
   }
 
   /** Use a consumable from the bag. Returns what was restored, or null if it would do nothing. */

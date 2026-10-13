@@ -142,8 +142,17 @@ export interface ProcDef {
   heal?: number;
 }
 
-export interface WeaponDef extends ItemBase {
+/** Shared by generated weapons and armor (see gear.ts). */
+interface GearBase extends ItemBase {
+  /** Gear line it belongs to; every version of a line shares this. */
+  family: string;
+  /** Level needed to equip. */
+  level: number;
+}
+
+export interface WeaponDef extends GearBase {
   type: 'weapon';
+  /** At 0% quality (what shops sell). Drops roll higher, see Gear.ts. */
   damage: [number, number];
   /** Melee scales with STR, pierce with DEX, magic with INT. */
   damageType: DamageType;
@@ -157,13 +166,33 @@ export interface WeaponDef extends ItemBase {
   grip?: number;
   /** Length on screen relative to the hero's height. Default 0.6. */
   size?: number;
+  /** Added to hit chance (from quality and traits; 0 on the base item). */
+  hit?: number;
+  /** Added to crit chance (from quality and traits). */
+  crit?: number;
 }
 
-export interface ArmorDef extends ItemBase {
+/** Plate: tough vs steel, weak vs magic. Cloth: the reverse, plus cheaper skills and faster walking. */
+export type ArmorType = 'plate' | 'leather' | 'cloth';
+
+export interface ArmorDef extends GearBase {
   type: 'armor';
+  archetype: ArmorType;
+  /** At 0% quality. */
   defense: Defenses;
   resists?: Resists;
   stats?: Partial<Stats>;
+  /** Skill MP cost change: 0.2 = skills cost 20% more. */
+  mpCost: number;
+  /** Walk speed change in rooms: 0.1 = 10% faster. */
+  walk: number;
+  /** Subtracted from enemies' hit chance (from quality and traits). */
+  evasion?: number;
+}
+
+/** Crafting stuff: dropped by monsters, salvaged from gear, spent at the smith. */
+export interface MaterialDef extends ItemBase {
+  type: 'material';
 }
 
 export interface ConsumableDef extends ItemBase {
@@ -171,7 +200,8 @@ export interface ConsumableDef extends ItemBase {
   restore: { hp?: number; mp?: number };
 }
 
-export type ItemDef = WeaponDef | ArmorDef | ConsumableDef;
+export type GearDef = WeaponDef | ArmorDef;
+export type ItemDef = GearDef | ConsumableDef | MaterialDef;
 export type EquipSlot = 'weapon' | 'armor';
 
 export interface MonsterAttack {
@@ -205,9 +235,12 @@ export interface MonsterDef {
   attacks: MonsterAttack[];
   xp: number;
   gold: [number, number];
-  drops: { itemId: string; chance: number }[];
+  /** Gear drops roll quality and rarity; other items drop `qty` (default 1). */
+  drops: { itemId: string; chance: number; qty?: number }[];
   /** Bosses can't be fled from and get a bigger presence on screen. */
   boss?: boolean;
+  /** Stronger than its level suggests; labelled "Tough" so players bring the counter its weaknesses ask for. */
+  tough?: boolean;
 }
 
 /** Painted background image key(s); the first one that exists is used. */
@@ -230,7 +263,12 @@ export interface ZoneDef {
   encounters: { monsterId: string; weight: number }[];
 }
 
-export type NpcRole = { kind: 'talk' } | { kind: 'shop'; stock: string[] } | { kind: 'inn' };
+export type NpcRole =
+  | { kind: 'talk' }
+  | { kind: 'shop'; stock: string[] }
+  | { kind: 'inn' }
+  /** Crafting, reinforcing, honing and salvaging. `recipes` are recipe ids. */
+  | { kind: 'forge'; recipes: string[] };
 
 export interface NpcDef {
   id: string;
@@ -291,4 +329,48 @@ export interface QuestDef {
   rewards: { xp: number; gold: number; items?: string[]; classItems?: Partial<Record<ClassId, string>> };
   /** Last quest of a chapter: shows the chapter-complete banner. */
   endsChapter?: string;
+}
+
+export type RarityId = 'common' | 'fine' | 'rare' | 'mythic';
+
+export interface RarityDef {
+  id: RarityId;
+  name: string;
+  /** Item name color. */
+  color: string;
+  /** Relative chance for drops and crafts. */
+  dropWeight: number;
+  craftWeight: number;
+  /** Quality lines never roll (or hone, or drift) below this. */
+  qualityFloor: number;
+  /** Number of bonus traits rolled. */
+  traits: number;
+  /** Damage/defense bonus: 0.1 = +10%. */
+  power: number;
+  /** Value multiplier for selling. */
+  value: number;
+}
+
+/** A bonus line on Fine and better gear. Values scale with the item's level. */
+export interface TraitDef {
+  id: string;
+  /** e.g. "+{v} STR"; {e} is replaced by the element name. */
+  label: string;
+  slots: ('weapon' | 'armor')[];
+  kind: 'stat' | 'resist' | 'hit' | 'crit' | 'evasion';
+  stat?: StatKey;
+  /** Rolled value at level 1: [min, max]. */
+  range: [number, number];
+  /** Added to both ends per item level. */
+  perLevel: number;
+  /** Percent-style values (hit, crit) are stored as 0-1 but rolled here in whole percent. */
+  percent?: boolean;
+}
+
+export interface RecipeDef {
+  id: string;
+  /** Item id made. Gear rolls quality with the crafting floor. */
+  result: string;
+  materials: { itemId: string; qty: number }[];
+  gold: number;
 }

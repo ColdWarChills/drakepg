@@ -94,7 +94,9 @@ export class BattleScene extends Phaser.Scene {
     this.pushLog(
       this.monster.boss
         ? `${this.monster.name} awakens! There is no running from this fight.`
-        : `A wild ${this.monster.name} (Lv ${this.monster.level}) appears in the ${this.zone.name}!`,
+        : this.monster.tough
+          ? `A tough ${this.monster.name} (Lv ${this.monster.level}) blocks the way! Hit it where it is weak.`
+          : `A wild ${this.monster.name} (Lv ${this.monster.level}) appears in the ${this.zone.name}!`,
     );
 
     ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX'].forEach((key, i) => {
@@ -149,10 +151,10 @@ export class BattleScene extends Phaser.Scene {
 
     const ex = this.scale.width - 436;
     this.statusPanel(ex, 16, 420, 120);
-    addText(this, ex + 16, 26, `${m.name}  ·  Lv ${m.level}${m.boss ? '  ·  BOSS' : ''}`, {
+    addText(this, ex + 16, 26, `${m.name}  ·  Lv ${m.level}${m.boss ? '  ·  BOSS' : m.tough ? '  ·  Tough' : ''}`, {
       size: 22,
       bold: true,
-      color: m.boss ? COLORS.textBad : COLORS.text,
+      color: m.boss ? COLORS.textBad : m.tough ? COLORS.textGold : COLORS.text,
     });
     this.enemyHp = new Bar(this, ex + 16, 68, 388, 26, COLORS.hp, 'HP ');
     this.drawAffinities(ex + 16, 108);
@@ -244,7 +246,7 @@ export class BattleScene extends Phaser.Scene {
   private skillButton(skill: SkillDef): MenuButton {
     const cd = this.battle.cooldownLeft(skill.id);
     const element = skill.element && skill.element !== 'weapon' ? ELEMENT_LABELS[skill.element] : null;
-    const sub = cd > 0 ? `Ready in ${cd}` : `${skill.mpCost} MP${element ? ` · ${element}` : ''}`;
+    const sub = cd > 0 ? `Ready in ${cd}` : `${this.battle.player.skillCost(skill)} MP${element ? ` · ${element}` : ''}`;
     const cdText = skill.cooldown > 0 ? ` Cooldown ${skill.cooldown}.` : '';
     return {
       label: skill.name,
@@ -723,7 +725,7 @@ export class BattleScene extends Phaser.Scene {
 
     switch (this.battle.state) {
       case 'victory': {
-        const rewards = this.battle.rewards ?? { xp: 0, gold: 0, items: [] };
+        const rewards = this.battle.rewards ?? { xp: 0, gold: 0, items: [], gear: [] };
         const levelBefore = player.level;
         const levelsGained = player.grantRewards(rewards);
         const quests = recordKill(player, this.monster.id).map((q) => ({

@@ -18,6 +18,7 @@ Browser turn-based RPG. Phaser 4 + TypeScript + Vite. See README.md for layout a
 - Effects live in `src/ui/fx.ts`; particle textures are generated at boot (no art needed). Sounds are synthesized in `src/ui/sfx.ts` (`sfx.play(scene, name)`), no audio files.
 - Combat: 8 elements (`src/data/elements.ts`), damage types melee/pierce/magic (STR/DEX/INT), statuses in `src/data/statuses.ts`, cooldowns and weapon procs in `src/game/Battle.ts`. Monster resist rule: +own element, -opposite. Every mechanic must be visible in the battle UI or item text (no hidden specials).
 - Weapons are drawn in the hero's hands: bare hero art + `look.bare.hands` pixel anchors + weapon `art/grip/size`. Re-measure anchors when bare art changes.
+- Gear: weapon/armor lines in `src/data/gear.ts` generate a version per level step from `BALANCE.gear`; never hand-write weapon numbers. Owned gear is `PlayerData.gear` (rolled instances: quality lines, rarity, +, traits); equipment holds uids. Read gear through `resolveGear()` / `player.weapon` (`src/game/Gear.ts`). Shop gear is 0% quality.
 - Skills come from the player's class (`ClassDef.skills` with unlock levels), not from save data. Quest rules live in `src/game/Quests.ts`; quest state is `PlayerData.quests`.
 - Art: raw images in `art/raw/` -> `python3 scripts/prepare_art.py` -> `src/assets/art/<key>.webp`, auto-loaded by key (`src/ui/art.ts`). Missing art falls back to shapes. Sprites face right.
 - Original names/art only. No assets or names from Artix Entertainment games.

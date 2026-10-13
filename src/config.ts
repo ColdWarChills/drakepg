@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -43,6 +43,51 @@ export const BALANCE = {
   monsterAggroRange: 260,
   /** Seconds of safety after fleeing, so the same monster can't instantly re-engage. */
   fleeGraceSeconds: 2,
+
+  /** Gear lines (src/data/gear.ts) and rolled item quality (src/game/Gear.ts). */
+  gear: {
+    /** A gear line gets a new version every this many levels, starting at its `from` level. */
+    versionStep: 5,
+    /** Highest version level generated. */
+    maxLevel: 20,
+    /** Weapon average damage at 0% quality = (base + perLevel * level) * family power. */
+    weaponBase: 4,
+    weaponPerLevel: 2,
+    /** Min/max damage spread around the average. */
+    damageSpread: 0.25,
+    /** Armor defense per damage type = (base + perLevel * level) * family power * archetype share. */
+    armorBase: 5,
+    armorPerLevel: 2,
+    /** Price = k * average damage^2 (weapons) or k * total defense^2 (armor), before rarity/quality. */
+    weaponPriceK: 1.3,
+    armorPriceK: 0.17,
+    /** A 100% quality line adds this much on top of the 0% value. */
+    qualityDamage: 0.3,
+    qualityDefense: 0.3,
+    qualityHit: 0.08,
+    qualityCrit: 0.06,
+    qualityEvasion: 0.05,
+    /** Rolled quality = floor + (100 - floor) * random^skew. Higher skew = low rolls more common. */
+    qualitySkew: 1.6,
+    /** Crafted gear never rolls below this quality. */
+    craftFloor: 25,
+    /** Quest reward gear quality. */
+    questQuality: 50,
+    /** Each +1 reinforcement adds this share to damage/defense. */
+    plusPower: 0.05,
+    maxPlus: 10,
+    /** Success chance for going to +1, +2, ... +10. */
+    reinforceChance: [1, 1, 1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3],
+    /** Failing a reinforce at or above this plus drops the item one plus. Below it you only lose materials. */
+    reinforceRiskFrom: 4,
+    /** Honing a line adds this much quality (whole percent). */
+    honeGain: [6, 20] as [number, number],
+    /** Chance another line drifts down when honing, and by how much. */
+    honeDriftChance: 0.3,
+    honeDrift: [3, 12] as [number, number],
+    /** Selling pays this share of an item's value. */
+    sellShare: 0.25,
+  },
 };
 
 export const COLORS = {

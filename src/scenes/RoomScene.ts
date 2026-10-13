@@ -14,7 +14,8 @@ import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { Hud } from '../ui/Hud';
 import { Modal } from '../ui/Modal';
-import { openCharacterPanel, openDialogue, openShop, type DialogueAction } from '../ui/panels';
+import { openForge } from '../ui/forge';
+import { lootNames, openCharacterPanel, openDialogue, openShop, type DialogueAction } from '../ui/panels';
 import { addText, toast } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type BattleSceneData, type RoomSceneData } from './keys';
 
@@ -60,7 +61,7 @@ export class RoomScene extends Phaser.Scene {
   private room!: RoomDef;
   private player!: Actor;
   /** Weapon id the player figure was drawn with. */
-  private playerWeapon: string | null = null;
+  private playerWeapon: number | null = null;
   private npcs: Npc[] = [];
   private mobs: Mob[] = [];
   private keys!: Keys;
@@ -260,7 +261,7 @@ export class RoomScene extends Phaser.Scene {
     const actor = this.makeActor(fig, r.x, r.y, def.look.scale * 0.85);
     const diff = def.level - session.player.level;
     const color = diff >= 2 ? COLORS.textBad : diff === 1 ? COLORS.textGold : diff <= -2 ? COLORS.textDim : COLORS.text;
-    const label = addText(this, r.x, 0, `${def.name}  Lv ${def.level}`, { size: 15, bold: true, color, stroke: true }).setOrigin(0.5, 1);
+    const label = addText(this, r.x, 0, `${def.name}  Lv ${def.level}${def.tough ? '  ·  Tough' : ''}`, { size: 15, bold: true, color, stroke: true }).setOrigin(0.5, 1);
     const mob: Mob = { ...actor, uid: r.uid, def, label, state: 'idle', timer: Phaser.Math.FloatBetween(0.3, 1.5), target: null };
     mob.facing = r.x > this.player.x ? -1 : 1;
     this.mobs.push(mob);
@@ -459,7 +460,7 @@ export class RoomScene extends Phaser.Scene {
     const len = Math.hypot(vx, vy);
     p.moving = len > 0;
     if (p.moving) {
-      const speed = BALANCE.walkSpeed;
+      const speed = BALANCE.walkSpeed * (1 + session.player.walkBonus);
       p.x += (vx / len) * speed * dt;
       p.y += (vy / len) * speed * 0.7 * dt;
       if (Math.abs(vx) > 0.1) p.facing = vx > 0 ? 1 : -1;
@@ -591,7 +592,7 @@ export class RoomScene extends Phaser.Scene {
     }
     const q = questForNpc(session.player, near.def.id);
     const verb =
-      q?.status === 'ready' ? 'Turn in' : q?.status === 'available' ? 'Quest' : near.def.role.kind === 'shop' ? 'Shop' : near.def.role.kind === 'inn' ? 'Rest' : 'Talk';
+      q?.status === 'ready' ? 'Turn in' : q?.status === 'available' ? 'Quest' : near.def.role.kind === 'shop' ? 'Shop' : near.def.role.kind === 'forge' ? 'Forge' : near.def.role.kind === 'inn' ? 'Rest' : 'Talk';
     this.promptText.setText(`E  ${verb}`);
     const marker = this.markers.get(near);
     const above = marker?.visible ? marker.y - 46 : near.label.y - near.label.height - 22;
@@ -810,6 +811,14 @@ export class RoomScene extends Phaser.Scene {
           openShop(this, player, `${npc.def.name}'s Shop`, role.stock, this.refresh);
         },
       });
+    } else if (role.kind === 'forge') {
+      actions.push({
+        label: 'Use the forge',
+        run: (close) => {
+          close();
+          openForge(this, player, `${npc.def.name}'s Forge`, role.recipes, this.refresh);
+        },
+      });
     } else if (role.kind === 'inn') {
       const rested = player.hp >= player.maxHp && player.mp >= player.maxMp;
       actions.push({
@@ -887,7 +896,7 @@ export class RoomScene extends Phaser.Scene {
     sfx.play(this, 'quest');
     const { rewards, levelsGained, newSkills } = result;
     toast(this, `Quest complete: ${quest.name}`, COLORS.textGold);
-    const items = rewards.items.map((id) => db.item(id).name);
+    const items = lootNames(rewards);
     toast(this, [`+${rewards.xp} XP`, `+${rewards.gold} gold`, ...items].join('   '), COLORS.textGood);
     void fx.coinShower(this, { x: npc.x, y: npc.y - 120 }, { x: 320, y: 40 }, Math.ceil(rewards.gold / 6), () => sfx.play(this, 'coin'));
     if (levelsGained > 0) {

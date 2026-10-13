@@ -20,7 +20,7 @@ npm run preview  # serve the dist/ build locally
 - **Title**: New Game / Continue (save in browser localStorage, including where you're standing).
 - **Create**: type a name (or Random) and pick a class: **Warrior**, **Mage** or **Rogue** (click or **1-3**). Each has its own stats, gear and skills.
 - **Rooms** (DragonFable-style screens): walk with **WASD / arrows** or **click to walk**. Walk off an edge to change room.
-  - **Brindlemoor** (town): talk with **E / Space** or click. Elder Maren and Garrick give quests (**!** = new, **?** = ready to turn in), Tobin runs the shop, Ilsa the inn.
+  - **Brindlemoor** (town): talk with **E / Space** or click. Elder Maren and Garrick give quests (**!** = new, **?** = ready to turn in), Tobin runs the shop (buy and sell), Hulda the forge, Ilsa the inn.
   - **Thornwood Path** and **Deep Thornwood**: monsters roam and chase you when you get close. Touch one to fight it. Label color = level vs yours.
   - **Thornheart Hollow**: sealed by thorns until the Elder sends you there. Home of the chapter boss.
 - **Quests**: a 4-quest chain (tracker on the left). Kill counts, then turn in for XP, gold and items. The last one ends the chapter.
@@ -32,6 +32,10 @@ npm run preview  # serve the dist/ build locally
   - **Weapon specials**: some weapons have a chance to trigger an extra effect when an Attack lands (shown in the item line).
 - **Leveling**: each level gives **stat points** (spend with **+** in the Character panel) and unlocks class skills at set levels (12 per class, up to level 20).
 - **Gear you can see**: the equipped weapon is drawn in the hero's hands.
+- **Gear lines**: every weapon and armor comes in a stronger version every 5 levels (Iron Sword, Iron Sword II, ...), generated from a level budget. Gear has a level requirement.
+- **Rolled gear**: each piece rolls three **quality** lines from 0% to 100% (weapons: Damage, Hit, Crit; armor: Physical, Magic, Evasion). Shop gear is always 0%, so drops are worth finding. Drops can roll **Fine / Rare / Mythic**: a quality floor, 1-3 bonus traits (+STR, element resist, crit...) and a little extra power.
+- **Armor types**: **Plate** (strong vs Melee/Pierce, weak vs Magic, walk -10%), **Leather** (balanced, skills -10% MP, walk +10%), **Cloth** (strong vs Magic, skills -20% MP, walk +20%).
+- **Materials and the forge**: monsters drop parts and elemental essences. Hulda **crafts** gear from recipes (at least 25% quality, better rarity odds), **reinforces** it to +10 (+5% each; from +4 a failure drops a +), **hones** one quality line (may make another line drift down, never below the rarity floor) and **salvages** gear into scrap, dust and essences.
 - **Result**: XP and gold count-up, loot, quest progress, level-up. Losing wakes you at the inn with no penalty.
 - **Character panel** (button or **C**): stats, stat points, skills, equipment, bag. **M** toggles sound. **Esc** closes windows.
 - **Sound**: all effects are synthesized in code (WebAudio), no audio files.
@@ -58,11 +62,15 @@ Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editin
 
 - **Room**: add to `ROOMS` in `src/data/world.ts` with its walkable strip (`walk`), `exits` (left/right to another room), `npcs`, and optionally a `zoneId` + `monsterCount` for roaming monsters. Link it from a neighbor's `exits`.
 - **Monster**: add to `src/data/monsters.ts` (with an `element`, `resists` in percent, `defense` per attack type, and `immune` statuses if any), then add it to a zone's `encounters` in `src/data/world.ts`. An attack can `applies` statuses; `power: 0` makes it a pure buff.
-- **Item**: add to `src/data/items.ts`, then to a shop's `stock` or a monster's `drops`. Weapons take a `damageType`, an optional `element` and an optional `proc` (special); armor takes `defense` per type and `resists`.
+- **Weapon / armor line**: add a family to `src/data/gear.ts` with its first level (`from`) and `power` (share of the level budget; lower it to pay for `stats`, an `element` or a `proc`). Versions every `BALANCE.gear.versionStep` levels are generated: the first keeps the family id, later ones are `<id>_<level>`. Armor picks an `archetype` (plate / leather / cloth, see `ARMOR_TYPES`). Then reference the id in a shop's `stock`, a monster's `drops` or a recipe. `npm run sim -- gear` lists everything generated.
+- **Potion**: add to `CONSUMABLES` in `src/data/items.ts`. **Material**: add to `MATERIALS` in `src/data/crafting.ts`.
+- **Recipe**: add to `RECIPES` in `src/data/crafting.ts` and to a forge NPC's `recipes` (`role: { kind: 'forge' }`).
+- **Rarity / traits**: `src/data/rarity.ts`. Quality, reinforce and hone numbers are in `BALANCE.gear`.
 - **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. Set `cooldown`, and `element`/`damageType` if it shouldn't use the weapon's. `applies` adds statuses (`self: true` for buffs). `fx: 'heavy'` gives a leap (or a big spell).
 - **Status**: add to `src/data/statuses.ts` (damage over time, regen, stun, damage/defense/resist/hit/crit modifiers).
 - **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look) and to `ClassId` in `src/data/types.ts`.
 - **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked by thorns until that quest is accepted; a room `boss` appears while its quest is active.
+- **Tough monster**: `tough: true` shows a "Tough" tag in rooms and battle. Design rule: trash is neutral with several small weaknesses; a tough one hits hard, resists a lot and has one or two big weaknesses the player should bring a counter for.
 - **Boss**: a monster with `boss: true` (can't flee). An attack with `windup` text is telegraphed one turn before it hits.
 
 Broken references (e.g. a drop pointing at a missing item) throw at startup in `validateData()`.
@@ -73,7 +81,7 @@ Broken references (e.g. a drop pointing at a missing item) throw at startup in `
 
 ### Saves
 
-Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
+Saved in `localStorage` under `drakepg.save`. Older saves are migrated (pre-class saves become Warriors; pre-v4 gear becomes 0% Common pieces). If you change `PlayerData`, bump `SAVE_VERSION` in `src/config.ts` and handle the old format in `migrate()` in `src/game/SaveSystem.ts`.
 
 ## Playing on GitHub Pages
 

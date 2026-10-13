@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
-import { db } from '../data/db';
 import { INN_SPAWN } from '../data/world';
 import { session } from '../game/session';
 import { Button } from '../ui/Button';
 import { drawFigure } from '../ui/figures';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
+import { lootNames } from '../ui/panels';
 import { addText } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type ResultSceneData, type RoomSceneData } from './keys';
 
@@ -62,7 +62,8 @@ export class ResultScene extends Phaser.Scene {
       sfx.play(this, 'victory');
 
       // Count-up rows.
-      const loot = rewards.items.length ? rewards.items.map((id) => db.item(id).name).join(', ') : 'nothing';
+      const names = lootNames(rewards);
+      const loot = names.length ? names.join(', ') : 'nothing';
       addText(this, cx, 245, `You defeated ${the(data.monsterName)}.`, { size: 24 }).setOrigin(0.5);
       const xpText = addText(this, cx, 300, '+0 XP', { size: 30, bold: true, color: COLORS.textGood }).setOrigin(0.5);
       const goldText = addText(this, cx, 345, '+0 gold', { size: 30, bold: true, color: COLORS.textGold }).setOrigin(0.5);
@@ -83,7 +84,7 @@ export class ResultScene extends Phaser.Scene {
       this.countUp(xpText, rewards.xp, ' XP', 400);
       this.countUp(goldText, rewards.gold, ' gold', 650);
       this.tweens.add({ targets: lootText, alpha: 1, delay: 1000, duration: 300 });
-      if (rewards.items.length) {
+      if (names.length) {
         lootText.setColor(COLORS.textGold);
         this.tweens.add({ targets: lootText, scale: 1.15, delay: 1300, duration: 160, yoyo: true, repeat: 1 });
       }

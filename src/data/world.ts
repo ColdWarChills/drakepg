@@ -8,9 +8,9 @@ export const ZONES: ZoneDef[] = [
     background: 'bg_thornwood',
     backdrop: { kind: 'forest' },
     encounters: [
-      { monsterId: 'mossling', weight: 4 },
-      { monsterId: 'thornback_boar', weight: 3 },
-      { monsterId: 'ash_imp', weight: 3 },
+      { monsterId: 'mossling', weight: 5 },
+      { monsterId: 'thornback_boar', weight: 4 },
+      { monsterId: 'ash_imp', weight: 1 },
     ],
   },
   {
@@ -20,9 +20,10 @@ export const ZONES: ZoneDef[] = [
     background: ['bg_thornwood_deep', 'bg_thornwood'],
     backdrop: { kind: 'forest', shade: 0.35 },
     encounters: [
-      { monsterId: 'thornback_boar', weight: 3 },
-      { monsterId: 'ash_imp', weight: 3 },
+      { monsterId: 'thornback_boar', weight: 2 },
       { monsterId: 'bramble_bandit', weight: 4 },
+      { monsterId: 'ash_imp', weight: 2 },
+      { monsterId: 'barkshell_beetle', weight: 2 },
     ],
   },
   {
@@ -68,9 +69,21 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0xb9770e, accent: 0x5d3a0a, scale: 1, art: 'npc_tobin' },
         role: {
           kind: 'shop',
-          stock: ['health_potion', 'mana_potion', 'iron_sword', 'hunting_knife', 'oak_staff', 'leather_armor', 'apprentice_robe'],
+          stock: ['health_potion', 'mana_potion', 'iron_sword', 'hunting_knife', 'oak_staff', 'chain_mail', 'leather_armor', 'apprentice_robe'],
         },
-        dialogue: ['Best prices this side of the river. Have a look!'],
+        dialogue: ['Best prices this side of the river. Have a look! I buy, too.'],
+      },
+      {
+        id: 'hulda',
+        name: 'Hulda',
+        title: 'Smith',
+        x: 320,
+        y: 610,
+        look: { shape: 'humanoid', color: 0x6e4b2a, accent: 0x2b2b2b, scale: 1.05, art: 'npc_hulda' },
+        role: { kind: 'forge', recipes: ['tusk_dagger', 'cinder_fang', 'emberbrand', 'ember_wand', 'thornhide_vest', 'mossweave_robe'] },
+        dialogue: [
+          "Tobin's blades are honest, but they're plain. Bring me scrap, dust and whatever the forest drops, and I'll make them sing.",
+        ],
       },
       {
         id: 'ilsa',

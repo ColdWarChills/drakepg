@@ -1,11 +1,12 @@
 import { CLASSES } from './classes';
+import { RECIPES } from './crafting';
 import { ITEMS } from './items';
 import { MONSTERS } from './monsters';
 import { QUESTS } from './quests';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, ItemDef, MonsterDef, QuestDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, ItemDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -25,6 +26,7 @@ const rooms = index('room', ROOMS);
 const classes = index('class', CLASSES);
 const quests = index('quest', QUESTS);
 const statuses = index('status', STATUSES);
+const recipes = index('recipe', RECIPES);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -41,6 +43,7 @@ export const db = {
   class: (id: ClassId): ClassDef => get('class', classes, id),
   quest: (id: string): QuestDef => get('quest', quests, id),
   status: (id: string): StatusDef => get('status', statuses, id),
+  recipe: (id: string): RecipeDef => get('recipe', recipes, id),
   hasClass: (id: string) => classes.has(id),
   quests: (): readonly QuestDef[] => QUESTS,
   hasRoom: (id: string) => rooms.has(id),
@@ -60,9 +63,12 @@ export function validateData(): void {
   for (const s of SKILLS) checkApplies(s.applies);
   for (const item of ITEMS) if (item.type === 'weapon') checkApplies(item.proc?.applies);
   for (const z of ZONES) for (const e of z.encounters) db.monster(e.monsterId);
+  for (const r of RECIPES) {
+    db.item(r.result);
+    r.materials.forEach((m) => db.item(m.itemId));
+  }
   for (const c of CLASSES) {
-    db.item(c.weapon);
-    db.item(c.armor);
+    if (db.item(c.weapon).type !== 'weapon' || db.item(c.armor).type !== 'armor') throw new Error(`Class ${c.id}: bad starting gear`);
     c.skills.forEach((s) => db.skill(s.skillId));
   }
   const npcIds = new Set(ROOMS.flatMap((r) => r.npcs.map((n) => n.id)));
@@ -85,6 +91,7 @@ export function validateData(): void {
     }
     for (const npc of r.npcs) {
       if (npc.role.kind === 'shop') npc.role.stock.forEach((id) => db.item(id));
+      if (npc.role.kind === 'forge') npc.role.recipes.forEach((id) => db.recipe(id));
     }
   }
 }

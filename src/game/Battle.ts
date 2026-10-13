@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, StatusDef, Stats } from '../data/types';
+import { isGear, rollGear } from './Gear';
 import { statFor, type Player, type Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
 
@@ -135,14 +136,14 @@ export class Battle {
   }
 
   canUseSkill(skillId: string): boolean {
-    return !this.isOver && this.player.mp >= db.skill(skillId).mpCost && !this.cooldowns.has(skillId);
+    return !this.isOver && this.player.mp >= this.player.skillCost(db.skill(skillId)) && !this.cooldowns.has(skillId);
   }
 
   useSkill(skillId: string): BattleEvent[] {
     if (!this.canUseSkill(skillId)) return [];
     const skill = db.skill(skillId);
     const p = this.player;
-    p.spendMp(skill.mpCost);
+    p.spendMp(p.skillCost(skill));
     // +1 because the end of this turn already counts down once; then it's locked for `cooldown` turns.
     if (skill.cooldown > 0) this.cooldowns.set(skill.id, skill.cooldown + 1);
 
@@ -435,14 +436,17 @@ export class Battle {
     const base = { source, move, moveId, damageType, element };
 
     const rolled = clamp(BALANCE.baseHitChance + (atk.dex - def.dex) * 0.01, BALANCE.minHitChance, BALANCE.maxHitChance);
-    const hitChance = clamp(rolled + this.mod(source, 'hitChance') - this.mod(target, 'evasion'), 0.05, BALANCE.maxHitChance);
+    // Gear: the player's weapon adds hit and crit, their armor adds evasion.
+    const gearHit = source === 'player' ? this.player.hitBonus : -this.player.evasion;
+    const hitChance = clamp(rolled + gearHit + this.mod(source, 'hitChance') - this.mod(target, 'evasion'), 0.05, BALANCE.maxHitChance);
     if (!chance(this.rng, hitChance)) return { kind: 'miss', ...base };
 
     const [min, max] = this.rollOf(source);
     let damage = randInt(this.rng, min, max) + Math.floor(statFor(atk, damageType) * BALANCE.statDamageScale);
     damage *= power;
 
-    const critChance = BALANCE.baseCritChance + atk.dex * BALANCE.critPerDex + this.mod(source, 'critChance') + critBonus;
+    const gearCrit = source === 'player' ? this.player.critBonus : 0;
+    const critChance = BALANCE.baseCritChance + atk.dex * BALANCE.critPerDex + this.mod(source, 'critChance') + critBonus + gearCrit;
     const crit = chance(this.rng, critChance);
     if (crit) damage *= BALANCE.critMultiplier;
 
@@ -458,11 +462,15 @@ export class Battle {
 
   private rollRewards(): Rewards {
     const m = this.enemy.def;
-    return {
-      xp: m.xp,
-      gold: randInt(this.rng, m.gold[0], m.gold[1]),
-      items: m.drops.filter((d) => chance(this.rng, d.chance)).map((d) => d.itemId),
-    };
+    const rewards: Rewards = { xp: m.xp, gold: randInt(this.rng, m.gold[0], m.gold[1]), items: [], gear: [] };
+    for (const d of m.drops) {
+      if (!chance(this.rng, d.chance)) continue;
+      for (let i = 0; i < (d.qty ?? 1); i++) {
+        if (isGear(db.item(d.itemId))) rewards.gear.push(rollGear(d.itemId, 'drop', this.rng));
+        else rewards.items.push(d.itemId);
+      }
+    }
+    return rewards;
   }
 }
 

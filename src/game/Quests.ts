@@ -1,3 +1,4 @@
+import { isGear, rollGear } from './Gear';
 import { db } from '../data/db';
 import type { QuestDef, SkillDef } from '../data/types';
 import type { Player, Rewards } from './Player';
@@ -80,10 +81,12 @@ export function turnInQuest(player: Player, quest: QuestDef): TurnInResult | nul
   if (questStatus(player, quest) !== 'ready') return null;
   player.data.quests[quest.id] = { status: 'done', count: quest.objective.count };
   const classItem = quest.rewards.classItems?.[player.data.classId];
+  const ids = [...(quest.rewards.items ?? []), ...(classItem ? [classItem] : [])];
   const rewards: Rewards = {
     xp: quest.rewards.xp,
     gold: quest.rewards.gold,
-    items: [...(quest.rewards.items ?? []), ...(classItem ? [classItem] : [])],
+    items: ids.filter((id) => !isGear(db.item(id))),
+    gear: ids.filter((id) => isGear(db.item(id))).map((id) => rollGear(id, 'quest')),
   };
   const levelBefore = player.level;
   const levelsGained = player.grantRewards(rewards);
