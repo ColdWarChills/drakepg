@@ -495,9 +495,14 @@ export class Battle {
     const items = m.drops
       .filter((d) => chance(this.rng, d.chance))
       .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source)));
-    // Gear: one cascading tier roll (Elites and bosses always drop something).
-    const gear = m.loot ? rollLoot(m.loot, source, this.rng) : null;
-    if (gear) items.push(gear);
+    // Gear: one cascading tier roll (Elites and bosses always drop something). Missing a Rare builds up luck.
+    if (m.loot) {
+      const pity = this.player.data.lootPity;
+      const gear = rollLoot(m.loot, source, this.rng, pity[m.loot] ?? 0);
+      if (gear?.tier === 'rare') delete pity[m.loot];
+      else pity[m.loot] = (pity[m.loot] ?? 0) + 1;
+      if (gear) items.push(gear.grant);
+    }
     return {
       xp: Math.round(m.xp * this.rewardScale),
       gold: Math.round(randInt(this.rng, m.gold[0], m.gold[1]) * this.rewardScale),

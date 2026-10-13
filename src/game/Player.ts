@@ -88,6 +88,8 @@ export interface PlayerData {
   /** Unspent points from leveling up. */
   statPoints: number;
   quests: Record<string, QuestState>;
+  /** Bad-luck protection: kills since the last Rare, per loot table id. Added in save version 7. */
+  lootPity: Record<string, number>;
 }
 
 export interface Rewards {
@@ -129,6 +131,7 @@ export class Player {
       classId,
       statPoints: 0,
       quests: {},
+      lootPity: {},
     });
     player.data.equipment.weapon = player.makeGear(cls.weapon);
     player.data.equipment.armor = player.makeGear(cls.armor);

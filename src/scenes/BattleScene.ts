@@ -6,6 +6,7 @@ import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, ZoneDef 
 import { INN_SPAWN } from '../data/world';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
 import { makeElite } from '../game/Elites';
+import { LOOT_TIERS, pityBonus, tierOdds, type LootSource } from '../game/Loot';
 import { questNeedsKill, recordKill } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
@@ -40,6 +41,8 @@ interface Style {
 
 const EFFECT_TAGS: Record<Effect, string> = { weak: 'WEAK!', resisted: 'Resisted', immune: 'Immune' };
 const ELITE_GLOW = 0xffc23d;
+/** Loot line colors (Common uses the normal text color). */
+const LOOT_CSS = { rare: '#ffd34d', uncommon: '#7ddc7d' };
 /** Name color of `tough` monsters: they need a counter. */
 const TOUGH_CSS = '#ff9a4d';
 
@@ -170,7 +173,8 @@ export class BattleScene extends Phaser.Scene {
     const ex = this.scale.width - 436;
     // Elites get an extra line explaining their affix.
     const affix = m.elite ? db.affix(m.elite.affix) : null;
-    this.statusPanel(ex, 16, 420, affix ? 148 : 120);
+    const lootY = affix ? 164 : 136;
+    this.statusPanel(ex, 16, 420, (affix ? 148 : 120) + (m.loot ? 26 : 0));
     // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
     const tags = [m.boss ? 'BOSS' : affix ? 'ELITE' : m.tough ? 'TOUGH' : ''].filter(Boolean);
     const head = addText(this, ex + 16, 26, [`${m.name}`, `Lv ${m.level}`, ...tags].join('  ·  '), {
@@ -184,7 +188,45 @@ export class BattleScene extends Phaser.Scene {
     this.drawAffinities(ex + 16, 108);
     if (affix) addText(this, ex + 16, 136, `${affix.name}: ${affix.description}`, { size: 15, bold: true, color: COLORS.textGold }).setOrigin(0, 0.5);
 
-    this.statusRows = { player: this.add.container(16, 152), enemy: this.add.container(ex, affix ? 180 : 152) };
+    if (m.loot) this.drawLootLine(ex + 16, lootY, m.loot);
+
+    this.statusRows = { player: this.add.container(16, 152), enemy: this.add.container(ex, (affix ? 180 : 152) + (m.loot ? 26 : 0)) };
+  }
+
+  /** "Gear  Rare 1%  Uncommon 5%  Common 6%": this fight's drop odds, luck included. Hover or tap for the items. */
+  private drawLootLine(x: number, y: number, tableId: string): void {
+    const m = this.monster;
+    const source: LootSource = m.boss ? 'boss' : m.elite ? 'elite' : 'mob';
+    const misses = this.battle.player.data.lootPity[tableId] ?? 0;
+    const odds = tierOdds(tableId, source, misses);
+    const luck = pityBonus(misses);
+    const pct = (v: number) => `${v >= 0.1 ? Math.round(v * 100) : (v * 100).toFixed(1)}%`;
+    const label = { rare: 'Rare', uncommon: 'Uncommon', common: 'Common' } as const;
+    const color = { rare: LOOT_CSS.rare, uncommon: LOOT_CSS.uncommon, common: COLORS.text } as const;
+    const row = this.add.container(x, y);
+    const parts: { text: string; color: string }[] = [{ text: 'Gear ', color: COLORS.textDim }];
+    for (const t of LOOT_TIERS) if (odds[t] > 0) parts.push({ text: ` ${label[t]} ${pct(odds[t])}${t === 'rare' && luck > 0 ? ' (luck)' : ''} `, color: color[t] });
+    let cx = 0;
+    for (const part of parts) {
+      const t = addText(this, cx, 0, part.text, { size: 14, bold: true, color: part.color }).setOrigin(0, 0.5);
+      row.add(t);
+      cx += t.width;
+    }
+    if (cx > 388) row.setScale(388 / cx);
+
+    const table = db.lootTable(tableId);
+    const names = (t: (typeof LOOT_TIERS)[number]) => table.tiers[t].map((e) => db.item(e.itemId).name).join(', ');
+    const pityText =
+      luck > 0
+        ? `Rolled rarest first. Luck: +${pct(luck)} Rare after ${misses} kills here without one.`
+        : `Rolled rarest first. ${misses} kills here without a Rare; after ${BALANCE.loot.pityAfter}, the Rare chance rises.`;
+    const details = [...LOOT_TIERS.filter((t) => odds[t] > 0).map((t) => `${label[t]} ${pct(odds[t])}: ${names(t)}`), pityText].join('\n');
+    const hit = this.add.rectangle(-4, -12, cx + 8, 24, 0x000000, 0).setOrigin(0).setInteractive({ useHandCursor: true });
+    row.addAt(hit, 0);
+    // Smaller type so the item lists fit the log box.
+    const show = () => this.logText?.setFontSize(15).setText(details);
+    const hide = () => this.logText?.setFontSize(19).setText(this.log.join('\n'));
+    hit.on('pointerover', show).on('pointerdown', show).on('pointerout', hide);
   }
 
   /** "Earth · Weak: Fire Wind · Resists: Earth Water", each element in its color. */

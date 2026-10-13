@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -67,6 +67,14 @@ export const BALANCE = {
     mob: { rare: 0.01, uncommon: 0.05, common: 0.06 },
     elite: { rare: 0.05, uncommon: 0.4, common: 1 },
     boss: { rare: 0.35, uncommon: 0.5, common: 1 },
+    /**
+     * Bad-luck protection: after `pityAfter` kills on a table without a Rare, each further kill adds `pityStep`
+     * to that table's Rare chance, up to `pityMax` extra. A Rare resets it. Counted per table (each area has its
+     * own streak). It only kicks in on long dry streaks, so average luck barely moves.
+     */
+    pityAfter: 80,
+    pityStep: 0.001,
+    pityMax: 0.2,
   },
   /** Chance that a gear drop is a Sigil, per tier. */
   sigilChance: {

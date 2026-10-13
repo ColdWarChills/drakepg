@@ -64,6 +64,7 @@ export const SaveSystem = {
  *           Standard (0%) gear instances in `equipment` and `gear`.
  * v4 -> v5: gear can carry a `sigil` and `mods`. Both are optional, so old gear simply has neither.
  * v5 -> v6: gear can carry a smith `plus`, and the bag can hold materials. Both need nothing from old saves.
+ * v6 -> v7: `lootPity` (bad-luck protection counters); sanitize() starts it empty.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -88,7 +89,18 @@ function migrate(file: SaveFile): SaveFile | null {
   }
   if (file.version < 5) file.version = 5;
   if (file.version < 6) file.version = 6;
+  if (file.version < 7) file.version = 7;
   return file;
+}
+
+/** Kill counters for loot tables that still exist. */
+function sanitizePity(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [id, n] of Object.entries(raw as Record<string, unknown>)) {
+    if (db.hasLootTable(id) && typeof n === 'number' && Number.isFinite(n) && n > 0) out[id] = Math.floor(n);
+  }
+  return out;
 }
 
 /** A saved gear piece, or null if it is broken or (for equipment) in the wrong slot. */
@@ -159,6 +171,7 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     classId,
     statPoints: Math.max(0, Math.floor(num(raw.statPoints, 0))),
     quests: sanitizeQuests(raw.quests),
+    lootPity: sanitizePity(raw.lootPity),
   };
 
   const player = new Player(data);

@@ -2,6 +2,7 @@
  * Headless balance check: plays thousands of battles with a simple AI and prints win rates.
  * Run with `npm run sim` (optionally `npm run sim -- 2000` for more battles per matchup).
  */
+import { BALANCE } from '../src/config';
 import { db, validateData } from '../src/data/db';
 import { ELEMENTS } from '../src/data/elements';
 import type { ClassId, SkillDef, StatKey } from '../src/data/types';
@@ -218,6 +219,21 @@ function lootReport(): void {
       console.log(`${table.id.padEnd(10)} ${source.padEnd(6)} | ${cells}| ${(rare / 1000).toFixed(2).padStart(6)}%| ${oneIn}`);
     }
   }
+
+  // Bad-luck protection: normal kills until the first Rare, 20k players each.
+  const streaks = (pity: boolean) => {
+    const kills: number[] = [];
+    for (let p = 0; p < 20000; p++) {
+      let n = 1;
+      while (rollLootTier('thornwood', 'mob', rng, pity ? n - 1 : 0) !== 'rare') n++;
+      kills.push(n);
+    }
+    kills.sort((a, b) => a - b);
+    const at = (q: number) => kills[Math.floor(q * (kills.length - 1))];
+    return `average ${Math.round(kills.reduce((a, b) => a + b, 0) / kills.length)}, half by ${at(0.5)}, 90% by ${at(0.9)}, unluckiest 1% past ${at(0.99)}`;
+  };
+  console.log(`Normal kills to the first Rare, no protection:   ${streaks(false)}`);
+  console.log(`Normal kills to the first Rare, with protection: ${streaks(true)}  (after ${BALANCE.loot.pityAfter} dry kills +${BALANCE.loot.pityStep * 100}% per kill, max +${BALANCE.loot.pityMax * 100}%)`);
 }
 lootReport();
 

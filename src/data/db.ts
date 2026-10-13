@@ -55,6 +55,7 @@ export const db = {
   quests: (): readonly QuestDef[] => QUESTS,
   hasRoom: (id: string) => rooms.has(id),
   hasItem: (id: string) => items.has(id),
+  hasLootTable: (id: string) => lootTables.has(id),
   hasSkill: (id: string) => skills.has(id),
 };
 
