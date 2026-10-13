@@ -1,8 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
-import type { Defenses, MonsterDef, Resists, ZoneDef } from '../data/types';
+import type { Defenses, MonsterDef, Resists } from '../data/types';
 import { cheats } from './cheats';
-import { isGearDef } from './Items';
 import { chance, defaultRng, randInt, type Rng } from './rng';
 
 /**
@@ -19,17 +18,8 @@ export function rollElite(rng: Rng = defaultRng, questWantsOne = false): string 
   return list[randInt(rng, 0, list.length - 1)].id;
 }
 
-/** Gear the zone's monsters can drop: the pool an Elite's guaranteed drop comes from. */
-export function zoneLoot(zone: ZoneDef): string[] {
-  const ids = new Set<string>();
-  for (const e of zone.encounters) {
-    for (const d of db.monster(e.monsterId).drops) if (isGearDef(db.item(d.itemId))) ids.add(d.itemId);
-  }
-  return [...ids];
-}
-
-/** The Elite version of `def` with the given affix. `zone` decides its bonus loot. */
-export function makeElite(def: MonsterDef, affixId: string, zone?: ZoneDef): MonsterDef {
+/** The Elite version of `def` with the given affix. Its guaranteed gear drop comes from `def.loot`. */
+export function makeElite(def: MonsterDef, affixId: string): MonsterDef {
   const a = db.affix(affixId);
   const e = BALANCE.elite;
   const range = (r: [number, number], m: number): [number, number] => [Math.round(r[0] * m), Math.round(r[1] * m)];
@@ -53,6 +43,6 @@ export function makeElite(def: MonsterDef, affixId: string, zone?: ZoneDef): Mon
     }),
     xp: Math.round(def.xp * e.rewards),
     gold: range(def.gold, e.rewards),
-    elite: { affix: a.id, loot: zone ? zoneLoot(zone) : [] },
+    elite: { affix: a.id },
   };
 }

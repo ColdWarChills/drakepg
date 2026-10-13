@@ -76,6 +76,7 @@ Tiers are about x1.5 apart; items in one tier are sidegrades.
 - [x] Monster drops, tier 2 elemental (one Water and one Energy weapon per class) with weapon specials, plus 2 armors with Water/Energy resists.
 - [x] Bogmother drops the 3 Water weapons at 15% each (boss Sigil odds).
 - [x] Stormcoil drops 3 tier-3 Energy weapons at 15% each; the quest gives your class's one.
+- Since 2026-10-13 gear comes from loot tables (src/data/loot.ts): the Bogmother's rare tier is her 3 Water weapons, the Stormcoil's is its 3 Energy weapons; boss odds Rare 35% / Uncommon 50% / else Common.
 
 ## Code (PR 2)
 

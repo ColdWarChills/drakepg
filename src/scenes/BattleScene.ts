@@ -83,7 +83,7 @@ export class BattleScene extends Phaser.Scene {
     this.back = data;
     this.zone = db.zone(data.zoneId);
     const base = db.monster(data.monsterId);
-    this.monster = data.elite ? makeElite(base, data.elite, this.zone) : base;
+    this.monster = data.elite ? makeElite(base, data.elite) : base;
     this.battle = new Battle(session.player, this.monster);
     if (this.monster.boss && !questNeedsKill(session.player, this.monster.id)) this.battle.rewardScale = BALANCE.bossRepeatRewards;
     this.log = [];

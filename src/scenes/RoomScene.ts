@@ -312,7 +312,7 @@ export class RoomScene extends Phaser.Scene {
 
   private addMob(r: RoamingMonster): void {
     const base = db.monster(r.monsterId);
-    const def = r.elite ? makeElite(base, r.elite, db.zone(this.room.zoneId!)) : base;
+    const def = r.elite ? makeElite(base, r.elite) : base;
     const fig = drawFigure(this, r.x, r.y, def.look, 1);
     const actor = this.makeActor(fig, r.x, r.y, def.look.scale * 0.85);
     const diff = def.level - session.player.level;

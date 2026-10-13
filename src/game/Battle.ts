@@ -3,6 +3,7 @@ import { db } from '../data/db';
 import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, StatusDef, Stats } from '../data/types';
 import { cheats } from './cheats';
 import { grantFor } from './Items';
+import { rollLoot } from './Loot';
 import { statFor, type Player, type Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
 
@@ -494,9 +495,9 @@ export class Battle {
     const items = m.drops
       .filter((d) => chance(this.rng, d.chance))
       .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source)));
-    // Elites always drop one piece of their zone's gear.
-    const loot = m.elite?.loot ?? [];
-    if (loot.length) items.push(grantFor(loot[randInt(this.rng, 0, loot.length - 1)], this.rng, 'elite'));
+    // Gear: one cascading tier roll (Elites and bosses always drop something).
+    const gear = m.loot ? rollLoot(m.loot, source, this.rng) : null;
+    if (gear) items.push(gear);
     return {
       xp: Math.round(m.xp * this.rewardScale),
       gold: Math.round(randInt(this.rng, m.gold[0], m.gold[1]) * this.rewardScale),

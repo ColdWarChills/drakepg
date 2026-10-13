@@ -236,8 +236,10 @@ export interface MonsterDef {
   attacks: MonsterAttack[];
   xp: number;
   gold: [number, number];
-  /** `qty` (default 1) is for stacking items like materials. */
+  /** Potions and materials, each rolled on its own. `qty` (default 1) is for stacking items. Gear comes from `loot`. */
   drops: { itemId: string; chance: number; qty?: number }[];
+  /** Loot table id (src/data/loot.ts) for gear: one cascading roll per kill, rarest tier first. */
+  loot?: string;
   /** Bosses can't be fled from and get a bigger presence on screen. */
   boss?: boolean;
   /** Stronger than its level suggests; tagged "Tough" so players bring the counter its weaknesses ask for. */
@@ -259,10 +261,22 @@ export interface MonsterPhase {
   attacks?: MonsterAttack[];
 }
 
-/** What makes a monster an Elite: its affix, and the gear pool its guaranteed drop comes from. */
+/** What makes a monster an Elite: its affix. */
 export interface EliteInfo {
   affix: string;
-  loot: string[];
+}
+
+/** Gear drop tiers, rarest first. */
+export type LootTier = 'rare' | 'uncommon' | 'common';
+
+/**
+ * Gear a group of monsters can drop, split by tier. A kill first rolls the tier (rare, then uncommon, then common,
+ * with the odds in `BALANCE.loot`), and only then picks an item from that tier by `weight` (default 1).
+ * So adding or removing an item never changes how often a tier drops.
+ */
+export interface LootTableDef {
+  id: string;
+  tiers: Record<LootTier, { itemId: string; weight?: number }[]>;
 }
 
 /** One Elite affix. Lives in elites.ts; every effect shows in the battle UI through `description`. */

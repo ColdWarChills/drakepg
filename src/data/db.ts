@@ -2,12 +2,13 @@ import { CLASSES } from './classes';
 import { RECIPES } from './crafting';
 import { ELITE_AFFIXES } from './elites';
 import { ITEMS } from './items';
+import { LOOT_TABLES } from './loot';
 import { MONSTERS } from './monsters';
 import { QUESTS } from './quests';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, EliteAffixDef, ItemDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, EliteAffixDef, ItemDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -29,6 +30,7 @@ const quests = index('quest', QUESTS);
 const statuses = index('status', STATUSES);
 const affixes = index('elite affix', ELITE_AFFIXES);
 const recipes = index('recipe', RECIPES);
+const lootTables = index('loot table', LOOT_TABLES);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -47,6 +49,7 @@ export const db = {
   status: (id: string): StatusDef => get('status', statuses, id),
   affix: (id: string): EliteAffixDef => get('elite affix', affixes, id),
   recipe: (id: string): RecipeDef => get('recipe', recipes, id),
+  lootTable: (id: string): LootTableDef => get('loot table', lootTables, id),
   affixes: (): readonly EliteAffixDef[] => ELITE_AFFIXES,
   hasClass: (id: string) => classes.has(id),
   quests: (): readonly QuestDef[] => QUESTS,
@@ -59,13 +62,25 @@ export const db = {
 export function validateData(): void {
   const checkApplies = (list: Apply[] | undefined) => list?.forEach((a) => db.status(a.status));
   for (const m of MONSTERS) {
-    for (const d of m.drops) db.item(d.itemId);
+    for (const d of m.drops) {
+      const t = db.item(d.itemId).type;
+      if (t === 'weapon' || t === 'armor') throw new Error(`Monster ${m.id}: gear ${d.itemId} belongs in a loot table, not drops`);
+    }
+    if (m.loot) db.lootTable(m.loot);
     if (m.attacks.length === 0) throw new Error(`Monster ${m.id} has no attacks`);
     m.attacks.forEach((a) => checkApplies(a.applies));
     m.phase?.attacks?.forEach((a) => checkApplies(a.applies));
     m.immune?.forEach((id) => db.status(id));
   }
   for (const s of SKILLS) checkApplies(s.applies);
+  for (const table of LOOT_TABLES) {
+    for (const entries of Object.values(table.tiers)) {
+      for (const e of entries) {
+        const t = db.item(e.itemId).type;
+        if (t !== 'weapon' && t !== 'armor') throw new Error(`Loot table ${table.id}: ${e.itemId} is not gear`);
+      }
+    }
+  }
   for (const rec of RECIPES) {
     const result = db.item(rec.result);
     if (result.type !== 'weapon' && result.type !== 'armor') throw new Error(`Recipe ${rec.id}: result must be gear`);

@@ -7,6 +7,8 @@ import { ELEMENTS } from '../src/data/elements';
 import type { ClassId, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
 import { makeElite } from '../src/game/Elites';
+import { LOOT_TIERS, rollLootTier, tierOdds, type LootSource } from '../src/game/Loot';
+import { LOOT_TABLES } from '../src/data/loot';
 import { rollGear, type GearDef, type SigilTier } from '../src/game/Items';
 import { Player, xpToNext } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
@@ -200,6 +202,24 @@ function table(title: string, rows: Row[]): void {
 validateData();
 console.log(`${RUNS} battles per cell. win = win rate, hp = HP left after a win, t = turns, pot = potions used.`);
 console.log(`Elements: ${ELEMENTS.join(', ')}`);
+
+/** Gear drop odds per kill: exact cascade math, checked against 100k simulated rolls. */
+function lootReport(): void {
+  console.log('\nGear loot per kill (cascade: rare, then uncommon, then common). sim = 100k rolls; "1 in" = kills per rare');
+  console.log(`${'table'.padEnd(10)} ${'source'.padEnd(6)} | ${LOOT_TIERS.map((t) => t.padEnd(9)).join(' ')} none      | sim rare | 1 in`);
+  const rng = seeded(777);
+  for (const table of LOOT_TABLES) {
+    for (const source of ['mob', 'elite', 'boss'] as LootSource[]) {
+      const odds = tierOdds(table.id, source);
+      let rare = 0;
+      for (let i = 0; i < 100000; i++) if (rollLootTier(table.id, source, rng) === 'rare') rare++;
+      const cells = [...LOOT_TIERS, 'none' as const].map((t) => `${(odds[t] * 100).toFixed(2).padStart(6)}%  `).join(' ');
+      const oneIn = odds.rare > 0 ? Math.round(1 / odds.rare) : '-';
+      console.log(`${table.id.padEnd(10)} ${source.padEnd(6)} | ${cells}| ${(rare / 1000).toFixed(2).padStart(6)}%| ${oneIn}`);
+    }
+  }
+}
+lootReport();
 
 table('Chapter 1 trash (full HP each fight, 1 potion)', [
   { monster: 'mossling', level: 1, gear: STARTER, potions: 1 },

@@ -58,6 +58,16 @@ export const BALANCE = {
     dusk: { boost: 0.35, mods: 2, sell: 6 },
     eclipse: { boost: 0.6, mods: 3, sell: 12 },
   },
+  /**
+   * Gear drops (src/game/Loot.ts): one cascading roll per kill, rarest first. Roll `rare`; only if it misses roll
+   * `uncommon`, then `common`. The first hit picks an item from that tier of the monster's loot table.
+   * A `common` of 1 means something always drops (Elites, bosses).
+   */
+  loot: {
+    mob: { rare: 0.01, uncommon: 0.05, common: 0.06 },
+    elite: { rare: 0.05, uncommon: 0.4, common: 1 },
+    boss: { rare: 0.35, uncommon: 0.5, common: 1 },
+  },
   /** Chance that a gear drop is a Sigil, per tier. */
   sigilChance: {
     mob: { dawn: 0.02, dusk: 0.005, eclipse: 0.0005 },
@@ -98,8 +108,8 @@ export const BALANCE = {
   /**
    * Elites: tougher roaming monsters with one affix (src/data/elites.ts). `chance` per roaming spawn
    * (`questChance` while a quest wants an Elite), at most `maxPerRoom`. `levels` is added to the shown level;
-   * hp/damage/rewards multiply the base monster; `size` scales the figure. Every Elite also drops one
-   * gear piece from its zone's loot. Their Sigil odds are `sigilChance.elite`.
+   * hp/damage/rewards multiply the base monster; `size` scales the figure. Every Elite drops one gear
+   * piece from its loot table (`loot.elite` odds). Their Sigil odds are `sigilChance.elite`.
    */
   elite: {
     chance: 0.08,
