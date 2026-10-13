@@ -67,6 +67,8 @@ export const BALANCE = {
     mob: { rare: 0.01, uncommon: 0.05, common: 0.06 },
     elite: { rare: 0.05, uncommon: 0.4, common: 1 },
     boss: { rare: 0.35, uncommon: 0.5, common: 1 },
+    /** Treasure chests and mimics: gear about two times in three. */
+    chest: { rare: 0.03, uncommon: 0.3, common: 0.5 },
     /**
      * Bad-luck protection: after `pityAfter` kills on a table without a Rare, each further kill adds `pityStep`
      * to that table's Rare chance, up to `pityMax` extra. A Rare resets it. Counted per table (each area has its
@@ -81,6 +83,7 @@ export const BALANCE = {
     mob: { dawn: 0.02, dusk: 0.005, eclipse: 0.0005 },
     boss: { dawn: 0.2, dusk: 0.07, eclipse: 0.015 },
     elite: { dawn: 0.08, dusk: 0.02, eclipse: 0.003 },
+    chest: { dawn: 0.05, dusk: 0.01, eclipse: 0.001 },
   },
   /** Chance a normal (non-Sigil) gear drop has one mod. */
   modChance: 0.1,
@@ -133,6 +136,10 @@ export const BALANCE = {
   },
 
   // Exploration
+  /** A cleared room refills one monster per this many seconds you spend away from it. */
+  respawnSeconds: 45,
+  /** Chance a freshly filled monster room has a treasure chest, and that a chest is a mimic. */
+  chest: { chance: 0.3, mimicChance: 0.25 },
   /** Player walk speed in px/s (horizontal; vertical is 70% of this). */
   walkSpeed: 300,
   monsterWanderSpeed: 50,

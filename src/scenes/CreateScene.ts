@@ -12,6 +12,7 @@ import { drawFigure } from '../ui/figures';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
+import { applyChapterStart, CHAPTER_STARTS } from '../game/cheats';
 import { enterScene, goTo, SceneKeys } from './keys';
 
 const NAMES = ['Aldric', 'Brynn', 'Cassia', 'Dorian', 'Elowen', 'Fenwick', 'Gwyn', 'Harlan', 'Isolde', 'Jory', 'Kestrel', 'Lorne', 'Nyx', 'Orrin', 'Perrin', 'Quill', 'Rowan', 'Sable', 'Tamsin', 'Ulric', 'Vesper', 'Wren'];
@@ -33,6 +34,8 @@ export class CreateScene extends Phaser.Scene {
   private cards: Card[] = [];
   private selected: ClassId = 'warrior';
   private starting = false;
+  /** Chapter to start at (later ones skip ahead for testing). */
+  private chapter = 1;
 
   constructor() {
     super(SceneKeys.Create);
@@ -60,6 +63,7 @@ export class CreateScene extends Phaser.Scene {
     this.select('warrior', false);
 
     new Button(this, width / 2, 668, 'Begin Adventure', () => this.begin(), { width: 300, height: 60, fontSize: 24 });
+    this.buildChapterPicker(40, 668);
     new Button(this, 80, 40, 'Back', () => goTo(this, SceneKeys.Title), { width: 120, height: 44, fontSize: 18 });
 
     // Clicking anywhere in the game takes focus out of the name box, so number keys pick classes again.
@@ -156,6 +160,20 @@ export class CreateScene extends Phaser.Scene {
     if (feedback) sfx.play(this, 'open');
   }
 
+  /** "Start at: Ch 1 / Ch 2 / Ch 3": skip ahead to test a later chapter with a fitting level and gear. */
+  private buildChapterPicker(x: number, y: number): void {
+    addText(this, x, y, 'Start at', { size: 18, color: COLORS.textDim }).setOrigin(0, 0.5);
+    const buttons = CHAPTER_STARTS.map((s, i) =>
+      new Button(this, x + 130 + i * 92, y, `Ch ${s.chapter}`, () => {
+        this.chapter = s.chapter;
+        paint();
+      }, { width: 84, height: 44, fontSize: 18 }),
+    );
+    const paint = () => buttons.forEach((b, i) => b.setColor(CHAPTER_STARTS[i].chapter === this.chapter ? 0x6b5320 : COLORS.button));
+    this.chapter = 1;
+    paint();
+  }
+
   private begin(): void {
     if (this.starting) return;
     this.starting = true;
@@ -163,9 +181,11 @@ export class CreateScene extends Phaser.Scene {
     this.nameInput.blur();
     SaveSystem.clear();
     const player = Player.createNew(name, this.selected);
+    const start = CHAPTER_STARTS.find((s) => s.chapter === this.chapter);
+    if (start && start.chapter > 1) applyChapterStart(player, start);
     session.start(player);
     SaveSystem.save(player);
     sfx.play(this, 'quest');
-    goTo(this, SceneKeys.Room, { ...START, via: 'spawn', intro: true }, 400);
+    goTo(this, SceneKeys.Room, { ...START, via: 'spawn', intro: this.chapter === 1 }, 400);
   }
 }

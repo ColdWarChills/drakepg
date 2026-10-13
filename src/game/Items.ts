@@ -66,7 +66,7 @@ export interface ItemGrant extends Partial<GearTraits> {
 }
 
 /** Where loot comes from. Quest rewards roll white lines only. */
-export type DropSource = 'mob' | 'elite' | 'boss' | 'quest';
+export type DropSource = 'mob' | 'elite' | 'boss' | 'chest' | 'quest';
 
 export const ROLL_LABELS: Record<RollKey, string> = {
   damage: 'Damage',

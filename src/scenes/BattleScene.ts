@@ -5,6 +5,7 @@ import { ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS 
 import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, ZoneDef } from '../data/types';
 import { INN_SPAWN } from '../data/world';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
+import { makeMimic } from '../game/Chests';
 import { makeElite } from '../game/Elites';
 import { LOOT_TIERS, pityBonus, tierOdds, type LootSource } from '../game/Loot';
 import { questNeedsKill, recordKill } from '../game/Quests';
@@ -87,7 +88,7 @@ export class BattleScene extends Phaser.Scene {
     enterScene(this, 350);
     this.back = data;
     this.zone = db.zone(data.zoneId);
-    const base = db.monster(data.monsterId);
+    const base = data.mimic ? makeMimic(this.zone) : db.monster(data.monsterId);
     this.monster = data.elite ? makeElite(base, data.elite) : base;
     this.battle = new Battle(session.player, this.monster);
     if (this.monster.boss && !questNeedsKill(session.player, this.monster.id)) this.battle.rewardScale = BALANCE.bossRepeatRewards;
@@ -225,7 +226,7 @@ export class BattleScene extends Phaser.Scene {
   /** "Gear  Rare 1%  Uncommon 5%  Common 6%": this fight's drop odds, luck included. Hover or tap for the items. */
   private drawLootLine(x: number, y: number, tableId: string): void {
     const m = this.monster;
-    const source: LootSource = m.boss ? 'boss' : m.elite ? 'elite' : 'mob';
+    const source: LootSource = m.boss ? 'boss' : m.elite ? 'elite' : m.chestLoot ? 'chest' : 'mob';
     const misses = this.battle.player.data.lootPity[tableId] ?? 0;
     const odds = tierOdds(tableId, source, misses);
     const luck = pityBonus(misses);

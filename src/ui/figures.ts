@@ -92,6 +92,18 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
       c.add([...legs, body, ...spikes, head, snout, tusk, eye]);
       break;
     }
+    case 'chest': {
+      const box = scene.add.rectangle(0, -40, 120, 70, color).setStrokeStyle(4, 0x3e2723);
+      const band = scene.add.rectangle(0, -40, 120, 12, accent);
+      const mouth = scene.add.rectangle(0, -82, 116, 22, 0x2a0d0d);
+      const tongue = scene.add.ellipse(16 * facing, -78, 50, 14, 0xd84a6a);
+      const teeth = [-44, -22, 0, 22, 44].map((tx) => tri(scene, 0xf5f0e1, tx - 8, -92, tx, -80, tx + 8, -92));
+      const lid = scene.add.rectangle(-6 * facing, -112, 124, 40, color).setStrokeStyle(4, 0x3e2723).setAngle(-12 * facing);
+      const eyeL = scene.add.circle(-20 * facing, -116, 7, 0xffe066);
+      const eyeR = scene.add.circle(14 * facing, -122, 7, 0xffe066);
+      c.add([box, band, mouth, tongue, ...teeth, lid, eyeL, eyeR]);
+      break;
+    }
     case 'imp': {
       const wingL = tri(scene, accent, -20, -100, -90, -150, -30, -60);
       const wingR = tri(scene, accent, 20, -100, 90, -150, 30, -60);

@@ -526,7 +526,7 @@ export class Battle {
 
   private rollRewards(): Rewards {
     const m = this.enemy.def;
-    const source = m.boss ? 'boss' : m.elite ? 'elite' : 'mob';
+    const source = m.boss ? 'boss' : m.elite ? 'elite' : m.chestLoot ? 'chest' : 'mob';
     const items = m.drops
       .filter((d) => chance(this.rng, d.chance))
       .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source)));

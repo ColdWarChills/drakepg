@@ -54,7 +54,7 @@ export interface StatusDef {
 
 /** How a character is drawn: art if it exists, otherwise placeholder shapes. */
 export interface Look {
-  shape: 'humanoid' | 'blob' | 'beast' | 'imp';
+  shape: 'humanoid' | 'blob' | 'beast' | 'imp' | 'chest';
   color: number;
   accent: number;
   /** 1 = player-sized. */
@@ -244,6 +244,8 @@ export interface MonsterDef {
   boss?: boolean;
   /** Stronger than its level suggests; tagged "Tough" so players bring the counter its weaknesses ask for. */
   tough?: boolean;
+  /** Pays out like a treasure chest (mimics): gear uses `BALANCE.loot.chest` odds. */
+  chestLoot?: boolean;
   /** Only on Elite copies made by `makeElite` (src/game/Elites.ts), never in monsters.ts. */
   elite?: EliteInfo;
   /** Changes once, the first time its HP drops to `at` (share of max HP) or below. */

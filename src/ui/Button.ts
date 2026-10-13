@@ -20,7 +20,7 @@ export class Button extends Phaser.GameObjects.Container {
   private readonly bg: Phaser.GameObjects.Rectangle;
   private readonly label: Phaser.GameObjects.Text;
   private readonly sub?: Phaser.GameObjects.Text;
-  private readonly baseColor: number;
+  private baseColor: number;
   private enabled = true;
   private hasHover = false;
   private downAt = 0;
@@ -87,6 +87,13 @@ export class Button extends Phaser.GameObjects.Container {
     if (!this.scene) return;
     this.scene.tweens.killTweensOf(this);
     this.scene.tweens.add({ targets: this, scale, duration: scale < 1 ? 60 : 180, ease: scale < 1 ? 'Quad.easeOut' : 'Back.easeOut' });
+  }
+
+  /** Change the resting color (e.g. to show which choice is picked). */
+  setColor(color: number): this {
+    this.baseColor = color;
+    if (this.enabled) this.bg.setFillStyle(color);
+    return this;
   }
 
   setEnabled(enabled: boolean): this {

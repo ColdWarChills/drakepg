@@ -637,4 +637,33 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'dust', chance: 1, qty: 3 },
     ],
   },
+  // A treasure chest with teeth. Level-1 base: the game sizes it to the area it is found in (src/game/Chests.ts).
+  {
+    id: 'mimic',
+    name: 'Mimic',
+    level: 1,
+    tough: true,
+    chestLoot: true,
+    look: { shape: 'chest', color: 0x8d5a2b, accent: 0xd4a017, scale: 1, art: 'mon_mimic' },
+    hp: 58,
+    stats: { str: 5, int: 3, dex: 4, end: 5 },
+    damage: [4, 8],
+    // Old wood with iron bands: it burns, and lightning rattles its hinges.
+    defense: { melee: 3, pierce: 3, magic: 2 },
+    resists: { earth: 25, fire: -50, energy: -25 },
+    attacks: [
+      { name: 'Chomp', damageType: 'melee', power: 1, weight: 3 },
+      { name: 'Tongue Lash', damageType: 'pierce', power: 0.9, weight: 2, applies: [{ status: 'weaken', turns: 2, chance: 0.4 }] },
+      {
+        name: 'Lid Slam',
+        damageType: 'melee',
+        power: 2.2,
+        weight: 1,
+        windup: 'The mimic opens its lid wide. Very wide... (Defend!)',
+      },
+    ],
+    xp: 20,
+    gold: [5, 10],
+    drops: [],
+  },
 ];

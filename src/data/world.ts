@@ -147,7 +147,7 @@ export const ROOMS: RoomDef[] = [
       { side: 'left', to: 'fen_road', label: 'Mirewater Fen', requiresQuest: 'rising_waters', blocker: 'barricade' },
       { side: 'right', to: 'thornwood_path', label: 'Thornwood' },
       // The north gate to the Frostfangs (drawn until the town art shows one).
-      { side: 'back', x: 960, frame: 'gate', to: 'frostfang_pass', label: 'Frostfang Pass', requiresQuest: 'cold_scale', blocker: 'snowdrift' },
+      { side: 'back', x: 1080, frame: 'gate', to: 'frostfang_pass', label: 'Frostfang Pass', requiresQuest: 'cold_scale', blocker: 'snowdrift' },
     ],
     npcs: [
       {
@@ -200,19 +200,6 @@ export const ROOMS: RoomDef[] = [
         role: { kind: 'inn' },
         dialogue: ['A warm bed and a hot meal. You look like you need both.'],
       },
-      {
-        id: 'gate_guard',
-        name: 'Garrick',
-        title: 'Gate Guard',
-        x: 1060,
-        y: 600,
-        look: { shape: 'humanoid', color: 0x34495e, accent: 0xbdc3c7, scale: 1.05, art: 'npc_gate_guard' },
-        role: { kind: 'talk' },
-        dialogue: [
-          'The Thornwood starts right past this gate. The north gate goes up to the Frostfangs, when it is not snowed shut.',
-          "Monsters out there can see you coming. If one charges, fight or run. Can't outrun a boar for long, mind.",
-        ],
-      },
     ],
   },
   {
@@ -226,7 +213,21 @@ export const ROOMS: RoomDef[] = [
       { side: 'left', to: 'brindlemoor', label: 'Brindlemoor' },
       { side: 'right', to: 'thornwood_deep', label: 'Deep Thornwood' },
     ],
-    npcs: [],
+    npcs: [
+      {
+        id: 'gate_guard',
+        name: 'Garrick',
+        title: 'Guard',
+        x: 170,
+        y: 610,
+        look: { shape: 'humanoid', color: 0x34495e, accent: 0xbdc3c7, scale: 1.05, art: 'npc_gate_guard' },
+        role: { kind: 'talk' },
+        dialogue: [
+          'I keep watch on the forest road. Monsters do not get past me into town.',
+          "Monsters out there can see you coming. If one charges, fight or run. Can't outrun a boar for long, mind.",
+        ],
+      },
+    ],
     zoneId: 'thornwood',
     monsterCount: 3,
   },

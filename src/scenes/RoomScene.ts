@@ -6,10 +6,12 @@ import type { Blocker, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '.
 import { cheats } from '../game/cheats';
 import { makeElite, rollElite } from '../game/Elites';
 import { Player } from '../game/Player';
-import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStarted, questWantsElite, turnInQuest } from '../game/Quests';
+import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStarted, questStatus, questWantsElite, turnInQuest } from '../game/Quests';
+import { saveSettings, settings } from '../game/settings';
 import { SaveSystem } from '../game/SaveSystem';
 import { defaultRng, weightedPick } from '../game/rng';
-import { session, type RoamingMonster } from '../game/session';
+import { MIMIC_UID, rollChest, rollChestLoot } from '../game/Chests';
+import { session, type Chest, type RoamingMonster } from '../game/session';
 import { drawScenery } from '../ui/backdrops';
 import { Button } from '../ui/Button';
 import { drawFigure } from '../ui/figures';
@@ -96,7 +98,6 @@ export class RoomScene extends Phaser.Scene {
   private mobs: Mob[] = [];
   private keys!: Keys;
   private hud!: Hud;
-  private soundBtn!: Button;
   private charBtn!: Button;
   private invBtn!: Button;
   private inventory: Modal | null = null;
@@ -116,6 +117,7 @@ export class RoomScene extends Phaser.Scene {
   private leaving = false;
   private dustTimer = 0;
   private nextUid = 1;
+  private chest: { data: Chest; fig: Phaser.GameObjects.Container; hit: Phaser.GameObjects.Rectangle } | null = null;
   /** Name labels grow on small screens (see labelScale). */
   private ls = 1;
 
@@ -136,6 +138,7 @@ export class RoomScene extends Phaser.Scene {
     this.moveTarget = null;
     this.pendingNpc = null;
     this.pendingBack = null;
+    this.chest = null;
     this.safeUntil = 0;
     this.leaving = false;
     this.dustTimer = 0;
@@ -162,7 +165,7 @@ export class RoomScene extends Phaser.Scene {
     kb.on('keydown-ESC', () => this.closeTopModal());
     kb.on('keydown-C', () => this.openCharacter());
     kb.on('keydown-I', () => this.toggleInventory());
-    kb.on('keydown-M', () => this.toggleSound());
+    kb.on('keydown-M', () => toast(this, sfx.toggleMute() ? 'Sound off' : 'Sound on', COLORS.textDim));
     // Hidden testing menu. On touch screens: tap the room name 5 times.
     kb.on('keydown-BACKTICK', () => this.openCheats());
     const talk = () => {
@@ -211,21 +214,18 @@ export class RoomScene extends Phaser.Scene {
   private spawnMonsters(data: RoomSceneData): void {
     const room = this.room;
     if (!room.zoneId) return;
+    const memory = session.roomMemory(room.id);
 
     let roaming: RoamingMonster[] | null = null;
+    let chest: Chest | null = null;
     if (data.via === 'battle') {
       const snap = session.takeRoom(room.id);
       if (snap) {
-        roaming = snap.monsters.filter((m) => !(data.outcome === 'victory' && m.uid === snap.fightingUid));
+        const won = data.outcome === 'victory';
+        roaming = snap.monsters.filter((m) => !(won && m.uid === snap.fightingUid));
         this.nextUid = Math.max(0, ...snap.monsters.map((m) => m.uid)) + 1;
-        // Give some room: nobody stays right next to you after a fight.
-        for (const m of roaming) {
-          if (Math.abs(m.x - this.player.x) < 260) {
-            const away = m.x < this.player.x ? -1 : 1;
-            const x = this.player.x + away * 260;
-            m.x = x < 80 || x > this.scale.width - 80 ? this.player.x - away * 260 : x;
-          }
-        }
+        // A beaten mimic is gone; a chest you didn't touch is still there.
+        chest = won && snap.fightingUid === MIMIC_UID ? null : (memory?.chest ?? null);
         if (data.outcome === 'fled') {
           this.safeUntil = this.time.now + BALANCE.fleeGraceSeconds * 1000;
           this.blinkPlayer();
@@ -233,21 +233,161 @@ export class RoomScene extends Phaser.Scene {
       }
     }
 
+    if (!roaming && memory) {
+      // Back in a room you cleared: the dead stay dead, and one monster wanders back per `respawnSeconds` away.
+      roaming = memory.monsters.map((m) => ({ ...m }));
+      chest = memory.chest;
+      this.nextUid = Math.max(0, ...roaming.map((m) => m.uid)) + 1;
+      const back = Math.floor((Date.now() - memory.leftAt) / (BALANCE.respawnSeconds * 1000));
+      const missing = Math.max(0, (room.monsterCount ?? 0) - roaming.length);
+      for (let i = 0; i < Math.min(back, missing); i++) roaming.push(this.newRoamer(roaming));
+      // Fully refilled: another chance at a chest.
+      if (!chest && missing > 0 && back >= missing) chest = this.newChest(roaming);
+    }
+
     if (!roaming) {
-      const zone = db.zone(room.zoneId);
-      const wantsElite = questWantsElite(session.player);
-      let elites = 0;
       roaming = [];
-      for (let i = 0; i < (room.monsterCount ?? 0); i++) {
-        const pos = this.findSpawnPoint(roaming);
-        // Monsters are visible, so tougher ones can appear; their level label warns you.
-        const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
-        const elite = elites < BALANCE.elite.maxPerRoom || cheats.elites ? rollElite(defaultRng, wantsElite) : undefined;
-        if (elite) elites++;
-        roaming.push({ uid: this.nextUid++, monsterId, elite, ...pos });
+      for (let i = 0; i < (room.monsterCount ?? 0); i++) roaming.push(this.newRoamer(roaming));
+      chest = this.newChest(roaming);
+    }
+    // Give some room: nobody stays right next to you when you arrive or come back from a fight.
+    for (const m of roaming) {
+      if (Math.abs(m.x - this.player.x) < 260) {
+        const away = m.x < this.player.x ? -1 : 1;
+        const x = this.player.x + away * 260;
+        m.x = x < 80 || x > this.scale.width - 80 ? this.player.x - away * 260 : x;
       }
     }
     for (const r of roaming) this.addMob(r);
+    if (chest) this.addChest(chest);
+  }
+
+  /** A freshly spawned roaming monster (maybe an Elite, at most `BALANCE.elite.maxPerRoom` per room). */
+  private newRoamer(taken: RoamingMonster[]): RoamingMonster {
+    const zone = db.zone(this.room.zoneId!);
+    const pos = this.findSpawnPoint(taken);
+    // Monsters are visible, so tougher ones can appear; their level label warns you.
+    const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
+    const elites = taken.filter((m) => m.elite).length;
+    const elite = elites < BALANCE.elite.maxPerRoom || cheats.elites ? rollElite(defaultRng, questWantsElite(session.player)) : undefined;
+    return { uid: this.nextUid++, monsterId, elite, ...pos };
+  }
+
+  /** Maybe a treasure chest, placed away from the monsters. */
+  private newChest(taken: RoamingMonster[]): Chest | null {
+    const roll = rollChest();
+    return roll ? { ...this.findSpawnPoint(taken), mimic: roll.mimic } : null;
+  }
+
+  /** Keep this room's survivors and chest for when you come back. */
+  private rememberRoom(): void {
+    if (!this.room.zoneId) return;
+    session.rememberRoom(this.room.id, {
+      monsters: this.mobs.map((x) => ({ uid: x.uid, monsterId: x.def.id, elite: x.elite, x: x.x, y: x.y })),
+      chest: this.chest?.data ?? null,
+      leftAt: Date.now(),
+    });
+  }
+
+  // --- Treasure chests ---
+
+  /** A drawn chest. Mimics give themselves away a little: they breathe, and now and then their lid twitches. */
+  private addChest(data: Chest): void {
+    const fig = this.add.container(data.x, data.y).setDepth(data.y);
+    const shadow = this.add.ellipse(0, 0, 90, 18, 0x000000, 0.35);
+    const box = this.add.rectangle(0, -26, 76, 46, 0x8d5a2b).setStrokeStyle(3, 0x3e2723);
+    const band = this.add.rectangle(0, -26, 76, 8, 0xd4a017);
+    const lid = this.add.container(0, -52);
+    lid.add([this.add.rectangle(0, 0, 80, 22, 0x9c6631).setStrokeStyle(3, 0x3e2723), this.add.rectangle(0, 0, 80, 6, 0xd4a017)]);
+    const lock = this.add.rectangle(0, -40, 12, 14, 0xf1c40f).setStrokeStyle(2, 0x3e2723);
+    fig.add([shadow, box, band, lid, lock]);
+    if (data.mimic) {
+      const teeth = this.add.graphics();
+      teeth.fillStyle(0xf5f0e1, 1);
+      for (let i = -3; i <= 3; i++) teeth.fillTriangle(i * 10 - 4, -41, i * 10, -34, i * 10 + 4, -41);
+      teeth.setAlpha(0);
+      fig.addAt(teeth, 3);
+      this.tweens.add({ targets: fig, scaleY: 1.04, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      this.time.addEvent({
+        delay: 3200,
+        loop: true,
+        callback: () => {
+          if (!fig.active || Math.abs(this.player.x - data.x) > 360) return;
+          teeth.setAlpha(1);
+          this.tweens.add({ targets: lid, y: -60, angle: -8, duration: 120, yoyo: true, onComplete: () => teeth.setAlpha(0) });
+        },
+      });
+    } else {
+      this.time.addEvent({
+        delay: 2600,
+        loop: true,
+        callback: () => fig.active && fx.hitSparks(this, data.x + 20, data.y - 50, false, false),
+      });
+    }
+    const hit = this.add.rectangle(data.x, data.y - 35, 100, 80, 0xffffff, 0).setInteractive({ useHandCursor: true }).setDepth(data.y + 1);
+    hit.on('pointerup', () => {
+      if (this.modalOpen() || this.leaving) return;
+      this.pendingNpc = null;
+      this.pendingBack = null;
+      this.moveTarget = { x: data.x + (this.player.x < data.x ? -40 : 40), y: data.y };
+    });
+    this.chest = { data, fig, hit };
+  }
+
+  /** Walking into a chest opens it. */
+  private checkChest(): void {
+    const c = this.chest;
+    if (!c || this.modalOpen()) return;
+    if (Math.abs(this.player.x - c.data.x) > 56 || Math.abs(this.player.y - c.data.y) > 34) return;
+    this.chest = null;
+    c.hit.destroy();
+    if (c.data.mimic) return this.springMimic(c.fig, c.data);
+
+    const player = session.player;
+    const rewards = rollChestLoot(db.zone(this.room.zoneId!));
+    const { lost } = player.grantRewards(rewards);
+    sfx.play(this, 'quest');
+    this.tweens.add({ targets: c.fig.list[3], y: -70, angle: -25, duration: 220 });
+    fx.healSparkles(this, c.data.x, c.data.y, 0xffd34d);
+    this.tweens.add({ targets: c.fig, alpha: 0, delay: 900, duration: 400, onComplete: () => c.fig.destroy() });
+    const items = rewards.items.filter((g) => !lost.includes(g));
+    // Stacks read as "Iron Scrap x2".
+    const counts = new Map<string, number>();
+    const names: string[] = [];
+    for (const g of items) {
+      const def = db.item(g.itemId);
+      if (g.rolls) names.push(lootName(def, g));
+      else counts.set(def.name, (counts.get(def.name) ?? 0) + 1);
+    }
+    for (const [name, n] of counts) names.push(n > 1 ? `${name} x${n}` : name);
+    toast(this, 'Treasure!', COLORS.textGold);
+    toast(this, [`+${rewards.gold} gold`, ...names].join('   '), COLORS.textGood);
+    if (lost.length) toast(this, `Bag full! ${lost.length} left behind`, COLORS.textBad);
+    void fx.coinShower(this, { x: c.data.x, y: c.data.y - 60 }, { x: 320, y: 40 }, Math.ceil(rewards.gold / 8), () => sfx.play(this, 'coin'));
+    this.refresh();
+  }
+
+  /** It was a mimic: it jumps up, and the fight starts. */
+  private springMimic(fig: Phaser.GameObjects.Container, data: Chest): void {
+    if (this.leaving) return;
+    this.leaving = true;
+    this.prompt.setVisible(false);
+    sfx.play(this, 'warning');
+    toast(this, 'The chest has teeth!', COLORS.textBad);
+    this.cameras.main.shake(300, 0.012);
+    this.tweens.add({ targets: fig, y: data.y - 30, duration: 160, yoyo: true, repeat: 1 });
+    // Remember the room with the mimic still in it, in case you run away.
+    session.saveRoom({
+      roomId: this.room.id,
+      fightingUid: MIMIC_UID,
+      monsters: this.mobs.map((x) => ({ uid: x.uid, monsterId: x.def.id, elite: x.elite, x: x.x, y: x.y })),
+    });
+    this.chest = { data, fig, hit: this.add.rectangle(0, 0, 1, 1) };
+    this.rememberRoom();
+    this.saveLocation();
+    const back = { roomId: this.room.id, x: this.player.x, y: this.player.y };
+    const battle: BattleSceneData = { zoneId: this.room.zoneId!, monsterId: 'mimic', mimic: true, ...back };
+    this.time.delayedCall(650, () => goTo(this, SceneKeys.Battle, battle, 200));
   }
 
   /** A spot away from the player and from `taken` (monsters placed so far). Falls back to the roomiest try. */
@@ -310,7 +450,7 @@ export class RoomScene extends Phaser.Scene {
   private addNpc(def: NpcDef): void {
     const fig = drawFigure(this, def.x, def.y, def.look, 1);
     const actor = this.makeActor(fig, def.x, def.y, def.look.scale);
-    const label = addText(this, def.x, 0, `${def.name}\n${def.title}`, { size: Math.round(17 * this.ls), bold: true, align: 'center', stroke: true })
+    const label = addText(this, def.x, 0, def.name, { size: Math.round(17 * this.ls), bold: true, align: 'center', stroke: true })
       .setOrigin(0.5, 1);
     const npc: Npc = { ...actor, def, label };
     this.npcs.push(npc);
@@ -402,6 +542,8 @@ export class RoomScene extends Phaser.Scene {
   private drawBackExit(exit: RoomExit): void {
     const [top] = this.room.walk;
     const x = exit.x!;
+    // A sealed way you can't open yet is just clutter: show it once its quest can be picked up.
+    if (exit.requiresQuest && questStatus(session.player, db.quest(exit.requiresQuest)) === 'locked') return;
     if (exit.frame) this.drawDoorway(x, exit.frame);
     if (!this.exitOpen(exit)) {
       this.drawBackBlocker(x, exit.blocker ?? 'barricade');
@@ -447,7 +589,13 @@ export class RoomScene extends Phaser.Scene {
   /** The back exit whose doorway the player is standing in (it sits at the top of the walkable strip). */
   private backExitAt(p: Actor): RoomExit | undefined {
     const [top] = this.room.walk;
-    return this.room.exits.find((e) => e.side === 'back' && Math.abs(p.x - e.x!) < 50 && p.y <= top + 8);
+    return this.room.exits.find(
+      (e) =>
+        e.side === 'back' &&
+        Math.abs(p.x - e.x!) < 50 &&
+        p.y <= top + 8 &&
+        !(e.requiresQuest && questStatus(session.player, db.quest(e.requiresQuest)) === 'locked'),
+    );
   }
 
   private exitOpen(exit: RoomExit): boolean {
@@ -583,17 +731,9 @@ export class RoomScene extends Phaser.Scene {
     const right = width - 16;
     const btn = (y: number, label: string, run: () => void) =>
       new Button(this, right - 70, y, label, run, { width: 140, height: 48, fontSize: 19 }).setDepth(UI_DEPTH);
-    btn(40, 'Title', () => this.saveAndQuit());
-    btn(98, 'Save', () => this.save(true));
-    this.charBtn = btn(156, 'Character', () => this.openCharacter());
-    this.invBtn = btn(214, 'Inventory', () => this.toggleInventory());
-    this.soundBtn = new Button(this, right - 70, 272, sfx.isMuted() ? 'Sound: off' : 'Sound: on', () => this.toggleSound(), {
-      width: 140,
-      height: 48,
-      fontSize: 17,
-    }).setDepth(UI_DEPTH);
-    // Not every browser has it (iPhone Safari doesn't), so only offer it where it works.
-    if (this.sys.game.device.fullscreen.available) btn(330, 'Fullscreen', () => this.scale.toggleFullscreen());
+    this.charBtn = btn(40, 'Character', () => this.openCharacter());
+    this.invBtn = btn(98, 'Inventory', () => this.toggleInventory());
+    btn(156, 'Menu', () => this.openMenu());
 
     const title = addText(this, width / 2, 36, this.room.name, { size: 30, bold: true, color: COLORS.textGold, stroke: true })
       .setOrigin(0.5)
@@ -662,6 +802,7 @@ export class RoomScene extends Phaser.Scene {
     for (const npc of this.npcs) this.updateNpc(npc, time);
     if (!blocked) this.separateMobs(dt);
     for (const mob of [...this.mobs]) this.updateMob(mob, dt, time, blocked);
+    if (!blocked && !this.leaving) this.checkChest();
     this.updatePrompt(blocked);
   }
 
@@ -955,6 +1096,7 @@ export class RoomScene extends Phaser.Scene {
     const back = db.room(exit.to).exits.find((e) => e.to === this.room.id);
     const side = back?.side ?? (exit.side === 'right' ? 'left' : 'right');
     const data: RoomSceneData = { roomId: exit.to, via: 'exit', side, x: back?.x, y: this.player.y };
+    this.rememberRoom();
     goTo(this, SceneKeys.Room, data);
   }
 
@@ -968,6 +1110,7 @@ export class RoomScene extends Phaser.Scene {
       fightingUid: m.uid,
       monsters: this.mobs.map((x) => ({ uid: x.uid, monsterId: x.def.id, elite: x.elite, x: x.x, y: x.y })),
     });
+    this.rememberRoom();
     this.saveLocation();
 
     sfx.play(this, m.elite ? 'warning' : 'encounter');
@@ -1009,9 +1152,31 @@ export class RoomScene extends Phaser.Scene {
     goTo(this, SceneKeys.Title);
   }
 
-  private toggleSound(): void {
-    const muted = sfx.toggleMute();
-    this.soundBtn.setLabel(muted ? 'Sound: off' : 'Sound: on');
+  /** Save, sound, story text, fullscreen and back to the title, in one place so the screen stays clear. */
+  private openMenu(): void {
+    if (this.modalOpen() || this.leaving) return;
+    this.moveTarget = null;
+    const modal = new Modal(this, 460, 470, 'Menu', () => {});
+    const render = () => {
+      const c = modal.content;
+      c.removeAll(true);
+      const rows: { label: string; run: () => void }[] = [
+        { label: 'Save', run: () => this.save(true) },
+        { label: sfx.isMuted() ? 'Sound: off' : 'Sound: on', run: () => (sfx.toggleMute(), render()) },
+        {
+          label: settings.storyText ? 'Story text: on' : 'Story text: off',
+          run: () => ((settings.storyText = !settings.storyText), saveSettings(), render()),
+        },
+      ];
+      // Not every browser has it (iPhone Safari doesn't), so only offer it where it works.
+      if (this.sys.game.device.fullscreen.available) rows.push({ label: 'Fullscreen', run: () => this.scale.toggleFullscreen() });
+      rows.push({ label: 'Save and quit to title', run: () => (modal.close(), this.saveAndQuit()) });
+      rows.forEach((r, i) => c.add(new Button(this, 230, 100 + i * 66, r.label, r.run, { width: 300, height: 52, fontSize: 19 })));
+      c.add(
+        addText(this, 230, 440, 'Story text off: quests say in one line what to do.', { size: 14, color: COLORS.textDim, align: 'center', wrap: 400 }).setOrigin(0.5),
+      );
+    };
+    render();
   }
 
   private openCharacter(): void {
@@ -1058,12 +1223,14 @@ export class RoomScene extends Phaser.Scene {
     const player = session.player;
     const role = npc.def.role;
     const actions: DialogueAction[] = [];
-    let lines = npc.def.dialogue;
+    // Story text off: one line of small talk, and quests say what to do instead of telling the story.
+    const story = settings.storyText;
+    let lines = story ? npc.def.dialogue : npc.def.dialogue.slice(0, 1);
 
     const q = questForNpc(player, npc.def.id);
     if (q?.status === 'ready') {
       const quest = q.quest;
-      lines = quest.complete;
+      lines = story ? quest.complete : [`${quest.name}: done! Here is your reward.`];
       actions.push({ label: 'Complete', run: (close) => (close(), this.completeQuest(quest, npc)) });
       this.moveTarget = null;
       this.tweens.add({ targets: npc.fig, y: npc.fig.y - 10, duration: 100, yoyo: true });
@@ -1072,7 +1239,7 @@ export class RoomScene extends Phaser.Scene {
     }
     if (q?.status === 'available') {
       const quest = q.quest;
-      lines = intro ? [...npc.def.dialogue, ...quest.offer] : quest.offer;
+      lines = story ? (intro ? [...npc.def.dialogue, ...quest.offer] : quest.offer) : [`New quest: ${quest.name}.  ${quest.reminder}`];
       actions.push({
         label: 'Accept',
         run: (close) => {
@@ -1251,6 +1418,7 @@ export class RoomScene extends Phaser.Scene {
     this.leaving = true;
     this.prompt.setVisible(false);
     session.saveRoom({ roomId: this.room.id, fightingUid: -1, monsters: [] });
+    this.rememberRoom();
     this.saveLocation();
     sfx.play(this, 'encounter');
     const cam = this.cameras.main;
