@@ -298,3 +298,27 @@ A single silver scepter whose top is a cage of coiled silver serpents holding a 
 ```
 A single long curved serpent-fang dagger, deep blue with glowing yellow veins, a hilt wrapped in blue scaled leather, sparks at the tip, shown alone as a game item. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole weapon visible with empty margin around it. No hands, no character, no stand. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
+
+---
+
+# Armor outfits (`char_<class>_<armor id>`)
+
+Wearing an armor, the hero is drawn from `char_<class>_<armor id>` when that image exists (empty-handed, like `char_<class>_bare`; the weapon is still drawn in the fist). Missing ones keep the default look, so make them in any order. Starting armor (Traveler's Garb, Novice Robe) is the default look and needs nothing.
+
+Attach the class's **bare** hero (`char_warrior_bare`, `char_mage_bare` or `char_rogue_bare`) as the reference, aspect **3:4**, and ask for an edit. Background: magenta for the Warrior and Rogue, bright green for the Mage (same as their hero images).
+
+```
+Edit this image (image 1). Change only the outfit: the hero now wears <outfit>. Keep everything else exactly the same: the same face, hair, body, pose, proportions, bold outline style, and the plain flat <magenta / bright green> background. Both hands stay empty clenched fists in exactly the same place. No weapon anywhere in the image. No text.
+```
+
+| Armor | `<outfit>` | Files (★ = the class most likely to wear it) |
+| --- | --- | --- |
+| Leather Armor | a fitted brown leather jerkin with stitched shoulder guards, leather bracers, a wide belt with a brass buckle and leather boots | `char_warrior_leather_armor` ★, `char_rogue_leather_armor` ★, `char_mage_leather_armor` |
+| Apprentice Robe | a deep blue apprentice robe with silver rune embroidery along the hems, a hood resting on the shoulders and a rope belt | `char_mage_apprentice_robe` ★, `char_warrior_apprentice_robe`, `char_rogue_apprentice_robe` |
+| Scale Mail | a shirt of overlapping polished steel scales over a dark red tunic, steel shoulder plates, a short mail skirt and steel-capped boots | `char_warrior_scale_mail` ★, `char_rogue_scale_mail` ★, `char_mage_scale_mail` |
+| Reedweave Robe | a robe woven from pale green marsh reeds and cream cloth, a braided reed sash with small knotted charms, sandals | `char_mage_reedweave_robe` ★, `char_warrior_reedweave_robe`, `char_rogue_reedweave_robe` |
+| Marshhide Vest | a dark green oiled hide vest with scaly shoulder pads, hide leggings, a belt of pouches and tall swamp boots | `char_warrior_marshhide_vest` ★, `char_rogue_marshhide_vest` ★, `char_mage_marshhide_vest` |
+| Stormweave Robe | a violet robe threaded with thin glowing silver lightning lines, a high collar and silver cuffs | `char_mage_stormweave_robe` ★, `char_warrior_stormweave_robe`, `char_rogue_stormweave_robe` |
+
+After processing, the fist positions get measured and set in the armor's `hands` (src/data/items.ts) if they moved.
+

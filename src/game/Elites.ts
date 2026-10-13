@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { Defenses, MonsterDef, Resists, ZoneDef } from '../data/types';
+import { cheats } from './cheats';
 import { isGearDef } from './Items';
 import { chance, defaultRng, randInt, type Rng } from './rng';
 
@@ -12,7 +13,7 @@ import { chance, defaultRng, randInt, type Rng } from './rng';
 
 /** An affix id if this roaming spawn should be an Elite, else undefined. */
 export function rollElite(rng: Rng = defaultRng, questWantsOne = false): string | undefined {
-  const odds = questWantsOne ? BALANCE.elite.questChance : BALANCE.elite.chance;
+  const odds = cheats.elites ? 1 : questWantsOne ? BALANCE.elite.questChance : BALANCE.elite.chance;
   if (!chance(rng, odds)) return undefined;
   const list = db.affixes();
   return list[randInt(rng, 0, list.length - 1)].id;

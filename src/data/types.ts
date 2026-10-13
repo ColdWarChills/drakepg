@@ -61,8 +61,16 @@ export interface Look {
   scale: number;
   /** Image key(s) in src/assets/art/ (file name without extension); first existing wins. Falls back to shapes. */
   art?: ArtRef;
-  /** Empty-handed art used when the equipped weapon has art of its own; the weapon is drawn in `hands`. */
-  bare?: { art: string; hands: Hand[] };
+  /**
+   * Empty-handed art used when the equipped weapon has art of its own; the weapon is drawn in `hands`.
+   * Several: the first whose art exists wins (the hero in their armor's outfit, then the default outfit).
+   */
+  bare?: BareLook | BareLook[];
+}
+
+export interface BareLook {
+  art: string;
+  hands: Hand[];
 }
 
 /** A fist on the bare art that holds the weapon. Weapons are drawn behind the body, so the fist covers the grip. */
@@ -166,6 +174,11 @@ export interface ArmorDef extends ItemBase {
   defense: Defenses;
   resists?: Resists;
   stats?: Partial<Stats>;
+  /**
+   * Wearing it, a hero is drawn from `char_<class>_<armor id>` (empty-handed, like `char_<class>_bare`) when that art
+   * exists. Its fist anchors default to the class's bare art; set them here per class once the art is measured.
+   */
+  hands?: Partial<Record<ClassId, Hand[]>>;
 }
 
 export interface ConsumableDef extends ItemBase {

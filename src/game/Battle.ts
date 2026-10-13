@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, StatusDef, Stats } from '../data/types';
+import { cheats } from './cheats';
 import { grantFor } from './Items';
 import { statFor, type Player, type Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
@@ -289,7 +290,7 @@ export class Battle {
     for (const s of [...this.effects[side]]) {
       if (s.tick > 0) {
         const { mult, effect } = this.elementMultiplier(side, s.element);
-        const damage = mult > 0 ? Math.max(1, Math.round(s.tick * mult)) : 0;
+        const damage = mult > 0 && !(cheats.god && side === 'player') ? Math.max(1, Math.round(s.tick * mult)) : 0;
         this.damage(side, damage);
         events.push({ kind: 'tick', target: side, status: s.def.id, damage, heal: 0, element: s.element, effect });
       }
@@ -469,7 +470,9 @@ export class Battle {
     damage *= mult * Math.max(0, 1 + this.mod(source, 'damageDealt')) * Math.max(0, 1 + this.mod(target, 'damageTaken'));
     if (target === 'player' && this.defending) damage *= BALANCE.defendDamage;
 
-    const final = mult > 0 ? Math.max(1, Math.round(damage)) : 0;
+    let final = mult > 0 ? Math.max(1, Math.round(damage)) : 0;
+    if (cheats.god && target === 'player') final = 0;
+    if (cheats.oneHit && target === 'enemy') final = Math.max(final, this.enemy.hp);
     this.damage(target, final);
     return { kind: 'hit', ...base, damage: final, crit, effect };
   }
