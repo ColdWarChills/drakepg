@@ -4,7 +4,7 @@ import { db } from '../data/db';
 import { ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS } from '../data/elements';
 import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, ZoneDef } from '../data/types';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
-import { recordKill } from '../game/Quests';
+import { questNeedsKill, recordKill } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
 import { drawScenery } from '../ui/backdrops';
@@ -77,6 +77,7 @@ export class BattleScene extends Phaser.Scene {
     this.zone = db.zone(data.zoneId);
     this.monster = db.monster(data.monsterId);
     this.battle = new Battle(session.player, this.monster);
+    if (this.monster.boss && !questNeedsKill(session.player, this.monster.id)) this.battle.rewardScale = BALANCE.bossRepeatRewards;
     this.log = [];
     this.busy = true;
     this.skillPage = 0;
@@ -85,7 +86,7 @@ export class BattleScene extends Phaser.Scene {
     this.shown = { player: new Map(), enemy: new Map() };
 
     drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
-    this.playerFig = drawFigure(this, -200, GROUND_Y, this.playerLook, 1, session.player.weapon);
+    this.playerFig = drawFigure(this, -200, GROUND_Y, this.playerLook, 1, session.player.weapon, session.player.weaponSigil);
     this.enemyFig = drawFigure(this, this.scale.width + 200, GROUND_Y, this.monster.look, -1);
 
     this.drawStatus();

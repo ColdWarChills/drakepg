@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import type { Look, WeaponDef } from '../data/types';
+import type { SigilTier } from '../game/Items';
 import { hasArt, pickArt } from './art';
+import { addSigilGlow } from './itemUi';
 
 /** On-screen size of a scale-1 character drawn from art. */
 const ART_HEIGHT = 240;
@@ -16,8 +18,9 @@ function tri(scene: Phaser.Scene, color: number, x1: number, y1: number, x2: num
  * otherwise draws placeholder shapes. Scenes only depend on the returned Container.
  * With a `weapon` that has art (and a look with bare art), the weapon is drawn in the figure's hands;
  * the weapon images are stored as `c.getData('weapons')` so battle animations can swing them.
+ * A Sigil weapon glows in its tier color.
  */
-export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look, facing: 1 | -1 = 1, weapon?: WeaponDef | null) {
+export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look, facing: 1 | -1 = 1, weapon?: WeaponDef | null, sigil?: SigilTier) {
   const c = scene.add.container(x, y);
   const { color, accent } = look;
 
@@ -31,10 +34,13 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
       w.setOrigin(0.5, weapon.grip ?? 0.85).setAngle(hand.angle);
       w.setScale(((weapon.size ?? 0.6) * img.displayHeight) / w.height);
       w.setData('angle', hand.angle);
+      if (sigil) addSigilGlow(scene, w, sigil);
       return w;
     });
     // Weapons go behind the body so the fists cover the grips.
-    c.add([scene.add.ellipse(0, 0, img.displayWidth * 0.7, 22, 0x000000, 0.35), ...weapons, img]);
+    c.add([scene.add.ellipse(0, 0, img.displayWidth * 0.7, 22, 0x000000, 0.35), ...weapons]);
+    if (sigil === 'eclipse') c.add(eclipseMotes(scene, weapons[0], weapon.grip ?? 0.85));
+    c.add(img);
     c.setData('weapons', weapons);
     c.setScale(look.scale * facing, look.scale);
     return c;
@@ -103,3 +109,32 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
   return c;
 }
 
+
+/** Slow embers drifting off the blade of an Eclipse weapon. */
+function eclipseMotes(scene: Phaser.Scene, w: Phaser.GameObjects.Image, grip: number): Phaser.GameObjects.Particles.ParticleEmitter {
+  // From the grip toward the tip along the weapon's angle (0 = up).
+  const reach = w.displayHeight * grip;
+  const a = Phaser.Math.DegToRad(w.angle);
+  const sin = Math.sin(a);
+  const cos = Math.cos(a);
+  return scene.add.particles(w.x, w.y, 'fx_soft', {
+    emitZone: {
+      type: 'random',
+      source: {
+        getRandomPoint: (p) => {
+          const t = 0.2 + Math.random() * 0.8;
+          p.x = sin * reach * t;
+          p.y = -cos * reach * t;
+        },
+      },
+    },
+    speedY: { min: -40, max: -15 },
+    speedX: { min: -10, max: 10 },
+    scale: { start: 0.6, end: 0 },
+    alpha: { start: 1, end: 0 },
+    lifespan: 1000,
+    frequency: 60,
+    tint: [0xff3358, 0xff8a9c, 0xffd0d8],
+    blendMode: 'ADD',
+  });
+}

@@ -272,7 +272,7 @@ export interface RoomDef {
   /** Monsters roaming here come from this zone; battles use its scenery. */
   zoneId?: string;
   monsterCount?: number;
-  /** A boss standing in the room. Gone once its quest is complete. */
+  /** A boss standing in the room once its quest is accepted. It stays after the quest for rematches (less XP and gold). */
   boss?: { monsterId: string; x: number; y: number; questId: string };
 }
 

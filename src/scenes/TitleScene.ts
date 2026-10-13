@@ -61,7 +61,7 @@ export class TitleScene extends Phaser.Scene {
       fontSize: 26,
     }).setEnabled(hasSave);
 
-    addText(this, cx, height - 30, 'v0.5 · Chapter 1', { size: 16, color: COLORS.textDim }).setOrigin(0.5);
+    addText(this, cx, height - 30, 'v0.6 · Chapter 1', { size: 16, color: COLORS.textDim }).setOrigin(0.5);
   }
 
   /** Draws the background and returns the x to center the menu on. */

@@ -2,11 +2,11 @@ import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { INN_SPAWN } from '../data/world';
-import type { ItemGrant } from '../game/Items';
+import { SIGIL_NAMES, SIGIL_TIERS, type ItemGrant, type SigilTier } from '../game/Items';
 import { session } from '../game/session';
 import { Button } from '../ui/Button';
 import { drawFigure } from '../ui/figures';
-import { gradeInfo, lootName } from '../ui/itemUi';
+import { gradeInfo, lootName, SIGIL_COLORS } from '../ui/itemUi';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
@@ -87,7 +87,7 @@ export class ResultScene extends Phaser.Scene {
       if (rewards.items.length) this.tweens.add({ targets: lootRow, scale: lootRow.scale * 1.12, delay: 1300, duration: 160, yoyo: true, repeat: 1 });
 
       if (levelsGained > 0) {
-        const hero = drawFigure(this, cx - 280, 470 + shift, player.classDef.look, 1, player.weapon).setScale(0.55);
+        const hero = drawFigure(this, cx - 280, 470 + shift, player.classDef.look, 1, player.weapon, player.weaponSigil).setScale(0.55);
         this.time.delayedCall(1200, () => {
           fx.levelUpBurst(this, hero.x, hero.y);
           sfx.play(this, 'levelup');
@@ -124,23 +124,28 @@ export class ResultScene extends Phaser.Scene {
     }
   }
 
-  /** "Loot: Cinder Fang (Fine 52%), Health Potion", each name in its grade color. Good rolls sparkle. */
+  /**
+   * "Loot: Cinder Fang (Fine 52%), Health Potion", each name in its grade color (Sigils in theirs).
+   * Good rolls sparkle; Sigils get a fanfare, Eclipse the biggest.
+   */
   private lootRow(cx: number, y: number, items: ItemGrant[], lost: ItemGrant[]): Phaser.GameObjects.Container {
     const row = this.add.container(cx, y).setAlpha(0);
     const parts: Phaser.GameObjects.Text[] = [addText(this, 0, 0, items.length ? 'Loot: ' : 'Loot: nothing', { size: 24 })];
     const sparkles: { text: Phaser.GameObjects.Text; tier: string }[] = [];
+    const sigils: { text: Phaser.GameObjects.Text; tier: SigilTier }[] = [];
     items.forEach((g, i) => {
       const def = db.item(g.itemId);
-      const info = gradeInfo(def, g.rolls);
+      const info = gradeInfo(def, g);
       const isLost = lost.includes(g);
-      const t = addText(this, 0, 0, `${lootName(def, g.rolls)}${i < items.length - 1 ? ', ' : ''}`, {
+      const t = addText(this, 0, 0, `${lootName(def, g)}${i < items.length - 1 ? ', ' : ''}`, {
         size: 24,
-        bold: info.tier !== 'standard',
-        color: isLost ? COLORS.textDim : info.tier === 'standard' && def.type !== 'consumable' ? COLORS.text : info.css,
+        bold: info.tier !== 'standard' || !!info.sigil,
+        color: isLost ? COLORS.textDim : info.sigil ? info.nameCss : info.tier === 'standard' && def.type !== 'consumable' ? COLORS.text : info.css,
       });
       if (isLost) t.setAlpha(0.6);
       parts.push(t);
-      if (!isLost && (info.tier === 'superior' || info.tier === 'masterwork')) sparkles.push({ text: t, tier: info.tier });
+      if (!isLost && info.sigil) sigils.push({ text: t, tier: info.sigil });
+      else if (!isLost && (info.tier === 'superior' || info.tier === 'masterwork')) sparkles.push({ text: t, tier: info.tier });
     });
     if (lost.length) parts.push(addText(this, 0, 0, `   Bag full! ${lost.length} left behind`, { size: 20, bold: true, color: COLORS.textBad }));
     let x = 0;
@@ -170,7 +175,49 @@ export class ResultScene extends Phaser.Scene {
         }
       });
     }
+    if (sigils.length) this.time.delayedCall(sparkles.length ? 1700 : 1100, () => this.sigilFanfare(sigils));
     return row;
+  }
+
+  /** Burst in the Sigil's color over its name; the best tier also gets a sound, a flash and a banner. */
+  private sigilFanfare(sigils: { text: Phaser.GameObjects.Text; tier: SigilTier }[]): void {
+    const best = sigils.reduce((a, b) => (SIGIL_TIERS.indexOf(b.tier) > SIGIL_TIERS.indexOf(a.tier) ? b : a)).tier;
+    const eclipse = best === 'eclipse';
+    sfx.play(this, eclipse ? 'eclipse' : 'sigil');
+    for (const s of sigils) {
+      const b = s.text.getBounds();
+      const color = SIGIL_COLORS[s.tier].color;
+      const big = s.tier !== 'dawn';
+      fx.shockwave(this, b.centerX, b.centerY, color, big ? 2.4 : 1.6, 0.35);
+      fx.burst(this, b.centerX, b.centerY, 'fx_star', s.tier === 'eclipse' ? 60 : big ? 36 : 24, {
+        speed: { min: 80, max: s.tier === 'eclipse' ? 420 : 280 },
+        scale: { start: big ? 1.1 : 0.8, end: 0 },
+        lifespan: s.tier === 'eclipse' ? 1400 : 1000,
+        tint: [color, 0xffffff],
+        blendMode: 'ADD',
+      });
+      this.tweens.add({ targets: s.text, alpha: 0.35, duration: 140, yoyo: true, repeat: 3 });
+    }
+    const c = Phaser.Display.Color.IntegerToColor(SIGIL_COLORS[best].color);
+    this.cameras.main.flash(eclipse ? 600 : 300, c.red, c.green, c.blue);
+    if (eclipse) this.cameras.main.shake(400, 0.008);
+    const banner = addText(this, this.scale.width / 2, 62, `${SIGIL_NAMES[best].toUpperCase()}!`, {
+      size: eclipse ? 46 : 36,
+      bold: true,
+      color: SIGIL_COLORS[best].css,
+      stroke: true,
+    })
+      .setOrigin(0.5)
+      .setScale(0)
+      .setDepth(10);
+    this.tweens.chain({
+      targets: banner,
+      tweens: [
+        { scale: 1.25, duration: 220, ease: 'Back.easeOut' },
+        { scale: 1, duration: 160 },
+        { alpha: 0, delay: eclipse ? 2200 : 1600, duration: 500 },
+      ],
+    });
   }
 
   private countUp(text: Phaser.GameObjects.Text, to: number, suffix: string, delay: number): void {

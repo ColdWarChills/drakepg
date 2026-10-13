@@ -4,14 +4,17 @@ import { START } from '../data/world';
 import {
   gearDef,
   isGearDef,
+  modTotal,
+  modValue,
   rollBonus,
   rolledDamage,
   rolledDefense,
   rolledProcChance,
   sellValue,
   type Gear,
+  type GearTraits,
   type ItemGrant,
-  type Rolls,
+  type SigilTier,
 } from './Items';
 import type {
   ArmorDef,
@@ -126,8 +129,8 @@ export class Player {
       statPoints: 0,
       quests: {},
     });
-    player.data.equipment.weapon = player.makeGear(cls.weapon, {});
-    player.data.equipment.armor = player.makeGear(cls.armor, {});
+    player.data.equipment.weapon = player.makeGear(cls.weapon);
+    player.data.equipment.armor = player.makeGear(cls.armor);
     player.restoreFull();
     return player;
   }
@@ -156,41 +159,56 @@ export class Player {
     return g ? (gearDef(g) as WeaponDef) : null;
   }
 
+  /** Sigil of the equipped weapon, for the glow in the hero's hands. */
+  get weaponSigil(): SigilTier | undefined {
+    return this.data.equipment.weapon?.sigil;
+  }
+
   get armor(): ArmorDef | null {
     const g = this.data.equipment.armor;
     return g ? (gearDef(g) as ArmorDef) : null;
   }
 
-  private rollsOf(slot: EquipSlot): Rolls {
-    return this.data.equipment[slot]?.rolls ?? {};
+  private traitsOf(slot: EquipSlot): GearTraits {
+    return this.data.equipment[slot] ?? { rolls: {} };
   }
 
-  /** Base stats plus equipment bonuses. */
+  private get worn(): (Gear | null)[] {
+    return [this.data.equipment.weapon, this.data.equipment.armor];
+  }
+
+  /** Base stats plus equipment bonuses (item stats and stat mods). */
   get stats(): Stats {
     const total = { ...this.data.baseStats };
     for (const gear of [this.weapon, this.armor]) {
       if (!gear?.stats) continue;
       for (const key of STAT_KEYS) total[key] += gear.stats[key] ?? 0;
     }
+    for (const key of STAT_KEYS) total[key] += modTotal(this.worn, key);
     return total;
   }
 
   get maxHp(): number {
-    return Math.round((40 + this.level * 10 + this.stats.end * 4) * (1 + rollBonus('hp', this.rollsOf('armor'))));
+    const base = (40 + this.level * 10 + this.stats.end * 4) * (1 + rollBonus('hp', this.traitsOf('armor').rolls));
+    return Math.round(base) + modTotal(this.worn, 'hp');
   }
 
   get maxMp(): number {
-    return 12 + this.level * 3 + this.stats.int * 2;
+    return 12 + this.level * 3 + this.stats.int * 2 + modTotal(this.worn, 'mp');
   }
 
   defenseFor(type: DamageType): number {
     const armor = this.armor;
-    return armor ? rolledDefense(armor, this.rollsOf('armor'), type) : 0;
+    return armor ? rolledDefense(armor, this.traitsOf('armor'), type) : 0;
   }
 
-  /** Elemental resistances from gear (before buffs and the cap, which Battle applies). */
+  /** Elemental resistances from gear and resist mods (before buffs and the cap, which Battle applies). */
   get resists(): Resists {
-    return { ...this.armor?.resists };
+    const out: Resists = { ...this.armor?.resists };
+    for (const g of this.worn) {
+      for (const m of g?.mods ?? []) if (m.key === 'resist' && m.element) out[m.element] = (out[m.element] ?? 0) + modValue(m);
+    }
+    return out;
   }
 
   get weaponDamageType(): DamageType {
@@ -204,18 +222,18 @@ export class Player {
 
   get weaponDamage(): [number, number] {
     const weapon = this.weapon;
-    return weapon ? rolledDamage(weapon, this.rollsOf('weapon')) : UNARMED;
+    return weapon ? rolledDamage(weapon, this.traitsOf('weapon')) : UNARMED;
   }
 
   /** Chance the weapon special triggers on a landed Attack (0 without one). */
   get procChance(): number {
     const weapon = this.weapon;
-    return weapon ? rolledProcChance(weapon, this.rollsOf('weapon')) : 0;
+    return weapon ? rolledProcChance(weapon, this.traitsOf('weapon')) : 0;
   }
 
-  /** Crit chance added by the weapon's rolls. */
+  /** Crit chance added by the weapon's Crit line and crit mods. */
   get critBonus(): number {
-    return rollBonus('crit', this.rollsOf('weapon'));
+    return rollBonus('crit', this.traitsOf('weapon').rolls) + modTotal(this.worn, 'crit') / 100;
   }
 
   /** Crit chance before battle buffs. For UI; Battle works it out the same way. */
@@ -344,9 +362,13 @@ export class Player {
   }
 
   /** A new gear instance (not yet placed anywhere). */
-  makeGear(itemId: string, rolls: Rolls, isNew = false): Gear {
-    const gear: Gear = { uid: `g${this.data.nextUid++}`, itemId, rolls: { ...rolls } };
+  makeGear(itemId: string, traits: Partial<GearTraits> = {}, isNew = false): Gear {
+    const gear: Gear = { uid: `g${this.data.nextUid++}`, itemId, rolls: { ...traits.rolls } };
+    if (traits.sigil) gear.sigil = traits.sigil;
+    if (traits.mods?.length) gear.mods = traits.mods.map((m) => ({ ...m }));
     if (isNew) gear.isNew = true;
+    // Sigils are rare enough that selling one by accident would hurt.
+    if (isNew && gear.sigil) gear.locked = true;
     return gear;
   }
 
@@ -355,7 +377,7 @@ export class Player {
     const def = db.item(grant.itemId);
     const stacks = !isGearDef(def) && this.data.inventory.some((e) => e.itemId === grant.itemId);
     if (!stacks && !force && this.freeSlots === 0) return false;
-    if (isGearDef(def)) this.data.gear.push(this.makeGear(grant.itemId, grant.rolls ?? {}, true));
+    if (isGearDef(def)) this.data.gear.push(this.makeGear(grant.itemId, grant, true));
     else this.addItem(grant.itemId);
     return true;
   }
@@ -370,7 +392,7 @@ export class Player {
   /** Add consumables, or 0% gear. Ignores the bag limit; use `receive` for loot. */
   addItem(itemId: string, qty = 1): void {
     if (isGearDef(db.item(itemId))) {
-      for (let i = 0; i < qty; i++) this.data.gear.push(this.makeGear(itemId, {}));
+      for (let i = 0; i < qty; i++) this.data.gear.push(this.makeGear(itemId));
       return;
     }
     const entry = this.data.inventory.find((e) => e.itemId === itemId);
@@ -442,7 +464,7 @@ export class Player {
     const index = this.data.gear.findIndex((g) => g.uid === uid);
     const gear = this.data.gear[index];
     if (!gear || gear.locked) return 0;
-    const gold = sellValue(gearDef(gear), gear.rolls);
+    const gold = sellValue(gearDef(gear), gear);
     this.data.gear.splice(index, 1);
     this.data.gold += gold;
     return gold;

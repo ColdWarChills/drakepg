@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -40,7 +40,7 @@ export const BALANCE = {
    * These are the bonuses at 100%: damage/defense/hp are a share of the base, crit is added to crit chance,
    * proc multiplies the weapon special's chance.
    */
-  gearRolls: { damage: 0.15, crit: 0.05, proc: 0.5, defense: 0.15, hp: 0.08 },
+  gearRolls: { damage: 0.5, crit: 0.05, proc: 0.5, defense: 0.5, hp: 0.15 },
   /** Dropped line quality = random ^ rollCurve. 1.5: median ~35%, ~7% of lines roll 90%+. */
   rollCurve: 1.5,
   /** Bag slots. Each gear piece or potion stack takes one; equipped gear doesn't count. */
@@ -49,6 +49,35 @@ export const BALANCE = {
   sellRate: 0.3,
   /** ...times (1 + grade * this): a 100% item sells for 3x a 0% one. */
   sellGradeBonus: 2,
+  /**
+   * Sigils: rare variants of any dropped weapon or armor. `boost` raises the base damage/defense
+   * (before the rolls), `mods` is how many extra lines it brings, `sell` multiplies the sell price.
+   */
+  sigils: {
+    dawn: { boost: 0.2, mods: 1, sell: 3 },
+    dusk: { boost: 0.35, mods: 2, sell: 6 },
+    eclipse: { boost: 0.6, mods: 3, sell: 12 },
+  },
+  /** Chance that a gear drop is a Sigil, per tier. */
+  sigilChance: {
+    mob: { dawn: 0.02, dusk: 0.005, eclipse: 0.0005 },
+    boss: { dawn: 0.2, dusk: 0.07, eclipse: 0.015 },
+  },
+  /** Chance a normal (non-Sigil) gear drop has one mod. */
+  modChance: 0.1,
+  /** Mod value at 0% and at 100% quality. Stats/resist/HP/MP are points, crit is percent. */
+  modRanges: {
+    str: [1, 4],
+    int: [1, 4],
+    dex: [1, 4],
+    end: [1, 4],
+    crit: [1, 4],
+    hp: [5, 25],
+    mp: [5, 20],
+    resist: [5, 20],
+  } as Record<'str' | 'int' | 'dex' | 'end' | 'crit' | 'hp' | 'mp' | 'resist', [number, number]>,
+  /** XP and gold from beating a boss again after its quest no longer needs it. */
+  bossRepeatRewards: 0.5,
 
   // Exploration
   /** Player walk speed in px/s (horizontal; vertical is 70% of this). */
