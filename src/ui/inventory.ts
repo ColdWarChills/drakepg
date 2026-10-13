@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { featureOn } from '../game/Features';
+import { reroll, rerollableLines, stoneFor, stonesNeeded } from '../game/Stones';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
-import type { ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef } from '../data/types';
-import { gearDef, grade, gradeTier, isGearDef, sellValue, SIGIL_TIERS, type Gear, type GearDef } from '../game/Items';
+import type { ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, StoneDef } from '../data/types';
+import { gearDef, grade, gradeTier, isGearDef, sellValue, SIGIL_TIERS, ROLL_LABELS, type Gear, type GearDef, type GearTraits } from '../game/Items';
 import type { Player } from '../game/Player';
 import { Button } from './Button';
 import { drawFigure } from './figures';
@@ -40,7 +41,7 @@ type SortMode = 'newest' | 'grade' | 'type' | 'value';
 
 type Entry =
   | { kind: 'gear'; key: string; gear: Gear; def: GearDef; slot: EquipSlot | null }
-  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef; qty: number }
+  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef | StoneDef; qty: number }
   | { kind: 'stock'; key: string; def: ItemDef };
 
 const W = 1240;
@@ -64,7 +65,7 @@ const TABS: { tab: Tab; label: string }[] = [
   { tab: 'all', label: 'All' },
   { tab: 'weapon', label: 'Weapons' },
   { tab: 'armor', label: 'Armor' },
-  { tab: 'consumable', label: 'Potions' },
+  { tab: 'consumable', label: 'Items' },
   { tab: 'material', label: 'Materials' },
 ];
 const SORTS: { sort: SortMode; label: string }[] = [
@@ -73,7 +74,7 @@ const SORTS: { sort: SortMode; label: string }[] = [
   { sort: 'type', label: 'Type' },
   { sort: 'value', label: 'Value' },
 ];
-const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, consumable: 2, material: 3 };
+const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, consumable: 2, stone: 3, material: 4 };
 /** Grades below this are offered by "Sell junk" (Standard and Fair). */
 const JUNK_BELOW = 40;
 
@@ -129,7 +130,7 @@ class InventoryView {
   private bagEntries(): Entry[] {
     const p = this.player;
     const gear: Entry[] = p.data.gear.map((g) => ({ kind: 'gear', key: g.uid, gear: g, def: gearDef(g), slot: null }));
-    const stacks: Entry[] = p.data.inventory.map((e) => ({ kind: 'stack', key: `stack:${e.itemId}`, def: db.item(e.itemId) as ConsumableDef | MaterialDef, qty: e.qty }));
+    const stacks: Entry[] = p.data.inventory.map((e) => ({ kind: 'stack', key: `stack:${e.itemId}`, def: db.item(e.itemId) as ConsumableDef | MaterialDef | StoneDef, qty: e.qty }));
     // Newest first; uids count up.
     gear.reverse();
     return [...gear, ...stacks];
@@ -144,10 +145,12 @@ class InventoryView {
     const all: Entry[] =
       this.mode === 'buy' ? this.stock.map((id) => ({ kind: 'stock', key: `stock:${id}`, def: db.item(id) })) : this.bagEntries();
     // Materials live in their own pouch (no bag slots), so only their tab shows them.
-    const filtered = remembered.tab === 'all' ? all.filter((e) => e.def.type !== 'material') : all.filter((e) => e.def.type === remembered.tab);
+    // Stones sit with the potions under Items.
+    const tabOf = (t: ItemDef['type']) => (t === 'stone' ? 'consumable' : t);
+    const filtered = remembered.tab === 'all' ? all.filter((e) => e.def.type !== 'material') : all.filter((e) => tabOf(e.def.type) === remembered.tab);
     // Sigils rank above every grade: Eclipse 300+, Dusk 200+, Dawn 100+.
     const sigilRank = (e: Entry) => (e.kind === 'gear' && e.gear.sigil ? (SIGIL_TIERS.indexOf(e.gear.sigil) + 1) * 100 : 0);
-    const gradeOf = (e: Entry) => (e.kind === 'gear' ? sigilRank(e) + grade(e.def, e.gear.rolls) : -1);
+    const gradeOf = (e: Entry) => (e.kind === 'gear' ? sigilRank(e) + grade(e.def, e.gear.rolls, e.gear.sigil) : -1);
     const valueOf = (e: Entry) => (e.kind === 'gear' ? sellValue(e.def, e.gear) : e.kind === 'stack' ? sellValue(e.def) : e.def.price);
     const byType = (a: Entry, b: Entry) => TYPE_ORDER[a.def.type] - TYPE_ORDER[b.def.type];
     switch (remembered.sort) {
@@ -181,7 +184,9 @@ class InventoryView {
     else this.renderShopSide();
 
     // Tabs
-    const tabs = TABS.filter((t) => t.tab !== 'material' || featureOn(this.player, 'materials'));
+    // Materials tab once materials drop, or as soon as you carry one (a quest item).
+    const hasMaterials = this.player.data.inventory.some((e) => db.item(e.itemId).type === 'material');
+    const tabs = TABS.filter((t) => t.tab !== 'material' || hasMaterials || featureOn(this.player, 'materials'));
     if (!tabs.some((t) => t.tab === remembered.tab)) remembered.tab = 'all';
     tabs.forEach((t, i) => {
       const active = remembered.tab === t.tab;
@@ -280,7 +285,7 @@ class InventoryView {
     c.add(addText(scene, 30, 196, hint, { size: 16, color: COLORS.textDim, wrap: 260 }));
 
     if (this.mode === 'sell') {
-      const junk = player.data.gear.filter((g) => !g.locked && !g.sigil && !g.plus && grade(gearDef(g), g.rolls) < JUNK_BELOW);
+      const junk = player.data.gear.filter((g) => !g.locked && !g.sigil && !g.plus && grade(gearDef(g), g.rolls, g.sigil) < JUNK_BELOW);
       const value = junk.reduce((sum, g) => sum + sellValue(gearDef(g), g), 0);
       const btn = new Button(scene, 150, 310, 'Sell junk', () => {
         let gold = 0;
@@ -497,7 +502,7 @@ class InventoryView {
       card.add(sig);
       headY += sig.height + 2;
     }
-    const kind = entry.def.type === 'weapon' ? 'Weapon' : entry.def.type === 'armor' ? 'Armor' : entry.def.type === 'material' ? 'Material' : 'Potion';
+    const kind = { weapon: 'Weapon', armor: 'Armor', material: 'Material', stone: 'Roll stone', consumable: 'Potion' }[entry.def.type];
     // Gear shows its tier, which also sets how many modifier lines it can carry.
     const tiered = isGearDef(entry.def) ? `Tier ${entry.def.tier} ${kind}` : kind;
     const sub = entry.kind === 'gear' ? `${tiered} · ${gradeLabel(info)}${entry.slot ? ' · Equipped' : ''}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : tiered;
@@ -511,12 +516,12 @@ class InventoryView {
       y += t.height + 4;
     };
 
-    const traits = entry.kind === 'gear' ? entry.gear : { rolls: {} };
+    const traits: GearTraits = entry.kind === 'gear' ? entry.gear : { rolls: {} };
     for (const l of itemLines(entry.def, traits)) line(l);
 
     if (isGearDef(entry.def)) {
       y += 6;
-      for (const r of rollLines(entry.def, traits.rolls)) {
+      for (const r of rollLines(entry.def, traits.rolls, traits.sigil)) {
         card.add(addText(scene, left, y, r.label, { size: 15, color: COLORS.textDim }));
         card.add(addText(scene, left + 118, y, r.effect, { size: 15, bold: true }));
         const barX = left + 178;
@@ -524,6 +529,24 @@ class InventoryView {
         if (r.quality > 0) card.add(scene.add.rectangle(barX, y + 9, r.quality, 8, GRADE_COLORS[gradeTier(r.quality).tier].color).setOrigin(0, 0.5));
         card.add(addText(scene, CARD_X + CARD_W - 20, y, `${r.quality}%`, { size: 15, color: COLORS.textDim }).setOrigin(1, 0));
         y += 24;
+      }
+      // Roll stones: re-roll a line right here (in the bag only).
+      if (this.mode === 'bag' && entry.kind === 'gear') {
+        const gear = entry.gear;
+        const need = stonesNeeded(gear);
+        for (const key of rerollableLines(gear)) {
+          const stone = stoneFor(key)!;
+          const have = this.player.countItem(stone.id);
+          const b = new Button(scene, left + 159, y + 15, `Re-roll ${ROLL_LABELS[key]}: ${need} ${stone.name}${need > 1 ? 's' : ''} (have ${have})`, () => {
+            const r = reroll(this.player, gear, key);
+            if (!r) return;
+            play(scene, r.after > r.before ? 'levelup' : 'click');
+            toast(scene, `${ROLL_LABELS[key]}: ${r.before}% -> ${r.after}%`, r.after >= r.before ? COLORS.textGood : COLORS.textBad);
+            this.changed();
+          }, { width: 318, height: 30, fontSize: 13 }).setEnabled(have >= need);
+          card.add(b);
+          y += 36;
+        }
       }
       // Mods: the blue lines.
       for (const m of modLines(traits)) {

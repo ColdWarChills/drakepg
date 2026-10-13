@@ -46,10 +46,10 @@ export function cheatGrant(itemId: string, opts: CheatItemOptions, rng: Rng = de
   const def = db.item(itemId);
   if (!isGearDef(def)) return { itemId };
   const fixed = opts.quality === 'random' ? undefined : opts.quality;
-  const grant: ItemGrant = { itemId, rolls: rollGear(def, rng, fixed) };
+  const grant: ItemGrant = { itemId, rolls: rollGear(def, rng, fixed, opts.sigil) };
   if (opts.sigil) grant.sigil = opts.sigil;
   if (opts.mods > 0) {
-    grant.mods = rollMods(def, Math.min(opts.mods, modSlots(def)), rng);
+    grant.mods = rollMods(def, Math.min(opts.mods, modSlots(def, opts.sigil)), rng);
     if (fixed !== undefined) for (const m of grant.mods) m.roll = fixed;
   }
   return grant;

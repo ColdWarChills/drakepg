@@ -4,6 +4,7 @@ import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, St
 import { cheats } from './cheats';
 import { grantFor } from './Items';
 import { featureOn } from './Features';
+import { questWantsItem } from './Quests';
 import { rollLoot } from './Loot';
 import { statFor, type Player, type Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
@@ -533,7 +534,7 @@ export class Battle {
     const materials = featureOn(this.player, 'materials');
     const extras = featureOn(this.player, 'sigils');
     const items = m.drops
-      .filter((d) => materials || db.item(d.itemId).type !== 'material')
+      .filter((d) => materials || db.item(d.itemId).type !== 'material' || questWantsItem(this.player, d.itemId))
       .filter((d) => chance(this.rng, d.chance))
       .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source, extras)));
     // Gear: one cascading tier roll (Elites and bosses always drop something). Missing a Rare builds up luck.

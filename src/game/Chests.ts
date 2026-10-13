@@ -35,11 +35,11 @@ export function rollChest(rng: Rng = defaultRng): { mimic: boolean } | null {
 }
 
 /** What a chest holds: gold, a material or two from the area's monsters, maybe a potion, often gear. `extras`: Sigils/mods. */
-export function rollChestLoot(zone: ZoneDef, rng: Rng = defaultRng, extras = true): Rewards {
+export function rollChestLoot(zone: ZoneDef, rng: Rng = defaultRng, extras = true, withMaterials = true): Rewards {
   const level = zoneLevel(zone);
   const items: ItemGrant[] = [];
   const drops = zone.encounters.flatMap((e) => db.monster(e.monsterId).drops);
-  const materials = drops.filter((d) => db.item(d.itemId).type === 'material');
+  const materials = withMaterials ? drops.filter((d) => db.item(d.itemId).type === 'material') : [];
   const potions = drops.filter((d) => db.item(d.itemId).type === 'consumable');
   for (let i = randInt(rng, 1, 2); i > 0 && materials.length; i--) {
     const m = materials[randInt(rng, 0, materials.length - 1)];

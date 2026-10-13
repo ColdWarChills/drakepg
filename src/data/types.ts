@@ -197,7 +197,13 @@ export interface MaterialDef extends ItemBase {
   type: 'material';
 }
 
-export type ItemDef = WeaponDef | ArmorDef | ConsumableDef | MaterialDef;
+/** Roll stone: re-rolls one quality line of a weapon or armor (src/game/Stones.ts). Stacks in the bag. */
+export interface StoneDef extends ItemBase {
+  type: 'stone';
+  line: 'damage' | 'crit' | 'defense' | 'hp';
+}
+
+export type ItemDef = WeaponDef | ArmorDef | ConsumableDef | MaterialDef | StoneDef;
 
 /** A smith recipe: materials and gold in, one rolled piece of gear out. */
 export interface RecipeDef {
@@ -346,6 +352,8 @@ export interface FeatureDef {
   text: string;
   /** Turning in this quest unlocks it. */
   unlockedBy: string;
+  /** Switched off for now: never unlocks or gets announced (the code stays for later). */
+  disabled?: boolean;
 }
 
 export interface NpcDef {

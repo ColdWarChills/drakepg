@@ -379,7 +379,7 @@ export class RoomScene extends Phaser.Scene {
     if (c.data.mimic) return this.springMimic(c.fig, c.data);
 
     const player = session.player;
-    const rewards = rollChestLoot(db.zone(this.room.zoneId!), undefined, featureOn(player, 'sigils'));
+    const rewards = rollChestLoot(db.zone(this.room.zoneId!), undefined, featureOn(player, 'sigils'), featureOn(player, 'materials'));
     const { lost } = player.grantRewards(rewards);
     sfx.play(this, 'quest');
     this.tweens.add({ targets: c.fig.list[3], y: -70, angle: -25, duration: 220 });

@@ -59,7 +59,7 @@ export interface GradeInfo {
 
 /** Grade, tier and colors of an item. Consumables count as Standard. */
 export function gradeInfo(def: ItemDef, g?: Partial<GearTraits>): GradeInfo {
-  const gr = isGearDef(def) && g ? grade(def, g.rolls ?? {}) : 0;
+  const gr = isGearDef(def) && g ? grade(def, g.rolls ?? {}, g.sigil) : 0;
   const t = gradeTier(gr);
   const colors = GRADE_COLORS[t.tier];
   const sigil = isGearDef(def) ? g?.sigil : undefined;
@@ -149,7 +149,7 @@ export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): P
     g.lineStyle(2, shade(color, 0.5)).strokePoints(pts, true);
     g.fillStyle(shade(color, 0.6)).fillRect(-16 * s, 6 * s, 32 * s, 5 * s);
     g.fillStyle(0xffffff, 0.18).fillRect(-12 * s, -14 * s, 6 * s, 18 * s);
-  } else if (def.type === 'material') {
+  } else if (def.type === 'material' || def.type === 'stone') {
     // A faceted chunk.
     const pts = [[0, -24], [20, -8], [14, 20], [-14, 20], [-20, -8]].map(([x, y]) => new Phaser.Math.Vector2(x * s, y * s));
     g.fillStyle(color).fillPoints(pts, true);
@@ -214,6 +214,7 @@ export function itemLines(def: ItemDef, g: GearTraits = { rolls: {} }): string[]
     }
     case 'consumable':
     case 'material':
+    case 'stone':
       return [def.description];
   }
 }
@@ -232,8 +233,8 @@ export interface RollLine {
   quality: number;
 }
 
-export function rollLines(def: GearDef, rolls: Rolls): RollLine[] {
-  return rollKeys(def).map((key) => ({ key, label: ROLL_LABELS[key], effect: rollEffectText(key, rolls), quality: rolls[key] ?? 0 }));
+export function rollLines(def: GearDef, rolls: Rolls, sigil?: SigilTier): RollLine[] {
+  return rollKeys(def, sigil).map((key) => ({ key, label: ROLL_LABELS[key], effect: rollEffectText(key, rolls), quality: rolls[key] ?? 0 }));
 }
 
 /** "+3 STR", "+2.5% Crit chance", "+14 Fire resist" */

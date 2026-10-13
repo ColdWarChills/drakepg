@@ -9,7 +9,7 @@ import { QUESTS } from './quests';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, ItemDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, ItemDef, StoneDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -53,6 +53,7 @@ export const db = {
   recipe: (id: string): RecipeDef => get('recipe', recipes, id),
   lootTable: (id: string): LootTableDef => get('loot table', lootTables, id),
   feature: (id: string): FeatureDef => get('feature', features, id),
+  stones: (): StoneDef[] => ITEMS.filter((i): i is StoneDef => i.type === 'stone'),
   features: (): readonly FeatureDef[] => FEATURES,
   affixes: (): readonly EliteAffixDef[] => ELITE_AFFIXES,
   hasClass: (id: string) => classes.has(id),

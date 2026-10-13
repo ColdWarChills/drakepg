@@ -173,7 +173,7 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0xb9770e, accent: 0x5d3a0a, scale: 1, art: 'npc_tobin' },
         role: {
           kind: 'shop',
-          stock: ['health_potion', 'mana_potion', 'iron_sword', 'hunting_knife', 'oak_staff', 'leather_armor', 'apprentice_robe'],
+          stock: ['health_potion', 'mana_potion', 'iron_sword', 'hunting_knife', 'oak_staff', 'leather_armor', 'apprentice_robe', 'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor'],
         },
         dialogue: ['Best prices this side of the river. Have a look!'],
       },
@@ -311,6 +311,7 @@ export const ROOMS: RoomDef[] = [
         role: {
           kind: 'shop',
           stock: [
+            'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor',
             'health_potion',
             'mana_potion',
             'greater_health_potion',
@@ -446,6 +447,7 @@ export const ROOMS: RoomDef[] = [
         role: {
           kind: 'shop',
           stock: [
+            'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor',
             'superior_health_potion',
             'superior_mana_potion',
             'greater_health_potion',
@@ -455,6 +457,15 @@ export const ROOMS: RoomDef[] = [
             'ridgerunner_kris',
             'ridgeplate',
             'fleecewool_robe',
+            // Ice for the caves, Fire for the mountain (crafting is off for now).
+            'frostbite',
+            'hoarfrost_staff',
+            'icicle_kris',
+            'hearthfire_blade',
+            'kindling_rod',
+            'salamander_kris',
+            'frostpelt_vest',
+            'galeweave_robe',
           ],
         },
         dialogue: ['Mountain steel, mountain wool. Nothing fancy, nothing that breaks. I buy too, if it is not frozen solid.'],

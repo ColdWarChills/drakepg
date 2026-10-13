@@ -2,7 +2,7 @@ import { BALANCE } from '../config';
 import { db } from '../data/db';
 import { ELEMENTS } from '../data/elements';
 import type { ArmorDef, Element, ItemDef, StatKey, WeaponDef } from '../data/types';
-import { chance, defaultRng, type Rng } from './rng';
+import { defaultRng, type Rng } from './rng';
 
 /**
  * Rolled gear. Every weapon and armor piece is a unique instance with a quality per line (0-100%).
@@ -84,21 +84,21 @@ export function gearDef(gear: Gear): GearDef {
   return db.item(gear.itemId) as GearDef;
 }
 
-/** The lines this item rolls, in display order. */
-export function rollKeys(def: GearDef): RollKey[] {
+/** The quality lines this item rolls, in display order: as many as its modifier slots allow. */
+export function rollKeys(def: GearDef, sigil?: SigilTier): RollKey[] {
   const all: RollKey[] = def.type === 'armor' ? ['defense', 'hp'] : def.proc ? ['damage', 'crit', 'proc'] : ['damage', 'crit'];
-  return all.slice(0, modifierSlots(def));
+  return all.slice(0, modifierSlots(def, sigil));
 }
 
-/** Modifier lines this item can have in total (rolled lines + mods), from its tier. */
-export function modifierSlots(def: GearDef): number {
+/** Modifier lines (quality lines + mods) this item can have: its tier's cap, plus the extra lines a Sigil brings. */
+export function modifierSlots(def: GearDef, sigil?: SigilTier): number {
   const slots = BALANCE.modifierSlots;
-  return slots[Math.min(def.tier, slots.length - 1)];
+  return slots[Math.min(def.tier, slots.length - 1)] + (sigil ? BALANCE.sigils[sigil].lines : 0);
 }
 
-/** How many mods fit after the rolled lines (0 on low tiers). */
-export function modSlots(def: GearDef): number {
-  return Math.max(0, modifierSlots(def) - rollKeys(def).length);
+/** How many mods fit after the quality lines (only Sigil gear has room for now). */
+export function modSlots(def: GearDef, sigil?: SigilTier): number {
+  return Math.max(0, modifierSlots(def, sigil) - rollKeys(def, sigil).length);
 }
 
 /** One drop line: random ^ curve, so most lines land low and 90%+ is rare. */
@@ -107,9 +107,9 @@ export function rollQuality(rng: Rng = defaultRng): number {
 }
 
 /** `quality` fixes every line (0 = shop, 100 = perfect); otherwise each line is rolled. */
-export function rollGear(def: GearDef, rng: Rng = defaultRng, quality?: number): Rolls {
+export function rollGear(def: GearDef, rng: Rng = defaultRng, quality?: number, sigil?: SigilTier): Rolls {
   const rolls: Rolls = {};
-  for (const key of rollKeys(def)) rolls[key] = quality ?? rollQuality(rng);
+  for (const key of rollKeys(def, sigil)) rolls[key] = quality ?? rollQuality(rng);
   return rolls;
 }
 
@@ -117,15 +117,14 @@ export function rollGear(def: GearDef, rng: Rng = defaultRng, quality?: number):
 export function grantFor(itemId: string, rng: Rng = defaultRng, source: DropSource = 'quest', extras = true): ItemGrant {
   const def = db.item(itemId);
   if (!isGearDef(def)) return { itemId };
-  const grant: ItemGrant = { itemId, rolls: rollGear(def, rng) };
   // `extras` off: no Sigils or mods yet (they unlock in a later chapter).
-  if (source === 'quest' || !extras) return grant;
-  const sigil = rollSigil(rng, source);
-  const wanted = sigil ? BALANCE.sigils[sigil].mods : chance(rng, BALANCE.modChance) ? 1 : 0;
-  // Low tiers have no room for mods; a Sigil there only raises the base.
-  const modCount = Math.min(wanted, modSlots(def));
-  if (sigil) grant.sigil = sigil;
-  if (modCount) grant.mods = rollMods(def, modCount, rng);
+  const sigil = source === 'quest' || !extras ? undefined : rollSigil(rng, source);
+  const grant: ItemGrant = { itemId, rolls: rollGear(def, rng, undefined, sigil) };
+  if (!sigil) return grant;
+  // A Sigil's extra lines: first any quality line the tier cap left out, then mods.
+  grant.sigil = sigil;
+  const mods = modSlots(def, sigil);
+  if (mods) grant.mods = rollMods(def, mods, rng);
   return grant;
 }
 
@@ -174,8 +173,8 @@ export function sigilBoost(g: GearTraits): number {
 }
 
 /** Average line quality, 0-100. */
-export function grade(def: GearDef, rolls: Rolls): number {
-  const keys = rollKeys(def);
+export function grade(def: GearDef, rolls: Rolls, sigil?: SigilTier): number {
+  const keys = rollKeys(def, sigil);
   return Math.round(keys.reduce((sum, k) => sum + (rolls[k] ?? 0), 0) / keys.length);
 }
 
@@ -215,17 +214,17 @@ export function rolledDefense(def: ArmorDef, g: GearTraits, type: keyof ArmorDef
 
 /** Gold the shop pays. Better grades sell for more, Sigils a lot more. */
 export function sellValue(def: ItemDef, g?: GearTraits): number {
-  const gr = isGearDef(def) && g ? grade(def, g.rolls) : 0;
+  const gr = isGearDef(def) && g ? grade(def, g.rolls, g.sigil) : 0;
   const sigil = g?.sigil ? BALANCE.sigils[g.sigil].sell : 1;
   const plus = 1 + 0.15 * (g?.plus ?? 0);
   return Math.max(1, Math.floor(def.price * BALANCE.sellRate * (1 + (gr / 100) * BALANCE.sellGradeBonus) * sigil * plus));
 }
 
 /** Keep only known lines, as whole percents in 0-100. For loading saves. */
-export function sanitizeRolls(def: GearDef, raw: unknown): Rolls {
+export function sanitizeRolls(def: GearDef, raw: unknown, sigil?: SigilTier): Rolls {
   const out: Rolls = {};
   if (!raw || typeof raw !== 'object') return out;
-  for (const key of rollKeys(def)) {
+  for (const key of rollKeys(def, sigil)) {
     const v = (raw as Record<string, unknown>)[key];
     if (typeof v === 'number' && Number.isFinite(v)) out[key] = Math.min(100, Math.max(0, Math.round(v)));
   }
@@ -236,12 +235,13 @@ const isSigil = (v: unknown): v is SigilTier => typeof v === 'string' && (SIGIL_
 
 /** Sigil, mods and rolls of a saved piece, keeping only what this item can have. For loading saves. */
 export function sanitizeTraits(def: GearDef, raw: Partial<Record<keyof GearTraits, unknown>>): GearTraits {
-  const out: GearTraits = { rolls: sanitizeRolls(def, raw.rolls) };
-  if (isSigil(raw.sigil)) out.sigil = raw.sigil;
+  const sigil = isSigil(raw.sigil) ? raw.sigil : undefined;
+  const out: GearTraits = { rolls: sanitizeRolls(def, raw.rolls, sigil) };
+  if (sigil) out.sigil = sigil;
   if (typeof raw.plus === 'number' && raw.plus >= 1) out.plus = Math.min(BALANCE.forge.maxPlus, Math.floor(raw.plus));
   const mods: Mod[] = [];
   for (const m of Array.isArray(raw.mods) ? (raw.mods as Partial<Mod>[]) : []) {
-    if (mods.length >= modSlots(def)) break;
+    if (mods.length >= modSlots(def, sigil)) break;
     if (!m || !MOD_POOLS[def.type].includes(m.key as ModKey) || mods.some((x) => x.key === m.key)) continue;
     if (typeof m.roll !== 'number' || !Number.isFinite(m.roll)) continue;
     const mod: Mod = { key: m.key as ModKey, roll: Math.min(100, Math.max(0, Math.round(m.roll))) };

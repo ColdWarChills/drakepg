@@ -10,9 +10,10 @@ import type { Player } from './Player';
 
 /** Is this system open yet? (Its unlocking quest has been turned in.) */
 export function featureOn(player: Player, id: string): boolean {
+  const f = db.feature(id);
+  if (f.disabled) return false;
   if (cheats.allFeatures) return true;
-  const quest = db.feature(id).unlockedBy;
-  return player.data.quests[quest]?.status === 'done';
+  return player.data.quests[f.unlockedBy]?.status === 'done';
 }
 
 export interface News {

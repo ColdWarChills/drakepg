@@ -209,7 +209,7 @@ export const QUESTS: QuestDef[] = [
     offer: [
       'This cold is not weather, dear. It is a spell. My fire burns half as warm as it should.',
       'There are hot springs in the caves behind Windscour Ridge, the Steamvent Caves. The salamanders there carry fire in their bellies.',
-      'Bring me five Fire Essence and I will keep this hearth burning. Hulda in Brindlemoor can make you fire blades from it, too: the things up here hate fire.',
+      'Bring me five Fire Essence and I will keep this hearth burning. And buy a fire blade from Gunnar while you are at it: the things up here hate fire.',
     ],
     reminder: 'Five Fire Essence. The Steamvent Caves are through the cave mouth on Windscour Ridge.',
     complete: [

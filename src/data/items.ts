@@ -848,6 +848,43 @@ export const ITEMS: ItemDef[] = [
     stats: { dex: 4 },
     proc: { name: 'Tailwind', chance: 0.15, power: 0, applies: [{ status: 'evasive', turns: 2, self: true }] },
   },
+  // Roll stones (src/game/Stones.ts), sold in every shop.
+  {
+    id: 'stone_of_might',
+    type: 'stone',
+    name: 'Stone of Might',
+    description: 'Re-rolls the Damage line of a weapon to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.',
+    price: 30,
+    iconColor: 0xe53935,
+    line: 'damage',
+  },
+  {
+    id: 'stone_of_precision',
+    type: 'stone',
+    name: 'Stone of Precision',
+    description: 'Re-rolls the Crit chance line of a weapon to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.',
+    price: 30,
+    iconColor: 0xfdd835,
+    line: 'crit',
+  },
+  {
+    id: 'stone_of_warding',
+    type: 'stone',
+    name: 'Stone of Warding',
+    description: 'Re-rolls the Defense line of a piece of armor to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.',
+    price: 30,
+    iconColor: 0x1e88e5,
+    line: 'defense',
+  },
+  {
+    id: 'stone_of_vigor',
+    type: 'stone',
+    name: 'Stone of Vigor',
+    description: 'Re-rolls the Max HP line of a piece of armor to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.',
+    price: 30,
+    iconColor: 0x43a047,
+    line: 'hp',
+  },
   // Materials (src/data/crafting.ts)
   ...MATERIALS,
 ];

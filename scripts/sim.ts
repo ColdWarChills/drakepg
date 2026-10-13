@@ -95,7 +95,7 @@ function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: num
   for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
   p.data.inventory = [];
   for (const id of [gear.weapon[classId], gear.armor[classId]]) {
-    const piece = p.makeGear(id, { rolls: rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0), sigil: gear.sigil });
+    const piece = p.makeGear(id, { rolls: rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0, gear.sigil), sigil: gear.sigil });
     p.data.gear.push(piece);
     p.equip(piece.uid);
   }

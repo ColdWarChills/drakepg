@@ -37,6 +37,11 @@ export function questNeedsKill(player: Player, monsterId: string): boolean {
   return db.quests().some((q) => q.objective.kind === 'kill' && q.objective.monsterId === monsterId && questStatus(player, q) === 'active');
 }
 
+/** True while an active quest asks you to bring this item (so it drops even if its kind is still locked). */
+export function questWantsItem(player: Player, itemId: string): boolean {
+  return db.quests().some((q) => q.objective.kind === 'collect' && q.objective.itemId === itemId && questStatus(player, q) === 'active');
+}
+
 /** True while an active quest wants any Elite (they spawn more often then). */
 export function questWantsElite(player: Player): boolean {
   return db.quests().some((q) => q.objective.kind === 'kill' && q.objective.elite && !q.objective.monsterId && questStatus(player, q) === 'active');

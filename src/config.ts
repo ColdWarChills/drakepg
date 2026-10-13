@@ -51,12 +51,12 @@ export const BALANCE = {
   sellGradeBonus: 2,
   /**
    * Sigils: rare variants of any dropped weapon or armor. `boost` raises the base damage/defense
-   * (before the rolls), `mods` is how many extra lines it brings, `sell` multiplies the sell price.
+   * (before the rolls), `lines` is how many extra modifier lines it adds above the tier's cap, `sell` multiplies the sell price.
    */
   sigils: {
-    dawn: { boost: 0.2, mods: 1, sell: 3 },
-    dusk: { boost: 0.35, mods: 2, sell: 6 },
-    eclipse: { boost: 0.6, mods: 3, sell: 12 },
+    dawn: { boost: 0.2, lines: 1, sell: 3 },
+    dusk: { boost: 0.35, lines: 2, sell: 6 },
+    eclipse: { boost: 0.6, lines: 3, sell: 12 },
   },
   /**
    * Gear drops (src/game/Loot.ts): one cascading roll per kill, rarest first. Roll `rare`; only if it misses roll
@@ -91,8 +91,6 @@ export const BALANCE = {
    */
   // Kept simple for now: at most 2 everywhere. The plan for later: T3-T5 4, T6+ 6.
   modifierSlots: [0, 1, 2, 2, 2, 2, 2],
-  /** Chance a normal (non-Sigil) gear drop has one mod. */
-  modChance: 0.1,
   /** Mod value at 0% and at 100% quality. Stats/resist/HP/MP are points, crit is percent. */
   modRanges: {
     str: [1, 4],
