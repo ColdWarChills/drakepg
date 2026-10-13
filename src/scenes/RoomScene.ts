@@ -402,6 +402,7 @@ export class RoomScene extends Phaser.Scene {
   private drawBackExit(exit: RoomExit): void {
     const [top] = this.room.walk;
     const x = exit.x!;
+    if (exit.frame) this.drawDoorway(x, exit.frame);
     if (!this.exitOpen(exit)) {
       this.drawBackBlocker(x, exit.blocker ?? 'barricade');
       return;
@@ -422,6 +423,25 @@ export class RoomScene extends Phaser.Scene {
       this.pendingBack = exit;
       this.moveTarget = { x, y: top };
     });
+  }
+
+  /** A gate or cave mouth drawn at the top of the walkable strip, behind everyone. */
+  private drawDoorway(x: number, frame: 'gate' | 'cave'): void {
+    const [top] = this.room.walk;
+    const g = this.add.graphics().setDepth(top - 2);
+    if (frame === 'cave') {
+      g.fillStyle(0x4a4146, 1).fillEllipse(x, top - 70, 220, 190);
+      g.fillStyle(0x151012, 1).fillEllipse(x, top - 55, 170, 150);
+      g.fillStyle(0xff8a3d, 0.25).fillEllipse(x, top - 20, 120, 50);
+      g.fillStyle(0x4a4146, 1).fillRect(x - 120, top + 6, 240, 14);
+      return;
+    }
+    // Stone posts, a lintel and open wooden doors on a dark passage.
+    g.fillStyle(0x1d1a18, 1).fillRect(x - 60, top - 170, 120, 176);
+    g.fillStyle(0x8d8478, 1).fillRect(x - 86, top - 190, 28, 196).fillRect(x + 58, top - 190, 28, 196);
+    g.fillStyle(0x6f675c, 1).fillRect(x - 96, top - 212, 192, 30);
+    g.fillStyle(0x6d4c33, 1).fillRect(x - 58, top - 166, 22, 170).fillRect(x + 36, top - 166, 22, 170);
+    g.lineStyle(3, 0x3e2723, 1).strokeRect(x - 96, top - 212, 192, 30);
   }
 
   /** The back exit whose doorway the player is standing in (it sits at the top of the walkable strip). */

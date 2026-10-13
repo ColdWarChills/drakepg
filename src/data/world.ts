@@ -77,10 +77,63 @@ export const ZONES: ZoneDef[] = [
     backdrop: { kind: 'marsh', shade: 0.45 },
     encounters: [],
   },
+  {
+    id: 'frostfang',
+    name: 'Frostfang Pass',
+    recommendedLevel: [10, 11],
+    background: 'bg_frostfang_pass',
+    backdrop: { kind: 'snow' },
+    encounters: [
+      { monsterId: 'drift_wolf', weight: 5 },
+      { monsterId: 'crag_ram', weight: 4 },
+    ],
+  },
+  {
+    id: 'windscour',
+    name: 'Windscour Ridge',
+    recommendedLevel: [11, 13],
+    background: ['bg_windscour_ridge', 'bg_frostfang_pass'],
+    backdrop: { kind: 'snow', shade: 0.15 },
+    encounters: [
+      { monsterId: 'drift_wolf', weight: 1 },
+      { monsterId: 'gust_sprite', weight: 4 },
+      { monsterId: 'rime_acolyte', weight: 3 },
+      { monsterId: 'glacier_golem', weight: 2 },
+    ],
+  },
+  {
+    id: 'steamvent',
+    name: 'Steamvent Caves',
+    recommendedLevel: [12, 13],
+    background: 'bg_steamvent_caves',
+    backdrop: { kind: 'cave' },
+    encounters: [
+      { monsterId: 'ember_salamander', weight: 5 },
+      { monsterId: 'vent_wyrmling', weight: 2 },
+    ],
+  },
+  {
+    id: 'snowmaw_den',
+    name: "Snowmaw's Den",
+    recommendedLevel: [12, 13],
+    background: ['bg_snowmaw_den', 'bg_windscour_ridge', 'bg_frostfang_pass'],
+    backdrop: { kind: 'snow', shade: 0.3 },
+    encounters: [],
+  },
+  {
+    id: 'frozen_roost',
+    name: 'The Frozen Roost',
+    recommendedLevel: [13, 15],
+    background: ['bg_frozen_roost', 'bg_windscour_ridge', 'bg_frostfang_pass'],
+    backdrop: { kind: 'snow', shade: 0.4 },
+    encounters: [],
+  },
 ];
 
 /** After a loss in the fen beyond Reedwatch you wake at its healer instead of walking back from Brindlemoor. */
 const REEDWATCH_WAKE = { roomId: 'reedwatch', x: 840, y: 650 };
+/** Chapter 3: wake at Hearthold's fire. */
+const HEARTHOLD_WAKE = { roomId: 'hearthold', x: 900, y: 650 };
 
 export const ROOMS: RoomDef[] = [
   {
@@ -93,6 +146,8 @@ export const ROOMS: RoomDef[] = [
     exits: [
       { side: 'left', to: 'fen_road', label: 'Mirewater Fen', requiresQuest: 'rising_waters', blocker: 'barricade' },
       { side: 'right', to: 'thornwood_path', label: 'Thornwood' },
+      // The north gate to the Frostfangs (drawn until the town art shows one).
+      { side: 'back', x: 960, frame: 'gate', to: 'frostfang_pass', label: 'Frostfang Pass', requiresQuest: 'cold_scale', blocker: 'snowdrift' },
     ],
     npcs: [
       {
@@ -154,7 +209,7 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0x34495e, accent: 0xbdc3c7, scale: 1.05, art: 'npc_gate_guard' },
         role: { kind: 'talk' },
         dialogue: [
-          'The Thornwood starts right past this gate.',
+          'The Thornwood starts right past this gate. The north gate goes up to the Frostfangs, when it is not snowed shut.',
           "Monsters out there can see you coming. If one charges, fight or run. Can't outrun a boar for long, mind.",
         ],
       },
@@ -336,6 +391,154 @@ export const ROOMS: RoomDef[] = [
       intro: 'Lightning crawls over the drowned stones. The Stormcoil uncoils from around a great, dull scale.',
     },
     wakeAt: REEDWATCH_WAKE,
+  },
+  // --- Chapter 3: north through Brindlemoor's mountain gate ---
+  {
+    id: 'frostfang_pass',
+    name: 'Frostfang Pass',
+    background: 'bg_frostfang_pass',
+    backdrop: { kind: 'snow' },
+    walk: [540, 700],
+    ambient: ['snow'],
+    exits: [
+      { side: 'left', to: 'brindlemoor', label: 'Brindlemoor' },
+      { side: 'right', to: 'hearthold', label: 'Hearthold' },
+    ],
+    npcs: [],
+    zoneId: 'frostfang',
+    monsterCount: 3,
+    wakeAt: HEARTHOLD_WAKE,
+  },
+  {
+    id: 'hearthold',
+    name: 'Hearthold',
+    background: 'bg_hearthold',
+    backdrop: { kind: 'village' },
+    walk: [590, 700],
+    ambient: ['snow'],
+    exits: [
+      { side: 'left', to: 'frostfang_pass', label: 'Frostfang Pass' },
+      { side: 'right', to: 'windscour_ridge', label: 'Windscour Ridge' },
+    ],
+    npcs: [
+      {
+        id: 'ranger_sabine',
+        name: 'Sabine',
+        title: 'Ranger',
+        x: 230,
+        y: 615,
+        look: { shape: 'humanoid', color: 0x2e7d32, accent: 0xd7ccc8, scale: 1, art: 'npc_ranger_sabine' },
+        role: { kind: 'talk' },
+        dialogue: [
+          "Another one from the lowlands. You'll want a thicker coat.",
+          'Winter came early this year and never left. The ridge is crawling with things that like it that way.',
+        ],
+      },
+      {
+        id: 'gunnar',
+        name: 'Gunnar',
+        title: 'Trader',
+        x: 620,
+        y: 610,
+        look: { shape: 'humanoid', color: 0x8d6e63, accent: 0x3e2723, scale: 1.1, art: 'npc_gunnar' },
+        role: {
+          kind: 'shop',
+          stock: [
+            'superior_health_potion',
+            'superior_mana_potion',
+            'greater_health_potion',
+            'greater_mana_potion',
+            'tempered_longsword',
+            'larchwood_staff',
+            'ridgerunner_kris',
+            'ridgeplate',
+            'fleecewool_robe',
+          ],
+        },
+        dialogue: ['Mountain steel, mountain wool. Nothing fancy, nothing that breaks. I buy too, if it is not frozen solid.'],
+      },
+      {
+        id: 'hearthkeeper_moll',
+        name: 'Moll',
+        title: 'Hearthkeeper',
+        x: 1000,
+        y: 610,
+        look: { shape: 'humanoid', color: 0xc62828, accent: 0xffe0b2, scale: 1, art: 'npc_hearthkeeper_moll' },
+        role: { kind: 'inn' },
+        dialogue: ['Come in, come in, shut the door! The fire is the only warm thing left on this mountain.'],
+      },
+    ],
+  },
+  {
+    id: 'windscour_ridge',
+    name: 'Windscour Ridge',
+    background: ['bg_windscour_ridge', 'bg_frostfang_pass'],
+    backdrop: { kind: 'snow', shade: 0.15 },
+    walk: [540, 700],
+    ambient: ['snow'],
+    exits: [
+      { side: 'left', to: 'hearthold', label: 'Hearthold' },
+      { side: 'right', to: 'snowmaw_den', label: "Snowmaw's Den", requiresQuest: 'the_old_one', blocker: 'snowdrift' },
+      { side: 'back', x: 640, frame: 'cave', to: 'steamvent_caves', label: 'Steamvent Caves' },
+    ],
+    npcs: [],
+    zoneId: 'windscour',
+    monsterCount: 4,
+    wakeAt: HEARTHOLD_WAKE,
+  },
+  {
+    id: 'steamvent_caves',
+    name: 'Steamvent Caves',
+    background: 'bg_steamvent_caves',
+    backdrop: { kind: 'cave' },
+    walk: [540, 700],
+    ambient: ['embers', 'mist'],
+    exits: [{ side: 'left', to: 'windscour_ridge', label: 'Windscour Ridge' }],
+    npcs: [],
+    zoneId: 'steamvent',
+    monsterCount: 3,
+    wakeAt: HEARTHOLD_WAKE,
+  },
+  {
+    id: 'snowmaw_den',
+    name: "Snowmaw's Den",
+    background: ['bg_snowmaw_den', 'bg_windscour_ridge', 'bg_frostfang_pass'],
+    backdrop: { kind: 'snow', shade: 0.3 },
+    walk: [540, 700],
+    ambient: ['snow'],
+    exits: [
+      { side: 'left', to: 'windscour_ridge', label: 'Windscour Ridge' },
+      { side: 'right', to: 'frozen_roost', label: 'The Frozen Roost', requiresQuest: 'the_frozen_roost', blocker: 'snowdrift' },
+    ],
+    npcs: [],
+    zoneId: 'snowmaw_den',
+    boss: {
+      monsterId: 'old_snowmaw',
+      x: 900,
+      y: 630,
+      questId: 'the_old_one',
+      intro: 'A snowbank stands up. It has eyes, and very large teeth.',
+    },
+    wakeAt: HEARTHOLD_WAKE,
+  },
+  {
+    id: 'frozen_roost',
+    name: 'The Frozen Roost',
+    background: ['bg_frozen_roost', 'bg_windscour_ridge', 'bg_frostfang_pass'],
+    backdrop: { kind: 'snow', shade: 0.4 },
+    walk: [540, 700],
+    ambient: ['snow', 'mist'],
+    exits: [{ side: 'left', to: 'snowmaw_den', label: "Snowmaw's Den" }],
+    npcs: [],
+    zoneId: 'frozen_roost',
+    boss: {
+      monsterId: 'frostbinder',
+      x: 930,
+      y: 630,
+      questId: 'the_frozen_roost',
+      intro: 'Behind a wall of blue ice, something enormous sleeps. In front of it, a woman in white turns around and smiles.',
+    },
+    wakeAt: HEARTHOLD_WAKE,
   },
 ];
 

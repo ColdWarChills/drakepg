@@ -70,6 +70,8 @@ export class BattleScene extends Phaser.Scene {
   private statusRows: Record<Side, Phaser.GameObjects.Container> | null = null;
   /** Element, weaknesses and resistances under the enemy's HP bar (redrawn when a boss changes form). */
   private affinityRow: Phaser.GameObjects.Container | null = null;
+  private shellLine: Phaser.GameObjects.Text | null = null;
+  private shellRegrew = false;
   /** Statuses as shown so far during playback (status id -> turns). The battle itself is already a turn ahead. */
   private shown: Record<Side, Map<string, number>> = { player: new Map(), enemy: new Map() };
 
@@ -95,6 +97,8 @@ export class BattleScene extends Phaser.Scene {
     this.chargeAura = null;
     this.shield = null;
     this.affinityRow = null;
+    this.shellLine = null;
+    this.shellRegrew = false;
     this.shown = { player: new Map(), enemy: new Map() };
 
     drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
@@ -176,10 +180,11 @@ export class BattleScene extends Phaser.Scene {
     this.playerMp = new Bar(this, 32, 108, 388, 22, COLORS.mp, 'MP ');
 
     const ex = this.scale.width - 436;
-    // Elites get an extra line explaining their affix.
+    // Elites get an extra line explaining their affix; shelled bosses one for the shell.
     const affix = m.elite ? db.affix(m.elite.affix) : null;
-    const lootY = affix ? 164 : 136;
-    this.statusPanel(ex, 16, 420, (affix ? 148 : 120) + (m.loot ? 26 : 0));
+    const infoLines = (affix ? 1 : 0) + (m.shell ? 1 : 0);
+    const lootY = 136 + infoLines * 28;
+    this.statusPanel(ex, 16, 420, 120 + infoLines * 28 + (m.loot ? 26 : 0));
     // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
     const tags = [m.boss ? 'BOSS' : affix ? 'ELITE' : m.tough ? 'TOUGH' : ''].filter(Boolean);
     const head = addText(this, ex + 16, 26, [`${m.name}`, `Lv ${m.level}`, ...tags].join('  ·  '), {
@@ -192,10 +197,29 @@ export class BattleScene extends Phaser.Scene {
     this.enemyHp = new Bar(this, ex + 16, 68, 388, 26, COLORS.hp, 'HP ');
     this.drawAffinities(ex + 16, 108);
     if (affix) addText(this, ex + 16, 136, `${affix.name}: ${affix.description}`, { size: 15, bold: true, color: COLORS.textGold }).setOrigin(0, 0.5);
+    if (m.shell) {
+      this.shellLine = addText(this, ex + 16, 136 + (affix ? 28 : 0), '', { size: 15, bold: true, color: '#bfe9ff' }).setOrigin(0, 0.5);
+      this.refreshShell();
+    }
 
     if (m.loot) this.drawLootLine(ex + 16, lootY, m.loot);
 
-    this.statusRows = { player: this.add.container(16, 152), enemy: this.add.container(ex, (affix ? 180 : 152) + (m.loot ? 26 : 0)) };
+    this.statusRows = { player: this.add.container(16, 152), enemy: this.add.container(ex, 152 + infoLines * 28 + (m.loot ? 26 : 0)) };
+  }
+
+  /** "Frost Shell ◆◆◇: 80% less damage. Fire hits crack it." */
+  private refreshShell(): void {
+    const shell = this.monster.shell;
+    if (!shell || !this.shellLine) return;
+    const left = this.battle.shell;
+    const pips = '◆'.repeat(left) + '◇'.repeat(shell.hits - left);
+    const regrow = shell.reformAt ? ` Grows back once at ${Math.round(shell.reformAt * 100)}% HP.` : '';
+    this.shellLine.setText(
+      left > 0
+        ? `${shell.name} ${pips}: ${Math.round(shell.reduction * 100)}% less damage. ${ELEMENT_LABELS[shell.element]} hits crack it.`
+        : `${shell.name} ${pips}: broken!${this.shellRegrew ? '' : regrow}`,
+    );
+    this.shellLine.setScale(Math.min(1, 388 / this.shellLine.width));
   }
 
   /** "Gear  Rare 1%  Uncommon 5%  Common 6%": this fight's drop odds, luck included. Hover or tap for the items. */
@@ -489,6 +513,13 @@ export class BattleScene extends Phaser.Scene {
         const style = this.styleOf(e);
         await this.attackAnim(e.source, style, () => (e.kind === 'hit' ? this.impact(e, style) : this.dodge(e.source === 'player' ? 'enemy' : 'player')));
         const who = e.source === 'player' ? 'You use' : `${enemyName} uses`;
+        if (e.kind === 'hit' && e.shellLeft !== undefined && this.monster.shell) {
+          const broke = e.shellLeft === 0;
+          sfx.play(this, broke ? 'explode' : 'hit');
+          if (broke) fx.shockwave(this, ENEMY_X, GROUND_Y, 0xbfe9ff, 3, 0.3);
+          floatText(this, ENEMY_X, GROUND_Y - 300, broke ? `${this.monster.shell.name} broken!` : 'Cracked!', '#bfe9ff', broke ? 34 : 26);
+          this.refreshShell();
+        }
         if (e.kind === 'hit') {
           const notes = [e.crit ? ' Critical!' : '', e.effect === 'weak' ? ' Weak spot!' : '', e.effect === 'resisted' ? ' Resisted.' : '', e.effect === 'immune' ? ' Immune!' : ''].join('');
           this.pushLog(e.moveId === 'proc' ? `${e.move}! ${e.damage} damage.${notes}` : `${who} ${e.move}: ${e.damage} damage.${notes}`);
@@ -628,6 +659,16 @@ export class BattleScene extends Phaser.Scene {
         this.pushLog(e.text);
         this.drawAffinities(this.scale.width - 420, 108);
         await this.wait(1100);
+        break;
+      }
+      case 'shell': {
+        this.shellRegrew = true;
+        sfx.play(this, 'warning');
+        fx.shockwave(this, ENEMY_X, GROUND_Y, 0xbfe9ff, 4, 0.35);
+        floatText(this, ENEMY_X, GROUND_Y - 290, `${this.monster.shell?.name ?? 'Shell'} grows back!`, '#bfe9ff', 32);
+        this.pushLog(e.text);
+        this.refreshShell();
+        await this.wait(900);
         break;
       }
       case 'flee': {

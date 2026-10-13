@@ -54,4 +54,36 @@ export const LOOT_TABLES: LootTableDef[] = [
       rare: [{ itemId: 'tidebreaker' }, { itemId: 'tidecaller_rod' }, { itemId: 'brinefang' }],
     },
   },
+  {
+    id: 'frostfang',
+    tiers: {
+      common: [
+        { itemId: 'tempered_longsword' },
+        { itemId: 'larchwood_staff' },
+        { itemId: 'ridgerunner_kris' },
+        { itemId: 'ridgeplate' },
+        { itemId: 'fleecewool_robe' },
+      ],
+      uncommon: [
+        { itemId: 'frostbite' },
+        { itemId: 'hoarfrost_staff' },
+        { itemId: 'icicle_kris' },
+        { itemId: 'hearthfire_blade' },
+        { itemId: 'kindling_rod' },
+        { itemId: 'salamander_kris' },
+        { itemId: 'frostpelt_vest' },
+        { itemId: 'galeweave_robe' },
+      ],
+      rare: [{ itemId: 'whiteout' }, { itemId: 'squall_stave' }, { itemId: 'galecutter' }],
+    },
+  },
+  {
+    // Old Snowmaw's own: its rare tier is the three weapons made from it.
+    id: 'snowmaw',
+    tiers: {
+      common: [{ itemId: 'ridgeplate' }, { itemId: 'fleecewool_robe' }, { itemId: 'frostpelt_vest' }],
+      uncommon: [{ itemId: 'hearthfire_blade' }, { itemId: 'kindling_rod' }, { itemId: 'salamander_kris' }, { itemId: 'galeweave_robe' }],
+      rare: [{ itemId: 'snowmaw_cleaver' }, { itemId: 'mawtooth_staff' }, { itemId: 'snowmaw_claw' }],
+    },
+  },
 ];

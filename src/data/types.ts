@@ -248,6 +248,20 @@ export interface MonsterDef {
   elite?: EliteInfo;
   /** Changes once, the first time its HP drops to `at` (share of max HP) or below. */
   phase?: MonsterPhase;
+  /** A shield that soaks up most damage until enough hits of one element break it. */
+  shell?: MonsterShell;
+}
+
+/**
+ * Boss shield, shown as pips on the battle panel: takes `reduction` less damage while up; each landed hit of
+ * `element` removes a pip (it takes `hits`). With `reformAt`, it grows back once when HP drops to that share.
+ */
+export interface MonsterShell {
+  name: string;
+  element: Element;
+  hits: number;
+  reduction: number;
+  reformAt?: number;
 }
 
 /** A boss's second form: new element and resistances (and optionally attacks), announced in battle. */
@@ -301,7 +315,7 @@ export type ArtRef = string | string[];
 
 /** Procedural scenery used when there's no background art. */
 export interface Backdrop {
-  kind: 'town' | 'forest' | 'marsh' | 'outpost';
+  kind: 'town' | 'forest' | 'marsh' | 'outpost' | 'snow' | 'village' | 'cave';
   /** Darken the whole scene, 0-1. */
   shade?: number;
 }
@@ -336,6 +350,8 @@ export interface RoomExit {
   side: 'left' | 'right' | 'back';
   /** Back exits: screen x of the doorway (it sits at the top of the walkable strip). */
   x?: number;
+  /** Back exits: draw a gate or cave mouth there, for rooms whose art doesn't show one (yet). */
+  frame?: 'gate' | 'cave';
   to: string;
   /** Shown on the arrow at the screen edge. */
   label: string;
@@ -347,7 +363,7 @@ export interface RoomExit {
 
 export type Blocker = 'thorns' | 'barricade' | 'reeds' | 'snowdrift';
 
-export type Ambient = 'dust' | 'leaves' | 'fireflies' | 'rain' | 'mist';
+export type Ambient = 'dust' | 'leaves' | 'fireflies' | 'rain' | 'mist' | 'snow' | 'embers';
 
 /** One walkable screen. Walk off a side with an exit to enter the next room. */
 export interface RoomDef {

@@ -71,6 +71,22 @@ const WATER2: Loadout = { label: 'water2', weapon: { warrior: 'tidebreaker', mag
 const ENERGY2: Loadout = { label: 'energy2', weapon: { warrior: 'stormcleaver', mage: 'sparkglass_wand', rogue: 'sparkfang' }, armor: SHOP2.armor };
 const SHOP2_100: Loadout = { ...SHOP2, label: 'shop2_100', quality: 100 };
 const GREATER = 'greater_health_potion';
+/** What a player likely carries into Chapter 3: the Stormcoil's quest weapon (tier 3 Energy). */
+const STORM: Loadout = {
+  label: 'storm',
+  weapon: { warrior: 'thunderhead_maul', mage: 'stormcoil_scepter', rogue: 'coilfang' },
+  armor: SHOP2.armor,
+};
+/** Hearthold shop gear (tier 3), and the Chapter 3 drops of each element. */
+const SHOP3: Loadout = {
+  label: 'shop3',
+  weapon: { warrior: 'tempered_longsword', mage: 'larchwood_staff', rogue: 'ridgerunner_kris' },
+  armor: { warrior: 'ridgeplate', mage: 'fleecewool_robe', rogue: 'ridgeplate' },
+};
+const ICE3: Loadout = { label: 'ice3', weapon: { warrior: 'frostbite', mage: 'hoarfrost_staff', rogue: 'icicle_kris' }, armor: SHOP3.armor };
+const FIRE3: Loadout = { label: 'fire3', weapon: { warrior: 'hearthfire_blade', mage: 'kindling_rod', rogue: 'salamander_kris' }, armor: SHOP3.armor };
+const EARTH3: Loadout = { ...HEART, label: 'heart3', armor: SHOP3.armor };
+const SUPERIOR = 'superior_health_potion';
 
 function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number, potion: string): Player {
   const p = Player.createNew('Sim', classId);
@@ -326,4 +342,40 @@ table('Stormcoil (boss, changes Energy -> Water at half HP, 3 potions)', [
   { monster: 'stormcoil', level: 10, gear: ENERGY2, potions: 3, potion: GREATER },
   { monster: 'stormcoil', level: 11, gear: SHOP2, potions: 3, potion: GREATER },
   { monster: 'stormcoil', level: 10, gear: SHOP2_100, potions: 3, potion: GREATER },
+]);
+
+table('Chapter 3 trash (full HP each fight, 1 potion)', [
+  { monster: 'drift_wolf', level: 10, gear: STORM, potions: 1, potion: GREATER },
+  { monster: 'drift_wolf', level: 10, gear: SHOP3, potions: 1, potion: SUPERIOR },
+  { monster: 'crag_ram', level: 10, gear: SHOP3, potions: 1, potion: SUPERIOR },
+  { monster: 'gust_sprite', level: 11, gear: SHOP3, potions: 1, potion: SUPERIOR },
+  { monster: 'gust_sprite', level: 11, gear: EARTH3, potions: 1, potion: SUPERIOR },
+  { monster: 'rime_acolyte', level: 12, gear: SHOP3, potions: 1, potion: SUPERIOR },
+  { monster: 'rime_acolyte', level: 12, gear: FIRE3, potions: 1, potion: SUPERIOR },
+  { monster: 'ember_salamander', level: 12, gear: SHOP3, potions: 1, potion: SUPERIOR },
+  { monster: 'ember_salamander', level: 12, gear: ICE3, potions: 1, potion: SUPERIOR },
+]);
+
+table('Chapter 3 tough monsters (full HP, 1 potion): the counter should matter', [
+  { monster: 'glacier_golem', level: 12, gear: SHOP3, potions: 1, potion: SUPERIOR },
+  { monster: 'glacier_golem', level: 12, gear: FIRE3, potions: 1, potion: SUPERIOR },
+  { monster: 'glacier_golem', level: 12, gear: STORM, potions: 1, potion: SUPERIOR },
+  { monster: 'vent_wyrmling', level: 13, gear: SHOP3, potions: 1, potion: SUPERIOR },
+  { monster: 'vent_wyrmling', level: 13, gear: ICE3, potions: 1, potion: SUPERIOR },
+]);
+
+table('Old Snowmaw (mini-boss, Frost Shell: 3 Fire hits, grows back at 50%, 3 potions)', [
+  { monster: 'old_snowmaw', level: 12, gear: SHOP3, potions: 3, potion: SUPERIOR },
+  { monster: 'old_snowmaw', level: 12, gear: STORM, potions: 3, potion: SUPERIOR },
+  { monster: 'old_snowmaw', level: 12, gear: FIRE3, potions: 3, potion: SUPERIOR },
+  { monster: 'old_snowmaw', level: 13, gear: SHOP3, potions: 3, potion: SUPERIOR },
+]);
+
+table('The Frostbinder (boss, Ice -> Wind at half HP, 3 potions)', [
+  { monster: 'frostbinder', level: 13, gear: SHOP3, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 14, gear: SHOP3, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 14, gear: FIRE3, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 14, gear: EARTH3, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 14, gear: STORM, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 15, gear: SHOP3, potions: 3, potion: SUPERIOR },
 ]);

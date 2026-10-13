@@ -477,6 +477,31 @@ export function ambient(scene: Phaser.Scene, kinds: Ambient[], depth = 50): Emit
           tint: 0xbfd8ff,
         });
         break;
+      case 'snow':
+        e = scene.add.particles(0, 0, TEX.soft, {
+          emitZone: randomRect(-100, -30, width + 200, 10),
+          speedY: { min: 40, max: 90 },
+          speedX: { min: -30, max: 10 },
+          scale: { min: 0.12, max: 0.3 },
+          alpha: { min: 0.5, max: 0.9 },
+          lifespan: 12000,
+          frequency: 70,
+          tint: 0xffffff,
+        });
+        break;
+      case 'embers':
+        e = scene.add.particles(0, 0, TEX.soft, {
+          emitZone: randomRect(0, height - 160, width, 120),
+          speedY: { min: -70, max: -30 },
+          speedX: { min: -15, max: 15 },
+          scale: { min: 0.15, max: 0.35 },
+          alpha: { onEmit: () => 0, onUpdate: (_p, _k, t) => Math.sin(t * Math.PI) * 0.8 },
+          lifespan: 5000,
+          frequency: 220,
+          tint: 0xffa040,
+          blendMode: 'ADD',
+        });
+        break;
       case 'mist':
         e = scene.add.particles(0, 0, TEX.soft, {
           emitZone: randomRect(-200, height - 330, width + 200, 200),
