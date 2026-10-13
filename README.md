@@ -82,9 +82,9 @@ npm run preview  # serve the dist/ build locally
 
 ### Art
 
-1. Generate images with the prompts in [`art/PROMPTS.md`](art/PROMPTS.md) and put them in `art/raw/`, named by key (e.g. `mon_mossling.png`).
+1. Generate images with the prompts in [`art/PROMPTS.md`](art/PROMPTS.md) and put them in `art/raw/`, named by key (e.g. `mon_mossling.png`). Everything still missing, with ready prompts in priority order: [`art/QUEUE.md`](art/QUEUE.md).
 2. Run `python3 scripts/prepare_art.py` (needs Pillow + numpy). It removes flat backgrounds from sprites, trims, resizes, and writes WebP files to `src/assets/art/`.
-3. Every file in `src/assets/art/` is loaded at boot by its file name. Point data at it with `look.art`, `zone.background` or `room.background`.
+3. Every file in `src/assets/art/` is loaded at boot by its file name. Point data at it with `look.art`, `zone.background` or `room.background`. Item icons need no data: `icon_<item id>` replaces the drawn icon in the inventory, shop and forge (fit in 256x256).
 
 Armor outfits: wearing an armor, a hero is drawn from `char_<class>_<armor id>` (empty-handed like the bare art) when it exists, else the default look. Its fists default to the class's `bare.hands`; if they moved, set `hands` per class on the armor in `items.ts`. Prompts are at the end of `art/PROMPTS.md`.
 

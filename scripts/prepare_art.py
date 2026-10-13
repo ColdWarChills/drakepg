@@ -4,6 +4,7 @@
 File names decide what happens (see art/PROMPTS.md for the list):
   bg_*.png/jpg  -> background: center-cropped to 16:9, resized to 1280x720, saved as WebP.
   wpn_*         -> weapon: like a sprite, but 320px tall. Draw weapons upright, handle at the bottom.
+  icon_*        -> inventory icon: like a sprite, but fit inside 256x256.
   anything else -> sprite: flat background color removed, trimmed, resized to 480px tall, saved as WebP.
 
 Usage:
@@ -25,6 +26,7 @@ OUT = ROOT / "src" / "assets" / "art"
 BG_SIZE = (1280, 720)
 SPRITE_HEIGHT = 480
 WEAPON_HEIGHT = 320
+ICON_SIZE = 256
 
 # Where to crop backgrounds that aren't 16:9: 0 = keep the top/left, 1 = keep the bottom/right.
 BG_FOCUS: dict[str, float] = {"bg_brindlemoor": 0.75}
@@ -161,9 +163,14 @@ def process_sprite(src: Path, key: str) -> Path:
 
     if key in FLIP:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
-    max_h = WEAPON_HEIGHT if key.startswith("wpn_") else SPRITE_HEIGHT
-    if img.height > max_h:
-        img = img.resize((round(img.width * max_h / img.height), max_h), Image.LANCZOS)
+    if key.startswith("icon_"):
+        scale = min(1.0, ICON_SIZE / max(img.width, img.height))
+        if scale < 1:
+            img = img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
+    else:
+        max_h = WEAPON_HEIGHT if key.startswith("wpn_") else SPRITE_HEIGHT
+        if img.height > max_h:
+            img = img.resize((round(img.width * max_h / img.height), max_h), Image.LANCZOS)
 
     out = OUT / f"{key}.webp"
     img.save(out, quality=90, method=6)

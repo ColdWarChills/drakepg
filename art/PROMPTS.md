@@ -1,5 +1,7 @@
 # Art prompts
 
+> **Still to make:** see [`QUEUE.md`](QUEUE.md) for every missing image (75) with copy-ready prompts in priority order.
+
 Painted cartoon style, original designs. 14 images (4 backgrounds, 10 characters), plus optional extras (class heroes, deep forest).
 
 ## How to make them

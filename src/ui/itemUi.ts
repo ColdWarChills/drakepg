@@ -117,10 +117,17 @@ function shade(color: number, f: number): number {
   return Phaser.Display.Color.GetColor(Math.round(c.red * f), Math.round(c.green * f), Math.round(c.blue * f));
 }
 
-/** Square item icon centered on (0, 0). Weapons use their art; armor and potions are drawn. */
+/** Square item icon centered on (0, 0). Uses `icon_<id>` art if it exists, else the weapon's art, else a drawn shape. */
 export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): Phaser.GameObjects.Container {
   const c = scene.add.container(0, 0);
   const color = def.iconColor ?? 0x9a8a6a;
+  const iconKey = `icon_${def.id}`;
+  if (hasArt(scene, iconKey)) {
+    const img = scene.add.image(0, 0, iconKey);
+    img.setScale((size * 0.95) / Math.max(img.width, img.height));
+    c.add(img);
+    return c;
+  }
   if (def.type === 'weapon' && def.art && hasArt(scene, def.art)) {
     // Upright art laid diagonally, like most inventory icons.
     const img = scene.add.image(0, 0, def.art).setAngle(45);
