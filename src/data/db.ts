@@ -1,6 +1,7 @@
 import { CLASSES } from './classes';
 import { RECIPES } from './crafting';
 import { ELITE_AFFIXES } from './elites';
+import { FEATURES } from './features';
 import { ITEMS } from './items';
 import { LOOT_TABLES } from './loot';
 import { MONSTERS } from './monsters';
@@ -8,7 +9,7 @@ import { QUESTS } from './quests';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, EliteAffixDef, ItemDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, ItemDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -31,6 +32,7 @@ const statuses = index('status', STATUSES);
 const affixes = index('elite affix', ELITE_AFFIXES);
 const recipes = index('recipe', RECIPES);
 const lootTables = index('loot table', LOOT_TABLES);
+const features = index('feature', FEATURES);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -50,6 +52,8 @@ export const db = {
   affix: (id: string): EliteAffixDef => get('elite affix', affixes, id),
   recipe: (id: string): RecipeDef => get('recipe', recipes, id),
   lootTable: (id: string): LootTableDef => get('loot table', lootTables, id),
+  feature: (id: string): FeatureDef => get('feature', features, id),
+  features: (): readonly FeatureDef[] => FEATURES,
   affixes: (): readonly EliteAffixDef[] => ELITE_AFFIXES,
   hasClass: (id: string) => classes.has(id),
   quests: (): readonly QuestDef[] => QUESTS,
@@ -75,6 +79,7 @@ export function validateData(): void {
     m.immune?.forEach((id) => db.status(id));
   }
   for (const s of SKILLS) checkApplies(s.applies);
+  for (const f of FEATURES) db.quest(f.unlockedBy);
   for (const table of LOOT_TABLES) {
     for (const entries of Object.values(table.tiers)) {
       for (const e of entries) {
@@ -123,6 +128,7 @@ export function validateData(): void {
     for (const npc of r.npcs) {
       if (npc.role.kind === 'shop') npc.role.stock.forEach((id) => db.item(id));
       if (npc.role.kind === 'forge') npc.role.recipes.forEach((id) => db.recipe(id));
+      if (npc.feature) db.feature(npc.feature);
     }
   }
 }

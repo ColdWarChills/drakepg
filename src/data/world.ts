@@ -185,6 +185,7 @@ export const ROOMS: RoomDef[] = [
         y: 610,
         look: { shape: 'humanoid', color: 0x6e4b2a, accent: 0x2b2b2b, scale: 1.05, art: 'npc_hulda' },
         role: { kind: 'forge', recipes: RECIPES.map((r) => r.id) },
+        feature: 'forge',
         dialogue: [
           "Tobin's blades are honest, but they're plain. Bring me scrap, dust and whatever the wilds drop, and I'll make them sing.",
           'I can reinforce what you carry, hone it, or break it down for parts.',

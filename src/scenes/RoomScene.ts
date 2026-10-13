@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
+import { ELEMENT_LABELS } from '../data/elements';
 import { ROOMS, START } from '../data/world';
 import type { Blocker, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
 import { cheats } from '../game/cheats';
+import { featureOn, markSeen, unseenNews } from '../game/Features';
 import { makeElite, rollElite } from '../game/Elites';
 import { Player } from '../game/Player';
 import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStarted, questStatus, questWantsElite, turnInQuest } from '../game/Quests';
@@ -117,6 +119,8 @@ export class RoomScene extends Phaser.Scene {
   private leaving = false;
   private dustTimer = 0;
   private nextUid = 1;
+  /** Next time to look for unannounced unlocks and skills. */
+  private newsAt = 0;
   private chest: { data: Chest; fig: Phaser.GameObjects.Container; hit: Phaser.GameObjects.Rectangle } | null = null;
   /** Name labels grow on small screens (see labelScale). */
   private ls = 1;
@@ -149,7 +153,8 @@ export class RoomScene extends Phaser.Scene {
     for (const kind of this.room.ambient ?? []) fx.ambient(this, [kind], kind === 'dust' || kind === 'mist' ? 1 : 1500);
     this.drawExits();
 
-    for (const def of this.room.npcs) this.addNpc(def);
+    // Some people only show up once their chapter unlocks them (Hulda and her forge).
+    for (const def of this.room.npcs) if (!def.feature || featureOn(session.player, def.feature)) this.addNpc(def);
     this.spawnPlayer(data);
     // A moment of safety on arrival so nothing jumps you mid-fade.
     if (data.via !== 'spawn') this.safeUntil = this.time.now + 1200;
@@ -269,14 +274,16 @@ export class RoomScene extends Phaser.Scene {
     // Monsters are visible, so tougher ones can appear; their level label warns you.
     const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
     const elites = taken.filter((m) => m.elite).length;
-    const elite = elites < BALANCE.elite.maxPerRoom || cheats.elites ? rollElite(defaultRng, questWantsElite(session.player)) : undefined;
+    const elitesOn = featureOn(session.player, 'elites') || cheats.elites;
+    const elite = elitesOn && (elites < BALANCE.elite.maxPerRoom || cheats.elites) ? rollElite(defaultRng, questWantsElite(session.player)) : undefined;
     return { uid: this.nextUid++, monsterId, elite, ...pos };
   }
 
   /** Maybe a treasure chest, placed away from the monsters. */
   private newChest(taken: RoamingMonster[]): Chest | null {
-    const roll = rollChest();
-    return roll ? { ...this.findSpawnPoint(taken), mimic: roll.mimic } : null;
+    const player = session.player;
+    const roll = featureOn(player, 'chests') ? rollChest() : null;
+    return roll ? { ...this.findSpawnPoint(taken), mimic: roll.mimic && featureOn(player, 'mimics') } : null;
   }
 
   /** Keep this room's survivors and chest for when you come back. */
@@ -334,6 +341,34 @@ export class RoomScene extends Phaser.Scene {
     this.chest = { data, fig, hit };
   }
 
+  /** "New!": systems this chapter just opened, and skills just learned. Shown once each. */
+  private showNews(): void {
+    const player = session.player;
+    const news = unseenNews(player);
+    if (!news.features.length && !news.skills.length) return;
+    markSeen(player, news);
+    this.save(false);
+    const rows: { title: string; text: string; color: string }[] = [
+      ...news.features.map((f) => ({ title: f.name, text: f.text, color: COLORS.textGold })),
+      ...news.skills.map((s) => {
+        const element = s.element && s.element !== 'weapon' ? ` · ${ELEMENT_LABELS[s.element]}` : '';
+        const cd = s.cooldown > 0 ? ` · cooldown ${s.cooldown}` : '';
+        return { title: `New skill: ${s.name}  (${s.mpCost} MP${element}${cd})`, text: s.description, color: COLORS.textMagic };
+      }),
+    ];
+    sfx.play(this, 'quest');
+    const height = Math.min(640, 150 + rows.length * 84);
+    const modal = new Modal(this, 760, height, 'New!', () => this.refresh());
+    let y = 80;
+    for (const r of rows) {
+      modal.content.add(addText(this, 40, y, r.title, { size: 20, bold: true, color: r.color }));
+      const t = addText(this, 40, y + 28, r.text, { size: 16, wrap: 680 });
+      modal.content.add(t);
+      y += 40 + t.height + 10;
+    }
+    modal.content.add(new Button(this, 380, height - 44, 'Got it', () => modal.close(() => this.refresh()), { width: 180, height: 48 }));
+  }
+
   /** Walking into a chest opens it. */
   private checkChest(): void {
     const c = this.chest;
@@ -344,7 +379,7 @@ export class RoomScene extends Phaser.Scene {
     if (c.data.mimic) return this.springMimic(c.fig, c.data);
 
     const player = session.player;
-    const rewards = rollChestLoot(db.zone(this.room.zoneId!));
+    const rewards = rollChestLoot(db.zone(this.room.zoneId!), undefined, featureOn(player, 'sigils'));
     const { lost } = player.grantRewards(rewards);
     sfx.play(this, 'quest');
     this.tweens.add({ targets: c.fig.list[3], y: -70, angle: -25, duration: 220 });
@@ -803,6 +838,10 @@ export class RoomScene extends Phaser.Scene {
     if (!blocked) this.separateMobs(dt);
     for (const mob of [...this.mobs]) this.updateMob(mob, dt, time, blocked);
     if (!blocked && !this.leaving) this.checkChest();
+    if (!blocked && !this.leaving && time > this.newsAt) {
+      this.newsAt = time + 500;
+      this.showNews();
+    }
     this.updatePrompt(blocked);
   }
 
@@ -1406,7 +1445,7 @@ export class RoomScene extends Phaser.Scene {
     const modal = new Modal(this, 700, 300, rematch ? `${def.name} (rematch)` : def.name);
     const intro = this.room.boss?.intro ?? 'It turns toward you.';
     const text = rematch
-      ? `It is back. There is no running from this fight.\nRematch: ${Math.round(BALANCE.bossRepeatRewards * 100)}% XP and gold, full loot (Sigils drop more often from bosses).`
+      ? `It is back. There is no running from this fight.\nRematch: ${Math.round(BALANCE.bossRepeatRewards * 100)}% XP and gold, full loot${featureOn(session.player, 'sigils') ? ' (Sigils drop more often from bosses)' : ''}.`
       : `${intro}\nThere is no running from this fight.`;
     modal.content.add(addText(this, 350, 110, text, { size: rematch ? 19 : 22, align: 'center', wrap: 640 }).setOrigin(0.5));
     modal.content.add(new Button(this, 230, 230, 'Fight', () => (modal.close(), this.startBossBattle()), { width: 220 }));

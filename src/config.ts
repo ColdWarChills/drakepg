@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {

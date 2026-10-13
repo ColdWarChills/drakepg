@@ -34,8 +34,8 @@ export function rollChest(rng: Rng = defaultRng): { mimic: boolean } | null {
   return { mimic: chance(rng, BALANCE.chest.mimicChance) };
 }
 
-/** What a chest holds: gold, a material or two from the area's monsters, maybe a potion, often gear. */
-export function rollChestLoot(zone: ZoneDef, rng: Rng = defaultRng): Rewards {
+/** What a chest holds: gold, a material or two from the area's monsters, maybe a potion, often gear. `extras`: Sigils/mods. */
+export function rollChestLoot(zone: ZoneDef, rng: Rng = defaultRng, extras = true): Rewards {
   const level = zoneLevel(zone);
   const items: ItemGrant[] = [];
   const drops = zone.encounters.flatMap((e) => db.monster(e.monsterId).drops);
@@ -47,7 +47,7 @@ export function rollChestLoot(zone: ZoneDef, rng: Rng = defaultRng): Rewards {
   }
   if (potions.length && chance(rng, 0.35)) items.push({ itemId: potions[randInt(rng, 0, potions.length - 1)].itemId });
   const table = zoneLootTable(zone);
-  const gear = table ? rollLoot(table, 'chest', rng) : null;
+  const gear = table ? rollLoot(table, 'chest', rng, 0, extras) : null;
   if (gear) items.push(gear.grant);
   return { xp: 0, gold: randInt(rng, 8, 14) * level, items };
 }

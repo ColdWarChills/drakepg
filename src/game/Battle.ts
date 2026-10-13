@@ -3,6 +3,7 @@ import { db } from '../data/db';
 import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, StatusDef, Stats } from '../data/types';
 import { cheats } from './cheats';
 import { grantFor } from './Items';
+import { featureOn } from './Features';
 import { rollLoot } from './Loot';
 import { statFor, type Player, type Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
@@ -160,6 +161,7 @@ export class Battle {
     const skill = db.skill(skillId);
     const p = this.player;
     p.spendMp(skill.mpCost);
+    p.data.freshSkills = p.data.freshSkills.filter((id) => id !== skill.id);
     // +1 because the end of this turn already counts down once; then it's locked for `cooldown` turns.
     if (skill.cooldown > 0) this.cooldowns.set(skill.id, skill.cooldown + 1);
 
@@ -527,13 +529,17 @@ export class Battle {
   private rollRewards(): Rewards {
     const m = this.enemy.def;
     const source = m.boss ? 'boss' : m.elite ? 'elite' : m.chestLoot ? 'chest' : 'mob';
+    // Materials, Sigils and mods only drop once their chapter has unlocked them.
+    const materials = featureOn(this.player, 'materials');
+    const extras = featureOn(this.player, 'sigils');
     const items = m.drops
+      .filter((d) => materials || db.item(d.itemId).type !== 'material')
       .filter((d) => chance(this.rng, d.chance))
-      .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source)));
+      .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source, extras)));
     // Gear: one cascading tier roll (Elites and bosses always drop something). Missing a Rare builds up luck.
     if (m.loot) {
       const pity = this.player.data.lootPity;
-      const gear = rollLoot(m.loot, source, this.rng, pity[m.loot] ?? 0);
+      const gear = rollLoot(m.loot, source, this.rng, pity[m.loot] ?? 0, extras);
       if (gear?.tier === 'rare') delete pity[m.loot];
       else pity[m.loot] = (pity[m.loot] ?? 0) + 1;
       if (gear) items.push(gear.grant);

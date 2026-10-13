@@ -16,6 +16,8 @@ export const cheats = {
   oneHit: false,
   /** Every roaming monster spawns as an Elite. */
   elites: false,
+  /** Every chapter unlock (forge, Sigils, chests...) is open. */
+  allFeatures: false,
 };
 
 /** Level up `count` times (stat points and skills as usual). */

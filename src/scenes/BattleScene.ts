@@ -351,7 +351,8 @@ export class BattleScene extends Phaser.Scene {
   private skillButton(skill: SkillDef): MenuButton {
     const cd = this.battle.cooldownLeft(skill.id);
     const element = skill.element && skill.element !== 'weapon' ? ELEMENT_LABELS[skill.element] : null;
-    const sub = cd > 0 ? `Ready in ${cd}` : `${skill.mpCost} MP${element ? ` · ${element}` : ''}`;
+    const fresh = this.battle.player.data.freshSkills.includes(skill.id) ? 'NEW · ' : '';
+    const sub = cd > 0 ? `Ready in ${cd}` : `${fresh}${skill.mpCost} MP${element ? ` · ${element}` : ''}`;
     const cdText = skill.cooldown > 0 ? ` Cooldown ${skill.cooldown}.` : '';
     return {
       label: skill.name,
@@ -370,7 +371,7 @@ export class BattleScene extends Phaser.Scene {
     if (menu === 'main') {
       buttons.push(
         { label: 'Attack', run: () => this.act(() => this.battle.attack()) },
-        { label: 'Skills', run: () => this.showMenu('skills') },
+        { label: 'Skills', sub: p.data.freshSkills.length ? `${p.data.freshSkills.length} NEW` : undefined, run: () => this.showMenu('skills') },
         { label: 'Items', run: () => this.showMenu('items') },
         { label: 'Defend', sub: `-60% dmg, +MP`, run: () => this.act(() => this.battle.defend()) },
         {

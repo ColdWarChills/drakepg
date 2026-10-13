@@ -334,6 +334,16 @@ export interface ZoneDef {
 
 export type NpcRole = { kind: 'talk' } | { kind: 'shop'; stock: string[] } | { kind: 'inn' } | { kind: 'forge'; recipes: string[] };
 
+/** A system that opens up later in the game (src/data/features.ts). */
+export interface FeatureDef {
+  id: string;
+  name: string;
+  /** One or two lines for the "New!" popup. */
+  text: string;
+  /** Turning in this quest unlocks it. */
+  unlockedBy: string;
+}
+
 export interface NpcDef {
   id: string;
   name: string;
@@ -343,6 +353,8 @@ export interface NpcDef {
   y: number;
   look: Look;
   role: NpcRole;
+  /** Only there once this feature is unlocked (src/data/features.ts). */
+  feature?: string;
   /** Shown when the dialog opens. Several lines are paged with "Next". */
   dialogue: string[];
 }

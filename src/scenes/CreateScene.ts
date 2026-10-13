@@ -13,6 +13,7 @@ import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
 import { applyChapterStart, CHAPTER_STARTS } from '../game/cheats';
+import { markSkillsSeen } from '../game/Features';
 import { enterScene, goTo, SceneKeys } from './keys';
 
 const NAMES = ['Aldric', 'Brynn', 'Cassia', 'Dorian', 'Elowen', 'Fenwick', 'Gwyn', 'Harlan', 'Isolde', 'Jory', 'Kestrel', 'Lorne', 'Nyx', 'Orrin', 'Perrin', 'Quill', 'Rowan', 'Sable', 'Tamsin', 'Ulric', 'Vesper', 'Wren'];
@@ -183,6 +184,8 @@ export class CreateScene extends Phaser.Scene {
     const player = Player.createNew(name, this.selected);
     const start = CHAPTER_STARTS.find((s) => s.chapter === this.chapter);
     if (start && start.chapter > 1) applyChapterStart(player, start);
+    // A chapter start already knows its skills; a new hero's first skill is tagged NEW.
+    markSkillsSeen(player, !start || start.chapter === 1);
     session.start(player);
     SaveSystem.save(player);
     sfx.play(this, 'quest');

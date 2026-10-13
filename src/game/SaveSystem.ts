@@ -66,6 +66,8 @@ export const SaveSystem = {
  * v5 -> v6: gear can carry a smith `plus`, and the bag can hold materials. Both need nothing from old saves.
  * v6 -> v7: `lootPity` (bad-luck protection counters); sanitize() starts it empty.
  * v7 -> v8: `bossGrit` (losses per boss); sanitize() starts it empty.
+ * v8 -> v9: `seen` and `freshSkills` (unlock popups, NEW skill tags). Old characters already know their skills,
+ *           so those are marked seen; unlocked systems still get announced once.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -92,6 +94,14 @@ function migrate(file: SaveFile): SaveFile | null {
   if (file.version < 6) file.version = 6;
   if (file.version < 7) file.version = 7;
   if (file.version < 8) file.version = 8;
+  if (file.version < 9) {
+    // Characters from before this already know their skills: no pile of popups on load.
+    const p = file.player as Partial<PlayerData> & { level?: number; classId?: string };
+    const cls = typeof p.classId === 'string' && db.hasClass(p.classId) ? db.class(p.classId as never) : null;
+    p.seen = cls ? cls.skills.filter((s) => s.level <= (p.level ?? 1)).map((s) => `skill:${s.skillId}`) : [];
+    p.freshSkills = [];
+    file.version = 9;
+  }
   return file;
 }
 
@@ -185,6 +195,8 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     quests: sanitizeQuests(raw.quests),
     lootPity: sanitizePity(raw.lootPity),
     bossGrit: sanitizeGrit(raw.bossGrit),
+    seen: Array.isArray(raw.seen) ? raw.seen.filter((s): s is string => typeof s === 'string') : [],
+    freshSkills: Array.isArray(raw.freshSkills) ? raw.freshSkills.filter((s): s is string => typeof s === 'string' && db.hasSkill(s)) : [],
   };
 
   const player = new Player(data);
