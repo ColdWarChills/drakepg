@@ -12,10 +12,17 @@ import type { Player, Rewards } from './Player';
  */
 export type QuestStatus = 'locked' | 'available' | 'active' | 'ready' | 'done';
 
+/** How far along the objective is: kills counted so far, or items of the kind in the bag (capped at the target). */
+export function questProgress(player: Player, quest: QuestDef): number {
+  const o = quest.objective;
+  if (o.kind === 'collect') return Math.min(o.count, player.countItem(o.itemId));
+  return player.data.quests[quest.id]?.count ?? 0;
+}
+
 export function questStatus(player: Player, quest: QuestDef): QuestStatus {
   const state = player.data.quests[quest.id];
   if (state?.status === 'done') return 'done';
-  if (state?.status === 'active') return state.count >= quest.objective.count ? 'ready' : 'active';
+  if (state?.status === 'active') return questProgress(player, quest) >= quest.objective.count ? 'ready' : 'active';
   if (quest.requires && player.data.quests[quest.requires]?.status !== 'done') return 'locked';
   return 'available';
 }
@@ -27,17 +34,18 @@ export function questStarted(player: Player, questId: string): boolean {
 
 /** True while an active quest still needs this monster killed. */
 export function questNeedsKill(player: Player, monsterId: string): boolean {
-  return db.quests().some((q) => q.objective.monsterId === monsterId && questStatus(player, q) === 'active');
+  return db.quests().some((q) => q.objective.kind === 'kill' && q.objective.monsterId === monsterId && questStatus(player, q) === 'active');
 }
 
 /** True while an active quest wants any Elite (they spawn more often then). */
 export function questWantsElite(player: Player): boolean {
-  return db.quests().some((q) => q.objective.elite && !q.objective.monsterId && questStatus(player, q) === 'active');
+  return db.quests().some((q) => q.objective.kind === 'kill' && q.objective.elite && !q.objective.monsterId && questStatus(player, q) === 'active');
 }
 
 /** Does killing this monster count for the quest? Elites keep their base monster's id. */
 function objectiveMatches(quest: QuestDef, monster: MonsterDef): boolean {
   const o = quest.objective;
+  if (o.kind !== 'kill') return false;
   return (!o.monsterId || o.monsterId === monster.id) && (!o.elite || monster.elite !== undefined);
 }
 
@@ -59,7 +67,7 @@ export function questForNpc(player: Player, npcId: string): { quest: QuestDef; s
 export function activeQuests(player: Player): { quest: QuestDef; status: QuestStatus; count: number }[] {
   return db
     .quests()
-    .map((quest) => ({ quest, status: questStatus(player, quest), count: player.data.quests[quest.id]?.count ?? 0 }))
+    .map((quest) => ({ quest, status: questStatus(player, quest), count: questProgress(player, quest) }))
     .filter((q) => q.status === 'active' || q.status === 'ready');
 }
 
@@ -95,7 +103,9 @@ export interface TurnInResult {
 
 export function turnInQuest(player: Player, quest: QuestDef): TurnInResult | null {
   if (questStatus(player, quest) !== 'ready') return null;
-  player.data.quests[quest.id] = { status: 'done', count: quest.objective.count };
+  const o = quest.objective;
+  if (o.kind === 'collect' && !player.removeItem(o.itemId, o.count)) return null;
+  player.data.quests[quest.id] = { status: 'done', count: o.count };
   const classItem = quest.rewards.classItems?.[player.data.classId];
   const rewards: Rewards = {
     xp: quest.rewards.xp,

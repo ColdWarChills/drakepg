@@ -19,7 +19,8 @@ export const SceneKeys = {
  */
 export type RoomSceneData =
   | { roomId: string; via: 'spawn'; x: number; y: number; intro?: boolean }
-  | { roomId: string; via: 'exit'; side: 'left' | 'right'; y: number }
+  /** Arriving through an exit: `side` is where you appear (for a back exit, at its `x`). */
+  | { roomId: string; via: 'exit'; side: 'left' | 'right' | 'back'; x?: number; y: number }
   | { roomId: string; via: 'battle'; outcome: 'victory' | 'fled'; x: number; y: number };
 
 export interface BattleSceneData {
@@ -47,7 +48,14 @@ export type ResultSceneData =
       quests: { name: string; goal: string; count: number; target: number }[];
       back: RoomSceneData;
     }
-  | { outcome: 'defeat'; monsterName: string; /** Where you wake up. */ wake: { roomId: string; x: number; y: number } };
+  | {
+      outcome: 'defeat';
+      monsterName: string;
+      /** Where you wake up. */
+      wake: { roomId: string; x: number; y: number };
+      /** Boss grit you now have against this boss (0-1), if it was a boss. */
+      grit?: number;
+    };
 
 /** Fade out, then start another scene. */
 export function goTo(scene: Phaser.Scene, key: string, data?: object, duration = 250): void {

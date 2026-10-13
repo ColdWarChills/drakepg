@@ -65,6 +65,7 @@ export const SaveSystem = {
  * v4 -> v5: gear can carry a `sigil` and `mods`. Both are optional, so old gear simply has neither.
  * v5 -> v6: gear can carry a smith `plus`, and the bag can hold materials. Both need nothing from old saves.
  * v6 -> v7: `lootPity` (bad-luck protection counters); sanitize() starts it empty.
+ * v7 -> v8: `bossGrit` (losses per boss); sanitize() starts it empty.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -90,6 +91,7 @@ function migrate(file: SaveFile): SaveFile | null {
   if (file.version < 5) file.version = 5;
   if (file.version < 6) file.version = 6;
   if (file.version < 7) file.version = 7;
+  if (file.version < 8) file.version = 8;
   return file;
 }
 
@@ -99,6 +101,16 @@ function sanitizePity(raw: unknown): Record<string, number> {
   if (!raw || typeof raw !== 'object') return out;
   for (const [id, n] of Object.entries(raw as Record<string, unknown>)) {
     if (db.hasLootTable(id) && typeof n === 'number' && Number.isFinite(n) && n > 0) out[id] = Math.floor(n);
+  }
+  return out;
+}
+
+/** Loss counters for monsters that are still bosses. */
+function sanitizeGrit(raw: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [id, n] of Object.entries(raw as Record<string, unknown>)) {
+    if (db.hasMonster(id) && db.monster(id).boss && typeof n === 'number' && Number.isFinite(n) && n > 0) out[id] = Math.floor(n);
   }
   return out;
 }
@@ -172,6 +184,7 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     statPoints: Math.max(0, Math.floor(num(raw.statPoints, 0))),
     quests: sanitizeQuests(raw.quests),
     lootPity: sanitizePity(raw.lootPity),
+    bossGrit: sanitizeGrit(raw.bossGrit),
   };
 
   const player = new Player(data);

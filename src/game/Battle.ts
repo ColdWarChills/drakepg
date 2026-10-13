@@ -339,18 +339,30 @@ export class Battle {
 
   private checkOver(events: BattleEvent[]): boolean {
     this.checkPhase(events);
+    const grit = this.player.data.bossGrit;
+    const id = this.enemy.def.id;
     if (this.enemy.hp <= 0) {
       events.push({ kind: 'defeated', side: 'enemy' });
       this.state = 'victory';
       this.rewards = this.rollRewards();
+      if (this.enemy.def.boss) delete grit[id];
       return true;
     }
     if (this.player.isDead) {
       events.push({ kind: 'defeated', side: 'player' });
       this.state = 'defeat';
+      // Losing to a boss makes the next attempt a little easier.
+      if (this.enemy.def.boss) grit[id] = (grit[id] ?? 0) + 1;
       return true;
     }
     return false;
+  }
+
+  /** Boss grit: extra damage against this boss from earlier losses (0 for other monsters). */
+  get grit(): number {
+    if (!this.enemy.def.boss) return 0;
+    const g = BALANCE.grit;
+    return Math.min(g.max, (this.player.data.bossGrit[this.enemy.def.id] ?? 0) * g.step);
   }
 
   /** Rage: a class with `mpOnHit` gains MP from every enemy hit that hurts. */
@@ -481,6 +493,7 @@ export class Battle {
     const { mult, effect } = this.elementMultiplier(target, element);
     damage *= mult * Math.max(0, 1 + this.mod(source, 'damageDealt')) * Math.max(0, 1 + this.mod(target, 'damageTaken'));
     if (target === 'player' && this.defending) damage *= BALANCE.defendDamage;
+    if (source === 'player') damage *= 1 + this.grit;
 
     let final = mult > 0 ? Math.max(1, Math.round(damage)) : 0;
     if (cheats.god && target === 'player') final = 0;

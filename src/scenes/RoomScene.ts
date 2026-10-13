@@ -6,7 +6,7 @@ import type { Blocker, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '.
 import { cheats } from '../game/cheats';
 import { makeElite, rollElite } from '../game/Elites';
 import { Player } from '../game/Player';
-import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questStarted, questWantsElite, turnInQuest } from '../game/Quests';
+import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStarted, questWantsElite, turnInQuest } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
 import { defaultRng, weightedPick } from '../game/rng';
 import { session, type RoamingMonster } from '../game/session';
@@ -71,6 +71,22 @@ type Keys = Record<'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT', Pha
 let showedControls = false;
 
 /** A walkable screen: move with WASD/arrows or by clicking, talk to NPCs, bump into monsters to fight. */
+/** Shown over a closed exit. */
+const BLOCKER_LABELS: Record<Blocker, string> = {
+  thorns: 'Blocked by\nthorns',
+  barricade: 'Barricaded',
+  reeds: 'Flooded',
+  snowdrift: 'Snowed in',
+};
+
+/** Toast when you walk into a closed exit. */
+const BLOCKER_BUMP: Record<Blocker, string> = {
+  thorns: 'A wall of thorns blocks the way.',
+  barricade: 'The road is barricaded. The Elder will know why.',
+  reeds: 'Deep water and thick reeds block the way.',
+  snowdrift: 'Snow is piled higher than your head. Someone in town might know a way through.',
+};
+
 export class RoomScene extends Phaser.Scene {
   private room!: RoomDef;
   private player!: Actor;
@@ -94,6 +110,8 @@ export class RoomScene extends Phaser.Scene {
   private promptText!: Phaser.GameObjects.Text;
   private moveTarget: { x: number; y: number } | null = null;
   private pendingNpc: Npc | null = null;
+  /** Back exit the player was sent walking to (click/tap); entered on arrival. */
+  private pendingBack: RoomExit | null = null;
   private safeUntil = 0;
   private leaving = false;
   private dustTimer = 0;
@@ -117,6 +135,7 @@ export class RoomScene extends Phaser.Scene {
     this.bossAsked = false;
     this.moveTarget = null;
     this.pendingNpc = null;
+    this.pendingBack = null;
     this.safeUntil = 0;
     this.leaving = false;
     this.dustTimer = 0;
@@ -169,7 +188,11 @@ export class RoomScene extends Phaser.Scene {
     const { width } = this.scale;
     let x: number;
     let y: number;
-    if (data.via === 'exit') {
+    if (data.via === 'exit' && data.side === 'back') {
+      // Step out of the doorway, just below it.
+      x = data.x ?? width / 2;
+      y = this.room.walk[0] + 24;
+    } else if (data.via === 'exit') {
       x = data.side === 'left' ? EDGE + 50 : width - EDGE - 50;
       y = data.y;
     } else {
@@ -180,7 +203,7 @@ export class RoomScene extends Phaser.Scene {
     const fig = drawFigure(this, x, y, look, 1, session.player.weapon, session.player.weaponSigil);
     this.player = this.makeActor(fig, x, y, look.scale);
     this.playerGear = this.gearKey();
-    if (data.via === 'exit') this.player.facing = data.side === 'left' ? 1 : -1;
+    if (data.via === 'exit') this.player.facing = data.side === 'right' ? -1 : 1;
     this.clampToWalk(this.player);
     this.place(this.player);
   }
@@ -345,6 +368,10 @@ export class RoomScene extends Phaser.Scene {
     const [top, bottom] = this.room.walk;
     const y = (top + bottom) / 2 - 70;
     for (const exit of this.room.exits) {
+      if (exit.side === 'back') {
+        this.drawBackExit(exit);
+        continue;
+      }
       const dir = exit.side === 'right' ? 1 : -1;
       const x = exit.side === 'right' ? width - 46 : 46;
       if (!this.exitOpen(exit)) {
@@ -369,6 +396,38 @@ export class RoomScene extends Phaser.Scene {
         this.moveTarget = { x: exit.side === 'right' ? width + 40 : -40, y: this.player.y };
       });
     }
+  }
+
+  /** A bobbing up-arrow and label over a doorway in the art; tap it to walk in. A closed one gets its blocker drawn instead. */
+  private drawBackExit(exit: RoomExit): void {
+    const [top] = this.room.walk;
+    const x = exit.x!;
+    if (!this.exitOpen(exit)) {
+      this.drawBackBlocker(x, exit.blocker ?? 'barricade');
+      return;
+    }
+    const y = top - 70;
+    const c = this.add.container(x, y).setDepth(UI_DEPTH - 1);
+    const arrow = this.add.graphics();
+    arrow.fillStyle(0xf1c40f, 1).lineStyle(4, 0x3e2723, 1);
+    const pts = [new Phaser.Math.Vector2(-26, 14), new Phaser.Math.Vector2(0, -20), new Phaser.Math.Vector2(26, 14)];
+    arrow.fillPoints(pts, true).strokePoints(pts, true, true);
+    const label = addText(this, 0, -46, exit.label, { size: Math.round(16 * this.ls), bold: true, stroke: true, align: 'center' }).setOrigin(0.5);
+    c.add([arrow, label]);
+    this.tweens.add({ targets: arrow, y: -8, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const hit = this.add.rectangle(x, y - 10, 120, 100, 0xffffff, 0).setInteractive({ useHandCursor: true }).setDepth(UI_DEPTH - 1);
+    hit.on('pointerup', () => {
+      if (this.modalOpen() || this.leaving) return;
+      this.pendingNpc = null;
+      this.pendingBack = exit;
+      this.moveTarget = { x, y: top };
+    });
+  }
+
+  /** The back exit whose doorway the player is standing in (it sits at the top of the walkable strip). */
+  private backExitAt(p: Actor): RoomExit | undefined {
+    const [top] = this.room.walk;
+    return this.room.exits.find((e) => e.side === 'back' && Math.abs(p.x - e.x!) < 50 && p.y <= top + 8);
   }
 
   private exitOpen(exit: RoomExit): boolean {
@@ -410,6 +469,8 @@ export class RoomScene extends Phaser.Scene {
         ], true);
         g.lineStyle(2, 0x3e2723, 1).strokeRect(x0 + 2, y - 6, 86, 2);
       }
+    } else if (kind === 'snowdrift') {
+      this.drawSnowdrift(g, x0 + 45, bottom + 10, 110, bottom - top + 200);
     } else {
       // Deep water with tall reeds and cattails.
       g.fillStyle(0x24485a, 0.85).fillRect(x0, top - 20, 90, bottom - top + 40);
@@ -425,25 +486,48 @@ export class RoomScene extends Phaser.Scene {
         if (i % 3 === 0) g.fillStyle(0x5d3a1e, 1).fillEllipse(x + ((i * 13) % 20) - 10, base - h + 16, 10, 30);
       }
     }
-    const label = kind === 'thorns' ? 'Blocked by\nthorns' : kind === 'barricade' ? 'Barricaded' : 'Flooded';
+    const label = BLOCKER_LABELS[kind];
     addText(this, side === 'right' ? width - 50 : 50, top - 290, label, { size: 15, bold: true, align: 'center', color: COLORS.textDim, stroke: true })
       .setOrigin(0.5)
       .setDepth(UI_DEPTH - 1);
   }
 
-  private bumpWall(side: 'left' | 'right'): void {
+  /** Snow piled into a mound: `cx` center, `base` bottom y, `w` x `h`. */
+  private drawSnowdrift(g: Phaser.GameObjects.Graphics, cx: number, base: number, w: number, h: number): void {
+    // Overlapping humps on a flat base, shaded darker at the bottom.
+    const humps = [
+      [-0.32, 0.55, 0.5],
+      [0.28, 0.6, 0.55],
+      [0, 1, 0.6],
+    ];
+    for (const [dx, hh, ww] of humps) g.fillStyle(0xc9d7e4, 1).fillEllipse(cx + dx * w, base - (h * hh) / 2, w * ww, h * hh);
+    for (const [dx, hh, ww] of humps) g.fillStyle(0xf4f8fc, 1).fillEllipse(cx + dx * w - w * 0.04, base - (h * hh) / 2 - h * 0.06, w * ww * 0.85, h * hh * 0.8);
+    g.fillStyle(0xffffff, 1).fillEllipse(cx - w * 0.06, base - h * 0.78, w * 0.22, h * 0.14);
+    g.fillStyle(0xb3c4d6, 1).fillRect(cx - w * 0.6, base - 8, w * 1.2, 10);
+  }
+
+  /** What blocks a closed back exit, drawn over its doorway. */
+  private drawBackBlocker(x: number, kind: Blocker): void {
+    const [top] = this.room.walk;
+    const g = this.add.graphics().setDepth(top - 1);
+    if (kind === 'snowdrift') this.drawSnowdrift(g, x, top + 14, 200, 150);
+    else {
+      for (let i = 0; i < 4; i++) {
+        g.fillStyle(i % 2 ? 0x8d6e63 : 0x795548, 1).fillRect(x - 70, top - 130 + i * 34, 140, 22);
+        g.lineStyle(2, 0x3e2723, 1).strokeRect(x - 70, top - 130 + i * 34, 140, 22);
+      }
+    }
+    addText(this, x, top - 190, BLOCKER_LABELS[kind].replace(/\s+/g, ' '), { size: 15, bold: true, align: 'center', color: COLORS.textDim, stroke: true })
+      .setOrigin(0.5)
+      .setDepth(UI_DEPTH - 1);
+  }
+
+  private bumpWall(exit: RoomExit): void {
     if (this.time.now < this.wallBumpAt) return;
     this.wallBumpAt = this.time.now + 2000;
     sfx.play(this, 'denied');
     this.cameras.main.shake(120, 0.004);
-    const kind = this.room.exits.find((e) => e.side === side)?.blocker ?? 'thorns';
-    const text =
-      kind === 'barricade'
-        ? 'The road is barricaded. The Elder will know why.'
-        : kind === 'reeds'
-          ? 'Deep water and thick reeds block the way.'
-          : 'A wall of thorns blocks the way.';
-    toast(this, text, COLORS.textDim);
+    toast(this, BLOCKER_BUMP[exit.blocker ?? (exit.side === 'back' ? 'barricade' : 'thorns')], COLORS.textDim);
   }
 
   private spawnBoss(): void {
@@ -607,14 +691,21 @@ export class RoomScene extends Phaser.Scene {
     const { width } = this.scale;
     const exitL = this.room.exits.find((e) => e.side === 'left' && this.exitOpen(e));
     const exitR = this.room.exits.find((e) => e.side === 'right' && this.exitOpen(e));
-    if (exitR && p.x > width - EDGE / 2) return this.leave('right');
-    if (exitL && p.x < EDGE / 2) return this.leave('left');
-    const wallR = !exitR && this.room.exits.some((e) => e.side === 'right');
-    const wallL = !exitL && this.room.exits.some((e) => e.side === 'left');
-    const maxX = exitR ? width : wallR ? width - 110 : width - EDGE;
-    const minX = exitL ? 0 : wallL ? 110 : EDGE;
-    if (wallR && p.x >= maxX && vx > 0) this.bumpWall('right');
-    if (wallL && p.x <= minX && vx < 0) this.bumpWall('left');
+    if (exitR && p.x > width - EDGE / 2) return this.leave(exitR);
+    if (exitL && p.x < EDGE / 2) return this.leave(exitL);
+    const shutR = exitR ? undefined : this.room.exits.find((e) => e.side === 'right');
+    const shutL = exitL ? undefined : this.room.exits.find((e) => e.side === 'left');
+    const maxX = exitR ? width : shutR ? width - 110 : width - EDGE;
+    const minX = exitL ? 0 : shutL ? 110 : EDGE;
+    if (shutR && p.x >= maxX && vx > 0) this.bumpWall(shutR);
+    if (shutL && p.x <= minX && vx < 0) this.bumpWall(shutL);
+    // Back exits: walk up into the doorway (or arrive there after tapping it).
+    const back = this.backExitAt(p);
+    if (back && (vy < 0 || this.pendingBack === back)) {
+      this.pendingBack = null;
+      if (this.exitOpen(back)) return this.leave(back);
+      this.bumpWall(back);
+    }
     this.clampToWalk(p, minX, maxX);
     this.place(p, time);
     if (this.boss) {
@@ -836,12 +927,14 @@ export class RoomScene extends Phaser.Scene {
 
   // --- Transitions ---
 
-  private leave(side: 'left' | 'right'): void {
-    const exit = this.room.exits.find((e) => e.side === side);
-    if (!exit || this.leaving) return;
+  private leave(exit: RoomExit): void {
+    if (this.leaving) return;
     this.leaving = true;
     this.prompt.setVisible(false);
-    const data: RoomSceneData = { roomId: exit.to, via: 'exit', side: side === 'right' ? 'left' : 'right', y: this.player.y };
+    // Arrive at the way back: the destination's exit to this room, else the opposite edge.
+    const back = db.room(exit.to).exits.find((e) => e.to === this.room.id);
+    const side = back?.side ?? (exit.side === 'right' ? 'left' : 'right');
+    const data: RoomSceneData = { roomId: exit.to, via: 'exit', side, x: back?.x, y: this.player.y };
     goTo(this, SceneKeys.Room, data);
   }
 
@@ -972,8 +1065,7 @@ export class RoomScene extends Phaser.Scene {
         },
       });
     } else if (q?.status === 'active') {
-      const count = player.data.quests[q.quest.id]?.count ?? 0;
-      lines = [`${q.quest.reminder}  (${q.quest.goal}: ${count}/${q.quest.objective.count})`];
+      lines = [`${q.quest.reminder}  (${q.quest.goal}: ${questProgress(player, q.quest)}/${q.quest.objective.count})`];
     }
     this.moveTarget = null;
     this.player.facing = npc.x < this.player.x ? -1 : 1;

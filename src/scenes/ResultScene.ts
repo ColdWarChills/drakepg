@@ -11,9 +11,9 @@ import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type ResultSceneData, type RoomSceneData } from './keys';
 
-/** "Mossling" -> "the Mossling"; names that already start with "The" are left alone. */
+/** "Mossling" -> "the Mossling", "The Thornheart" -> "the Thornheart" (for use mid-sentence; capitalize() at the start). */
 function the(name: string): string {
-  return /^the /i.test(name) ? name : `the ${name}`;
+  return /^the /i.test(name) ? `the ${name.slice(4)}` : `the ${name}`;
 }
 
 function capitalize(s: string): string {
@@ -118,6 +118,10 @@ export class ResultScene extends Phaser.Scene {
     } else {
       this.cameras.main.shake(300, 0.006);
       const lines = [`${capitalize(the(data.monsterName))} got the better of you.`, '', `You wake up in ${db.room(data.wake.roomId).name}, fully rested.`];
+      if (data.grit) {
+        const max = data.grit >= BALANCE.grit.max ? ' (max)' : '';
+        lines.push('', `Grit: +${Math.round(data.grit * 100)}% damage against ${the(data.monsterName)} next time${max}.`);
+      }
       addText(this, cx, 330, lines.join('\n'), { size: 26, align: 'center' }).setOrigin(0.5).setLineSpacing(6);
       this.continueButton('Wake up', { ...data.wake, via: 'spawn' }, 520);
     }

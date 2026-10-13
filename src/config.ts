@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -111,6 +111,8 @@ export const BALANCE = {
     honeDriftChance: 0.35,
     honeDrift: [3, 8] as [number, number],
   },
+  /** Boss grit: each loss to a boss adds `step` damage against it, up to `max`. Beating it resets the count. */
+  grit: { step: 0.05, max: 0.25 },
   /** XP and gold from beating a boss again after its quest no longer needs it. */
   bossRepeatRewards: 0.5,
   /**

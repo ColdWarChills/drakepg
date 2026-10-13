@@ -55,6 +55,7 @@ export const db = {
   quests: (): readonly QuestDef[] => QUESTS,
   hasRoom: (id: string) => rooms.has(id),
   hasItem: (id: string) => items.has(id),
+  hasMonster: (id: string) => monsters.has(id),
   hasLootTable: (id: string) => lootTables.has(id),
   hasSkill: (id: string) => skills.has(id),
 };
@@ -99,8 +100,12 @@ export function validateData(): void {
   for (const q of QUESTS) {
     if (!npcIds.has(q.giver)) throw new Error(`Quest ${q.id}: unknown giver ${q.giver}`);
     if (q.requires) db.quest(q.requires);
-    if (q.objective.monsterId) db.monster(q.objective.monsterId);
-    else if (!q.objective.elite) throw new Error(`Quest ${q.id}: objective needs a monsterId or elite`);
+    const o = q.objective;
+    if (o.kind === 'collect') {
+      const t = db.item(o.itemId).type;
+      if (t === 'weapon' || t === 'armor') throw new Error(`Quest ${q.id}: collect quests take potions or materials, not gear`);
+    } else if (o.monsterId) db.monster(o.monsterId);
+    else if (!o.elite) throw new Error(`Quest ${q.id}: objective needs a monsterId or elite`);
     q.rewards.items?.forEach((id) => db.item(id));
     Object.values(q.rewards.classItems ?? {}).forEach((id) => db.item(id));
   }
@@ -112,6 +117,7 @@ export function validateData(): void {
     }
     for (const exit of r.exits) {
       db.room(exit.to);
+      if (exit.side === 'back' && exit.x === undefined) throw new Error(`Room ${r.id}: back exit to ${exit.to} needs an x`);
       if (exit.requiresQuest) db.quest(exit.requiresQuest);
     }
     for (const npc of r.npcs) {
