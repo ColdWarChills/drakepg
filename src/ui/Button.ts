@@ -12,6 +12,9 @@ export interface ButtonOptions {
   sublabel?: string;
 }
 
+/** Holding a button with a hover text this long on a touch screen reads the text instead of pressing it. */
+const LONG_PRESS_MS = 450;
+
 /** Rounded rectangle button. Works with mouse and touch. */
 export class Button extends Phaser.GameObjects.Container {
   private readonly bg: Phaser.GameObjects.Rectangle;
@@ -19,6 +22,8 @@ export class Button extends Phaser.GameObjects.Container {
   private readonly sub?: Phaser.GameObjects.Text;
   private readonly baseColor: number;
   private enabled = true;
+  private hasHover = false;
+  private downAt = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -59,14 +64,18 @@ export class Button extends Phaser.GameObjects.Container {
       this.squash(1);
     });
     this.bg.on('pointerdown', () => {
+      this.downAt = scene.time.now;
       if (!this.enabled) return;
       this.bg.setFillStyle(COLORS.buttonDown);
       this.squash(0.93);
     });
-    this.bg.on('pointerup', () => {
+    this.bg.on('pointerup', (pointer: Phaser.Input.Pointer) => {
       if (!this.enabled) return;
       this.bg.setFillStyle(COLORS.buttonHover);
       this.squash(1);
+      // Touch "hover" lasts while the finger is down (Phaser fires over on touch start, out on touch end),
+      // so a long press was for reading the text, not for pressing.
+      if (this.hasHover && pointer.wasTouch && scene.time.now - this.downAt >= LONG_PRESS_MS) return;
       play(this.scene, 'click');
       this.onClick();
     });
@@ -99,8 +108,9 @@ export class Button extends Phaser.GameObjects.Container {
     return this;
   }
 
-  /** Forward hover so lists can show item descriptions. */
+  /** Forward hover so lists can show item descriptions. On touch screens, holding the button shows it. */
   onHover(over: () => void, out?: () => void): this {
+    this.hasHover = true;
     this.bg.on('pointerover', over);
     if (out) this.bg.on('pointerout', out);
     return this;

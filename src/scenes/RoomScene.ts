@@ -21,7 +21,7 @@ import { openCheatMenu } from '../ui/cheatMenu';
 import { openInventory, openShop } from '../ui/inventory';
 import { lootName } from '../ui/itemUi';
 import { openCharacterPanel, openDialogue, type DialogueAction } from '../ui/panels';
-import { addText, toast } from '../ui/text';
+import { addText, isTouchScreen, labelScale, toast } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type BattleSceneData, type RoomSceneData } from './keys';
 
 /** Characters are drawn a bit smaller on maps than in battle. */
@@ -97,6 +97,8 @@ export class RoomScene extends Phaser.Scene {
   private leaving = false;
   private dustTimer = 0;
   private nextUid = 1;
+  /** Name labels grow on small screens (see labelScale). */
+  private ls = 1;
 
   constructor() {
     super(SceneKeys.Room);
@@ -117,6 +119,7 @@ export class RoomScene extends Phaser.Scene {
     this.safeUntil = 0;
     this.leaving = false;
     this.dustTimer = 0;
+    this.ls = labelScale(this);
 
     const [top] = this.room.walk;
     drawScenery(this, this.room.background, this.room.backdrop, top - 10);
@@ -283,7 +286,7 @@ export class RoomScene extends Phaser.Scene {
   private addNpc(def: NpcDef): void {
     const fig = drawFigure(this, def.x, def.y, def.look, 1);
     const actor = this.makeActor(fig, def.x, def.y, def.look.scale);
-    const label = addText(this, def.x, 0, `${def.name}\n${def.title}`, { size: 17, bold: true, align: 'center', stroke: true })
+    const label = addText(this, def.x, 0, `${def.name}\n${def.title}`, { size: Math.round(17 * this.ls), bold: true, align: 'center', stroke: true })
       .setOrigin(0.5, 1);
     const npc: Npc = { ...actor, def, label };
     this.npcs.push(npc);
@@ -313,14 +316,14 @@ export class RoomScene extends Phaser.Scene {
     const actor = this.makeActor(fig, r.x, r.y, def.look.scale * 0.85);
     const diff = def.level - session.player.level;
     const color = diff >= 2 ? COLORS.textBad : diff === 1 ? COLORS.textGold : diff <= -2 ? COLORS.textDim : COLORS.text;
-    const label = addText(this, r.x, 0, `${def.name}  Lv ${def.level}`, { size: 15, bold: true, color, stroke: true }).setOrigin(0.5, 1);
+    const label = addText(this, r.x, 0, `${def.name}  Lv ${def.level}`, { size: Math.round(15 * this.ls), bold: true, color, stroke: true }).setOrigin(0.5, 1);
     const mob: Mob = { ...actor, uid: r.uid, def, label, state: 'idle', timer: Phaser.Math.FloatBetween(0.3, 1.5), target: null };
     mob.facing = r.x > this.player.x ? -1 : 1;
     if (r.elite) {
       mob.elite = r.elite;
       mob.aura = this.add.image(r.x, r.y, 'fx_soft').setTint(ELITE_GLOW).setBlendMode('ADD').setScale(5).setAlpha(0.3);
       this.tweens.add({ targets: mob.aura, alpha: 0.55, scale: 5.8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      mob.tag = addText(this, r.x, 0, 'ELITE', { size: 14, bold: true, color: COLORS.textGold, stroke: true }).setOrigin(0.5, 1);
+      mob.tag = addText(this, r.x, 0, 'ELITE', { size: Math.round(14 * this.ls), bold: true, color: COLORS.textGold, stroke: true }).setOrigin(0.5, 1);
     }
     this.mobs.push(mob);
     this.place(mob);
@@ -352,7 +355,7 @@ export class RoomScene extends Phaser.Scene {
       arrow.fillStyle(0xf1c40f, 1).lineStyle(4, 0x3e2723, 1);
       const pts = [new Phaser.Math.Vector2(-16 * dir, -26), new Phaser.Math.Vector2(22 * dir, 0), new Phaser.Math.Vector2(-16 * dir, 26)];
       arrow.fillPoints(pts, true).strokePoints(pts, true, true);
-      const label = addText(this, -10 * dir, -48, exit.label, { size: 16, bold: true, stroke: true, align: 'center' }).setOrigin(
+      const label = addText(this, -10 * dir, -48, exit.label, { size: Math.round(16 * this.ls), bold: true, stroke: true, align: 'center' }).setOrigin(
         exit.side === 'right' ? 1 : 0,
         0.5,
       );
@@ -451,7 +454,7 @@ export class RoomScene extends Phaser.Scene {
     const fig = drawFigure(this, b.x, b.y, def.look, faceLeft ? -1 : 1);
     const actor = this.makeActor(fig, b.x, b.y, def.look.scale);
     actor.facing = 1;
-    const label = addText(this, b.x, 0, `${def.name}  ·  Boss`, { size: 18, bold: true, color: COLORS.textBad, stroke: true }).setOrigin(0.5, 1);
+    const label = addText(this, b.x, 0, `${def.name}  ·  Boss`, { size: Math.round(18 * this.ls), bold: true, color: COLORS.textBad, stroke: true }).setOrigin(0.5, 1);
     this.boss = { ...actor, def, label };
     this.place(this.boss);
     const aura = this.add.image(b.x, b.y - 120, 'fx_soft').setTint(0x7dff9a).setBlendMode('ADD').setScale(9).setAlpha(0.25).setDepth(b.y - 1);
@@ -484,6 +487,8 @@ export class RoomScene extends Phaser.Scene {
       height: 48,
       fontSize: 17,
     }).setDepth(UI_DEPTH);
+    // Not every browser has it (iPhone Safari doesn't), so only offer it where it works.
+    if (this.sys.game.device.fullscreen.available) btn(330, 'Fullscreen', () => this.scale.toggleFullscreen());
 
     const title = addText(this, width / 2, 36, this.room.name, { size: 30, bold: true, color: COLORS.textGold, stroke: true })
       .setOrigin(0.5)
@@ -503,8 +508,11 @@ export class RoomScene extends Phaser.Scene {
 
     if (!showedControls) {
       showedControls = true;
-      const hint = addText(this, width / 2, height - 18, 'WASD / arrows: move    E / Space: talk    C: character    Click: walk there', {
-        size: 17,
+      const controls = isTouchScreen()
+        ? 'Tap the ground to walk    Tap people to talk    Hold a battle button to read it'
+        : 'WASD / arrows: move    E / Space: talk    C: character    Click: walk there';
+      const hint = addText(this, width / 2, height - 18, controls, {
+        size: Math.round(17 * Math.min(this.ls, 1.25)),
         stroke: true,
       })
         .setOrigin(0.5, 1)
@@ -517,8 +525,8 @@ export class RoomScene extends Phaser.Scene {
     // "E Talk" bubble shown over the nearest NPC.
     const bg = this.add.rectangle(0, 0, 110, 34, 0x1d1826, 0.92).setRounded(10).setStrokeStyle(2, COLORS.panelBorder);
     this.promptText = addText(this, 0, 0, '', { size: 17, bold: true, color: COLORS.textGold }).setOrigin(0.5);
-    this.prompt = this.add.container(0, 0, [bg, this.promptText]).setDepth(UI_DEPTH - 2).setVisible(false);
-    this.tweens.add({ targets: this.prompt, scale: 1.06, yoyo: true, repeat: -1, duration: 450, ease: 'Sine.easeInOut' });
+    this.prompt = this.add.container(0, 0, [bg, this.promptText]).setDepth(UI_DEPTH - 2).setVisible(false).setScale(this.ls);
+    this.tweens.add({ targets: this.prompt, scale: 1.06 * this.ls, yoyo: true, repeat: -1, duration: 450, ease: 'Sine.easeInOut' });
   }
 
   /** Big room name that fades in and out on arrival. */
@@ -714,17 +722,22 @@ export class RoomScene extends Phaser.Scene {
       return;
     }
     if (near === 'boss') {
-      this.promptText.setText('E  Fight');
+      this.promptText.setText(`${this.keyHint}Fight`);
       this.prompt.setVisible(true).setPosition(this.boss!.x, this.boss!.label.y - this.boss!.label.height - 22);
       return;
     }
     const q = questForNpc(session.player, near.def.id);
     const verb =
       q?.status === 'ready' ? 'Turn in' : q?.status === 'available' ? 'Quest' : near.def.role.kind === 'shop' ? 'Shop' : near.def.role.kind === 'inn' ? 'Rest' : 'Talk';
-    this.promptText.setText(`E  ${verb}`);
+    this.promptText.setText(`${this.keyHint}${verb}`);
     const marker = this.markers.get(near);
     const above = marker?.visible ? marker.y - 46 : near.label.y - near.label.height - 22;
     this.prompt.setVisible(true).setPosition(near.x, above);
+  }
+
+  /** "E  " before the bubble's verb, except on touch screens (you tap the person instead). */
+  private get keyHint(): string {
+    return isTouchScreen() ? '' : 'E  ';
   }
 
   /** Closest thing the player can interact with: an NPC, or the boss. */
@@ -1023,7 +1036,7 @@ export class RoomScene extends Phaser.Scene {
           ? `${q.quest.name}: done! Return to ${this.giverName(q.quest)}`
           : `${q.quest.name}: ${q.quest.goal} ${q.count}/${q.quest.objective.count}`,
       );
-      const text = addText(this, 12, 8, rows.join('\n'), { size: 16, color: COLORS.text }).setLineSpacing(6);
+      const text = addText(this, 12, 8, rows.join('\n'), { size: Math.round(16 * Math.min(this.ls, 1.25)), color: COLORS.text }).setLineSpacing(6);
       const bg = this.add
         .rectangle(0, 0, Math.max(340, text.width + 24), text.height + 16, COLORS.panel, 0.8)
         .setOrigin(0)
