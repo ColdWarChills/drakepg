@@ -4,7 +4,7 @@ export const CLASSES: ClassDef[] = [
   {
     id: 'warrior',
     name: 'Warrior',
-    tagline: 'Tough and steady. Big HP, heavy hits.',
+    tagline: 'Tough and steady. Big HP, heavy hits. Rage: gains MP when hit.',
     stats: { str: 8, int: 2, dex: 5, end: 7 },
     growth: { str: 2, end: 1 },
     weapon: 'training_sword',
@@ -23,6 +23,7 @@ export const CLASSES: ClassDef[] = [
       { skillId: 'rallying_roar', level: 18 },
       { skillId: 'titans_wrath', level: 20 },
     ],
+    mpOnHit: 3,
     look: {
       shape: 'humanoid',
       color: 0x2e86de,

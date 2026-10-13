@@ -43,6 +43,8 @@ export type BattleEvent =
   | { kind: 'defend'; mp: number }
   /** Enemy is winding up a telegraphed attack that lands next turn. */
   | { kind: 'windup'; move: string; text: string }
+  /** MP from Rage (a Warrior taking a hit). */
+  | { kind: 'rage'; mp: number }
   /** A boss changes form (new element and resistances). */
   | { kind: 'phase'; text: string; element: Element }
   | { kind: 'defeated'; side: Side };
@@ -281,6 +283,7 @@ export class Battle {
       const hit = this.strike('enemy', attack.name, 'enemy', attack.damageType, element, attack.power);
       events.push(hit);
       if (hit.kind === 'miss') return;
+      this.rage(hit.damage, events);
     }
     for (const a of attack.applies ?? []) this.pushApply(events, 'enemy', a, element, attack.damageType);
   }
@@ -347,6 +350,14 @@ export class Battle {
       return true;
     }
     return false;
+  }
+
+  /** Rage: a class with `mpOnHit` gains MP from every enemy hit that hurts. */
+  private rage(damage: number, events: BattleEvent[]): void {
+    const gain = this.player.classDef.mpOnHit ?? 0;
+    if (gain <= 0 || damage <= 0 || this.player.isDead) return;
+    const mp = this.player.restoreMp(gain);
+    if (mp > 0) events.push({ kind: 'rage', mp });
   }
 
   /** A boss's second form kicks in once its HP falls to the threshold (only once, and not on the killing blow). */

@@ -554,6 +554,11 @@ export class BattleScene extends Phaser.Scene {
         await this.wait(700);
         break;
       }
+      case 'rage': {
+        floatText(this, PLAYER_X + 70, GROUND_Y - 170, `Rage +${e.mp} MP`, COLORS.textMagic, 22);
+        this.refreshBars();
+        break;
+      }
       case 'phase': {
         // The battle already holds the new form; catch the scene's copy up and show it off.
         this.monster = this.battle.enemy.def;

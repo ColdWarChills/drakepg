@@ -31,6 +31,7 @@ npm run preview  # serve the dist/ build locally
   - **Elements**: Fire, Water, Ice, Wind, Earth, Energy, Light, Dark. Weapons, spells and monster attacks carry one (or none: neutral). Every monster's weaknesses and resistances are shown under its name; hits show **WEAK!** / **Resisted**. Rule of thumb: a creature resists its own element and is weak to the opposite (Fire/Ice, Water/Energy, Earth/Wind, Light/Dark).
   - **Attack types**: Melee (STR), Pierce (DEX), Magic (INT). Each has its own defense on armor and monsters.
   - **Skills** cost MP and most have a **cooldown** (turns until reuse, shown on the button). Hover a skill for its description.
+  - **Warrior Rage**: Warriors gain 3 MP whenever an enemy hit lands on them ("Rage +3 MP"), so they can keep using skills in long fights.
   - **Statuses**: burn, poison, bleed, stun, weaken, expose, buffs and more, shown as chips under each status panel with turns left.
   - **Weapon specials**: some weapons have a chance to trigger an extra effect when an Attack lands (shown in the item line).
 - **Leveling**: each level gives **stat points** (spend with **+** in the Character panel) and unlocks class skills at set levels (12 per class, up to level 20).
@@ -87,7 +88,7 @@ Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editin
 - **Skill**: add to `src/data/skills.ts`, then to a class's `skills` in `src/data/classes.ts` with the level that unlocks it. Set `cooldown`, and `element`/`damageType` if it shouldn't use the weapon's. `applies` adds statuses (`self: true` for buffs). `fx: 'heavy'` gives a leap (or a big spell).
 - **Status**: add to `src/data/statuses.ts` (damage over time, regen, stun, damage/defense/resist/hit/crit modifiers).
 - **Elite affix**: add to `src/data/elites.ts` (`hp`, `damage`, `defense` multipliers, `resists`, `applies` added to every attack) with a `description` the battle panel shows. Spawn chance, stat and reward multipliers are in `BALANCE.elite`; Elite Sigil odds in `BALANCE.sigilChance.elite`. Any monster can become an Elite; its guaranteed drop comes from the gear its zone's monsters drop.
-- **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look) and to `ClassId` in `src/data/types.ts`.
+- **Class**: add to `src/data/classes.ts` (stats, per-level `growth`, starting gear, skills, look, optional `mpOnHit` for Rage) and to `ClassId` in `src/data/types.ts`.
 - **Quest**: add to `src/data/quests.ts`. `giver` is an NPC id, `requires` chains it after another quest, the objective kills a `monsterId` or any Elite (`elite: true`, which also makes Elites spawn more often while it's active), `classItems` gives a different reward per class, `endsChapter` shows the chapter-complete screen. A room exit with `requiresQuest` stays blocked (by thorns, or its `blocker`: barricade or reeds) until that quest is accepted; a room `boss` appears once its quest is accepted and stays for rematches (`BALANCE.bossRepeatRewards` XP and gold).
 - **Boss**: a monster with `boss: true` (can't flee). An attack with `windup` text is telegraphed one turn before it hits. A `phase` changes its element, resistances and attacks once its HP drops below a share (the Stormcoil at 50%). The room's `boss.intro` is the line shown before the fight.
 

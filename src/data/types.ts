@@ -124,6 +124,8 @@ export interface ClassDef {
   armor: string;
   /** Skills and the level each unlocks at. */
   skills: { skillId: string; level: number }[];
+  /** Rage: MP gained each time an enemy hit lands on you. Shown on the class card and Character panel. */
+  mpOnHit?: number;
   look: Look;
 }
 
