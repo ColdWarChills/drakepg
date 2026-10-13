@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
-import { INN_SPAWN } from '../data/world';
 import { SIGIL_NAMES, SIGIL_TIERS, type ItemGrant, type SigilTier } from '../game/Items';
 import { session } from '../game/session';
 import { Button } from '../ui/Button';
@@ -118,9 +117,9 @@ export class ResultScene extends Phaser.Scene {
       this.continueButton('Continue', data.back, 560 + Math.min(shift, 20));
     } else {
       this.cameras.main.shake(300, 0.006);
-      const lines = [`${capitalize(the(data.monsterName))} got the better of you.`, '', 'You wake up at the inn, fully rested.'];
+      const lines = [`${capitalize(the(data.monsterName))} got the better of you.`, '', `You wake up in ${db.room(data.wake.roomId).name}, fully rested.`];
       addText(this, cx, 330, lines.join('\n'), { size: 26, align: 'center' }).setOrigin(0.5).setLineSpacing(6);
-      this.continueButton('Wake up', { ...INN_SPAWN, via: 'spawn' }, 520);
+      this.continueButton('Wake up', { ...data.wake, via: 'spawn' }, 520);
     }
   }
 

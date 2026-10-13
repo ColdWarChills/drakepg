@@ -212,6 +212,19 @@ export interface MonsterDef {
   boss?: boolean;
   /** Only on Elite copies made by `makeElite` (src/game/Elites.ts), never in monsters.ts. */
   elite?: EliteInfo;
+  /** Changes once, the first time its HP drops to `at` (share of max HP) or below. */
+  phase?: MonsterPhase;
+}
+
+/** A boss's second form: new element and resistances (and optionally attacks), announced in battle. */
+export interface MonsterPhase {
+  /** 0.5 = at half HP. */
+  at: number;
+  /** Battle log line and banner when it happens. */
+  text: string;
+  element: Element;
+  resists: Resists;
+  attacks?: MonsterAttack[];
 }
 
 /** What makes a monster an Elite: its affix, and the gear pool its guaranteed drop comes from. */
@@ -242,7 +255,7 @@ export type ArtRef = string | string[];
 
 /** Procedural scenery used when there's no background art. */
 export interface Backdrop {
-  kind: 'town' | 'forest';
+  kind: 'town' | 'forest' | 'marsh' | 'outpost';
   /** Darken the whole scene, 0-1. */
   shade?: number;
 }
@@ -279,9 +292,13 @@ export interface RoomExit {
   label: string;
   /** Exit stays blocked until this quest is accepted (or done). */
   requiresQuest?: string;
+  /** What blocks it until then. Default thorns. */
+  blocker?: Blocker;
 }
 
-export type Ambient = 'dust' | 'leaves' | 'fireflies';
+export type Blocker = 'thorns' | 'barricade' | 'reeds';
+
+export type Ambient = 'dust' | 'leaves' | 'fireflies' | 'rain' | 'mist';
 
 /** One walkable screen. Walk off a side with an exit to enter the next room. */
 export interface RoomDef {
@@ -298,7 +315,9 @@ export interface RoomDef {
   zoneId?: string;
   monsterCount?: number;
   /** A boss standing in the room once its quest is accepted. It stays after the quest for rematches (less XP and gold). */
-  boss?: { monsterId: string; x: number; y: number; questId: string };
+  boss?: { monsterId: string; x: number; y: number; questId: string; intro?: string };
+  /** Where you wake up after losing a battle here. Default: the Brindlemoor inn. */
+  wakeAt?: { roomId: string; x: number; y: number };
 }
 
 export interface QuestDef {

@@ -3,6 +3,7 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS } from '../data/elements';
 import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, ZoneDef } from '../data/types';
+import { INN_SPAWN } from '../data/world';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
 import { makeElite } from '../game/Elites';
 import { questNeedsKill, recordKill } from '../game/Quests';
@@ -62,6 +63,8 @@ export class BattleScene extends Phaser.Scene {
   /** Blue bubble while the player defends. */
   private shield: Phaser.GameObjects.Arc | null = null;
   private statusRows: Record<Side, Phaser.GameObjects.Container> | null = null;
+  /** Element, weaknesses and resistances under the enemy's HP bar (redrawn when a boss changes form). */
+  private affinityRow: Phaser.GameObjects.Container | null = null;
   /** Statuses as shown so far during playback (status id -> turns). The battle itself is already a turn ahead. */
   private shown: Record<Side, Map<string, number>> = { player: new Map(), enemy: new Map() };
 
@@ -86,6 +89,7 @@ export class BattleScene extends Phaser.Scene {
     this.skillPage = 0;
     this.chargeAura = null;
     this.shield = null;
+    this.affinityRow = null;
     this.shown = { player: new Map(), enemy: new Map() };
 
     drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
@@ -195,9 +199,12 @@ export class BattleScene extends Phaser.Scene {
     group('Weak:', weak);
     group('Resists:', strong);
     if (all) parts.push({ text: `${parts.length ? '  ·  ' : ''}All ${all > 0 ? '+' : ''}${all}`, color: COLORS.textGold });
-    let cx = x;
+    this.affinityRow?.destroy();
+    this.affinityRow = this.add.container(x, y);
+    let cx = 0;
     for (const part of parts) {
-      const t = addText(this, cx, y, part.text, { size: 15, bold: true, color: part.color }).setOrigin(0, 0.5);
+      const t = addText(this, cx, 0, part.text, { size: 15, bold: true, color: part.color }).setOrigin(0, 0.5);
+      this.affinityRow.add(t);
       cx += t.width;
     }
   }
@@ -547,6 +554,22 @@ export class BattleScene extends Phaser.Scene {
         await this.wait(700);
         break;
       }
+      case 'phase': {
+        // The battle already holds the new form; catch the scene's copy up and show it off.
+        this.monster = this.battle.enemy.def;
+        const colors = ELEMENT_COLORS[e.element];
+        sfx.play(this, 'warning');
+        this.cameras.main.flash(350, (colors[1] >> 16) & 0xff, (colors[1] >> 8) & 0xff, colors[1] & 0xff);
+        this.cameras.main.shake(450, 0.012);
+        fx.shockwave(this, ENEMY_X, GROUND_Y, colors[1], 4, 0.4);
+        fx.explosion(this, ENEMY_X, GROUND_Y - CHEST, colors);
+        for (const part of this.enemyFig.list) if (part instanceof Phaser.GameObjects.Image) part.setTint(colors[1]);
+        floatText(this, ENEMY_X, GROUND_Y - 290, `${ELEMENT_LABELS[e.element]} form!`, ELEMENT_TEXT[e.element], 40);
+        this.pushLog(e.text);
+        this.drawAffinities(this.scale.width - 420, 108);
+        await this.wait(1100);
+        break;
+      }
       case 'flee': {
         const fig = this.playerFig;
         if (e.success) {
@@ -760,10 +783,10 @@ export class BattleScene extends Phaser.Scene {
         break;
       }
       case 'defeat': {
-        // No penalty: wake up at the inn.
+        // No penalty: wake up at the nearest inn.
         player.restoreFull();
         SaveSystem.save(player);
-        const data: ResultSceneData = { outcome: 'defeat', monsterName };
+        const data: ResultSceneData = { outcome: 'defeat', monsterName, wake: db.room(this.back.roomId).wakeAt ?? INN_SPAWN };
         goTo(this, SceneKeys.Result, data);
         break;
       }

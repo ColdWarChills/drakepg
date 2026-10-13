@@ -463,6 +463,32 @@ export function ambient(scene: Phaser.Scene, kinds: Ambient[], depth = 50): Emit
           blendMode: 'ADD',
         });
         break;
+      case 'rain':
+        e = scene.add.particles(0, 0, TEX.spark, {
+          emitZone: randomRect(-200, -40, width + 300, 10),
+          speedY: { min: 620, max: 760 },
+          speedX: { min: -150, max: -120 },
+          rotate: 12,
+          scaleX: 0.25,
+          scaleY: { min: 0.8, max: 1.3 },
+          alpha: { min: 0.15, max: 0.35 },
+          lifespan: 1400,
+          frequency: 12,
+          tint: 0xbfd8ff,
+        });
+        break;
+      case 'mist':
+        e = scene.add.particles(0, 0, TEX.soft, {
+          emitZone: randomRect(-200, height - 330, width + 200, 200),
+          speedX: { min: 8, max: 22 },
+          speedY: { min: -3, max: 3 },
+          scale: { min: 6, max: 11 },
+          alpha: { onEmit: () => 0, onUpdate: (_p, _k, t) => Math.sin(t * Math.PI) * 0.12 },
+          lifespan: 14000,
+          frequency: 700,
+          tint: 0xcfe3dc,
+        });
+        break;
     }
     e.setDepth(depth);
     // Pre-warm so the screen isn't empty on entry.
