@@ -42,6 +42,9 @@ KEY_HOLE = 40   # this close anywhere (e.g. a gap between wing and body) -> tran
 KEY_SOFT = 230  # edge pixels between HARD and SOFT get partial alpha
 SPILL_RIM = 28  # green-keyed art: px from the edge where green spill is removed...
 SPILL_FADE = 2.5  # ...and how fast green-dominated pixels there fade out
+# Magenta-keyed art that needs the same spill pass (glows over magenta leave pink specks). Opt-in, so the
+# subject's own pinks and purples near the edge stay untouched everywhere else.
+MAGENTA_SPILL = {"icon_stormwatch_amulet"}
 EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
@@ -154,14 +157,20 @@ def process_sprite(src: Path, key: str) -> Path:
     clean = np.where(alpha[..., None] > 0, clean, 0)
 
     # Green-screen spill: glows and anti-aliasing over the green leave a lime rim along the silhouette.
-    # Near the edge only (so the subject's own greens survive): green can't exceed the brighter of red and
-    # blue, and the more green dominated a pixel, the more transparent it gets (a glow keeps its warm part).
-    if key_color[1] > key_color[0] + 60 and key_color[1] > key_color[2] + 60:
+    # Near the edge only (so the subject's own greens survive): the key's channels can't exceed the brightest
+    # other channel, and the more key-colored a pixel, the more transparent it gets (a glow keeps the rest).
+    green = key_color[1] > key_color[0] + 60 and key_color[1] > key_color[2] + 60
+    magenta = key in MAGENTA_SPILL and min(key_color[0], key_color[2]) > key_color[1] + 60
+    if green or magenta:
+        keys, others = ([1], [0, 2]) if green else ([0, 2], [1])
         rim = _dilate(bg, SPILL_RIM) & ~bg
-        rb = np.maximum(clean[..., 0], clean[..., 2])
-        spill = np.clip(clean[..., 1] - rb, 0, 255)
+        other = clean[..., others].max(axis=2)
+        spill = np.clip(clean[..., keys].min(axis=2) - other, 0, 255)
         alpha = np.where(rim, alpha * np.clip(1 - spill / 255 * SPILL_FADE, 0, 1), alpha)
-        clean[..., 1] = np.where(rim, np.minimum(clean[..., 1], rb), clean[..., 1])
+        weakest = keys[0] if green else np.where(clean[..., 0] < clean[..., 2], 0, 2)
+        for c in keys:
+            fix = rim & (weakest == c)
+            clean[..., c] = np.where(fix, np.minimum(clean[..., c], other), clean[..., c])
 
     rgba = np.dstack([clean, alpha * 255]).astype(np.uint8)
     img = Image.fromarray(rgba, "RGBA")
