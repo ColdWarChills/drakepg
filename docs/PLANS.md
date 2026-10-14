@@ -23,6 +23,7 @@ Build order (all built, see "Done" at the bottom):
   - Is the drop reveal too slow when farming normal monsters?
   - Is the 5-slot skill swap in the Character panel clear?
   - 8 equipment slots, sets, Lucky Impling.
+  - Ch2-3 bosses (retuned 2026-10-14): is a big wind-up every 3rd move fair, or too samey across bosses?
   - Battle effects (built 2026-10-14): too much or too little? Do farming fights feel slower? Easy to tone down per effect in `src/ui/fx.ts`.
 
 ## Longer chapters (Ch1-3)
@@ -86,12 +87,13 @@ Build order (all built, see "Done" at the bottom):
 
 - **Decided:** monster rebalances are fine and expected often. Keep numbers small (no thousands early), especially weapons.
 - **Decided (2026-10-14):** no fix for the Mage vs Thornheart at level 4 with starter gear (3%). Rushing the boss without gear may be hard; with shop gear it's 75%, at level 5 97%.
-- **Open:** Ch2-3 bosses are too soft: the random-button bot still wins 75-95%. Options: fixed `every` beats on their big attacks (worked for the Thornheart), or a per-chapter `bossDamage`.
-- **Open:** monsters were not rebalanced after the equipment/sets update. Sim: a full set + jewelry gives ~20-30% fewer boss turns and +5-17% HP left.
+- **Built (2026-10-14):** Ch2-3 bosses wind up their big hit every 3rd move, like the Thornheart, and hit harder (their damage had fallen behind hero HP: normal hits took 7-13% of max HP vs the Thornheart's 13-18%). Sim, shop gear at the intended level: smart AI wins 83-100%, the random-button bot 52-76% (was 75-98%), close to the Thornheart's 47-71%. Old Snowmaw's test stays Fire (with it: 89-100% smart).
+- **Proposed (built as the default, 2026-10-14):** first-kill bosses are tuned for shop gear; a full set + jewelry makes them easy (random bot ~95-100%) as the reward for farming. Trash was left as is (early game easy).
+- **Open:** Heroic rematches are still easy with a full set (random bot 94-100%). A bigger Heroic damage multiplier hurts players without a set long before it touches set-geared ones, so it stays x1.25. Needs new Heroic moves (beats, a second phase), or a higher tier later.
 - **Open:** Lucky Impling catch rates in the sim: Warrior ~9-85%, Mage ~18-87%, Rogue ~39-100% (worst in late areas). Tune later.
 - **Open:** the longer chapters need one timed run by hand (the pace bot is done, see "Longer chapters").
 - **Open:** no roll stone for the Power line of rings and necklaces.
-- Watch: Old Snowmaw without Fire is a 0-58% win for every class (intended: the quest before her collects Fire Essence).
+- Watch: Old Snowmaw without Fire is a 0-4% win for every class (intended: the quest before her collects Fire Essence). With Fire she's 89-100% for the smart AI. The sim's Mage now carries Meteor and Ember Bolt for her (it had no Fire spell in its default 5, which made her look much harder for Mages).
 - Watch: stacked-affix Elites on Tough monsters are harsh (Frenzied Ash Imp at level 3: 6-72%; Ironhide Drakeling: 15-77%). They can be fled.
 - Watch: in normal fights the random bot does about as well as the smart AI. Accepted: the tension is in attrition between fights.
 

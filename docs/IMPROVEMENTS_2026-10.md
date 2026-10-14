@@ -83,3 +83,13 @@ Every hit gets wind-up, contact and reaction, on both sides, with or without mon
 - Fixed: a scene stopped during a hit-stop came back in slow motion next time (`fx.hitStop` now always restores the time scale).
 - Code: effects in `src/ui/fx.ts` (`elementBurst`, `lightning`, `clawMarks`, `critFlare`, `castCircle`, `aura`, `statusMark`, `stunStars`, `dissolve`...), sounds in `src/ui/sfx.ts` (`ELEMENT_SFX`), playback in `src/scenes/BattleScene.ts`.
 - Checked in the browser: all 8 element bursts side by side, Warrior heavy crit on a shape monster, monster claws on a guarded hero, Mage magic circle + Meteor + Spark Chain combo, Rogue Thousand Cuts with a miss and Bleed, War Cry, Stun, Burn tick, Second Wind, Thornheart boss death. Real fights for all three classes run to the result screen with no console errors. Typecheck and build pass.
+
+## Chapter 2-3 boss tuning (fixed beats)
+
+- **Why:** a random-button bot beat the Ch2-3 bosses 75-98% of the time. Their hits had fallen behind hero HP: normal hits took 7-13% of max HP and big hits 16-38%, vs the Thornheart's 13-18% and 34-46%.
+- **Beats:** every boss now winds up its big hit every 3rd move, in both forms (Drag Under, Thunderhead / Tidal Crush, Avalanche, Glacial Prison / Cyclone). The big hit wins ties with other timed moves (Wallow, Blizzard). Traits say so on the battle panel.
+- **Numbers:** Bogmother damage 15-20 -> 20-26, Drag Under 2.4 -> 3.2. Stormcoil HP 480 -> 430, damage 18-24 -> 23-31, big hits 2.2/2.3 -> 3.0. Old Snowmaw damage 20-26 -> 28-36, Avalanche 2.4 -> 3.4. Frostbinder HP 760 -> 650, damage 22-28 -> 26-34, big hits 2.3 -> 2.8.
+- **Sim, shop gear at the intended level** (smart / random): Bogmother 99-100% / 57-76%, Stormcoil 91-99% / 52-72%, Old Snowmaw with Fire 89-100% / 34-95%, Frostbinder 83-99% / 68-76%. Thornheart for comparison: 97-99% / 47-71%. With a full set + jewelry they're easy again (the farming reward). Pace bot: bosses still rarely beat it (it arrives over-leveled and defends on the beat).
+- **Sim:** `npm run sim -- 400 <word>` prints only matching tables; loadouts can `carry` skills (the Fire loadout gives the Mage Meteor and Ember Bolt); new table: Heroic rematches with the area set.
+- Heroic stays x1.25: a bigger multiplier crushes players without a set before it challenges set-geared ones (see PLANS.md).
+- Checked in the browser: Old Snowmaw's panel (shell line + new trait line) and the Stormcoil's trait fit.

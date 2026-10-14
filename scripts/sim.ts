@@ -1,7 +1,8 @@
 /**
  * Headless balance check: plays thousands of battles with a simple AI and prints win rates.
  * Each cell also runs a random-button bot ("rnd"): if it does nearly as well as the smart AI, choices don't matter there.
- * Run with `npm run sim` (optionally `npm run sim -- 2000` for more battles per matchup).
+ * Run with `npm run sim` (optionally `npm run sim -- 2000` for more battles per matchup, and
+ * `npm run sim -- 400 stormcoil` to print only the tables whose title or monsters mention a word).
  */
 import { BALANCE } from '../src/config';
 import { db, validateData } from '../src/data/db';
@@ -18,6 +19,7 @@ import { Player, xpToNext } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
 
 const RUNS = Number(process.argv[2] ?? 400);
+const ONLY = process.argv[3]?.toLowerCase();
 
 /** Where free stat points go, repeating. */
 const STAT_PLAN: Record<ClassId, StatKey[]> = {
@@ -36,6 +38,8 @@ interface Loadout {
   sigil?: SigilTier;
   /** Worn instead of the body armor's shop helm/gloves/boots (`KITS`): set pieces, rings, necklaces. */
   kit?: Record<ClassId, string[]>;
+  /** Skills carried on top of the class heal (the newest others fill the rest), e.g. a Mage's Fire spells for Old Snowmaw. */
+  carry?: Partial<Record<ClassId, string[]>>;
 }
 
 const STARTER: Loadout = {
@@ -89,7 +93,13 @@ const SHOP3: Loadout = {
   armor: { warrior: 'ridgeplate', mage: 'fleecewool_robe', rogue: 'ridgeplate' },
 };
 const ICE3: Loadout = { label: 'ice3', weapon: { warrior: 'frostbite', mage: 'hoarfrost_staff', rogue: 'icicle_kris' }, armor: SHOP3.armor };
-const FIRE3: Loadout = { label: 'fire3', weapon: { warrior: 'hearthfire_blade', mage: 'kindling_rod', rogue: 'salamander_kris' }, armor: SHOP3.armor };
+/** Fire weapons, and the Mage carries its Fire spells (what you'd bring to Old Snowmaw's Frost Shell). */
+const FIRE3: Loadout = {
+  label: 'fire3',
+  weapon: { warrior: 'hearthfire_blade', mage: 'kindling_rod', rogue: 'salamander_kris' },
+  armor: SHOP3.armor,
+  carry: { mage: ['meteor', 'ember_bolt'] },
+};
 const EARTH3: Loadout = { ...HEART, label: 'heart3', armor: SHOP3.armor };
 const SUPERIOR = 'superior_health_potion';
 
@@ -106,8 +116,11 @@ const KITS: Record<string, string[]> = {
 function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number, potion: string): Player {
   const p = Player.createNew('Sim', classId);
   while (p.level < level) p.addXp(xpToNext(p.level));
-  // Carry the default pick of skills (the class heal and the newest others).
-  p.data.loadout = p.defaultLoadout();
+  // Carry the default pick of skills (the class heal and the newest others), or the loadout's picks first.
+  const picks = gear.carry?.[classId] ?? [];
+  const usual = p.defaultLoadout();
+  const heal = usual.filter((id) => db.skill(id).kind === 'heal');
+  p.data.loadout = [...heal, ...picks, ...usual.filter((id) => !heal.includes(id) && !picks.includes(id))].slice(0, BALANCE.skillSlots);
   const plan = STAT_PLAN[classId];
   for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
   p.data.inventory = [];
@@ -241,6 +254,7 @@ interface Row {
 }
 
 function table(title: string, rows: Row[]): void {
+  if (ONLY && !title.toLowerCase().includes(ONLY) && !rows.some((r) => r.monster.includes(ONLY))) return;
   const rng = seeded(12345);
   console.log(`\n${title}`);
   console.log(`${'monster'.padEnd(20)} lv gear     | ` + ['warrior', 'mage', 'rogue'].map((c) => c.padEnd(40)).join(' | '));
@@ -292,7 +306,7 @@ function lootReport(): void {
   console.log(`Normal kills to the first Rare, no protection:   ${streaks(false)}`);
   console.log(`Normal kills to the first Rare, with protection: ${streaks(true)}  (after ${BALANCE.loot.pityAfter} dry kills +${BALANCE.loot.pityStep * 100}% per kill, max +${BALANCE.loot.pityMax * 100}%)`);
 }
-lootReport();
+if (!ONLY) lootReport();
 
 table('Prologue road (should take about 2 turns and cost a few HP)', [
   { monster: 'burrow_rat', level: 1, gear: STARTER, potions: 0 },
@@ -481,4 +495,14 @@ table('Sets and jewelry: shop weapon and body, the area set (4 pieces) and jewel
   { monster: 'rime_acolyte', level: 12, gear: FROST_SET, potions: 1, potion: SUPERIOR },
   { monster: 'frostbinder', level: 14, gear: SHOP3, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 14, gear: FROST_SET, potions: 3, potion: SUPERIOR },
+]);
+
+/** The Frost set with a Fire weapon: what you'd bring to Old Snowmaw. */
+const FROST_SET_FIRE: Loadout = { ...FROST_SET, label: 'frostfire', weapon: FIRE3.weapon, carry: FIRE3.carry };
+table('Heroic rematches with the area set and jewelry (3 potions): the challenge for farmed gear', [
+  { monster: 'thornheart', heroic: true, level: 7, gear: THORN_SET, potions: 3 },
+  { monster: 'bogmother', heroic: true, level: 10, gear: STORM_SET, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', heroic: true, level: 12, gear: STORM_SET, potions: 3, potion: GREATER },
+  { monster: 'old_snowmaw', heroic: true, level: 14, gear: FROST_SET_FIRE, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', heroic: true, level: 16, gear: FROST_SET, potions: 3, potion: SUPERIOR },
 ]);
