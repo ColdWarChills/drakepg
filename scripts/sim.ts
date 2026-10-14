@@ -279,6 +279,12 @@ function lootReport(): void {
 }
 lootReport();
 
+table('Prologue road (should take about 2 turns and cost a few HP)', [
+  { monster: 'burrow_rat', level: 1, gear: STARTER, potions: 0 },
+  { monster: 'dew_slug', level: 1, gear: STARTER, potions: 0 },
+  { monster: 'hedge_pixie', level: 1, gear: STARTER, potions: 0 },
+]);
+
 table('Chapter 1 trash (full HP each fight, 1 potion)', [
   { monster: 'mossling', level: 1, gear: STARTER, potions: 1 },
   { monster: 'thornback_boar', level: 1, gear: STARTER, potions: 1 },

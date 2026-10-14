@@ -1,5 +1,6 @@
 import { BALANCE, SAVE_KEY, SAVE_VERSION } from '../config';
 import { db } from '../data/db';
+import { TOWN_START } from '../data/world';
 import type { EquipSlot } from '../data/types';
 import { isGearDef, sanitizeTraits, type Gear } from './Items';
 import { Player, STAT_KEYS, type PlayerData } from './Player';
@@ -188,10 +189,11 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
       .map((e) => ({ itemId: e.itemId, qty: Math.floor(e.qty) })),
     gear,
     nextUid: Math.max(highest + 1, Math.floor(num(raw.nextUid, 1))),
+    // An existing hero with no usable location goes to town, not back to the prologue road.
     location:
       raw.location && db.hasRoom(raw.location.roomId)
-        ? { roomId: raw.location.roomId, x: num(raw.location.x, fresh.location.x), y: num(raw.location.y, fresh.location.y) }
-        : fresh.location,
+        ? { roomId: raw.location.roomId, x: num(raw.location.x, TOWN_START.x), y: num(raw.location.y, TOWN_START.y) }
+        : { ...TOWN_START },
     classId,
     statPoints: Math.max(0, Math.floor(num(raw.statPoints, 0))),
     quests: sanitizeQuests(raw.quests),

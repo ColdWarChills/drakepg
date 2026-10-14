@@ -9,6 +9,22 @@ import type { LootTableDef } from './types';
  */
 export const LOOT_TABLES: LootTableDef[] = [
   {
+    // The road to Brindlemoor: starter gear, armor most often (heroes set out with only a weapon).
+    // Drops far more often than other tables (`BALANCE.loot.tableMob.road`).
+    id: 'road',
+    tiers: {
+      common: [
+        { itemId: 'travel_garb', weight: 2 },
+        { itemId: 'novice_robe', weight: 2 },
+        { itemId: 'training_sword' },
+        { itemId: 'worn_staff' },
+        { itemId: 'rusty_dagger' },
+      ],
+      uncommon: [],
+      rare: [],
+    },
+  },
+  {
     id: 'thornwood',
     tiers: {
       common: [

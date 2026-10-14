@@ -71,6 +71,8 @@ export const BALANCE = {
     boss: { rare: 0.35, uncommon: 0.5, common: 1 },
     /** Treasure chests and mimics: gear about two times in three. */
     chest: { rare: 0.03, uncommon: 0.3, common: 0.5 },
+    /** Normal-monster odds for one loot table instead of `mob`. The prologue road drops gear about one kill in three. */
+    tableMob: { road: { rare: 0, uncommon: 0, common: 0.35 } } as Record<string, { rare: number; uncommon: number; common: number }>,
     /**
      * Bad-luck protection: after `pityAfter` kills on a table without a Rare, each further kill adds `pityStep`
      * to that table's Rare chance, up to `pityMax` extra. A Rare resets it. Counted per table (each area has its

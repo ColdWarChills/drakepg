@@ -18,8 +18,9 @@ export function pityBonus(misses: number): number {
 /** Tiers this table can drop, with their odds. Empty tiers are skipped, so they never eat a roll. */
 function tiersFor(tableId: string, source: LootSource, misses: number): { tier: LootTier; odds: number }[] {
   const table = db.lootTable(tableId);
+  const odds = (source === 'mob' && BALANCE.loot.tableMob[tableId]) || BALANCE.loot[source];
   return LOOT_TIERS.filter((t) => table.tiers[t].length > 0).map((tier) => {
-    const base = BALANCE.loot[source][tier];
+    const base = odds[tier];
     return { tier, odds: tier === 'rare' ? Math.min(1, base + pityBonus(misses)) : base };
   });
 }
