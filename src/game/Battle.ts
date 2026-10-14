@@ -168,7 +168,7 @@ export class Battle {
   }
 
   canUseSkill(skillId: string): boolean {
-    return !this.isOver && this.player.mp >= db.skill(skillId).mpCost && !this.cooldowns.has(skillId);
+    return !this.isOver && this.player.isCarried(skillId) && this.player.mp >= db.skill(skillId).mpCost && !this.cooldowns.has(skillId);
   }
 
   useSkill(skillId: string): BattleEvent[] {

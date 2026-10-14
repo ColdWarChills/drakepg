@@ -1,4 +1,4 @@
-import { SAVE_KEY, SAVE_VERSION } from '../config';
+import { BALANCE, SAVE_KEY, SAVE_VERSION } from '../config';
 import { db } from '../data/db';
 import type { EquipSlot } from '../data/types';
 import { isGearDef, sanitizeTraits, type Gear } from './Items';
@@ -102,6 +102,8 @@ function migrate(file: SaveFile): SaveFile | null {
     p.freshSkills = [];
     file.version = 9;
   }
+  // v9 -> v10: `loadout` (skills carried into battle). Old characters get the default pick in sanitize.
+  if (file.version < 10) file.version = 10;
   return file;
 }
 
@@ -197,9 +199,14 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     bossGrit: sanitizeGrit(raw.bossGrit),
     seen: Array.isArray(raw.seen) ? raw.seen.filter((s): s is string => typeof s === 'string') : [],
     freshSkills: Array.isArray(raw.freshSkills) ? raw.freshSkills.filter((s): s is string => typeof s === 'string' && db.hasSkill(s)) : [],
+    loadout: [],
   };
 
   const player = new Player(data);
+  const known = new Set(player.knownSkills.map((s) => s.id));
+  data.loadout = Array.isArray(raw.loadout)
+    ? [...new Set(raw.loadout.filter((s): s is string => typeof s === 'string' && known.has(s)))].slice(0, BALANCE.skillSlots)
+    : player.defaultLoadout();
   player.clampVitals();
   if (player.hp <= 0) player.restoreFull();
   return player.data;

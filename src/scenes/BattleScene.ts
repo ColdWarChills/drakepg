@@ -431,9 +431,10 @@ export class BattleScene extends Phaser.Scene {
     const buttons: MenuButton[] = [];
 
     if (menu === 'main') {
+      const fresh = p.carriedSkills.filter((sk) => p.data.freshSkills.includes(sk.id)).length;
       buttons.push(
         { label: 'Attack', run: () => this.act(() => this.battle.attack()) },
-        { label: 'Skills', sub: p.data.freshSkills.length ? `${p.data.freshSkills.length} NEW` : undefined, run: () => this.showMenu('skills') },
+        { label: 'Skills', sub: fresh ? `${fresh} NEW` : undefined, run: () => this.showMenu('skills') },
         { label: 'Items', run: () => this.showMenu('items') },
         { label: 'Defend', sub: `-60% dmg, +MP`, run: () => this.act(() => this.battle.defend()) },
         {
@@ -444,7 +445,7 @@ export class BattleScene extends Phaser.Scene {
         },
       );
     } else if (menu === 'skills') {
-      const skills = p.knownSkills;
+      const skills = p.carriedSkills;
       if (skills.length <= SKILLS_PER_PAGE + 1) {
         buttons.push(...skills.map((s) => this.skillButton(s)));
       } else {

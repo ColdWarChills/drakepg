@@ -353,7 +353,8 @@ export class RoomScene extends Phaser.Scene {
       ...news.skills.map((s) => {
         const element = s.element && s.element !== 'weapon' ? ` · ${ELEMENT_LABELS[s.element]}` : '';
         const cd = s.cooldown > 0 ? ` · cooldown ${s.cooldown}` : '';
-        return { title: `New skill: ${s.name}  (${s.mpCost} MP${element}${cd})`, text: s.description, color: COLORS.textMagic };
+        const slot = player.isCarried(s.id) ? '' : ` Your ${BALANCE.skillSlots} skill slots are full: carry it from the Character panel (C).`;
+        return { title: `New skill: ${s.name}  (${s.mpCost} MP${element}${cd})`, text: `${s.description}${slot}`, color: COLORS.textMagic };
       }),
     ];
     sfx.play(this, 'quest');

@@ -93,6 +93,8 @@ const SUPERIOR = 'superior_health_potion';
 function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number, potion: string): Player {
   const p = Player.createNew('Sim', classId);
   while (p.level < level) p.addXp(xpToNext(p.level));
+  // Carry the default pick of skills (the class heal and the newest others).
+  p.data.loadout = p.defaultLoadout();
   const plan = STAT_PLAN[classId];
   for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
   p.data.inventory = [];
@@ -120,7 +122,7 @@ const BUFFS = new Set(['war_cry', 'iron_skin', 'stone_skin', 'smoke_bomb']);
 /** Pick and perform one action. */
 function act(b: Battle): void {
   const p = b.player;
-  const skills = p.knownSkills.filter((s) => b.canUseSkill(s.id));
+  const skills = p.carriedSkills.filter((s) => b.canUseSkill(s.id));
   const heal = skills.find((s) => s.kind === 'heal');
   const hpPct = p.hp / p.maxHp;
   const enemyHasStatus = (id: string) => b.statuses('enemy').some((s) => s.def.id === id);
@@ -142,7 +144,7 @@ function act(b: Battle): void {
     if (s.kind === 'buff' && longFight && enemyHpPct > 0.4 && BUFFS.has(s.id) && !selfHasStatus(s.applies![0].status)) return void b.useSkill(s.id);
   }
   // Keep enough MP for one heal.
-  const reserve = heal ? 0 : (p.knownSkills.find((s) => s.kind === 'heal')?.mpCost ?? 0);
+  const reserve = heal ? 0 : (p.carriedSkills.find((s) => s.kind === 'heal')?.mpCost ?? 0);
   let best: SkillDef | null = null;
   let bestValue = 1.05;
   for (const s of skills) {
@@ -166,7 +168,7 @@ function actRandom(b: Battle, rng: Rng): void {
     const potion = p.data.inventory[0]?.itemId;
     if (potion && b.canUseItem(potion)) return void b.useItem(potion);
   }
-  const skills = p.knownSkills.filter((s) => b.canUseSkill(s.id));
+  const skills = p.carriedSkills.filter((s) => b.canUseSkill(s.id));
   const options = [() => b.attack(), () => b.defend(), ...skills.map((s) => () => b.useSkill(s.id))];
   options[Math.floor(rng.next() * options.length)]();
 }
