@@ -3,6 +3,18 @@ import type { RoomDef, ZoneDef } from './types';
 
 export const ZONES: ZoneDef[] = [
   {
+    // Prologue: the road to Brindlemoor. Pests that hit for 1.
+    id: 'road',
+    name: 'Old Road',
+    recommendedLevel: [1, 1],
+    backdrop: { kind: 'forest' },
+    encounters: [
+      { monsterId: 'burrow_rat', weight: 4 },
+      { monsterId: 'dew_slug', weight: 3 },
+      { monsterId: 'hedge_pixie', weight: 2 },
+    ],
+  },
+  {
     id: 'thornwood',
     name: 'Thornwood',
     recommendedLevel: [1, 3],
@@ -131,12 +143,133 @@ export const ZONES: ZoneDef[] = [
   },
 ];
 
+/** A loss on the prologue road (rare: everything there hits for 1) starts you back at the cart. */
+const ROAD_WAKE = { roomId: 'road_cart', x: 920, y: 640 };
 /** After a loss in the fen beyond Reedwatch you wake at its healer instead of walking back from Brindlemoor. */
 const REEDWATCH_WAKE = { roomId: 'reedwatch', x: 840, y: 650 };
 /** Chapter 3: wake at Hearthold's fire. */
 const HEARTHOLD_WAKE = { roomId: 'hearthold', x: 900, y: 650 };
 
 export const ROOMS: RoomDef[] = [
+  // Prologue: six rooms of road walked right to left, one way into Brindlemoor's east gate (the town has no exit back).
+  {
+    id: 'road_cart',
+    name: 'Overturned Cart',
+    backdrop: { kind: 'forest' },
+    walk: [540, 700],
+    ambient: ['leaves'],
+    exits: [
+      { side: 'left', to: 'road_mill', label: 'Old Mill Road' },
+    ],
+    npcs: [
+      {
+        id: 'odo',
+        name: 'Odo',
+        title: 'Carter',
+        x: 1080,
+        y: 610,
+        look: { shape: 'humanoid', color: 0x7d6a4f, accent: 0xd9c7a3, scale: 1 },
+        role: { kind: 'talk' },
+        dialogue: [
+          'Brindlemoor is just up the road, west. The hedges are full of pests, but they barely bite. Pick up what they drop: you will want more than a weapon.',
+          'Since the old dragon went quiet, every hedge has something living in it. Small things, all bluster.',
+          'Me? I will sit here with my broken wheel until someone from town comes by. Go on.',
+        ],
+      },
+    ],
+    zoneId: 'road',
+    monsterCount: 2,
+    wakeAt: ROAD_WAKE,
+  },
+  {
+    id: 'road_mill',
+    name: 'Old Mill Road',
+    backdrop: { kind: 'forest' },
+    walk: [540, 700],
+    ambient: ['dust'],
+    exits: [
+      { side: 'right', to: 'road_cart', label: 'Overturned Cart' },
+      { side: 'left', to: 'road_ford', label: 'Willow Ford' },
+    ],
+    npcs: [],
+    zoneId: 'road',
+    monsterCount: 3,
+    wakeAt: ROAD_WAKE,
+  },
+  {
+    id: 'road_ford',
+    name: 'Willow Ford',
+    backdrop: { kind: 'forest' },
+    walk: [540, 700],
+    ambient: ['leaves', 'fireflies'],
+    exits: [
+      { side: 'right', to: 'road_mill', label: 'Old Mill Road' },
+      { side: 'left', to: 'road_fields', label: 'Fallow Fields' },
+    ],
+    npcs: [],
+    zoneId: 'road',
+    monsterCount: 3,
+    wakeAt: ROAD_WAKE,
+  },
+  {
+    id: 'road_fields',
+    name: 'Fallow Fields',
+    backdrop: { kind: 'forest', shade: 0.1 },
+    walk: [540, 700],
+    ambient: ['dust', 'leaves'],
+    exits: [
+      { side: 'right', to: 'road_ford', label: 'Willow Ford' },
+      { side: 'left', to: 'road_hedges', label: 'Hedgerow Lane' },
+    ],
+    npcs: [],
+    zoneId: 'road',
+    monsterCount: 3,
+    wakeAt: ROAD_WAKE,
+  },
+  {
+    id: 'road_hedges',
+    name: 'Hedgerow Lane',
+    backdrop: { kind: 'forest', shade: 0.2 },
+    walk: [540, 700],
+    ambient: ['leaves'],
+    exits: [
+      { side: 'right', to: 'road_fields', label: 'Fallow Fields' },
+      { side: 'left', to: 'road_gate', label: 'Brindlemoor Gate' },
+    ],
+    npcs: [],
+    zoneId: 'road',
+    monsterCount: 3,
+    wakeAt: ROAD_WAKE,
+  },
+  {
+    id: 'road_gate',
+    name: 'Brindlemoor Gate',
+    backdrop: { kind: 'forest' },
+    walk: [540, 700],
+    ambient: ['dust'],
+    exits: [
+      { side: 'right', to: 'road_hedges', label: 'Hedgerow Lane' },
+      { side: 'left', to: 'brindlemoor', label: 'Brindlemoor' },
+    ],
+    npcs: [
+      {
+        id: 'pell',
+        name: 'Pell',
+        title: 'Gatekeeper',
+        x: 280,
+        y: 610,
+        look: { shape: 'humanoid', color: 0x34495e, accent: 0xbdc3c7, scale: 1.05 },
+        role: { kind: 'talk' },
+        dialogue: [
+          'Brindlemoor, just through here. Tobin sells gear, Ilsa has beds.',
+          'Elder Maren keeps to the far end of the square. She always has work for a new blade.',
+        ],
+      },
+    ],
+    zoneId: 'road',
+    monsterCount: 2,
+    wakeAt: ROAD_WAKE,
+  },
   {
     id: 'brindlemoor',
     name: 'Brindlemoor',
@@ -545,6 +678,8 @@ export const ROOMS: RoomDef[] = [
   },
 ];
 
-/** Where new characters start, and where you wake up after losing a battle. */
-export const START = { roomId: 'brindlemoor', x: 620, y: 650 };
+/** Where new characters start: the prologue road. */
+export const START = { roomId: 'road_cart', x: 920, y: 640 };
+/** Brindlemoor's square: where chapter starts (and a lost save location) put you. */
+export const TOWN_START = { roomId: 'brindlemoor', x: 620, y: 650 };
 export const INN_SPAWN = { roomId: 'brindlemoor', x: 760, y: 650 };

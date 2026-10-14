@@ -37,3 +37,11 @@ Parked: 6 (hunter contracts), 7 (class trial), 8 (bad-luck threshold), 10 (syste
 - Old Snowmaw without Fire: 0-58% for every class (Mage too, since Staff Bolt). That's intended (the quest before her has you collect Fire Essence), but watch it in playtests.
 - Elites with stacked affixes on Tough monsters are still hard (Frenzied Ash Imp at level 3: 6-72%; Ironhide Drakeling: 15-77%). They can be fled.
 - Mage early game is weaker without a Fire spam (Thornheart at level 4 with starter gear: 3%, 20% after 5 losses).
+
+## Prologue road (after the merge)
+
+- New heroes start at **Overturned Cart** with their class weapon only (no armor) and walk six one-way rooms west into Brindlemoor's east gate, so the town and its shop are something you arrive at.
+- Placeholder pests (`burrow_rat`, `dew_slug`, `hedge_pixie`): damage 0, so every hit floors to 1; 20-24 HP, so about 2 turns (sim: 1.7-2.3). 5-6 XP each, ~16 on the road: level 2 by town.
+- Loot table `road` (starter armor weighted 2x, starter weapons) drops on 35% of kills via `BALANCE.loot.tableMob`, a per-table override of the normal-monster odds.
+- Chapter 2/3 starts and saves with a broken location go to `TOWN_START`. The new-hero greeting now waits for the "New!" popup to close instead of being skipped.
+- Not final: monster names, stats and look (shape stand-ins, no art), room backdrops (procedural forest), Odo/Pell lines.

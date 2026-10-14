@@ -147,7 +147,7 @@ export class Player {
     });
     player.data.loadout = player.defaultLoadout();
     player.data.equipment.weapon = player.makeGear(cls.weapon);
-    player.data.equipment.armor = player.makeGear(cls.armor);
+    // No armor yet: it drops on the prologue road (or Tobin sells it in town).
     player.restoreFull();
     return player;
   }

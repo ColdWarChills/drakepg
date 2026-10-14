@@ -186,7 +186,9 @@ export class RoomScene extends Phaser.Scene {
     this.saveLocation();
     if (data.via === 'spawn' && data.intro) {
       const elder = this.npcs.find((n) => n.def.role.kind === 'talk');
-      if (elder) this.time.delayedCall(500, () => this.interact(elder, true));
+      // Wait out the "New!" popup (a new hero's first skill) so the greeting isn't skipped.
+      const greet = (npc: Npc) => (this.modalOpen() ? this.time.delayedCall(300, () => greet(npc)) : this.interact(npc, true));
+      if (elder) this.time.delayedCall(500, () => greet(elder));
     }
   }
 
