@@ -14,7 +14,7 @@ Build order (all built, see "Done" at the bottom):
 5. ~~Sim and pacing check, art queue entries~~
 
 - **Review:** every new line (first-visit scenes, notes, signs) is a draft, listed in `docs/ROOM_LINES.md`. Mark what to change; the next chat edits `src/data/world.ts` and deletes that file once approved. Includes the Hunters' Camp lines.
-- **Decide:** the chapters are still shorter than the targets (see "Longer chapters"). Add side quests, or accept the length?
+- **Timed run:** the designer times one run per chapter; compare with the pace bot (see "Longer chapters").
 - **Playtest by hand** (only the sim, the pace bot and screenshots have checked these so far):
   - New rooms: one timed run per chapter (the pace bot's minutes are guesses). Do the quiet rooms feel good or slow? Are campfires before every boss too generous?
   - Map, Recall Scroll: is the map readable now that pages have 7-9 rooms in a row?
@@ -37,9 +37,8 @@ Build order (all built, see "Done" at the bottom):
   - Ch3: Frostfang Pass, Hearthold, Windscour Ridge (+ Steamvent Caves, now with a sure chest, + Hot Springs past them: quiet), The High Trail, Ranger's Lookout (quiet), Snowmaw's Den, Whiteout Ledge (the acolytes), Roost Stair (quiet), The Frozen Roost.
   - Quest gates moved to the quiet room before each boss (thorns, reeds, snowdrifts), so you see the pre-boss room before the quest.
 - **Pace bot (`npm run pace`, guessed seconds per action; it fights everything it walks past):** old layout -> new: Ch1 28 -> 32 min, Ch2 33 -> 41, Ch3 46 -> 49. Level at each boss barely moved (Thornheart L5 at hero 5-7, Bogmother L8 at 8-10, Stormcoil L10 at 9-12, Snowmaw L12 at 13-18, Frostbinder L14 at 14-19). Most of the time is quest farming, which more rooms don't change.
-- **Proposed:** to reach the targets without more grind, give each chapter 1-2 short side quests that use the new rooms (e.g. a Woodcutters' Clearing sign quest, the Eel Pools, the Ranger's log leading to a small reward). About +10 min per chapter.
+- **Decided (2026-10-14):** no side quests now. Build the base first (rooms, systems); quests and side quests come with the story pass. The length gap to the targets waits until then.
 - **Proposed:** target lengths about 35 / 55 / 70 min (rough estimates).
-- **Open:** side quests (above), or accept the current length after a timed run?
 - **Open:** keep campfires after a playtest? (Built, easy to remove per room.)
 - **Open:** sure chests in side rooms (`room.chest`, first fill each session, never a mimic): keep? Only the Eel Pools and Steamvent Caves have one; Chapter 1 has none because chests unlock after it.
 
