@@ -6,6 +6,13 @@ Browser turn-based RPG. Phaser 4 + TypeScript + Vite. See README.md for layout a
 - `npm run dev` / `npm run build` (build runs `tsc --noEmit` first) / `npm run typecheck`
 - `npm run sim`: headless balance check (scripts/sim.ts). Run it after tuning monsters, skills, items or `BALANCE`.
 
+## Working across chats
+Several chats (in the browser and on the PC) work on this repo and can't see each other. The repo is the only shared memory.
+- **Start:** `git fetch`, then merge `origin/claude/sweet-cray-w6r64t` (the default branch, which GitHub Pages deploys) into your branch. Read `docs/PLANS.md` before planning anything.
+- **Decisions:** when the user decides or proposes something, write it into `docs/PLANS.md` (Decided / Proposed / Open). When you build something from it, remove it there and log it in `docs/IMPROVEMENTS_2026-10.md`.
+- **Finish:** nothing counts as done on a side branch. When the user OKs the work, merge it into the default branch (PR or local merge) and push, with `docs/PLANS.md` up to date. Never leave finished work only on a `claude/*` branch.
+- If the user says "handoff", update `docs/PLANS.md`, merge and push, then reply with a short summary.
+
 ## Conventions
 - Phaser 4, not 3. Before using an unfamiliar Phaser API, check `node_modules/phaser/skills/` (incl. `v3-to-v4-migration`) or `node_modules/phaser/types/phaser.d.ts`.
 - Game rules in `src/game/` stay Phaser-free so they can be tested/simulated headless.
