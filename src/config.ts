@@ -154,6 +154,12 @@ export const BALANCE = {
     size: 1.2,
   },
 
+  /**
+   * Result screen drop reveal (src/scenes/ResultScene.ts): ms of wind-up before each item pops in, by how good it is.
+   * Plain drops just pop; better grades and Sigils build up first. Best items are revealed last.
+   */
+  dropReveal: { start: 900, gap: 160, plain: 0, fine: 0, superior: 200, masterwork: 450, dawn: 700, dusk: 1000, eclipse: 1500 },
+
   // Exploration
   /** A cleared room refills one monster per this many seconds you spend away from it. */
   respawnSeconds: 45,

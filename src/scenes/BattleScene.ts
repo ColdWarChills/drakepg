@@ -249,7 +249,8 @@ export class BattleScene extends Phaser.Scene {
       detail = `heals ${Math.round(a.heal * 100)}% HP`;
       color = COLORS.textMagic;
     } else if (dmg === null) {
-      detail = statuses.length ? statuses.join(', ') : 'prepares';
+      const self = (a.applies ?? []).every((x) => x.self);
+      detail = statuses.length ? `${self ? 'buffs itself: ' : ''}${statuses.join(', ')}` : 'prepares';
       color = COLORS.textMagic;
     } else {
       detail = [`~${dmg} dmg`, ...statuses.map((x) => `+ ${x}`)].join(' ');
