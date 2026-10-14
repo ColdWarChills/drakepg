@@ -186,7 +186,7 @@ export class CreateScene extends Phaser.Scene {
     if (start && start.chapter > 1) applyChapterStart(player, start);
     // A chapter start already knows its skills; a new hero's first skill is tagged NEW.
     markSkillsSeen(player, !start || start.chapter === 1);
-    session.start(player);
+    session.start(player, true);
     SaveSystem.save(player);
     sfx.play(this, 'quest');
     goTo(this, SceneKeys.Room, { ...START, via: 'spawn', intro: this.chapter === 1 }, 400);

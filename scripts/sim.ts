@@ -8,6 +8,7 @@ import { ELEMENTS } from '../src/data/elements';
 import type { ClassId, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
 import { makeElite } from '../src/game/Elites';
+import { makeImpling } from '../src/game/Lucky';
 import { LOOT_TIERS, rollLootTier, tierOdds, type LootSource } from '../src/game/Loot';
 import { LOOT_TABLES } from '../src/data/loot';
 import { rollGear, type GearDef, type SigilTier } from '../src/game/Items';
@@ -167,7 +168,8 @@ function fight(row: Row, classId: ClassId, rng: Rng): Result {
   const { level, monster: monsterId, elite, gear, potions } = row;
   const potion = row.potion ?? 'health_potion';
   const res: Result = { wins: 0, turns: 0, hpLeft: 0, potions: 0 };
-  const monster = elite ? makeElite(db.monster(monsterId), elite) : db.monster(monsterId);
+  const base = row.zone ? makeImpling(db.zone(row.zone)) : db.monster(monsterId);
+  const monster = elite ? makeElite(base, elite) : base;
   for (let i = 0; i < RUNS; i++) {
     const p = makePlayer(classId, level, gear, potions, potion);
     if (row.losses) p.data.bossGrit[monster.id] = row.losses;
@@ -202,6 +204,8 @@ interface Row {
   potion?: string;
   /** Earlier losses to this boss (boss grit). */
   losses?: number;
+  /** Lucky Impling of this zone (`monster` is just the label). */
+  zone?: string;
 }
 
 function table(title: string, rows: Row[]): void {
@@ -214,7 +218,7 @@ function table(title: string, rows: Row[]): void {
       const hp = r.wins ? r.hpLeft / r.wins : 0;
       return `win${pct(r.wins / RUNS)} hp${pct(hp)} t${(r.turns / RUNS).toFixed(1).padStart(4)} pot${(r.potions / RUNS).toFixed(1)}`;
     });
-    const name = row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.losses ? `${row.monster} grit${row.losses}` : row.monster;
+    const name = row.zone ? `lucky@${row.zone}` : row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.losses ? `${row.monster} grit${row.losses}` : row.monster;
     console.log(`${name.padEnd(20)} ${String(row.level).padStart(2)} ${row.gear.label.padEnd(8)} | ${cells.join(' | ')}`);
   }
 }
@@ -378,4 +382,15 @@ table('The Frostbinder (boss, Ice -> Wind at half HP, 3 potions)', [
   { monster: 'frostbinder', level: 14, gear: EARTH3, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 14, gear: STORM, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 15, gear: SHOP3, potions: 3, potion: SUPERIOR },
+]);
+
+table('Lucky Impling (sized to its area, runs away on its 3rd turn): win = caught', [
+  { monster: 'lucky', zone: 'thornwood', level: 1, gear: STARTER, potions: 0 },
+  { monster: 'lucky', zone: 'thornwood', level: 3, gear: STARTER, potions: 0 },
+  { monster: 'lucky', zone: 'thornwood_deep', level: 4, gear: SHOP, potions: 0 },
+  { monster: 'lucky', zone: 'fen', level: 6, gear: HEART, potions: 0 },
+  { monster: 'lucky', zone: 'causeway', level: 8, gear: SHOP2, potions: 0 },
+  { monster: 'lucky', zone: 'frostfang', level: 10, gear: SHOP3, potions: 0 },
+  { monster: 'lucky', zone: 'windscour', level: 12, gear: SHOP3, potions: 0 },
+  { monster: 'lucky', zone: 'steamvent', level: 12, gear: SHOP3, potions: 0 },
 ]);

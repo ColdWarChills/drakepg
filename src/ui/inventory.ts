@@ -9,7 +9,7 @@ import type { Player } from '../game/Player';
 import { Button } from './Button';
 import { drawFigure } from './figures';
 import {
-  addSigilGlow,
+  animateSigilIcon,
   compareGear,
   defenseText,
   drawItemIcon,
@@ -314,7 +314,7 @@ class InventoryView {
     const icon = drawItemIcon(scene, entry.def, 60);
     s.add(icon);
     if (info?.sigil) {
-      addSigilGlow(scene, icon, info.sigil, 0.8);
+      animateSigilIcon(scene, icon, info.sigil, 60);
       s.add(addText(scene, -CELL / 2 + 5, CELL / 2 - 2, '✦', { size: 16, bold: true, color: SIGIL_COLORS[info.sigil].css, stroke: true }).setOrigin(0, 1));
     }
     if (entry.kind === 'stack' && entry.qty > 1) {
@@ -488,7 +488,7 @@ class InventoryView {
     const iconBg = scene.add.rectangle(left + 38, CARD_Y + 56, 76, 76, SLOT_BG).setRounded(8).setStrokeStyle(3, info.frame);
     const icon = drawItemIcon(scene, entry.def, 58).setPosition(left + 38, CARD_Y + 56);
     card.add([iconBg, icon]);
-    if (info.sigil) addSigilGlow(scene, icon, info.sigil);
+    if (info.sigil) animateSigilIcon(scene, icon, info.sigil, 58);
     const name = addText(scene, left + 92, CARD_Y + 18, itemName(entry.def, entry.kind === 'gear' ? entry.gear : undefined), { size: 22, bold: true, color: info.nameCss, wrap: CARD_W - 120 });
     card.add(name);
     let headY = name.y + name.height + 2;

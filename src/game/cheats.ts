@@ -16,9 +16,14 @@ export const cheats = {
   oneHit: false,
   /** Every roaming monster spawns as an Elite. */
   elites: false,
+  /** Every monster room has a Lucky Impling. */
+  lucky: false,
   /** Every chapter unlock (forge, Sigils, chests...) is open. */
   allFeatures: false,
 };
+
+/** Testing: a new character meets a Lucky Impling in the first monster room it enters. Remove when done testing. */
+export const LUCKY_ON_NEW_GAME = true;
 
 /** Level up `count` times (stat points and skills as usual). */
 export function addLevels(player: Player, count: number): void {

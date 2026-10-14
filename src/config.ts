@@ -134,6 +134,24 @@ export const BALANCE = {
     rewards: 3,
     size: 1.2,
   },
+  /**
+   * Lucky Implings (src/game/Lucky.ts): a rare roaming spawn in any monster room from the start, at most one per room
+   * (`chance` per spawn). It runs from you (`runSpeed`, px/s) and escapes on its `escapeAfter`-th turn in battle.
+   * Sized to the area: `hp` x the area monsters' average HP, their best DEX + `dex` (hard to hit), `xp`/`gold` x their
+   * average. A win has a `sigilChance` shot at a Sigil piece of the area's gear, tier picked by `sigilTiers`.
+   */
+  lucky: {
+    chance: 0.015,
+    runSpeed: 230,
+    escapeAfter: 3,
+    hp: 0.6,
+    dex: 12,
+    damage: 0.5,
+    xp: 1.5,
+    gold: 5,
+    sigilChance: 0.1,
+    sigilTiers: { dawn: 0.8, dusk: 0.17, eclipse: 0.03 },
+  },
 
   // Exploration
   /** A cleared room refills one monster per this many seconds you spend away from it. */

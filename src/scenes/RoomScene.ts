@@ -7,6 +7,7 @@ import type { Blocker, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '.
 import { cheats } from '../game/cheats';
 import { featureOn, markSeen, unseenNews } from '../game/Features';
 import { makeElite, rollElite } from '../game/Elites';
+import { isLucky, makeImpling, rollLucky } from '../game/Lucky';
 import { Player } from '../game/Player';
 import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStarted, questStatus, questWantsElite, turnInQuest } from '../game/Quests';
 import { saveSettings, settings } from '../game/settings';
@@ -39,6 +40,9 @@ const MOB_GAP = { x: 150, y: 70 };
 const UI_DEPTH = 3000;
 /** Gold glow around Elites. */
 const ELITE_GLOW = 0xffc23d;
+/** Lucky Implings: mint tag and glow, gold twinkles. */
+const LUCKY_GLOW = 0x7dffb0;
+const LUCKY_CSS = '#8dffbe';
 
 interface Actor {
   fig: Phaser.GameObjects.Container;
@@ -65,7 +69,10 @@ interface Mob extends Actor {
   elite?: string;
   aura?: Phaser.GameObjects.Image;
   tag?: Phaser.GameObjects.Text;
-  state: 'idle' | 'wander' | 'alert' | 'chase';
+  /** Gold twinkles around a Lucky Impling. */
+  sparkle?: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** `run`: a Lucky Impling running from you. */
+  state: 'idle' | 'wander' | 'alert' | 'chase' | 'run';
   timer: number;
   target: { x: number; y: number } | null;
 }
@@ -226,8 +233,10 @@ export class RoomScene extends Phaser.Scene {
     if (data.via === 'battle') {
       const snap = session.takeRoom(room.id);
       if (snap) {
+        // Beaten, or ran away (a Lucky Impling): either way it's gone.
         const won = data.outcome === 'victory';
-        roaming = snap.monsters.filter((m) => !(won && m.uid === snap.fightingUid));
+        const gone = won || data.outcome === 'escaped';
+        roaming = snap.monsters.filter((m) => !(gone && m.uid === snap.fightingUid));
         this.nextUid = Math.max(0, ...snap.monsters.map((m) => m.uid)) + 1;
         // A beaten mimic is gone; a chest you didn't touch is still there.
         chest = won && snap.fightingUid === MIMIC_UID ? null : (memory?.chest ?? null);
@@ -235,6 +244,7 @@ export class RoomScene extends Phaser.Scene {
           this.safeUntil = this.time.now + BALANCE.fleeGraceSeconds * 1000;
           this.blinkPlayer();
         }
+        if (data.outcome === 'escaped') this.safeUntil = this.time.now + BALANCE.fleeGraceSeconds * 1000;
       }
     }
 
@@ -254,6 +264,11 @@ export class RoomScene extends Phaser.Scene {
       roaming = [];
       for (let i = 0; i < (room.monsterCount ?? 0); i++) roaming.push(this.newRoamer(roaming));
       chest = this.newChest(roaming);
+      // Testing: a new character's first monster room has a Lucky Impling.
+      if (session.luckyNext && roaming.length && !roaming.some((m) => isLucky(m.monsterId))) {
+        session.luckyNext = false;
+        roaming[roaming.length - 1] = { ...roaming[roaming.length - 1], monsterId: 'lucky_impling', elite: undefined };
+      }
     }
     // Give some room: nobody stays right next to you when you arrive or come back from a fight.
     for (const m of roaming) {
@@ -272,6 +287,8 @@ export class RoomScene extends Phaser.Scene {
     const zone = db.zone(this.room.zoneId!);
     const pos = this.findSpawnPoint(taken);
     // Monsters are visible, so tougher ones can appear; their level label warns you.
+    // Now and then a Lucky Impling instead (at most one per room).
+    if (!taken.some((m) => isLucky(m.monsterId)) && rollLucky()) return { uid: this.nextUid++, monsterId: 'lucky_impling', ...pos };
     const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
     const elites = taken.filter((m) => m.elite).length;
     const elitesOn = featureOn(session.player, 'elites') || cheats.elites;
@@ -509,7 +526,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private addMob(r: RoamingMonster): void {
-    const base = db.monster(r.monsterId);
+    const base = isLucky(r.monsterId) ? makeImpling(db.zone(this.room.zoneId!)) : db.monster(r.monsterId);
     const def = r.elite ? makeElite(base, r.elite) : base;
     const fig = drawFigure(this, r.x, r.y, def.look, 1);
     const actor = this.makeActor(fig, r.x, r.y, def.look.scale * 0.85);
@@ -524,6 +541,22 @@ export class RoomScene extends Phaser.Scene {
       this.tweens.add({ targets: mob.aura, alpha: 0.55, scale: 5.8, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
       mob.tag = addText(this, r.x, 0, 'ELITE', { size: Math.round(14 * this.ls), bold: true, color: COLORS.textGold, stroke: true }).setOrigin(0.5, 1);
     }
+    if (def.lucky) {
+      mob.aura = this.add.image(r.x, r.y, 'fx_soft').setTint(LUCKY_GLOW).setBlendMode('ADD').setScale(3.5).setAlpha(0.3);
+      this.tweens.add({ targets: mob.aura, alpha: 0.6, scale: 4.2, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      mob.tag = addText(this, r.x, 0, 'LUCKY', { size: Math.round(14 * this.ls), bold: true, color: LUCKY_CSS, stroke: true }).setOrigin(0.5, 1);
+      mob.sparkle = this.add.particles(r.x, r.y, 'fx_star', {
+        x: { min: -40, max: 40 },
+        y: { min: -90, max: 0 },
+        speedY: { min: -30, max: -10 },
+        scale: { start: 0.55, end: 0 },
+        alpha: { start: 1, end: 0 },
+        lifespan: 700,
+        frequency: 110,
+        tint: [0xffe066, 0xfff6c4, 0x8dffbe],
+        blendMode: 'ADD',
+      });
+    }
     this.mobs.push(mob);
     this.place(mob);
     this.placeEliteMarks(mob);
@@ -532,10 +565,11 @@ export class RoomScene extends Phaser.Scene {
     this.tweens.add({ targets: fig, alpha: 1, duration: 300, delay: 150 });
   }
 
-  /** Keep an Elite's aura and tag with it. */
+  /** Keep an Elite's (or Lucky Impling's) aura, tag and twinkles with it. */
   private placeEliteMarks(m: Mob): void {
     m.aura?.setPosition(m.x, m.y - m.height * m.scale * 0.45).setDepth(m.y - 1);
     m.tag?.setPosition(m.x, m.label.y - m.label.height).setDepth(m.y + 0.5);
+    m.sparkle?.setPosition(m.x, m.y).setDepth(m.y + 0.4);
   }
 
   private drawExits(): void {
@@ -937,7 +971,19 @@ export class RoomScene extends Phaser.Scene {
     let speed = 0;
     let target: { x: number; y: number } | null = null;
 
-    if (!blocked) {
+    if (!blocked && m.def.lucky) {
+      // A Lucky Impling runs from you instead, and slips along the walls when cornered.
+      if (dist < BALANCE.monsterAggroRange * 1.15) {
+        if (m.state !== 'run') this.alertPop(m);
+        m.state = 'run';
+        target = this.runTarget(m);
+        speed = BALANCE.lucky.runSpeed;
+      } else if (m.state === 'run') {
+        m.state = 'idle';
+        m.timer = 0.6;
+      }
+    }
+    if (!blocked && m.state !== 'run') {
       if (!safe && m.state !== 'chase' && m.state !== 'alert' && dist < BALANCE.monsterAggroRange) {
         m.state = 'alert';
         m.timer = 0.45;
@@ -997,7 +1043,7 @@ export class RoomScene extends Phaser.Scene {
         m.y += (ty / len) * step * 0.8;
         m.facing = tx < 0 ? -1 : 1;
         m.moving = true;
-        m.walkT += dt * (m.state === 'chase' ? 14 : 8);
+        m.walkT += dt * (m.state === 'chase' || m.state === 'run' ? 14 : 8);
       }
     }
     this.clampToWalk(m, 60, this.scale.width - 60);
@@ -1005,6 +1051,23 @@ export class RoomScene extends Phaser.Scene {
     this.placeEliteMarks(m);
 
     if (!blocked && !safe && Math.abs(dx) < TOUCH_RANGE.x && Math.abs(dy) < TOUCH_RANGE.y) this.startBattle(m);
+  }
+
+  /** Where a running Lucky Impling heads: away from you; along the wall (up or down, toward more room) once it's backed into one. */
+  private runTarget(m: Mob): { x: number; y: number } {
+    const p = this.player;
+    const [top, bottom] = this.room.walk;
+    const away = m.x === p.x ? (m.uid % 2 ? 1 : -1) : Math.sign(m.x - p.x);
+    let x = m.x + away * 200;
+    let y = m.y + (m.y - p.y >= 0 ? 60 : -60);
+    const margin = 90;
+    if (x < margin || x > this.scale.width - margin) {
+      // Cornered: dash past you on the roomier side.
+      x = Phaser.Math.Clamp(x, margin, this.scale.width - margin);
+      y = m.y - top > bottom - m.y ? top : bottom;
+      if (Math.abs(m.x - p.x) < 140) x = p.x - away * 220;
+    }
+    return { x, y: Phaser.Math.Clamp(y, top, bottom) };
   }
 
   private updatePrompt(blocked: boolean): void {
@@ -1097,8 +1160,8 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private alertPop(m: Mob): void {
-    sfx.play(this, 'alert');
-    const mark = addText(this, m.x, m.y - m.height * m.scale - 30, '!', { size: 44, bold: true, color: COLORS.textBad, stroke: true })
+    sfx.play(this, m.def.lucky ? 'coin' : 'alert');
+    const mark = addText(this, m.x, m.y - m.height * m.scale - 30, '!', { size: 44, bold: true, color: m.def.lucky ? LUCKY_CSS : COLORS.textBad, stroke: true })
       .setOrigin(0.5)
       .setDepth(UI_DEPTH - 3)
       .setScale(0);
@@ -1152,7 +1215,7 @@ export class RoomScene extends Phaser.Scene {
     this.rememberRoom();
     this.saveLocation();
 
-    sfx.play(this, m.elite ? 'warning' : 'encounter');
+    sfx.play(this, m.elite ? 'warning' : m.def.lucky ? 'coin' : 'encounter');
     fx.whiteFlash(this, m.fig, 140);
     fx.hitSparks(this, (m.x + this.player.x) / 2, m.y - 80, false, true);
     const cam = this.cameras.main;
@@ -1237,7 +1300,7 @@ export class RoomScene extends Phaser.Scene {
       resetCharacter: () => {
         const old = session.player;
         const fresh = Player.createNew(old.name, old.data.classId);
-        session.start(fresh);
+        session.start(fresh, true);
         SaveSystem.save(fresh);
         this.leaving = true;
         goTo(this, SceneKeys.Room, { roomId: START.roomId, via: 'spawn', x: START.x, y: START.y } satisfies RoomSceneData);

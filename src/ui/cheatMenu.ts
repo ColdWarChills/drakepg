@@ -132,14 +132,16 @@ export function openCheatMenu(scene: Phaser.Scene, player: Player, hooks: CheatH
     }, 240);
 
     label(40, 410, 'Toggles (until reload, not saved)');
-    const toggle = (x: number, name: string, key: keyof typeof cheats, note: string) => {
-      button(x, 460, `${name}: ${cheats[key] ? 'ON' : 'off'}`, () => ((cheats[key] = !cheats[key]), render()), 230, cheats[key] ? ON : undefined);
-      c.add(addText(scene, x, 492, note, { size: 14, color: COLORS.textDim, wrap: 230 }));
+    const toggle = (i: number, name: string, key: keyof typeof cheats, note: string) => {
+      const x = 40 + i * 212;
+      button(x, 460, `${name}: ${cheats[key] ? 'ON' : 'off'}`, () => ((cheats[key] = !cheats[key]), render()), 202, cheats[key] ? ON : undefined);
+      c.add(addText(scene, x, 492, note, { size: 14, color: COLORS.textDim, wrap: 202 }));
     };
-    toggle(40, 'God mode', 'god', 'You take no damage.');
-    toggle(290, 'One-hit kills', 'oneHit', 'Any hit that lands finishes the enemy.');
-    toggle(540, 'Elites everywhere', 'elites', 'Every roaming monster spawns as an Elite (re-enter a room or Respawn).');
-    toggle(790, 'All unlocks', 'allFeatures', 'Forge, Sigils, chests and the rest without finishing chapters.');
+    toggle(0, 'God mode', 'god', 'You take no damage.');
+    toggle(1, 'One-hit kills', 'oneHit', 'Any hit that lands finishes the enemy.');
+    toggle(2, 'Elites everywhere', 'elites', 'Every roaming monster spawns as an Elite (re-enter a room or Respawn).');
+    toggle(3, 'Lucky everywhere', 'lucky', 'A Lucky Impling in every monster room (re-enter a room or Respawn).');
+    toggle(4, 'All unlocks', 'allFeatures', 'Forge, Sigils, chests and the rest without finishing chapters.');
 
     button(40, 600, 'Reset character...', () => confirmReset(), 220, DANGER);
   };

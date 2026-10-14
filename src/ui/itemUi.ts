@@ -41,6 +41,13 @@ export const SIGIL_COLORS: Record<SigilTier, { color: number; css: string }> = {
   eclipse: { color: 0xff3358, css: '#ff6680' },
 };
 
+/** Particle colors and pace per Sigil tier: rarer tiers sparkle faster. Used on icons and on the weapon in hand. */
+export const SIGIL_FX: Record<SigilTier, { tint: number[]; moteEvery: number; twinkleEvery: number }> = {
+  dawn: { tint: [0xff7a2e, 0xffb070, 0xffe0b0], moteEvery: 160, twinkleEvery: 520 },
+  dusk: { tint: [0xb070ff, 0xd4b0ff, 0xffffff], moteEvery: 95, twinkleEvery: 340 },
+  eclipse: { tint: [0xff3358, 0xff8a9c, 0xffd0d8], moteEvery: 55, twinkleEvery: 220 },
+};
+
 /** Blue lines, like the mods themselves. */
 export const MOD_CSS = '#7fb8ff';
 
@@ -107,6 +114,45 @@ export function addSigilGlow(scene: Phaser.Scene, obj: Phaser.GameObjects.Image 
   const peak = tier === 'eclipse' ? 6 : tier === 'dusk' ? 4.5 : 3.5;
   const tween = scene.tweens.add({ targets: glow, outerStrength: peak, duration: tier === 'eclipse' ? 700 : 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   obj.once(Phaser.GameObjects.Events.DESTROY, () => tween.remove());
+}
+
+/**
+ * A Sigil item's icon comes alive: the pulsing glow, stars twinkling on it and a slow swell.
+ * `size` is the icon's size in px (the stars stay inside it).
+ */
+export function animateSigilIcon(scene: Phaser.Scene, icon: Phaser.GameObjects.Container, tier: SigilTier, size: number): void {
+  addSigilGlow(scene, icon, tier, size / 72);
+  const fx = SIGIL_FX[tier];
+  const half = size * 0.42;
+  const stars = scene.add.particles(0, 0, 'fx_star', {
+    x: { min: -half, max: half },
+    y: { min: -half, max: half },
+    // Each star swells in and out over its life: a twinkle.
+    scale: { onEmit: () => 0, onUpdate: (_p, _k, t) => Math.sin(t * Math.PI) * 0.55 },
+    alpha: { start: 1, end: 0.6 },
+    rotate: { min: 0, max: 90 },
+    lifespan: 650,
+    frequency: fx.twinkleEvery,
+    tint: [0xffffff, ...fx.tint],
+    blendMode: 'ADD',
+  });
+  icon.add(stars);
+  if (tier !== 'dawn') {
+    icon.add(
+      scene.add.particles(0, half * 0.6, 'fx_soft', {
+        x: { min: -half * 0.8, max: half * 0.8 },
+        speedY: { min: -26, max: -12 },
+        scale: { start: 0.35, end: 0 },
+        alpha: { start: 0.9, end: 0 },
+        lifespan: 1100,
+        frequency: fx.moteEvery * 2,
+        tint: fx.tint,
+        blendMode: 'ADD',
+      }),
+    );
+  }
+  const tween = scene.tweens.add({ targets: icon, scale: 1.07, duration: tier === 'eclipse' ? 700 : 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  icon.once(Phaser.GameObjects.Events.DESTROY, () => tween.remove());
 }
 
 // --- Icons ---

@@ -666,4 +666,23 @@ export const MONSTERS: MonsterDef[] = [
     gold: [5, 10],
     drops: [],
   },
+  // Rare spawn in any monster room, sized to the area by makeImpling (src/game/Lucky.ts). It runs away.
+  {
+    id: 'lucky_impling',
+    name: 'Lucky Impling',
+    level: 1,
+    lucky: true,
+    look: { shape: 'imp', color: 0xf1c40f, accent: 0x2ecc71, scale: 0.6, art: 'mon_lucky_impling' },
+    hp: 16,
+    stats: { str: 2, int: 2, dex: 8, end: 2 },
+    damage: [2, 4],
+    defense: { melee: 2, pierce: 2, magic: 2 },
+    attacks: [
+      { name: 'Coin Flick', damageType: 'pierce', power: 0.6, weight: 2 },
+      { name: 'Jingle Taunt', damageType: 'magic', power: 0, weight: 1 },
+    ],
+    xp: 15,
+    gold: [20, 30],
+    drops: [],
+  },
 ];

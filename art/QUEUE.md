@@ -1,4 +1,4 @@
-# Art queue: 130 images
+# Art queue: 131 images
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
@@ -17,7 +17,7 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `npc_gunnar` (Ch3, Hearthold trader (shop))
 - [ ] `npc_hearthkeeper_moll` (Ch3, Hearthold innkeeper)
 
-**2. Monsters** (17)
+**2. Monsters** (18)
 - [ ] `mon_barkshell_beetle` (Ch1, tough)
 - [ ] `mon_mire_toad` (Ch2)
 - [ ] `mon_spark_wisp` (Ch2)
@@ -35,6 +35,7 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `mon_vent_wyrmling` (Ch3, tough)
 - [ ] `mon_old_snowmaw` (Ch3 mini-boss)
 - [ ] `mon_frostbinder` (Ch3 boss)
+- [ ] `mon_lucky_impling` (rare spawn, any area)
 
 **3. Backgrounds** (11)
 - [ ] `bg_fen_road` (Ch2 monster area)
@@ -280,6 +281,11 @@ A huge ancient shaggy mountain beast like a giant snow bear crossed with a yak, 
 ### `mon_frostbinder` · 3:4 · Ch3 boss
 ```
 An elegant ice sorceress in flowing white and pale blue robes, long silver hair blowing in the wind, a crown of ice shards, holding a tall stave topped with a swirling blue crystal, a cold calm smile, snowflakes swirling around her. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_lucky_impling` · 1:1 · rare spawn
+```
+A tiny mischievous winged imp made of shiny gold, round and chubby like a coin purse, small emerald-green bat wings, a big toothy grin, sparkling green eyes, hugging a bulging sack of gold coins that spill out, a four-leaf clover tucked behind one pointed ear. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
 
 ---

@@ -246,6 +246,13 @@ export interface MonsterDef {
   tough?: boolean;
   /** Pays out like a treasure chest (mimics): gear uses `BALANCE.loot.chest` odds. */
   chestLoot?: boolean;
+  /**
+   * A rare Lucky spawn (src/game/Lucky.ts): lots of gold, and a `BALANCE.lucky.sigilChance` shot at a Sigil piece
+   * of its loot table instead of the normal gear roll.
+   */
+  lucky?: boolean;
+  /** Runs away on this many-th of its own turns (a stun holds it for that turn). */
+  escapeAfter?: number;
   /** Only on Elite copies made by `makeElite` (src/game/Elites.ts), never in monsters.ts. */
   elite?: EliteInfo;
   /** Changes once, the first time its HP drops to `at` (share of max HP) or below. */
