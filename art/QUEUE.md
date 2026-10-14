@@ -1,4 +1,4 @@
-# Art queue: 131 images
+# Art queue: 90 images left
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
@@ -51,45 +51,45 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `bg_frozen_roost` (Ch3 boss arena)
 
 **4. Weapons** (29)
-- [ ] `wpn_heartwood_staff` (Thornheart drop)
-- [ ] `wpn_briar_fang` (Thornheart drop)
-- [ ] `wpn_steel_broadsword` (Ch2)
-- [ ] `wpn_yew_staff` (Ch2)
-- [ ] `wpn_fenwatch_stiletto` (Ch2)
-- [ ] `wpn_tidebreaker` (Ch2)
-- [ ] `wpn_stormcleaver` (Ch2)
-- [ ] `wpn_tidecaller_rod` (Ch2)
-- [ ] `wpn_sparkglass_wand` (Ch2)
-- [ ] `wpn_brinefang` (Ch2)
-- [ ] `wpn_sparkfang` (Ch2)
-- [ ] `wpn_thunderhead_maul` (Ch2)
-- [ ] `wpn_stormcoil_scepter` (Ch2)
-- [ ] `wpn_coilfang` (Ch2)
-- [ ] `wpn_tempered_longsword` (Ch3 shop)
-- [ ] `wpn_larchwood_staff` (Ch3 shop)
-- [ ] `wpn_ridgerunner_kris` (Ch3 shop)
-- [ ] `wpn_frostbite` (Ch3 Ice)
-- [ ] `wpn_hoarfrost_staff` (Ch3 Ice)
-- [ ] `wpn_icicle_kris` (Ch3 Ice)
-- [ ] `wpn_hearthfire_blade` (Ch3 Fire)
-- [ ] `wpn_kindling_rod` (Ch3 Fire)
-- [ ] `wpn_salamander_kris` (Ch3 Fire)
-- [ ] `wpn_snowmaw_cleaver` (Snowmaw drop)
-- [ ] `wpn_mawtooth_staff` (Snowmaw drop)
-- [ ] `wpn_snowmaw_claw` (Snowmaw drop)
-- [ ] `wpn_whiteout` (Frostbinder drop)
-- [ ] `wpn_squall_stave` (Frostbinder drop)
-- [ ] `wpn_galecutter` (Frostbinder drop)
+- [x] `wpn_heartwood_staff` (Thornheart drop)
+- [x] `wpn_briar_fang` (Thornheart drop)
+- [x] `wpn_steel_broadsword` (Ch2)
+- [x] `wpn_yew_staff` (Ch2)
+- [x] `wpn_fenwatch_stiletto` (Ch2)
+- [x] `wpn_tidebreaker` (Ch2)
+- [x] `wpn_stormcleaver` (Ch2)
+- [x] `wpn_tidecaller_rod` (Ch2)
+- [x] `wpn_sparkglass_wand` (Ch2)
+- [x] `wpn_brinefang` (Ch2)
+- [x] `wpn_sparkfang` (Ch2)
+- [x] `wpn_thunderhead_maul` (Ch2)
+- [x] `wpn_stormcoil_scepter` (Ch2)
+- [x] `wpn_coilfang` (Ch2)
+- [x] `wpn_tempered_longsword` (Ch3 shop)
+- [x] `wpn_larchwood_staff` (Ch3 shop)
+- [x] `wpn_ridgerunner_kris` (Ch3 shop)
+- [x] `wpn_frostbite` (Ch3 Ice)
+- [x] `wpn_hoarfrost_staff` (Ch3 Ice)
+- [x] `wpn_icicle_kris` (Ch3 Ice)
+- [x] `wpn_hearthfire_blade` (Ch3 Fire)
+- [x] `wpn_kindling_rod` (Ch3 Fire)
+- [x] `wpn_salamander_kris` (Ch3 Fire)
+- [x] `wpn_snowmaw_cleaver` (Snowmaw drop)
+- [x] `wpn_mawtooth_staff` (Snowmaw drop)
+- [x] `wpn_snowmaw_claw` (Snowmaw drop)
+- [x] `wpn_whiteout` (Frostbinder drop)
+- [x] `wpn_squall_stave` (Frostbinder drop)
+- [x] `wpn_galecutter` (Frostbinder drop)
 
 **5. Item icons** (36)
-- [ ] `icon_travel_garb`
-- [ ] `icon_novice_robe`
-- [ ] `icon_leather_armor`
-- [ ] `icon_apprentice_robe`
-- [ ] `icon_scale_mail`
-- [ ] `icon_reedweave_robe`
-- [ ] `icon_marshhide_vest`
-- [ ] `icon_stormweave_robe`
+- [x] `icon_travel_garb`
+- [x] `icon_novice_robe`
+- [x] `icon_leather_armor`
+- [x] `icon_apprentice_robe`
+- [x] `icon_scale_mail`
+- [x] `icon_reedweave_robe`
+- [x] `icon_marshhide_vest`
+- [x] `icon_stormweave_robe`
 - [ ] `icon_health_potion`
 - [ ] `icon_mana_potion`
 - [ ] `icon_greater_health_potion`
@@ -102,10 +102,10 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `icon_storm_scale`
 - [ ] `icon_superior_health_potion`
 - [ ] `icon_superior_mana_potion`
-- [ ] `icon_ridgeplate`
-- [ ] `icon_fleecewool_robe`
-- [ ] `icon_frostpelt_vest`
-- [ ] `icon_galeweave_robe`
+- [x] `icon_ridgeplate`
+- [x] `icon_fleecewool_robe`
+- [x] `icon_frostpelt_vest`
+- [x] `icon_galeweave_robe`
 - [ ] `icon_frost_pelt`
 - [ ] `icon_ram_horn`
 - [ ] `icon_rime_shard`

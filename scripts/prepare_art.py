@@ -40,6 +40,8 @@ FLIP: set[str] = set()
 KEY_HARD = 70   # closer than this and connected to the border -> fully transparent
 KEY_HOLE = 40   # this close anywhere (e.g. a gap between wing and body) -> transparent too
 KEY_SOFT = 230  # edge pixels between HARD and SOFT get partial alpha
+SPILL_RIM = 28  # green-keyed art: px from the edge where green spill is removed...
+SPILL_FADE = 2.5  # ...and how fast green-dominated pixels there fade out
 EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
@@ -150,6 +152,16 @@ def process_sprite(src: Path, key: str) -> Path:
     a = np.maximum(alpha, 1e-3)[..., None]
     clean = np.clip((rgb - (1 - a) * key_color) / a, 0, 255)
     clean = np.where(alpha[..., None] > 0, clean, 0)
+
+    # Green-screen spill: glows and anti-aliasing over the green leave a lime rim along the silhouette.
+    # Near the edge only (so the subject's own greens survive): green can't exceed the brighter of red and
+    # blue, and the more green dominated a pixel, the more transparent it gets (a glow keeps its warm part).
+    if key_color[1] > key_color[0] + 60 and key_color[1] > key_color[2] + 60:
+        rim = _dilate(bg, SPILL_RIM) & ~bg
+        rb = np.maximum(clean[..., 0], clean[..., 2])
+        spill = np.clip(clean[..., 1] - rb, 0, 255)
+        alpha = np.where(rim, alpha * np.clip(1 - spill / 255 * SPILL_FADE, 0, 1), alpha)
+        clean[..., 1] = np.where(rim, np.minimum(clean[..., 1], rb), clean[..., 1])
 
     rgba = np.dstack([clean, alpha * 255]).astype(np.uint8)
     img = Image.fromarray(rgba, "RGBA")
