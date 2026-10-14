@@ -3,7 +3,7 @@ import { COLORS, FONT } from '../config';
 import { CLASSES } from '../data/classes';
 import { db } from '../data/db';
 import type { ClassDef, ClassId, WeaponDef } from '../data/types';
-import { START } from '../data/world';
+import { START, TOWN_START } from '../data/world';
 import { Player, STAT_KEYS, STAT_LABELS } from '../game/Player';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
@@ -186,9 +186,12 @@ export class CreateScene extends Phaser.Scene {
     if (start && start.chapter > 1) applyChapterStart(player, start);
     // A chapter start already knows its skills; a new hero's first skill is tagged NEW.
     markSkillsSeen(player, !start || start.chapter === 1);
+    // Chapter 1 begins on the prologue road; later chapter starts are already in town.
+    const at = this.chapter === 1 ? START : TOWN_START;
+    player.data.location = { ...at };
     session.start(player);
     SaveSystem.save(player);
     sfx.play(this, 'quest');
-    goTo(this, SceneKeys.Room, { ...START, via: 'spawn', intro: this.chapter === 1 }, 400);
+    goTo(this, SceneKeys.Room, { ...at, via: 'spawn', intro: this.chapter === 1 }, 400);
   }
 }

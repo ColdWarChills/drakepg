@@ -96,6 +96,8 @@ export interface PlayerData {
   seen: string[];
   /** Skills learned but not used yet: tagged NEW in battle. */
   freshSkills: string[];
+  /** Skill ids carried into battle, at most `BALANCE.skillSlots`. Added in save version 10. */
+  loadout: string[];
 }
 
 export interface Rewards {
@@ -141,9 +143,11 @@ export class Player {
       bossGrit: {},
       seen: [],
       freshSkills: [],
+      loadout: [],
     });
+    player.data.loadout = player.defaultLoadout();
     player.data.equipment.weapon = player.makeGear(cls.weapon);
-    player.data.equipment.armor = player.makeGear(cls.armor);
+    // No armor yet: it drops on the prologue road (or Tobin sells it in town).
     player.restoreFull();
     return player;
   }
@@ -291,6 +295,46 @@ export class Player {
   /** Class skills unlocked at the current level. */
   get knownSkills(): SkillDef[] {
     return this.classDef.skills.filter((s) => s.level <= this.level).map((s) => db.skill(s.skillId));
+  }
+
+  /** Known skills carried into battle, in loadout order. */
+  get carriedSkills(): SkillDef[] {
+    const known = new Set(this.knownSkills.map((s) => s.id));
+    return this.data.loadout.filter((id) => known.has(id)).map((id) => db.skill(id));
+  }
+
+  isCarried(skillId: string): boolean {
+    return this.data.loadout.includes(skillId);
+  }
+
+  /** A sensible pick: the class's first heal plus its newest other skills, up to the slot count. */
+  defaultLoadout(): string[] {
+    const known = this.knownSkills;
+    const heal = known.find((s) => s.kind === 'heal');
+    const rest = known.filter((s) => s !== heal).reverse();
+    const picked = new Set([...(heal ? [heal] : []), ...rest].slice(0, BALANCE.skillSlots).map((s) => s.id));
+    // Keep the class's own order (the order they were learned) for the battle menu.
+    return known.filter((s) => picked.has(s.id)).map((s) => s.id);
+  }
+
+  /** Carry or put away a known skill. 'full' if every slot is taken. */
+  toggleCarry(skillId: string): 'added' | 'removed' | 'full' | 'unknown' {
+    if (!this.knownSkills.some((s) => s.id === skillId)) return 'unknown';
+    const list = this.data.loadout;
+    if (list.includes(skillId)) {
+      list.splice(list.indexOf(skillId), 1);
+      return 'removed';
+    }
+    if (list.length >= BALANCE.skillSlots) return 'full';
+    list.push(skillId);
+    return 'added';
+  }
+
+  /** A newly learned skill goes into a free slot, if there is one. */
+  carryNew(skillId: string): boolean {
+    if (this.isCarried(skillId) || this.data.loadout.length >= BALANCE.skillSlots) return this.isCarried(skillId);
+    this.data.loadout.push(skillId);
+    return true;
   }
 
   /** Skills that unlock after `fromLevel`, up to the current level. */

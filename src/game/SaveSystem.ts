@@ -1,5 +1,6 @@
-import { SAVE_KEY, SAVE_VERSION } from '../config';
+import { BALANCE, SAVE_KEY, SAVE_VERSION } from '../config';
 import { db } from '../data/db';
+import { TOWN_START } from '../data/world';
 import type { EquipSlot } from '../data/types';
 import { isGearDef, sanitizeTraits, type Gear } from './Items';
 import { Player, STAT_KEYS, type PlayerData } from './Player';
@@ -102,6 +103,8 @@ function migrate(file: SaveFile): SaveFile | null {
     p.freshSkills = [];
     file.version = 9;
   }
+  // v9 -> v10: `loadout` (skills carried into battle). Old characters get the default pick in sanitize.
+  if (file.version < 10) file.version = 10;
   return file;
 }
 
@@ -186,10 +189,11 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
       .map((e) => ({ itemId: e.itemId, qty: Math.floor(e.qty) })),
     gear,
     nextUid: Math.max(highest + 1, Math.floor(num(raw.nextUid, 1))),
+    // An existing hero with no usable location goes to town, not back to the prologue road.
     location:
       raw.location && db.hasRoom(raw.location.roomId)
-        ? { roomId: raw.location.roomId, x: num(raw.location.x, fresh.location.x), y: num(raw.location.y, fresh.location.y) }
-        : fresh.location,
+        ? { roomId: raw.location.roomId, x: num(raw.location.x, TOWN_START.x), y: num(raw.location.y, TOWN_START.y) }
+        : { ...TOWN_START },
     classId,
     statPoints: Math.max(0, Math.floor(num(raw.statPoints, 0))),
     quests: sanitizeQuests(raw.quests),
@@ -197,9 +201,14 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     bossGrit: sanitizeGrit(raw.bossGrit),
     seen: Array.isArray(raw.seen) ? raw.seen.filter((s): s is string => typeof s === 'string') : [],
     freshSkills: Array.isArray(raw.freshSkills) ? raw.freshSkills.filter((s): s is string => typeof s === 'string' && db.hasSkill(s)) : [],
+    loadout: [],
   };
 
   const player = new Player(data);
+  const known = new Set(player.knownSkills.map((s) => s.id));
+  data.loadout = Array.isArray(raw.loadout)
+    ? [...new Set(raw.loadout.filter((s): s is string => typeof s === 'string' && known.has(s)))].slice(0, BALANCE.skillSlots)
+    : player.defaultLoadout();
   player.clampVitals();
   if (player.hp <= 0) player.restoreFull();
   return player.data;

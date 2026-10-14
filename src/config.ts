@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -23,6 +23,8 @@ export const BALANCE = {
   statDamageScale: 0.6,
   baseFleeChance: 0.5,
   maxLevel: 50,
+  /** Skills a hero carries into battle (picked in the Character panel; new skills fill free slots). */
+  skillSlots: 5,
   /** Free stat points per level up (class growth is added on top). */
   statPointsPerLevel: 3,
   /** Damage taken while defending is multiplied by this. */
@@ -69,6 +71,8 @@ export const BALANCE = {
     boss: { rare: 0.35, uncommon: 0.5, common: 1 },
     /** Treasure chests and mimics: gear about two times in three. */
     chest: { rare: 0.03, uncommon: 0.3, common: 0.5 },
+    /** Normal-monster odds for one loot table instead of `mob`. The prologue road drops gear about one kill in three. */
+    tableMob: { road: { rare: 0, uncommon: 0, common: 0.35 } } as Record<string, { rare: number; uncommon: number; common: number }>,
     /**
      * Bad-luck protection: after `pityAfter` kills on a table without a Rare, each further kill adds `pityStep`
      * to that table's Rare chance, up to `pityMax` extra. A Rare resets it. Counted per table (each area has its
@@ -118,10 +122,27 @@ export const BALANCE = {
     honeDriftChance: 0.35,
     honeDrift: [3, 8] as [number, number],
   },
+  /**
+   * Damage multiplier for every non-boss monster (Elites and Mimics too). Monsters show their next move,
+   * so normal fights can hit hard enough that Defend and healing matter.
+   */
+  mobDamage: 2,
+  /** The same for bosses: high enough that reading their wind-ups and Defending is what wins. */
+  bossDamage: 1.3,
+  /**
+   * Long fights: from player turn `turns` (`bossTurns` vs bosses) on, the enemy enrages and deals `step` more
+   * damage every turn. The battle panel counts down the last `warn` turns.
+   */
+  enrage: { turns: 15, bossTurns: 30, step: 0.2, warn: 3 },
   /** Boss grit: each loss to a boss adds `step` damage against it, up to `max`. Beating it resets the count. */
   grit: { step: 0.05, max: 0.25 },
   /** XP and gold from beating a boss again after its quest no longer needs it. */
   bossRepeatRewards: 0.5,
+  /**
+   * Heroic rematch (src/game/Heroic.ts), open after a boss's quest: `levels` added, damage times `damage`, plus
+   * its heroic moves. XP and gold times `rewards` (instead of the repeat share), and `lootRolls` gear rolls.
+   */
+  heroic: { levels: 3, damage: 1.25, rewards: 1, lootRolls: 2 },
   /**
    * Elites: tougher roaming monsters with one affix (src/data/elites.ts). `chance` per roaming spawn
    * (`questChance` while a quest wants an Elite), at most `maxPerRoom`. `levels` is added to the shown level;
@@ -133,11 +154,17 @@ export const BALANCE = {
     questChance: 0.25,
     maxPerRoom: 1,
     levels: 1,
-    hp: 2,
-    damage: 1.25,
+    hp: 1.5,
+    damage: 1.1,
     rewards: 3,
     size: 1.2,
   },
+
+  /**
+   * Result screen drop reveal (src/scenes/ResultScene.ts): ms of wind-up before each item pops in, by how good it is.
+   * Plain drops just pop; better grades and Sigils build up first. Best items are revealed last.
+   */
+  dropReveal: { start: 900, gap: 160, plain: 0, fine: 0, superior: 200, masterwork: 450, dawn: 700, dusk: 1000, eclipse: 1500 },
 
   // Exploration
   /** A cleared room refills one monster per this many seconds you spend away from it. */

@@ -7,6 +7,7 @@ export const STATUSES: StatusDef[] = [
   { id: 'poison', name: 'Poison', harmful: true, description: 'Takes damage each turn. Ignores resistances.', dot: { power: 0.25 } },
   { id: 'bleed', name: 'Bleed', harmful: true, description: 'Takes damage each turn from the weapon that cut it.', dot: { power: 0.35, element: 'weapon' } },
   { id: 'spores', name: 'Spores', harmful: true, description: 'Choking spores. Earth damage each turn.', dot: { power: 0.3, element: 'earth' } },
+  { id: 'windchill', name: 'Windchill', harmful: true, description: 'Freezing wind. Wind damage each turn.', dot: { power: 0.3, element: 'wind' } },
   { id: 'shadow_rot', name: 'Shadow Rot', harmful: true, description: 'Dark damage each turn and -15 to all resistances.', dot: { power: 0.3, element: 'dark' }, resists: { all: -15 } },
 
   // Control

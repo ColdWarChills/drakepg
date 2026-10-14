@@ -227,6 +227,16 @@ export interface MonsterAttack {
   /** Telegraphed attack: the monster spends a turn winding up (this text is shown), then hits next turn. */
   windup?: string;
   applies?: Apply[];
+  /** Heals the monster by this share of its max HP. */
+  heal?: number;
+  /**
+   * Signature moves (src/game/Battle.ts `pickIntent`) are never picked at random:
+   * `opener` is always its first move, `every: 3` is every 3rd move, `hpBelow: 0.4` is used once,
+   * the first time it picks a move at or under 40% HP.
+   */
+  opener?: boolean;
+  every?: number;
+  hpBelow?: number;
 }
 
 export interface MonsterDef {
@@ -262,6 +272,12 @@ export interface MonsterDef {
   phase?: MonsterPhase;
   /** A shield that soaks up most damage until enough hits of one element break it. */
   shell?: MonsterShell;
+  /** One line on its signature behavior, shown in battle ("Heals once when badly hurt."). */
+  trait?: string;
+  /** Bosses: extra moves and a line for the Heroic rematch (src/game/Heroic.ts). */
+  heroic?: { text: string; attacks: MonsterAttack[] };
+  /** Only on Heroic copies made by `makeHeroic`. */
+  isHeroic?: boolean;
 }
 
 /**

@@ -30,6 +30,8 @@ export interface BattleSceneData {
   elite?: string;
   /** A mimic sized to the zone (src/game/Chests.ts). */
   mimic?: boolean;
+  /** Heroic rematch of a boss (src/game/Heroic.ts). */
+  heroic?: boolean;
   /** Where to go back to afterwards. */
   roomId: string;
   x: number;

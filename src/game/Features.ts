@@ -35,6 +35,7 @@ export function markSeen(player: Player, news: News): void {
   for (const f of news.features) player.data.seen.push(`feature:${f.id}`);
   for (const s of news.skills) {
     player.data.seen.push(`skill:${s.id}`);
+    player.carryNew(s.id);
     if (!player.data.freshSkills.includes(s.id)) player.data.freshSkills.push(s.id);
   }
 }
@@ -42,5 +43,6 @@ export function markSeen(player: Player, news: News): void {
 /** Skills a character starts with need no popup. `tag`: still mark them NEW in battle (a brand-new hero's first skill). */
 export function markSkillsSeen(player: Player, tag: boolean): void {
   markSeen(player, { features: [], skills: unseenNews(player).skills });
+  player.data.loadout = player.defaultLoadout();
   if (!tag) player.data.freshSkills = [];
 }

@@ -5,7 +5,7 @@ import { isGearDef, SIGIL_NAMES, SIGIL_TIERS, type ItemGrant, type SigilTier } f
 import { session } from '../game/session';
 import { Button } from '../ui/Button';
 import { drawFigure } from '../ui/figures';
-import { gradeInfo, lootName, SIGIL_COLORS } from '../ui/itemUi';
+import { addSigilGlow, drawItemIcon, GRADE_COLORS, gradeInfo, gradeLabel, itemName, SIGIL_COLORS } from '../ui/itemUi';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
@@ -15,6 +15,10 @@ import { enterScene, goTo, SceneKeys, type ResultSceneData, type RoomSceneData }
 function the(name: string): string {
   return /^the /i.test(name) ? `the ${name.slice(4)}` : `the ${name}`;
 }
+
+/** How a drop is revealed: plain, by grade (Fine and up), or by Sigil. */
+type RevealTier = 'plain' | 'fine' | 'superior' | 'masterwork' | SigilTier;
+const REVEAL_ORDER: RevealTier[] = ['plain', 'fine', 'superior', 'masterwork', 'dawn', 'dusk', 'eclipse'];
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -63,13 +67,13 @@ export class ResultScene extends Phaser.Scene {
       sfx.play(this, 'victory');
 
       // Count-up rows.
-      addText(this, cx, 245, `You defeated ${the(data.monsterName)}.`, { size: 24 }).setOrigin(0.5);
-      const xpText = addText(this, cx, 300, '+0 XP', { size: 30, bold: true, color: COLORS.textGood }).setOrigin(0.5);
-      const goldText = addText(this, cx, 345, '+0 gold', { size: 30, bold: true, color: COLORS.textGold }).setOrigin(0.5);
-      const lootRow = this.lootRow(cx, 390, data.rewards.items, data.lost);
+      addText(this, cx, 240, `You defeated ${the(data.monsterName)}.`, { size: 24 }).setOrigin(0.5);
+      const xpText = addText(this, cx - 120, 288, '+0 XP', { size: 30, bold: true, color: COLORS.textGood }).setOrigin(0.5);
+      const goldText = addText(this, cx + 120, 288, '+0 gold', { size: 30, bold: true, color: COLORS.textGold }).setOrigin(0.5);
+      this.dropReveal(cx, 360, data.rewards.items, data.lost);
       data.quests.forEach((q, i) => {
         const done = q.count >= q.target;
-        const line = addText(this, cx, 428 + i * 28, `${q.name}: ${q.goal} ${q.count}/${q.target}${done ? '  ✔ Return to the quest giver' : ''}`, {
+        const line = addText(this, cx, 450 + i * 28, `${q.name}: ${q.goal} ${q.count}/${q.target}${done ? '  ✔ Return to the quest giver' : ''}`, {
           size: 19,
           bold: done,
           color: done ? COLORS.textGood : COLORS.textGold,
@@ -82,18 +86,16 @@ export class ResultScene extends Phaser.Scene {
       const shift = data.quests.length * 28;
       this.countUp(xpText, rewards.xp, ' XP', 400);
       this.countUp(goldText, rewards.gold, ' gold', 650);
-      this.tweens.add({ targets: lootRow, alpha: 1, delay: 1000, duration: 300 });
-      if (rewards.items.length) this.tweens.add({ targets: lootRow, scale: lootRow.scale * 1.12, delay: 1300, duration: 160, yoyo: true, repeat: 1 });
 
       if (levelsGained > 0) {
-        const hero = drawFigure(this, cx - 280, 470 + shift, player.look, 1, player.weapon, player.weaponSigil).setScale(0.55);
+        const hero = drawFigure(this, cx - 280, 490 + shift, player.look, 1, player.weapon, player.weaponSigil).setScale(0.55);
         this.time.delayedCall(1200, () => {
           fx.levelUpBurst(this, hero.x, hero.y);
           sfx.play(this, 'levelup');
           this.cameras.main.shake(200, 0.006);
           const extras = [`+${data.levelsGained * BALANCE.statPointsPerLevel} stat points (press C)`, ...data.newSkills.map((n) => `New skill: ${n}`)];
-          addText(this, cx + 40, 485 + shift, extras.join('   ·   '), { size: 18, color: COLORS.textMagic, bold: true }).setOrigin(0.5);
-          const banner = addText(this, cx + 40, 450 + shift, `LEVEL UP!  Now level ${player.level}`, {
+          addText(this, cx + 40, 507 + shift, extras.join('   ·   '), { size: 18, color: COLORS.textMagic, bold: true }).setOrigin(0.5);
+          const banner = addText(this, cx + 40, 474 + shift, `LEVEL UP!  Now level ${player.level}`, {
             size: 32,
             bold: true,
             color: COLORS.textGood,
@@ -111,10 +113,10 @@ export class ResultScene extends Phaser.Scene {
           });
         });
       } else {
-        addText(this, cx, 455 + shift, `XP ${player.xp} / ${player.xpNeeded}`, { size: 20, color: COLORS.textDim }).setOrigin(0.5);
+        addText(this, cx, 480 + shift, `XP ${player.xp} / ${player.xpNeeded}`, { size: 20, color: COLORS.textDim }).setOrigin(0.5);
       }
 
-      this.continueButton('Continue', data.back, 560 + Math.min(shift, 20));
+      this.continueButton('Continue', data.back, 568 + Math.min(shift, 20));
     } else {
       this.cameras.main.shake(300, 0.006);
       const lines = [`${capitalize(the(data.monsterName))} got the better of you.`, '', `You wake up in ${db.room(data.wake.roomId).name}, fully rested.`];
@@ -128,15 +130,13 @@ export class ResultScene extends Phaser.Scene {
   }
 
   /**
-   * "Loot: Cinder Fang (Fine 52%), Health Potion", each name in its grade color (Sigils in theirs).
-   * Good rolls sparkle; Sigils get a fanfare, Eclipse the biggest.
+   * The drops as cards (icon and name in its grade or Sigil color) that pop in one by one, best last.
+   * Plain drops just pop; Superior and Masterwork glow first; Sigils get a long charge-up and their fanfare
+   * (timings in `BALANCE.dropReveal`). Loot that didn't fit the bag is greyed out.
    */
-  private lootRow(cx: number, y: number, items: ItemGrant[], lost: ItemGrant[]): Phaser.GameObjects.Container {
-    const row = this.add.container(cx, y).setAlpha(0);
-    const parts: Phaser.GameObjects.Text[] = [addText(this, 0, 0, items.length ? 'Loot: ' : 'Loot: nothing', { size: 24 })];
-    const sparkles: { text: Phaser.GameObjects.Text; tier: string }[] = [];
-    const sigils: { text: Phaser.GameObjects.Text; tier: SigilTier }[] = [];
-    // Gear is listed one by one; stacking items (potions, materials) as "Iron Scrap x2".
+  private dropReveal(cx: number, y: number, items: ItemGrant[], lost: ItemGrant[]): void {
+    const r = BALANCE.dropReveal;
+    // Gear one card each; stacking items (potions, materials) as one card "x2".
     const shown: { g: ItemGrant; qty: number; isLost: boolean }[] = [];
     for (const g of items) {
       const isLost = lost.includes(g);
@@ -144,49 +144,96 @@ export class ResultScene extends Phaser.Scene {
       if (same) same.qty++;
       else shown.push({ g, qty: 1, isLost });
     }
-    shown.forEach(({ g, qty, isLost }, i) => {
+    if (!shown.length) {
+      const none = addText(this, cx, y, 'No loot this time', { size: 22, color: COLORS.textDim }).setOrigin(0.5).setAlpha(0);
+      this.tweens.add({ targets: none, alpha: 1, delay: r.start, duration: 300 });
+      return;
+    }
+    const cards = shown.map(({ g, qty, isLost }) => {
       const def = db.item(g.itemId);
       const info = gradeInfo(def, g);
-      const t = addText(this, 0, 0, `${lootName(def, g)}${qty > 1 ? ` x${qty}` : ''}${i < shown.length - 1 ? ', ' : ''}`, {
-        size: 24,
-        bold: info.tier !== 'standard' || !!info.sigil,
-        color: isLost ? COLORS.textDim : info.sigil ? info.nameCss : info.tier === 'standard' && isGearDef(def) ? COLORS.text : info.css,
-      });
-      if (isLost) t.setAlpha(0.6);
-      parts.push(t);
-      if (!isLost && info.sigil) sigils.push({ text: t, tier: info.sigil });
-      else if (!isLost && (info.tier === 'superior' || info.tier === 'masterwork')) sparkles.push({ text: t, tier: info.tier });
+      const tier: RevealTier = isLost ? 'plain' : (info.sigil ?? (isGearDef(def) && info.tier !== 'standard' && info.tier !== 'fair' ? info.tier : 'plain'));
+      return { def, g, qty, isLost, info, tier };
     });
-    if (lost.length) parts.push(addText(this, 0, 0, `   Bag full! ${lost.length} left behind`, { size: 20, bold: true, color: COLORS.textBad }));
-    let x = 0;
-    for (const p of parts) {
-      p.setOrigin(0, 0.5).setX(x);
-      x += p.width;
-    }
-    for (const p of parts) p.x -= x / 2;
-    row.add(parts);
-    // Keep long loot lists inside the panel.
-    row.setScale(Math.min(1, 680 / x));
+    cards.sort((a, b) => REVEAL_ORDER.indexOf(a.tier) - REVEAL_ORDER.indexOf(b.tier));
 
-    if (sparkles.length) {
-      this.time.delayedCall(1100, () => {
-        sfx.play(this, 'rare');
-        for (const s of sparkles) {
-          const b = s.text.getBounds();
-          const master = s.tier === 'masterwork';
-          fx.burst(this, b.centerX, b.centerY, 'fx_star', master ? 36 : 16, {
-            speed: { min: 60, max: master ? 320 : 200 },
-            scale: { start: master ? 1 : 0.7, end: 0 },
-            lifespan: master ? 1000 : 700,
-            tint: master ? 0xffd34d : 0x7fb8ff,
-            blendMode: 'ADD',
-          });
-          if (master) this.cameras.main.flash(250, 255, 230, 140);
-        }
-      });
+    const step = 128;
+    const scale = Math.min(1, 680 / (cards.length * step));
+    const row = this.add.container(cx, y).setScale(scale);
+    let at = r.start;
+    cards.forEach((c, i) => {
+      const x = (i - (cards.length - 1) / 2) * step;
+      const card = this.add.container(x, 0).setScale(0);
+      const frame = this.add.rectangle(0, -10, 64, 64, 0x000000, 0.35).setRounded(8).setStrokeStyle(3, c.isLost ? 0x555555 : c.info.frame);
+      const icon = drawItemIcon(this, c.def, 52).setPosition(0, -10);
+      const name = `${itemName(c.def, c.g)}${c.qty > 1 ? ` x${c.qty}` : ''}`;
+      const label = addText(this, 0, 34, name, {
+        size: 15,
+        bold: c.tier !== 'plain',
+        align: 'center',
+        wrap: 124,
+        color: c.isLost ? COLORS.textDim : c.info.sigil ? c.info.nameCss : c.info.tier === 'standard' && isGearDef(c.def) ? COLORS.text : c.info.css,
+      }).setOrigin(0.5, 0);
+      card.add([frame, icon, label]);
+      // "Fine 52%" / "Sigil of Dusk" under gear names.
+      if (isGearDef(c.def)) {
+        const sub = c.info.sigil ? SIGIL_NAMES[c.info.sigil] : gradeLabel(c.info);
+        card.add(addText(this, 0, 36 + label.height, sub, { size: 13, color: COLORS.textDim }).setOrigin(0.5, 0));
+      }
+      if (c.isLost) card.add(addText(this, 0, -10, 'Bag full', { size: 13, bold: true, color: COLORS.textBad }).setOrigin(0.5));
+      if (c.info.sigil && !c.isLost) addSigilGlow(this, icon, c.info.sigil, 0.6);
+      row.add(card);
+
+      const windup = r[c.tier];
+      const pop = at + windup;
+      if (windup > 0) this.time.delayedCall(at, () => this.windUp(row, x, c.tier, windup));
+      this.time.delayedCall(pop, () => this.popCard(row, card, c.tier, c.info.frame, label));
+      at = pop + r.gap;
+    });
+  }
+
+  /** The build-up before a good drop: a glow (Superior, Masterwork) or a shaking charge in the Sigil's color. */
+  private windUp(row: Phaser.GameObjects.Container, x: number, tier: RevealTier, ms: number): void {
+    const p = row.getWorldTransformMatrix().transformPoint(x, -10);
+    const sigil = tier === 'dawn' || tier === 'dusk' || tier === 'eclipse';
+    const color = sigil ? SIGIL_COLORS[tier].color : GRADE_COLORS[tier === 'masterwork' ? 'masterwork' : 'superior'].color;
+    sfx.play(this, 'charge');
+    void fx.chargeUp(this, p.x, p.y, color, ms);
+    if (sigil) {
+      // Heavier tiers rumble harder as they charge.
+      this.cameras.main.shake(ms, tier === 'eclipse' ? 0.006 : tier === 'dusk' ? 0.004 : 0.002);
+      if (ms > 700) this.time.delayedCall(ms / 2, () => sfx.play(this, 'charge'));
     }
-    if (sigils.length) this.time.delayedCall(sparkles.length ? 1700 : 1100, () => this.sigilFanfare(sigils));
-    return row;
+  }
+
+  private popCard(row: Phaser.GameObjects.Container, card: Phaser.GameObjects.Container, tier: RevealTier, color: number, label: Phaser.GameObjects.Text): void {
+    const big = tier !== 'plain' && tier !== 'fine';
+    this.tweens.chain({
+      targets: card,
+      tweens: [
+        { scale: big ? 1.3 : 1.12, duration: big ? 200 : 140, ease: 'Back.easeOut' },
+        { scale: 1, duration: 140 },
+      ],
+    });
+    const p = row.getWorldTransformMatrix().transformPoint(card.x, -10);
+    if (tier === 'plain') {
+      sfx.play(this, 'click');
+      return;
+    }
+    if (tier === 'fine' || tier === 'superior' || tier === 'masterwork') {
+      sfx.play(this, tier === 'fine' ? 'coin' : 'rare');
+      const master = tier === 'masterwork';
+      fx.burst(this, p.x, p.y, 'fx_star', master ? 36 : tier === 'superior' ? 20 : 10, {
+        speed: { min: 60, max: master ? 320 : 200 },
+        scale: { start: master ? 1 : 0.7, end: 0 },
+        lifespan: master ? 1000 : 700,
+        tint: color,
+        blendMode: 'ADD',
+      });
+      if (master) this.cameras.main.flash(250, 255, 230, 140);
+      return;
+    }
+    this.sigilFanfare([{ text: label, tier }]);
   }
 
   /** Burst in the Sigil's color over its name; the best tier also gets a sound, a flash and a banner. */
