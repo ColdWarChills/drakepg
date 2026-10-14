@@ -4,7 +4,8 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
 import type { ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef } from '../data/types';
-import { gearDef, grade, gradeTier, isGearDef, sellValue, SIGIL_TIERS, type Gear, type GearDef } from '../game/Items';
+import { EQUIP_SLOTS, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, SLOT_LABELS, slotsFor, type Gear, type GearDef } from '../game/Items';
+import { activeSetBonuses, setCounts } from '../game/Sets';
 import type { Player } from '../game/Player';
 import { Button } from './Button';
 import { drawFigure } from './figures';
@@ -22,6 +23,9 @@ import {
   modLines,
   restoreText,
   rollLines,
+  setBonusText,
+  setCard,
+  setCompareLines,
   SIGIL_COLORS,
   sigilLabel,
 } from './itemUi';
@@ -31,11 +35,11 @@ import { addText, toast } from './text';
 
 /**
  * Grid inventory (I) and the shop. Both share the grid, the tabs and the item card:
- * - bag:  hero with weapon/armor slots on the left; equip by double-click, the card's button, or drag.
+ * - bag:  hero with 8 equipment slots around it on the left; equip by double-click, the card's button, or drag.
  * - shop: Buy (the merchant's stock, always Standard) and Sell (your bag) on the left.
  */
 type Mode = 'bag' | 'buy' | 'sell';
-type Tab = 'all' | 'weapon' | 'armor' | 'consumable' | 'material';
+type Tab = 'all' | 'weapon' | 'armor' | 'accessory' | 'consumable' | 'material';
 type SortMode = 'newest' | 'grade' | 'type' | 'value';
 
 type Entry =
@@ -58,12 +62,25 @@ const CARD_Y = 70;
 const CARD_W = 358;
 const CARD_H = 590;
 const SLOT_BG = 0x2a2236;
+/** The hero's equipment slots: left column armor, right column weapon and jewelry. */
+const EQ = 58;
+const EQ_POS: Record<EquipSlot, { x: number; y: number }> = {
+  helm: { x: 42, y: 112 },
+  body: { x: 42, y: 178 },
+  gloves: { x: 42, y: 244 },
+  boots: { x: 42, y: 310 },
+  weapon: { x: 258, y: 112 },
+  necklace: { x: 258, y: 178 },
+  ring1: { x: 258, y: 244 },
+  ring2: { x: 258, y: 310 },
+};
 const EMPTY_BORDER = 0x4a3f5a;
 
 const TABS: { tab: Tab; label: string }[] = [
   { tab: 'all', label: 'All' },
   { tab: 'weapon', label: 'Weapons' },
   { tab: 'armor', label: 'Armor' },
+  { tab: 'accessory', label: 'Jewelry' },
   { tab: 'consumable', label: 'Potions' },
   { tab: 'material', label: 'Materials' },
 ];
@@ -73,7 +90,7 @@ const SORTS: { sort: SortMode; label: string }[] = [
   { sort: 'type', label: 'Type' },
   { sort: 'value', label: 'Value' },
 ];
-const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, consumable: 2, material: 3 };
+const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, accessory: 2, consumable: 3, material: 4 };
 /** Grades below this are offered by "Sell junk" (Standard and Fair). */
 const JUNK_BELOW = 40;
 
@@ -164,7 +181,7 @@ class InventoryView {
 
   private find(key: string | null): Entry | null {
     if (!key) return null;
-    return this.entries.find((e) => e.key === key) ?? (['weapon', 'armor'] as const).map((s) => this.equippedEntry(s)).find((e) => e?.key === key) ?? null;
+    return this.entries.find((e) => e.key === key) ?? EQUIP_SLOTS.map((s) => this.equippedEntry(s)).find((e) => e?.key === key) ?? null;
   }
 
   // --- Layout ---
@@ -185,11 +202,11 @@ class InventoryView {
     if (!tabs.some((t) => t.tab === remembered.tab)) remembered.tab = 'all';
     tabs.forEach((t, i) => {
       const active = remembered.tab === t.tab;
-      const b = new Button(scene, GRID_X + 48 + i * 106, 96, t.label, () => {
+      const b = new Button(scene, GRID_X + 42 + i * 88, 96, t.label, () => {
         remembered.tab = t.tab;
         this.page = 0;
         this.render();
-      }, { width: 98, height: 40, fontSize: 15, color: active ? 0x6b5320 : COLORS.button });
+      }, { width: 84, height: 40, fontSize: 14, color: active ? 0x6b5320 : COLORS.button });
       c.add(b);
     });
 
@@ -234,29 +251,39 @@ class InventoryView {
     const { scene, player } = this;
     const c = this.modal.content;
     const look = player.look;
-    const hero = drawFigure(scene, 150, 330, look, 1, player.weapon, player.weaponSigil);
-    hero.setScale(hero.scaleX * 0.82, hero.scaleY * 0.82);
+    const hero = drawFigure(scene, 150, 352, look, 1, player.weapon, player.weaponSigil);
+    hero.setScale(hero.scaleX * 0.8, hero.scaleY * 0.8);
     c.add(hero);
 
-    (['weapon', 'armor'] as const).forEach((slot, i) => {
-      const x = 95 + i * 110;
-      const y = 400;
-      const s = this.slot(x, y, this.equippedEntry(slot), slot);
-      c.add(s);
-      c.add(addText(scene, x, y + 52, slot === 'weapon' ? 'Weapon' : 'Armor', { size: 15, color: COLORS.textDim }).setOrigin(0.5));
-    });
+    for (const slot of EQUIP_SLOTS) c.add(this.slot(EQ_POS[slot].x, EQ_POS[slot].y, this.equippedEntry(slot), slot, EQ));
 
     const [min, max] = player.attackRange;
     const element = player.weaponElement;
     const d = { melee: player.defenseFor('melee'), pierce: player.defenseFor('pierce'), magic: player.defenseFor('magic') };
     const lines = [
       `Attack ${min}-${max} ${DAMAGE_TYPE_LABELS[player.weaponDamageType]} · ${element ? ELEMENT_LABELS[element] : 'Neutral'}`,
-      `Crit ${(player.critChance * 100).toFixed(1)}%`,
+      `Crit ${(player.critChance * 100).toFixed(1)}%${player.damageBonus ? ` · Damage +${Math.round(player.damageBonus * 100)}%` : ''}`,
       defenseText(d),
       `Max HP ${player.maxHp} · Max MP ${player.maxMp}`,
       `Gold ${player.gold}`,
     ];
-    c.add(addText(scene, 26, 482, lines.join('\n'), { size: 15, wrap: 280 }).setLineSpacing(6));
+    const stats = addText(scene, 20, 378, lines.join('\n'), { size: 15, wrap: 284 }).setLineSpacing(5);
+    c.add(stats);
+    // Sets being worn, and what they switch on.
+    let y = stats.y + stats.height + 8;
+    const active = activeSetBonuses(player.data.equipment);
+    for (const [id, count] of setCounts(player.data.equipment)) {
+      const set = db.set(id);
+      const t = addText(scene, 20, y, `${set.name} set ${count}/${set.pieces.length}`, { size: 15, bold: true, color: COLORS.textGold });
+      c.add(t);
+      y += t.height + 2;
+      for (const b of set.bonuses) {
+        const on = active.some((a) => a.set.id === id && a.bonus === b);
+        const bt = addText(scene, 28, y, `(${b.pieces}) ${setBonusText(b)}`, { size: 13, color: on ? COLORS.textGood : COLORS.textDim, wrap: 270 });
+        c.add(bt);
+        y += bt.height + 2;
+      }
+    }
   }
 
   private renderShopSide(): void {
@@ -294,28 +321,29 @@ class InventoryView {
     }
   }
 
-  /** One grid cell. `equipSlot` marks the hero's weapon/armor slots. */
-  private slot(x: number, y: number, entry: Entry | null, equipSlot?: EquipSlot): Phaser.GameObjects.Container {
+  /** One grid cell. `equipSlot` marks the hero's equipment slots (drawn at `size`). */
+  private slot(x: number, y: number, entry: Entry | null, equipSlot?: EquipSlot, size = CELL): Phaser.GameObjects.Container {
     const { scene } = this;
     const s = scene.add.container(x, y);
     const info = entry ? gradeInfo(entry.def, entry.kind === 'gear' ? entry.gear : undefined) : null;
     const bg = scene.add
-      .rectangle(0, 0, CELL, CELL, SLOT_BG)
+      .rectangle(0, 0, size, size, SLOT_BG)
       .setRounded(8)
       .setStrokeStyle(entry ? 3 : 2, info ? info.frame : EMPTY_BORDER);
     s.add(bg);
     if (equipSlot) this.equipSlots.push({ slot: equipSlot, bg });
     if (!entry) {
-      if (equipSlot) s.add(addText(scene, 0, 0, equipSlot === 'weapon' ? 'No\nweapon' : 'No\narmor', { size: 13, align: 'center', color: COLORS.textDim }).setOrigin(0.5));
+      if (equipSlot) s.add(addText(scene, 0, 0, SLOT_LABELS[equipSlot], { size: 12, align: 'center', color: COLORS.textDim }).setOrigin(0.5));
       return s;
     }
 
-    if (entry.key === this.selected) s.add(scene.add.rectangle(0, 0, CELL + 8, CELL + 8).setRounded(11).setStrokeStyle(3, 0xffffff));
-    const icon = drawItemIcon(scene, entry.def, 60);
+    if (entry.key === this.selected) s.add(scene.add.rectangle(0, 0, size + 8, size + 8).setRounded(11).setStrokeStyle(3, 0xffffff));
+    const iconSize = Math.round(size * 0.75);
+    const icon = drawItemIcon(scene, entry.def, iconSize);
     s.add(icon);
     if (info?.sigil) {
-      animateSigilIcon(scene, icon, info.sigil, 60);
-      s.add(addText(scene, -CELL / 2 + 5, CELL / 2 - 2, '✦', { size: 16, bold: true, color: SIGIL_COLORS[info.sigil].css, stroke: true }).setOrigin(0, 1));
+      animateSigilIcon(scene, icon, info.sigil, iconSize);
+      s.add(addText(scene, -size / 2 + 5, size / 2 - 2, '✦', { size: 16, bold: true, color: SIGIL_COLORS[info.sigil].css, stroke: true }).setOrigin(0, 1));
     }
     if (entry.kind === 'stack' && entry.qty > 1) {
       s.add(addText(scene, CELL / 2 - 6, CELL / 2 - 4, `${entry.qty}`, { size: 17, bold: true, stroke: true }).setOrigin(1, 1));
@@ -325,9 +353,9 @@ class InventoryView {
     }
     let newDot: Phaser.GameObjects.Arc | null = null;
     if (entry.kind === 'gear') {
-      if (entry.gear.locked) s.add(this.lockBadge(-CELL / 2 + 13, -CELL / 2 + 13));
+      if (entry.gear.locked) s.add(this.lockBadge(-size / 2 + 13, -size / 2 + 13));
       if (entry.gear.isNew) {
-        newDot = scene.add.circle(CELL / 2 - 10, -CELL / 2 + 10, 6, 0xffd34d).setStrokeStyle(2, 0x000000);
+        newDot = scene.add.circle(size / 2 - 10, -size / 2 + 10, 6, 0xffd34d).setStrokeStyle(2, 0x000000);
         s.add(newDot);
       }
       if (!equipSlot && info && info.tier !== 'standard') {
@@ -374,7 +402,8 @@ class InventoryView {
       this.dragging = true;
       ghost = drawItemIcon(scene, entry.def, 70).setPosition(pointer.x, pointer.y).setDepth(5200).setAlpha(0.85);
       bg.setAlpha(0.4);
-      for (const t of this.equipSlots) if (!entry.slot && t.slot === entry.def.type) t.bg.setStrokeStyle(4, 0xffffff);
+      const fits = slotsFor(entry.def);
+      for (const t of this.equipSlots) if (!entry.slot && fits.includes(t.slot)) t.bg.setStrokeStyle(4, 0xffffff);
     });
     bg.on('drag', (pointer: Phaser.Input.Pointer) => ghost?.setPosition(pointer.x, pointer.y));
     bg.on('dragend', (pointer: Phaser.Input.Pointer) => {
@@ -384,7 +413,9 @@ class InventoryView {
       ghost = null;
       bg.setAlpha(1);
       const heroSide = pointer.x < this.modal.content.x + 300;
-      if (!entry.slot && heroSide) this.equip(entry);
+      // Dropped on a slot it fits (a ring on the second ring slot): there. Anywhere else on the hero side: its usual slot.
+      const target = this.equipSlots.find((t) => t.bg.getBounds().contains(pointer.x, pointer.y))?.slot;
+      if (!entry.slot && heroSide) this.equip(entry, target);
       else if (entry.slot && this.gridZone.getBounds().contains(pointer.x, pointer.y)) this.unequip(entry.slot);
       else this.render();
     });
@@ -417,8 +448,8 @@ class InventoryView {
     this.render();
   }
 
-  private equip(entry: Extract<Entry, { kind: 'gear' }>): void {
-    if (!this.player.equip(entry.gear.uid)) return;
+  private equip(entry: Extract<Entry, { kind: 'gear' }>, slot?: EquipSlot): void {
+    if (!this.player.equip(entry.gear.uid, slot)) return;
     play(this.scene, 'equip');
     this.selected = entry.gear.uid;
     this.changed();
@@ -497,7 +528,7 @@ class InventoryView {
       card.add(sig);
       headY += sig.height + 2;
     }
-    const kind = entry.def.type === 'weapon' ? 'Weapon' : entry.def.type === 'armor' ? 'Armor' : entry.def.type === 'material' ? 'Material' : 'Potion';
+    const kind = isGearDef(entry.def) ? kindLabel(entry.def) : entry.def.type === 'material' ? 'Material' : 'Potion';
     const sub = entry.kind === 'gear' ? `${kind} · ${gradeLabel(info)}${entry.slot ? ' · Equipped' : ''}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : kind;
     const subText = addText(scene, left + 92, headY, sub, { size: 15, color: COLORS.textDim });
     card.add(subText);
@@ -537,11 +568,24 @@ class InventoryView {
     y += 6;
     line(entry.def.description, COLORS.textDim, 15);
 
-    // Compare with what is worn, for gear that isn't.
+    // The item's set: pieces (worn ones ticked) and bonuses (active ones lit).
+    const set = isGearDef(entry.def) ? setCard(entry.def.id, this.player.data.equipment) : null;
+    if (set) {
+      y += 4;
+      line(set.title, COLORS.textGold, 15);
+      for (const l of set.lines) line(l.text, l.on ? COLORS.textGood : COLORS.textDim, 14);
+    }
+
+    // Compare with what is worn in the slot it would go to, for gear that isn't worn.
     if (entry.kind !== 'stack' && isGearDef(entry.def) && !(entry.kind === 'gear' && entry.slot)) {
-      const worn = this.player.data.equipment[entry.def.type];
+      const slot = this.player.slotFor(entry.def);
+      const worn = this.player.data.equipment[slot];
       const statBonus = (t: DamageType) => Math.floor(this.player.statFor(t) * BALANCE.statDamageScale);
-      const diff = compareGear(entry.def, traits, worn ? { def: gearDef(worn), gear: worn } : null, statBonus);
+      const piece: Gear = entry.kind === 'gear' ? entry.gear : { uid: '', itemId: entry.def.id, rolls: {} };
+      const diff = [
+        ...compareGear(entry.def, traits, worn ? { def: gearDef(worn), gear: worn } : null, statBonus),
+        ...setCompareLines(this.player.data.equipment, slot, piece),
+      ];
       y += 6;
       line(worn ? `Compared to your ${gearDef(worn).name}:` : 'Nothing equipped in that slot.', COLORS.textGold, 15);
       // As many lines as fit above the price.

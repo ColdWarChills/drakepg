@@ -25,7 +25,7 @@ import { Modal } from './Modal';
 import { addText, toast } from './text';
 
 type Tab = 'hero' | 'items' | 'wardrobe' | 'world';
-type Category = 'weapon' | 'armor' | 'consumable';
+type Category = 'weapon' | 'armor' | 'accessory' | 'consumable';
 
 export interface CheatHooks {
   /** HUD, quest tracker, hero figure and save. */
@@ -160,6 +160,7 @@ export function openCheatMenu(scene: Phaser.Scene, player: Player, hooks: CheatH
     choices(40, 240, 'Type', [
       { label: 'Weapons', value: 'weapon' as Category },
       { label: 'Armor', value: 'armor' as Category },
+      { label: 'Rings etc', value: 'accessory' as Category },
       { label: 'Potions', value: 'consumable' as Category },
     ], state.category, (v) => ((state.category = v), (state.page = 0)), 130);
     const items = listOf(state.category);
@@ -207,8 +208,8 @@ export function openCheatMenu(scene: Phaser.Scene, player: Player, hooks: CheatH
     const hero = drawFigure(scene, 180, 560, player.look, 1, player.weapon, player.weaponSigil);
     hero.setScale(hero.scaleX * 1.25, hero.scaleY * 1.25);
     c.add(hero);
-    const { weapon, armor } = player.data.equipment;
-    const worn = [weapon ? lootName(db.item(weapon.itemId), weapon) : 'No weapon', armor ? lootName(db.item(armor.itemId), armor) : 'No armor'];
+    const { weapon, body: armor } = player.data.equipment;
+    const worn = [weapon ? lootName(db.item(weapon.itemId), weapon) : 'No weapon', armor ? lootName(db.item(armor.itemId), armor) : 'No body armor'];
     c.add(addText(scene, 180, 600, worn.join('\n'), { size: 15, align: 'center', wrap: 280 }).setOrigin(0.5));
 
     const classId = player.data.classId;
@@ -228,8 +229,8 @@ export function openCheatMenu(scene: Phaser.Scene, player: Player, hooks: CheatH
     label(350, 128, 'Weapons');
     grid(weapons, 160);
     const armorTop = 160 + Math.ceil(weapons.length / cols) * 44 + 10;
-    label(350, armorTop - 4, 'Armor');
-    grid(listOf('armor'), armorTop + 28);
+    label(350, armorTop - 4, 'Body armor (the outfit)');
+    grid(listOf('armor').filter((i) => i.type === 'armor' && (i.slot ?? 'body') === 'body'), armorTop + 28);
     label(350, 640, 'Faded = no art yet (falls back to the default look). New pieces use the Give item options.', COLORS.textDim, 14);
   };
 

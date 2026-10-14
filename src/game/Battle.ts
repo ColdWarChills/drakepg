@@ -526,7 +526,7 @@ export class Battle {
     const { mult, effect } = this.elementMultiplier(target, element);
     damage *= mult * Math.max(0, 1 + this.mod(source, 'damageDealt')) * Math.max(0, 1 + this.mod(target, 'damageTaken'));
     if (target === 'player' && this.defending) damage *= BALANCE.defendDamage;
-    if (source === 'player') damage *= 1 + this.grit;
+    if (source === 'player') damage *= (1 + this.grit) * (1 + this.player.damageBonus);
     const shell = this.enemy.def.shell;
     const shielded = target === 'enemy' && shell !== undefined && this.shell > 0;
     if (shielded) damage *= 1 - shell.reduction;
@@ -564,6 +564,12 @@ export class Battle {
       if (gear?.tier === 'rare') delete pity[m.loot];
       else pity[m.loot] = (pity[m.loot] ?? 0) + 1;
       if (gear) items.push(gear.grant);
+      // Elites and bosses may also drop a piece of the area's set.
+      const set = db.lootTable(m.loot).set;
+      if (set && (source === 'elite' || source === 'boss') && chance(this.rng, BALANCE.setDrop[source])) {
+        const pieces = db.set(set).pieces;
+        items.push(grantFor(pieces[randInt(this.rng, 0, pieces.length - 1)], this.rng, source, extras));
+      }
     }
     return { xp, gold: gold(), items };
   }

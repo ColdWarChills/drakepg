@@ -1,10 +1,14 @@
 import Phaser from 'phaser';
 import { DAMAGE_TYPE_LABELS, ELEMENTS, ELEMENT_LABELS } from '../data/elements';
-import type { ArmorDef, DamageType, Defenses, ItemDef, Resists, Stats, WeaponDef } from '../data/types';
+import { db } from '../data/db';
+import type { DamageType, Defenses, EquipSlot, ItemDef, Resists, SetBonus, SetDef, Stats } from '../data/types';
 import {
+  accessoryValue,
+  armorSlot,
   grade,
   gradeTier,
   isGearDef,
+  lineBonus,
   modTotal,
   modValue,
   rollBonus,
@@ -14,6 +18,7 @@ import {
   rollKeys,
   ROLL_LABELS,
   SIGIL_NAMES,
+  type Gear,
   type GearDef,
   type GearTraits,
   type GradeTier,
@@ -23,6 +28,7 @@ import {
   type SigilTier,
 } from '../game/Items';
 import { STAT_KEYS, STAT_LABELS } from '../game/Player';
+import { activeSetBonuses, setCounts, setOfItem } from '../game/Sets';
 import { hasArt } from './art';
 
 /** Border and text color per grade tier. */
@@ -187,6 +193,20 @@ export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): P
     g.fillStyle(0xd8dde3).fillRect(-4 * s, -28 * s, 8 * s, 40 * s);
     g.fillStyle(0x8a6d3b).fillRect(-14 * s, 12 * s, 28 * s, 5 * s).fillRect(-3 * s, 17 * s, 6 * s, 12 * s);
     g.setAngle(45);
+  } else if (def.type === 'armor' && armorSlot(def) !== 'body') {
+    drawArmorPiece(g, armorSlot(def) as 'helm' | 'gloves' | 'boots', color, s);
+  } else if (def.type === 'accessory') {
+    if (def.slot === 'ring') {
+      g.lineStyle(7 * s, color).strokeCircle(0, 6 * s, 15 * s);
+      g.lineStyle(2 * s, shade(color, 0.5)).strokeCircle(0, 6 * s, 19 * s).strokeCircle(0, 6 * s, 11 * s);
+      g.fillStyle(0xbfe9ff).fillCircle(0, -13 * s, 7 * s);
+      g.fillStyle(0xffffff, 0.6).fillCircle(-2 * s, -15 * s, 2.5 * s);
+    } else {
+      g.lineStyle(3 * s, 0xc9a84a).beginPath().arc(0, -14 * s, 20 * s, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(340), false).strokePath();
+      g.fillStyle(color).fillCircle(0, 12 * s, 12 * s);
+      g.lineStyle(2 * s, shade(color, 0.5)).strokeCircle(0, 12 * s, 12 * s);
+      g.fillStyle(0xffffff, 0.45).fillCircle(-4 * s, 8 * s, 3.5 * s);
+    }
   } else if (def.type === 'armor') {
     const pts = [
       [-12, -24], [-4, -18], [4, -18], [12, -24], [26, -16], [22, -4], [16, -6], [16, 24], [-16, 24], [-16, -6], [-22, -4], [-26, -16],
@@ -211,6 +231,31 @@ export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): P
   }
   c.add(g);
   return c;
+}
+
+/** Drawn helm, gloves or boots (until `icon_<id>` art exists). */
+function drawArmorPiece(g: Phaser.GameObjects.Graphics, slot: 'helm' | 'gloves' | 'boots', color: number, s: number): void {
+  const dark = shade(color, 0.5);
+  const poly = (pts: number[][]) => {
+    const v = pts.map(([x, y]) => new Phaser.Math.Vector2(x * s, y * s));
+    g.fillStyle(color).fillPoints(v, true);
+    g.lineStyle(2, dark).strokePoints(v, true);
+  };
+  if (slot === 'helm') {
+    poly([[-20, 18], [-22, -2], [-14, -18], [0, -24], [14, -18], [22, -2], [20, 18], [10, 18], [10, 4], [-10, 4], [-10, 18]]);
+    g.fillStyle(dark).fillRect(-12 * s, -2 * s, 24 * s, 5 * s);
+    g.fillStyle(0xffffff, 0.2).fillRect(-12 * s, -16 * s, 5 * s, 12 * s);
+  } else if (slot === 'gloves') {
+    for (const dx of [-12, 12]) {
+      poly([[dx - 9, 22], [dx - 9, -2], [dx - 10, -14], [dx - 5, -16], [dx - 3, -6], [dx - 1, -20], [dx + 3, -20], [dx + 4, -6], [dx + 6, -16], [dx + 10, -12], [dx + 9, 22]]);
+      g.fillStyle(dark).fillRect((dx - 9) * s, 14 * s, 18 * s, 4 * s);
+    }
+  } else {
+    for (const dx of [-11, 11]) {
+      poly([[dx - 7, -22], [dx + 5, -22], [dx + 5, 10], [dx + 14, 14], [dx + 14, 22], [dx - 7, 22]]);
+      g.fillStyle(dark).fillRect((dx - 7) * s, 18 * s, 21 * s, 4 * s);
+    }
+  }
 }
 
 // --- Text ---
@@ -258,6 +303,21 @@ export function itemLines(def: ItemDef, g: GearTraits = { rolls: {} }): string[]
       if (def.stats) lines.push(bonusText(def.stats));
       return lines;
     }
+    case 'accessory': {
+      // Everything scales with the Power roll (and a Sigil or +).
+      const lines: string[] = [];
+      const stats: Partial<Stats> = {};
+      for (const k of STAT_KEYS) if (def.stats?.[k]) stats[k] = accessoryValue(def.stats[k]!, g);
+      if (Object.keys(stats).length) lines.push(bonusText(stats));
+      if (def.hp) lines.push(`+${accessoryValue(def.hp, g)} Max HP`);
+      if (def.mp) lines.push(`+${accessoryValue(def.mp, g)} Max MP`);
+      if (def.crit) lines.push(`+${accessoryValue(def.crit, g, 1).toFixed(1)}% Crit chance`);
+      const res: Resists = {};
+      for (const [k, v] of Object.entries(def.resists ?? {}) as [keyof Resists, number][]) res[k] = accessoryValue(v, g);
+      const rt = resistText(res, 'Resists ');
+      if (rt) lines.push(rt);
+      return lines;
+    }
     case 'consumable':
     case 'material':
       return [def.description];
@@ -265,8 +325,8 @@ export function itemLines(def: ItemDef, g: GearTraits = { rolls: {} }): string[]
 }
 
 /** What a roll line adds at its quality, e.g. "+11%". */
-export function rollEffectText(key: RollKey, rolls: Rolls): string {
-  const b = rollBonus(key, rolls) * 100;
+export function rollEffectText(def: GearDef, key: RollKey, rolls: Rolls): string {
+  const b = lineBonus(def, key, rolls) * 100;
   return `+${key === 'crit' ? b.toFixed(1) : Math.round(b)}%`;
 }
 
@@ -279,7 +339,7 @@ export interface RollLine {
 }
 
 export function rollLines(def: GearDef, rolls: Rolls): RollLine[] {
-  return rollKeys(def).map((key) => ({ key, label: ROLL_LABELS[key], effect: rollEffectText(key, rolls), quality: rolls[key] ?? 0 }));
+  return rollKeys(def).map((key) => ({ key, label: ROLL_LABELS[key], effect: rollEffectText(def, key, rolls), quality: rolls[key] ?? 0 }));
 }
 
 /** "+3 STR", "+2.5% Crit chance", "+14 Fire resist" */
@@ -307,6 +367,56 @@ export interface ModLine {
 
 export function modLines(g: GearTraits): ModLine[] {
   return (g.mods ?? []).map((m) => ({ text: modText(m), quality: m.roll }));
+}
+
+/** "+8% Max HP, Earth +15" */
+export function setBonusText(b: SetBonus): string {
+  const parts: string[] = [];
+  const stats = bonusText(b.stats);
+  if (stats) parts.push(stats);
+  if (b.hpPct) parts.push(`+${b.hpPct}% Max HP`);
+  if (b.defensePct) parts.push(`+${b.defensePct}% defense`);
+  if (b.damagePct) parts.push(`+${b.damagePct}% damage`);
+  if (b.crit) parts.push(`+${b.crit}% Crit chance`);
+  const res = resistText(b.resists, 'Resists ');
+  if (res) parts.push(res);
+  return parts.join(', ');
+}
+
+export interface SetCardLine {
+  text: string;
+  /** Worn piece or active bonus: drawn bright; the rest dim. */
+  on: boolean;
+}
+
+/** The item's set for its card: name with pieces worn, the pieces, and each bonus. Null if it has no set. */
+export function setCard(itemId: string, equipment: Record<EquipSlot, Gear | null>): { set: SetDef; title: string; lines: SetCardLine[] } | null {
+  const set = setOfItem(itemId);
+  if (!set) return null;
+  const count = setCounts(equipment).get(set.id) ?? 0;
+  const worn = new Set(Object.values(equipment).filter((g): g is Gear => !!g).map((g) => g.itemId));
+  return {
+    set,
+    title: `${set.name} set (${count}/${set.pieces.length})`,
+    lines: [
+      // "Helm ✓ · Gloves · Boots ✓ · Band": worn pieces ticked.
+      { text: set.pieces.map((id) => `${db.item(id).name.replace(`${set.name} `, '')}${worn.has(id) ? ' ✓' : ''}`).join(' · '), on: false },
+      ...set.bonuses.map((b) => ({ text: `(${b.pieces}) ${setBonusText(b)}`, on: count >= b.pieces })),
+    ],
+  };
+}
+
+/** Set bonuses that wearing a piece in `slot` would switch on (good) or off (bad). */
+export function setCompareLines(equipment: Record<EquipSlot, Gear | null>, slot: EquipSlot, piece: Gear): CompareLine[] {
+  const key = (x: { set: SetDef; bonus: SetBonus }) => `${x.set.id}:${x.bonus.pieces}`;
+  const before = activeSetBonuses(equipment);
+  const after = activeSetBonuses({ ...equipment, [slot]: piece });
+  const was = new Set(before.map(key));
+  const now = new Set(after.map(key));
+  return [
+    ...after.filter((x) => !was.has(key(x))).map((x) => ({ text: `${x.set.name} (${x.bonus.pieces}): ${setBonusText(x.bonus)}`, tone: 'good' as const })),
+    ...before.filter((x) => !now.has(key(x))).map((x) => ({ text: `Loses ${x.set.name} (${x.bonus.pieces})`, tone: 'bad' as const })),
+  ];
 }
 
 /** "+40 HP, +20 MP" */
@@ -345,9 +455,16 @@ function numbers(def: GearDef | null, g: GearTraits, statBonus: (type: DamageTyp
     out.avgDamage = (min + max) / 2 + statBonus(def.damageType);
     out.crit += rollBonus('crit', g.rolls) * 100;
     out.special = rolledProcChance(def, g) * 100;
-  } else {
+  } else if (def.type === 'armor') {
     for (const t of ['melee', 'pierce', 'magic'] as const) out.defense[t] = rolledDefense(def, g, t);
-    out.hp = rollBonus('hp', g.rolls) * 100;
+    out.hp = lineBonus(def, 'hp', g.rolls) * 100;
+  } else {
+    // Accessories: every number scales with Power.
+    for (const k of STAT_KEYS) out.stats[k] = (out.stats[k] ?? 0) - (def.stats?.[k] ?? 0) + accessoryValue(def.stats?.[k] ?? 0, g);
+    out.hpFlat += accessoryValue(def.hp ?? 0, g);
+    out.mp += accessoryValue(def.mp ?? 0, g);
+    out.crit += accessoryValue(def.crit ?? 0, g, 1);
+    for (const [k, v] of Object.entries(def.resists ?? {}) as [keyof Resists, number][]) out.resists[k] = (out.resists[k] ?? 0) + accessoryValue(v, g);
   }
   return out;
 }
@@ -365,7 +482,7 @@ export interface CompareLine {
 export function compareGear(
   def: GearDef,
   g: GearTraits,
-  equipped: { def: WeaponDef | ArmorDef; gear: GearTraits } | null,
+  equipped: { def: GearDef; gear: GearTraits } | null,
   statBonus: (type: DamageType) => number,
 ): CompareLine[] {
   const a = numbers(def, g, statBonus);

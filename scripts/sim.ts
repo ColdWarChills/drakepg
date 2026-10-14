@@ -30,8 +30,10 @@ interface Loadout {
   armor: Record<ClassId, string>;
   /** Roll quality of every line, 0-100. Shop gear is 0. */
   quality?: number;
-  /** Sigil on both pieces (no mods: this measures the base boost). */
+  /** Sigil on every piece (no mods: this measures the base boost). */
   sigil?: SigilTier;
+  /** Worn instead of the body armor's shop helm/gloves/boots (`KITS`): set pieces, rings, necklaces. */
+  kit?: Record<ClassId, string[]>;
 }
 
 const STARTER: Loadout = {
@@ -89,13 +91,23 @@ const FIRE3: Loadout = { label: 'fire3', weapon: { warrior: 'hearthfire_blade', 
 const EARTH3: Loadout = { ...HEART, label: 'heart3', armor: SHOP3.armor };
 const SUPERIOR = 'superior_health_potion';
 
+/** Helm, gloves and boots worn with each shop body armor (the same tier, heavy or light). Starter armor has none. */
+const KITS: Record<string, string[]> = {
+  leather_armor: ['leather_cap', 'leather_gloves', 'leather_boots'],
+  apprentice_robe: ['apprentice_hood', 'apprentice_wraps', 'apprentice_slippers'],
+  scale_mail: ['scale_coif', 'scale_gauntlets', 'scale_boots'],
+  reedweave_robe: ['reedweave_hood', 'reedweave_wraps', 'reedweave_slippers'],
+  ridgeplate: ['ridgeplate_helm', 'ridgeplate_gauntlets', 'ridgeplate_boots'],
+  fleecewool_robe: ['fleecewool_hood', 'fleecewool_mittens', 'fleecewool_boots'],
+};
+
 function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number, potion: string): Player {
   const p = Player.createNew('Sim', classId);
   while (p.level < level) p.addXp(xpToNext(p.level));
   const plan = STAT_PLAN[classId];
   for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
   p.data.inventory = [];
-  for (const id of [gear.weapon[classId], gear.armor[classId]]) {
+  for (const id of [gear.weapon[classId], gear.armor[classId], ...(gear.kit?.[classId] ?? KITS[gear.armor[classId]] ?? [])]) {
     const piece = p.makeGear(id, { rolls: rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0), sigil: gear.sigil });
     p.data.gear.push(piece);
     p.equip(piece.uid);
@@ -393,4 +405,41 @@ table('Lucky Impling (sized to its area, runs away on its 3rd turn): win = caugh
   { monster: 'lucky', zone: 'frostfang', level: 10, gear: SHOP3, potions: 0 },
   { monster: 'lucky', zone: 'windscour', level: 12, gear: SHOP3, potions: 0 },
   { monster: 'lucky', zone: 'steamvent', level: 12, gear: SHOP3, potions: 0 },
+]);
+
+/** A full set plus the area's class ring (and necklace where the set has none). */
+const setKit = (set: string[], rings: Record<ClassId, string>, necklace?: string): Record<ClassId, string[]> => ({
+  warrior: [...set, rings.warrior, ...(necklace ? [necklace] : [])],
+  mage: [...set, rings.mage, ...(necklace ? [necklace] : [])],
+  rogue: [...set, rings.rogue, ...(necklace ? [necklace] : [])],
+});
+const THORN_SET: Loadout = {
+  ...SHOP,
+  label: 'thornset',
+  kit: setKit(['thornwarden_helm', 'thornwarden_gloves', 'thornwarden_boots', 'thornwarden_band'], { warrior: 'copper_band', mage: 'moonstone_ring', rogue: 'fox_ring' }, 'oak_pendant'),
+};
+const STORM_SET: Loadout = {
+  ...SHOP2,
+  label: 'stormset',
+  kit: setKit(['stormwatch_helm', 'stormwatch_gloves', 'stormwatch_boots', 'stormwatch_amulet'], { warrior: 'silver_band', mage: 'tidepearl_ring', rogue: 'eelskin_ring' }),
+};
+const FROST_SET: Loadout = {
+  ...SHOP3,
+  label: 'frostset',
+  kit: setKit(['frostward_helm', 'frostward_gloves', 'frostward_boots', 'frostward_ring'], { warrior: 'gold_band', mage: 'rimeglass_ring', rogue: 'wolfclaw_ring' }, 'hearthstone_pendant'),
+};
+
+table('Sets and jewelry: shop weapon and body, the area set (4 pieces) and jewelry, 0% rolls (3 potions for bosses)', [
+  { monster: 'bramble_bandit', level: 3, gear: SHOP, potions: 1 },
+  { monster: 'bramble_bandit', level: 3, gear: THORN_SET, potions: 1 },
+  { monster: 'thornheart', level: 5, gear: SHOP, potions: 3 },
+  { monster: 'thornheart', level: 5, gear: THORN_SET, potions: 3 },
+  { monster: 'sunken_revenant', level: 8, gear: SHOP2, potions: 1, potion: GREATER },
+  { monster: 'sunken_revenant', level: 8, gear: STORM_SET, potions: 1, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: STORM_SET, potions: 3, potion: GREATER },
+  { monster: 'rime_acolyte', level: 12, gear: SHOP3, potions: 1, potion: SUPERIOR },
+  { monster: 'rime_acolyte', level: 12, gear: FROST_SET, potions: 1, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 14, gear: SHOP3, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 14, gear: FROST_SET, potions: 3, potion: SUPERIOR },
 ]);

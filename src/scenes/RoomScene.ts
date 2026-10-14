@@ -479,8 +479,8 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private gearKey(): string {
-    const { weapon, armor } = session.player.data.equipment;
-    return `${weapon?.uid ?? ''}|${armor?.uid ?? ''}`;
+    const { weapon, body } = session.player.data.equipment;
+    return `${weapon?.uid ?? ''}|${body?.uid ?? ''}`;
   }
 
   /** The hero holds the equipped weapon and wears the armor's outfit, so redraw them after a gear swap. */

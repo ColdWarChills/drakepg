@@ -73,4 +73,17 @@ export const RECIPES: RecipeDef[] = [
   r('salamander_kris', 230, ['essence_fire', 5], ['salamander_scale', 2], ['scrap', 3]),
   r('frostpelt_vest', 200, ['frost_pelt', 4], ['ram_horn', 1], ['scrap', 2]),
   r('galeweave_robe', 200, ['essence_wind', 4], ['frost_pelt', 2], ['scrap', 1]),
+  // Set pieces (src/data/sets.ts): the area's monster parts and an essence.
+  r('thornwarden_helm', 60, ['moss_clump', 5], ['boar_tusk', 1], ['scrap', 2]),
+  r('thornwarden_gloves', 50, ['moss_clump', 4], ['boar_tusk', 1], ['scrap', 1]),
+  r('thornwarden_boots', 50, ['moss_clump', 4], ['boar_tusk', 1], ['scrap', 1]),
+  r('thornwarden_band', 70, ['essence_earth', 3], ['boar_tusk', 2]),
+  r('stormwatch_helm', 140, ['fen_hide', 3], ['storm_scale', 2], ['scrap', 3]),
+  r('stormwatch_gloves', 120, ['fen_hide', 3], ['storm_scale', 1], ['scrap', 2]),
+  r('stormwatch_boots', 120, ['fen_hide', 3], ['storm_scale', 1], ['scrap', 2]),
+  r('stormwatch_amulet', 150, ['essence_energy', 3], ['essence_water', 3], ['storm_scale', 2]),
+  r('frostward_helm', 280, ['frost_pelt', 3], ['rime_shard', 2], ['scrap', 4]),
+  r('frostward_gloves', 240, ['frost_pelt', 3], ['rime_shard', 1], ['scrap', 3]),
+  r('frostward_boots', 240, ['frost_pelt', 3], ['ram_horn', 1], ['scrap', 3]),
+  r('frostward_ring', 300, ['essence_ice', 4], ['rime_shard', 2]),
 ];

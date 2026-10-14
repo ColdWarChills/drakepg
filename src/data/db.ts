@@ -6,10 +6,14 @@ import { ITEMS } from './items';
 import { LOOT_TABLES } from './loot';
 import { MONSTERS } from './monsters';
 import { QUESTS } from './quests';
+import { SETS } from './sets';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, ItemDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, ItemDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SetDef, SkillDef, StatusDef, ZoneDef } from './types';
+
+const GEAR_TYPES: ItemDef['type'][] = ['weapon', 'armor', 'accessory'];
+const isGearType = (t: ItemDef['type']) => GEAR_TYPES.includes(t);
 
 /** Build an id -> def lookup and fail loudly on duplicate ids. */
 function index<T extends { id: string }>(kind: string, list: T[]): Map<string, T> {
@@ -33,6 +37,7 @@ const affixes = index('elite affix', ELITE_AFFIXES);
 const recipes = index('recipe', RECIPES);
 const lootTables = index('loot table', LOOT_TABLES);
 const features = index('feature', FEATURES);
+const sets = index('set', SETS);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -53,6 +58,7 @@ export const db = {
   recipe: (id: string): RecipeDef => get('recipe', recipes, id),
   lootTable: (id: string): LootTableDef => get('loot table', lootTables, id),
   feature: (id: string): FeatureDef => get('feature', features, id),
+  set: (id: string): SetDef => get('set', sets, id),
   features: (): readonly FeatureDef[] => FEATURES,
   affixes: (): readonly EliteAffixDef[] => ELITE_AFFIXES,
   hasClass: (id: string) => classes.has(id),
@@ -70,7 +76,7 @@ export function validateData(): void {
   for (const m of MONSTERS) {
     for (const d of m.drops) {
       const t = db.item(d.itemId).type;
-      if (t === 'weapon' || t === 'armor') throw new Error(`Monster ${m.id}: gear ${d.itemId} belongs in a loot table, not drops`);
+      if (isGearType(t)) throw new Error(`Monster ${m.id}: gear ${d.itemId} belongs in a loot table, not drops`);
     }
     if (m.loot) db.lootTable(m.loot);
     if (m.attacks.length === 0) throw new Error(`Monster ${m.id} has no attacks`);
@@ -84,13 +90,25 @@ export function validateData(): void {
     for (const entries of Object.values(table.tiers)) {
       for (const e of entries) {
         const t = db.item(e.itemId).type;
-        if (t !== 'weapon' && t !== 'armor') throw new Error(`Loot table ${table.id}: ${e.itemId} is not gear`);
+        if (!isGearType(t)) throw new Error(`Loot table ${table.id}: ${e.itemId} is not gear`);
       }
+    }
+    if (table.set) db.set(table.set);
+  }
+  for (const set of SETS) {
+    for (const id of set.pieces) {
+      const def = db.item(id);
+      if ((def.type !== 'armor' && def.type !== 'accessory') || def.set !== set.id) throw new Error(`Set ${set.id}: ${id} must be armor or an accessory with set '${set.id}'`);
+    }
+  }
+  for (const item of ITEMS) {
+    if ((item.type === 'armor' || item.type === 'accessory') && item.set && !db.set(item.set).pieces.includes(item.id)) {
+      throw new Error(`Item ${item.id}: not listed in its set ${item.set}`);
     }
   }
   for (const rec of RECIPES) {
     const result = db.item(rec.result);
-    if (result.type !== 'weapon' && result.type !== 'armor') throw new Error(`Recipe ${rec.id}: result must be gear`);
+    if (!isGearType(result.type)) throw new Error(`Recipe ${rec.id}: result must be gear`);
     rec.materials.forEach((m) => db.item(m.itemId));
   }
   for (const a of ELITE_AFFIXES) checkApplies(a.applies);
@@ -98,7 +116,8 @@ export function validateData(): void {
   for (const z of ZONES) for (const e of z.encounters) db.monster(e.monsterId);
   for (const c of CLASSES) {
     db.item(c.weapon);
-    db.item(c.armor);
+    const body = db.item(c.armor);
+    if (body.type !== 'armor' || (body.slot ?? 'body') !== 'body') throw new Error(`Class ${c.id}: starting armor must be body armor`);
     c.skills.forEach((s) => db.skill(s.skillId));
   }
   const npcIds = new Set(ROOMS.flatMap((r) => r.npcs.map((n) => n.id)));
@@ -108,7 +127,7 @@ export function validateData(): void {
     const o = q.objective;
     if (o.kind === 'collect') {
       const t = db.item(o.itemId).type;
-      if (t === 'weapon' || t === 'armor') throw new Error(`Quest ${q.id}: collect quests take potions or materials, not gear`);
+      if (isGearType(t)) throw new Error(`Quest ${q.id}: collect quests take potions or materials, not gear`);
     } else if (o.monsterId) db.monster(o.monsterId);
     else if (!o.elite) throw new Error(`Quest ${q.id}: objective needs a monsterId or elite`);
     q.rewards.items?.forEach((id) => db.item(id));

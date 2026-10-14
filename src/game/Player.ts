@@ -2,8 +2,11 @@ import { BALANCE } from '../config';
 import { db } from '../data/db';
 import { START } from '../data/world';
 import {
+  accessoryValue,
+  EQUIP_SLOTS,
   gearDef,
   isGearDef,
+  lineBonus,
   modTotal,
   modValue,
   rollBonus,
@@ -11,11 +14,14 @@ import {
   rolledDefense,
   rolledProcChance,
   sellValue,
+  slotsFor,
   type Gear,
+  type GearDef,
   type GearTraits,
   type ItemGrant,
   type SigilTier,
 } from './Items';
+import { setBonusTotals, type SetBonusTotals } from './Sets';
 import type {
   ArmorDef,
   ClassDef,
@@ -73,7 +79,7 @@ export interface PlayerData {
   baseStats: Stats;
   hp: number;
   mp: number;
-  /** Equipped gear. Changed from item ids to rolled gear in save version 4. */
+  /** Equipped gear. Changed from item ids to rolled gear in save version 4; 8 slots since version 10. */
   equipment: Record<EquipSlot, Gear | null>;
   /** Consumable stacks. */
   inventory: InventoryEntry[];
@@ -113,6 +119,11 @@ export function xpToNext(level: number): number {
 
 const UNARMED: [number, number] = [2, 4];
 
+/** Every slot empty. */
+export function emptyEquipment(): Record<EquipSlot, Gear | null> {
+  return Object.fromEntries(EQUIP_SLOTS.map((s) => [s, null])) as Record<EquipSlot, Gear | null>;
+}
+
 export class Player {
   constructor(public data: PlayerData) {}
 
@@ -126,7 +137,7 @@ export class Player {
       baseStats: { ...cls.stats },
       hp: 1,
       mp: 1,
-      equipment: { weapon: null, armor: null },
+      equipment: emptyEquipment(),
       inventory: [
         { itemId: 'health_potion', qty: 2 },
         { itemId: 'mana_potion', qty: 1 },
@@ -143,7 +154,7 @@ export class Player {
       freshSkills: [],
     });
     player.data.equipment.weapon = player.makeGear(cls.weapon);
-    player.data.equipment.armor = player.makeGear(cls.armor);
+    player.data.equipment.body = player.makeGear(cls.armor);
     player.restoreFull();
     return player;
   }
@@ -177,8 +188,9 @@ export class Player {
     return this.data.equipment.weapon?.sigil;
   }
 
-  get armor(): ArmorDef | null {
-    const g = this.data.equipment.armor;
+  /** Body armor: it decides the hero's outfit. */
+  get bodyArmor(): ArmorDef | null {
+    const g = this.data.equipment.body;
     return g ? (gearDef(g) as ArmorDef) : null;
   }
 
@@ -188,7 +200,7 @@ export class Player {
    */
   get look(): Look {
     const cls = this.classDef.look;
-    const armor = this.armor;
+    const armor = this.bodyArmor;
     if (!armor) return cls;
     const art = `char_${this.data.classId}_${armor.id}`;
     const classBare = cls.bare === undefined ? [] : Array.isArray(cls.bare) ? cls.bare : [cls.bare];
@@ -202,41 +214,77 @@ export class Player {
   }
 
   private get worn(): (Gear | null)[] {
-    return [this.data.equipment.weapon, this.data.equipment.armor];
+    return EQUIP_SLOTS.map((s) => this.data.equipment[s]);
   }
 
-  /** Base stats plus equipment bonuses (item stats and stat mods). */
+  /** Every worn piece with its item. */
+  private get wornPieces(): { def: GearDef; gear: Gear }[] {
+    return this.worn.filter((g): g is Gear => !!g).map((gear) => ({ def: gearDef(gear), gear }));
+  }
+
+  /** What the active set bonuses add up to (src/game/Sets.ts). */
+  get setBonus(): SetBonusTotals {
+    return setBonusTotals(this.data.equipment);
+  }
+
+  /** Base stats plus equipment bonuses (item stats, accessories, stat mods and set bonuses). */
   get stats(): Stats {
     const total = { ...this.data.baseStats };
-    for (const gear of [this.weapon, this.armor]) {
-      if (!gear?.stats) continue;
-      for (const key of STAT_KEYS) total[key] += gear.stats[key] ?? 0;
+    const set = this.setBonus;
+    for (const { def, gear } of this.wornPieces) {
+      if (!def.stats) continue;
+      for (const key of STAT_KEYS) {
+        const v = def.stats[key] ?? 0;
+        total[key] += def.type === 'accessory' ? accessoryValue(v, gear) : v;
+      }
     }
-    for (const key of STAT_KEYS) total[key] += modTotal(this.worn, key);
+    for (const key of STAT_KEYS) total[key] += modTotal(this.worn, key) + (set.stats[key] ?? 0);
+    return total;
+  }
+
+  /** Flat HP or MP from accessories. */
+  private accessoryTotal(key: 'hp' | 'mp'): number {
+    let total = 0;
+    for (const { def, gear } of this.wornPieces) if (def.type === 'accessory' && def[key]) total += accessoryValue(def[key]!, gear);
     return total;
   }
 
   get maxHp(): number {
-    const base = (40 + this.level * 10 + this.stats.end * 4) * (1 + rollBonus('hp', this.traitsOf('armor').rolls));
-    return Math.round(base) + modTotal(this.worn, 'hp');
+    let pct = this.setBonus.hpPct / 100;
+    for (const { def, gear } of this.wornPieces) if (def.type === 'armor') pct += lineBonus(def, 'hp', gear.rolls);
+    const base = (40 + this.level * 10 + this.stats.end * 4) * (1 + pct);
+    return Math.round(base) + modTotal(this.worn, 'hp') + this.accessoryTotal('hp');
   }
 
   get maxMp(): number {
-    return 12 + this.level * 3 + this.stats.int * 2 + modTotal(this.worn, 'mp');
+    return 12 + this.level * 3 + this.stats.int * 2 + modTotal(this.worn, 'mp') + this.accessoryTotal('mp');
   }
 
+  /** Every armor piece's defense, raised by set bonuses. */
   defenseFor(type: DamageType): number {
-    const armor = this.armor;
-    return armor ? rolledDefense(armor, this.traitsOf('armor'), type) : 0;
+    let total = 0;
+    for (const { def, gear } of this.wornPieces) if (def.type === 'armor') total += rolledDefense(def, gear, type);
+    return Math.round(total * (1 + this.setBonus.defensePct / 100));
   }
 
-  /** Elemental resistances from gear and resist mods (before buffs and the cap, which Battle applies). */
+  /** Elemental resistances from armor, accessories, resist mods and set bonuses (before buffs and the cap, which Battle applies). */
   get resists(): Resists {
-    const out: Resists = { ...this.armor?.resists };
-    for (const g of this.worn) {
-      for (const m of g?.mods ?? []) if (m.key === 'resist' && m.element) out[m.element] = (out[m.element] ?? 0) + modValue(m);
+    const out: Resists = {};
+    const add = (r: Resists | undefined, scale = (v: number) => v) => {
+      for (const [k, v] of Object.entries(r ?? {}) as [keyof Resists, number][]) out[k] = (out[k] ?? 0) + scale(v);
+    };
+    for (const { def, gear } of this.wornPieces) {
+      if (def.type === 'armor') add(def.resists);
+      if (def.type === 'accessory') add(def.resists, (v) => accessoryValue(v, gear));
+      for (const m of gear.mods ?? []) if (m.key === 'resist' && m.element) out[m.element] = (out[m.element] ?? 0) + modValue(m);
     }
+    add(this.setBonus.resists);
     return out;
+  }
+
+  /** Extra damage dealt from set bonuses, as a fraction. Battle multiplies the hero's hits by 1 + this. */
+  get damageBonus(): number {
+    return this.setBonus.damagePct / 100;
   }
 
   get weaponDamageType(): DamageType {
@@ -259,9 +307,11 @@ export class Player {
     return weapon ? rolledProcChance(weapon, this.traitsOf('weapon')) : 0;
   }
 
-  /** Crit chance added by the weapon's Crit line and crit mods. */
+  /** Crit chance added by the weapon's Crit line, crit mods, accessories and set bonuses. */
   get critBonus(): number {
-    return rollBonus('crit', this.traitsOf('weapon').rolls) + modTotal(this.worn, 'crit') / 100;
+    let accessories = 0;
+    for (const { def, gear } of this.wornPieces) if (def.type === 'accessory' && def.crit) accessories += accessoryValue(def.crit, gear, 1);
+    return rollBonus('crit', this.traitsOf('weapon').rolls) + (modTotal(this.worn, 'crit') + accessories + this.setBonus.crit) / 100;
   }
 
   /** Crit chance before battle buffs. For UI; Battle works it out the same way. */
@@ -452,16 +502,26 @@ export class Player {
   }
 
   equippedSlot(uid: string): EquipSlot | null {
-    for (const slot of ['weapon', 'armor'] as const) if (this.data.equipment[slot]?.uid === uid) return slot;
+    for (const slot of EQUIP_SLOTS) if (this.data.equipment[slot]?.uid === uid) return slot;
     return null;
   }
 
-  /** Equip gear from the bag. The previously equipped piece takes its place in the bag. */
-  equip(uid: string): boolean {
+  /** Where a piece would go: its only slot, or for rings the first empty ring slot (else the first). */
+  slotFor(def: GearDef): EquipSlot {
+    const slots = slotsFor(def);
+    return slots.find((s) => !this.data.equipment[s]) ?? slots[0];
+  }
+
+  /**
+   * Equip gear from the bag, into `slot` if it fits there (rings: either ring slot), else its usual slot.
+   * The previously equipped piece takes its place in the bag.
+   */
+  equip(uid: string, slot?: EquipSlot): boolean {
     const index = this.data.gear.findIndex((g) => g.uid === uid);
     if (index < 0) return false;
     const gear = this.data.gear[index];
-    const slot: EquipSlot = gearDef(gear).type;
+    const def = gearDef(gear);
+    if (!slot || !slotsFor(def).includes(slot)) slot = this.slotFor(def);
     const previous = this.data.equipment[slot];
     delete gear.isNew;
     this.data.equipment[slot] = gear;

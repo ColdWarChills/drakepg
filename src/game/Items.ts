@@ -1,19 +1,20 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import { ELEMENTS } from '../data/elements';
-import type { ArmorDef, Element, ItemDef, StatKey, WeaponDef } from '../data/types';
+import type { AccessoryDef, ArmorDef, ArmorSlot, Element, EquipSlot, ItemDef, StatKey, WeaponDef } from '../data/types';
 import { chance, defaultRng, type Rng } from './rng';
 
 /**
- * Rolled gear. Every weapon and armor piece is a unique instance with a quality per line (0-100%).
+ * Rolled gear. Every weapon, armor piece and accessory is a unique instance with a quality per line (0-100%).
  * Shop gear is always 0% ("Standard"); drops roll each line on a curve, so high rolls are rare.
+ * Accessories roll one line, Power, which scales everything they give.
  */
-export type RollKey = 'damage' | 'crit' | 'proc' | 'defense' | 'hp';
+export type RollKey = 'damage' | 'crit' | 'proc' | 'defense' | 'hp' | 'power';
 
 /** Whole percent, 0-100. Missing = 0. */
 export type Rolls = Partial<Record<RollKey, number>>;
 
-export type GearDef = WeaponDef | ArmorDef;
+export type GearDef = WeaponDef | ArmorDef | AccessoryDef;
 
 /** Rare variants, weakest first. A Sigil raises the item's base and brings extra mods. */
 export type SigilTier = 'dawn' | 'dusk' | 'eclipse';
@@ -39,7 +40,42 @@ export interface Mod {
 export const MOD_POOLS: Record<GearDef['type'], ModKey[]> = {
   weapon: ['str', 'int', 'dex', 'end', 'crit', 'mp'],
   armor: ['str', 'int', 'dex', 'end', 'hp', 'mp', 'resist'],
+  accessory: ['str', 'int', 'dex', 'end', 'crit', 'hp', 'mp', 'resist'],
 };
+
+/** Every equipment slot, in display order. */
+export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helm', 'body', 'gloves', 'boots', 'necklace', 'ring1', 'ring2'];
+
+export const SLOT_LABELS: Record<EquipSlot, string> = {
+  weapon: 'Weapon',
+  helm: 'Helm',
+  body: 'Body',
+  gloves: 'Gloves',
+  boots: 'Boots',
+  necklace: 'Necklace',
+  ring1: 'Ring',
+  ring2: 'Ring',
+};
+
+/** Where an armor piece goes (body when it doesn't say). */
+export function armorSlot(def: ArmorDef): ArmorSlot {
+  return def.slot ?? 'body';
+}
+
+/** The equipment slots a piece can go in: two for rings, one for everything else. */
+export function slotsFor(def: GearDef): EquipSlot[] {
+  if (def.type === 'weapon') return ['weapon'];
+  if (def.type === 'armor') return [armorSlot(def)];
+  return def.slot === 'ring' ? ['ring1', 'ring2'] : ['necklace'];
+}
+
+/** "Helm", "Body armor", "Ring"... for item cards. */
+export function kindLabel(def: GearDef): string {
+  if (def.type === 'weapon') return 'Weapon';
+  if (def.type === 'accessory') return def.slot === 'ring' ? 'Ring' : 'Necklace';
+  const slot = armorSlot(def);
+  return slot === 'body' ? 'Body armor' : SLOT_LABELS[slot];
+}
 
 /** What makes one piece unique. Owned gear and loot grants both carry it. */
 export interface GearTraits {
@@ -74,10 +110,11 @@ export const ROLL_LABELS: Record<RollKey, string> = {
   proc: 'Special chance',
   defense: 'Defense',
   hp: 'Max HP',
+  power: 'Power',
 };
 
 export function isGearDef(item: ItemDef): item is GearDef {
-  return item.type === 'weapon' || item.type === 'armor';
+  return item.type === 'weapon' || item.type === 'armor' || item.type === 'accessory';
 }
 
 export function gearDef(gear: Gear): GearDef {
@@ -87,6 +124,7 @@ export function gearDef(gear: Gear): GearDef {
 /** The lines this item rolls, in display order. */
 export function rollKeys(def: GearDef): RollKey[] {
   if (def.type === 'armor') return ['defense', 'hp'];
+  if (def.type === 'accessory') return ['power'];
   return def.proc ? ['damage', 'crit', 'proc'] : ['damage', 'crit'];
 }
 
@@ -184,6 +222,19 @@ export function gradeTier(g: number): { tier: GradeTier; name: string } {
 /** Bonus a line gives at its quality, as a fraction (damage 0.15 = +15%). */
 export function rollBonus(key: RollKey, rolls: Rolls): number {
   return ((rolls[key] ?? 0) / 100) * BALANCE.gearRolls[key];
+}
+
+/** Like `rollBonus`, for this item: an armor piece's Max HP line is shared out by slot (`BALANCE.armorHpShare`). */
+export function lineBonus(def: GearDef, key: RollKey, rolls: Rolls): number {
+  const share = def.type === 'armor' && key === 'hp' ? BALANCE.armorHpShare[armorSlot(def)] : 1;
+  return rollBonus(key, rolls) * share;
+}
+
+/** An accessory's number at this piece's Power roll, Sigil and +. Crit keeps one decimal. */
+export function accessoryValue(value: number, g: GearTraits, decimals = 0): number {
+  const v = value * sigilBoost(g) * (1 + rollBonus('power', g.rolls));
+  const f = 10 ** decimals;
+  return Math.round(v * f) / f;
 }
 
 /** The Sigil raises the base first, then the Damage line applies on top. */

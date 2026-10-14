@@ -47,6 +47,8 @@ const ELITE_GLOW = 0xffc23d;
 /** Lucky Implings: mint tag and glow. */
 const LUCKY_GLOW = 0x7dffb0;
 const LUCKY_CSS = '#8dffbe';
+/** Set pieces on the loot line. */
+const SET_CSS = '#7fe0c0';
 /** Loot line colors (Common uses the normal text color). */
 const LOOT_CSS = { rare: '#ffd34d', uncommon: '#7ddc7d' };
 /** Name color of `tough` monsters: they need a counter. */
@@ -289,6 +291,10 @@ export class BattleScene extends Phaser.Scene {
     const row = this.add.container(x, y);
     const parts: { text: string; color: string }[] = [{ text: 'Gear ', color: COLORS.textDim }];
     for (const t of LOOT_TIERS) if (odds[t] > 0) parts.push({ text: ` ${label[t]} ${pct(odds[t])}${t === 'rare' && luck > 0 ? ' (luck)' : ''} `, color: color[t] });
+    // Elites and bosses: a chance at a piece of the area's set on top.
+    const table = db.lootTable(tableId);
+    const setChance = table.set && (source === 'elite' || source === 'boss') ? BALANCE.setDrop[source] : 0;
+    if (setChance) parts.push({ text: ` · Set ${pct(setChance)} `, color: SET_CSS });
     let cx = 0;
     for (const part of parts) {
       const t = addText(this, cx, 0, part.text, { size: 14, bold: true, color: part.color }).setOrigin(0, 0.5);
@@ -297,13 +303,13 @@ export class BattleScene extends Phaser.Scene {
     }
     if (cx > 388) row.setScale(388 / cx);
 
-    const table = db.lootTable(tableId);
     const names = (t: (typeof LOOT_TIERS)[number]) => table.tiers[t].map((e) => db.item(e.itemId).name).join(', ');
     const pityText =
       luck > 0
         ? `Rolled rarest first. Luck: +${pct(luck)} Rare after ${misses} kills here without one.`
         : `Rolled rarest first. ${misses} kills here without a Rare; after ${BALANCE.loot.pityAfter}, the Rare chance rises.`;
-    const details = [...LOOT_TIERS.filter((t) => odds[t] > 0).map((t) => `${label[t]} ${pct(odds[t])}: ${names(t)}`), pityText].join('\n');
+    const setText = setChance ? [`Set ${pct(setChance)} (extra): ${db.set(table.set!).pieces.map((id) => db.item(id).name).join(', ')}`] : [];
+    const details = [...LOOT_TIERS.filter((t) => odds[t] > 0).map((t) => `${label[t]} ${pct(odds[t])}: ${names(t)}`), ...setText, pityText].join('\n');
     const hit = this.add.rectangle(-4, -12, cx + 8, 24, 0x000000, 0).setOrigin(0).setInteractive({ useHandCursor: true });
     row.addAt(hit, 0);
     // Smaller type so the item lists fit the log box.
