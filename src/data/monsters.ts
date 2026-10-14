@@ -16,8 +16,10 @@ export const MONSTERS: MonsterDef[] = [
     damage: [4, 7],
     defense: { melee: 2, pierce: 2, magic: 2 },
     resists: { fire: -50, wind: -25, ice: -25 },
+    trait: 'Bursts into spores once when hurt.',
     attacks: [
       { name: 'Slam', damageType: 'melee', power: 1, weight: 3 },
+      { name: 'Spore Burst', damageType: 'magic', element: 'earth', power: 0.8, weight: 1, hpBelow: 0.5, applies: [{ status: 'spores', turns: 3 }] },
       { name: 'Spore Puff', damageType: 'magic', element: 'earth', power: 1.1, weight: 1, applies: [{ status: 'spores', turns: 2, chance: 0.3 }] },
     ],
     xp: 14,
@@ -35,9 +37,11 @@ export const MONSTERS: MonsterDef[] = [
     damage: [4, 8],
     defense: { melee: 6, pierce: 4, magic: 1 },
     resists: { wind: -50, water: -25, energy: -25 },
+    trait: 'Opens with a Thorn Charge.',
     attacks: [
       { name: 'Gore', damageType: 'pierce', power: 1, weight: 3 },
-      { name: 'Thorn Charge', damageType: 'melee', power: 1.5, weight: 1 },
+      { name: 'Thorn Charge', damageType: 'melee', power: 1.5, weight: 1, opener: true },
+      { name: 'Trample', damageType: 'melee', power: 1.3, weight: 1 },
     ],
     xp: 22,
     gold: [5, 10],
@@ -61,7 +65,9 @@ export const MONSTERS: MonsterDef[] = [
     // Fire only feeds it. Douse it with ice or water.
     defense: { melee: 4, pierce: 4, magic: 8 },
     resists: { fire: 100, earth: 25, wind: 25, ice: -75, water: -50 },
+    trait: 'Flares up once when hurt: +30% damage.',
     attacks: [
+      { name: 'Flare Up', damageType: 'magic', power: 0, weight: 1, hpBelow: 0.5, applies: [{ status: 'war_cry', turns: 3, self: true }] },
       { name: 'Claw', damageType: 'melee', power: 0.9, weight: 2 },
       { name: 'Cinder Spit', damageType: 'magic', power: 1.2, weight: 2, applies: [{ status: 'burn', turns: 2, chance: 0.3 }] },
     ],
@@ -83,9 +89,11 @@ export const MONSTERS: MonsterDef[] = [
     damage: [5, 9],
     defense: { melee: 6, pierce: 6, magic: 4 },
     resists: { light: -50, energy: -25, ice: -25 },
+    trait: 'Opens with a Dirty Trick (may Blind).',
     attacks: [
       { name: 'Stab', damageType: 'pierce', power: 1, weight: 3 },
-      { name: 'Dirty Trick', damageType: 'melee', power: 1.2, weight: 1, applies: [{ status: 'blind', turns: 2, chance: 0.5 }] },
+      { name: 'Dirty Trick', damageType: 'melee', power: 1.2, weight: 1, opener: true, applies: [{ status: 'blind', turns: 2, chance: 0.5 }] },
+      { name: 'Slash', damageType: 'melee', power: 1.2, weight: 1 },
     ],
     xp: 32,
     gold: [10, 18],
@@ -110,9 +118,11 @@ export const MONSTERS: MonsterDef[] = [
     // Steel glances off the shell, but it is old dry bark: it burns, and wind flips it over.
     defense: { melee: 24, pierce: 24, magic: 3 },
     resists: { earth: 75, water: 25, ice: 25, fire: -75, wind: -50 },
+    trait: 'Shells up every 3rd move (-25% damage taken).',
     attacks: [
       { name: 'Mandible Snap', damageType: 'pierce', power: 1, weight: 3 },
-      { name: 'Shell Up', damageType: 'melee', power: 0, weight: 1, applies: [{ status: 'bark_hide', turns: 2, self: true }] },
+      { name: 'Shell Up', damageType: 'melee', power: 0, weight: 1, every: 3, applies: [{ status: 'bark_hide', turns: 2, self: true }] },
+      { name: 'Ram', damageType: 'melee', power: 1.2, weight: 1 },
     ],
     xp: 50,
     gold: [14, 22],
@@ -138,6 +148,8 @@ export const MONSTERS: MonsterDef[] = [
     defense: { melee: 4, pierce: 4, magic: 18 },
     resists: { earth: 75, water: 50, fire: -25, wind: -25 },
     immune: ['stun'],
+    // Boss test: Defend timing. Root Crush comes on a steady beat.
+    trait: 'Every 3rd move: winds up Root Crush. Defend on the beat!',
     attacks: [
       { name: 'Bramble Lash', damageType: 'melee', power: 1, weight: 4 },
       { name: 'Spore Cloud', damageType: 'magic', power: 0.9, weight: 2, applies: [{ status: 'spores', turns: 3, chance: 0.7 }] },
@@ -147,9 +159,16 @@ export const MONSTERS: MonsterDef[] = [
         damageType: 'melee',
         power: 2.6,
         weight: 2,
+        every: 3,
         windup: 'The Thornheart sinks its roots deep into the earth... (Defend or heal!)',
       },
     ],
+    heroic: {
+      text: 'Seed Burst every 4th move: Spores and Poison at once.',
+      attacks: [
+        { name: 'Seed Burst', damageType: 'magic', element: 'earth', power: 0.6, weight: 1, every: 4, applies: [{ status: 'spores', turns: 3 }, { status: 'poison', turns: 3 }] },
+      ],
+    },
     xp: 120,
     gold: [60, 80],
     // Bosses roll loot with `BALANCE.loot.boss` odds and roll Sigils far more often.
@@ -172,9 +191,11 @@ export const MONSTERS: MonsterDef[] = [
     element: 'water',
     defense: { melee: 6, pierce: 8, magic: 6 },
     resists: { water: 50, energy: -50, fire: 25 },
+    trait: 'Wallows once when hurt: heals 25%. Finish it fast.',
     attacks: [
       { name: 'Belly Slam', damageType: 'melee', power: 1, weight: 3 },
       { name: 'Tongue Lash', damageType: 'pierce', power: 1.1, weight: 2, applies: [{ status: 'poison', turns: 3, chance: 0.3 }] },
+      { name: 'Wallow', damageType: 'melee', power: 0, weight: 1, hpBelow: 0.4, heal: 0.25 },
     ],
     xp: 45,
     gold: [12, 20],
@@ -197,9 +218,11 @@ export const MONSTERS: MonsterDef[] = [
     // A body of pure lightning: spells barely scratch it, steel goes right through.
     defense: { melee: 4, pierce: 4, magic: 16 },
     resists: { energy: 75, water: -50, earth: 25 },
+    trait: 'Flickers out of reach every 3rd move (-40% to hit it).',
     attacks: [
       { name: 'Static Bolt', damageType: 'magic', power: 1, weight: 3, applies: [{ status: 'shock', turns: 2, chance: 0.3 }] },
-      { name: 'Flicker', damageType: 'magic', power: 0, weight: 1, applies: [{ status: 'evasive', turns: 2, self: true }] },
+      { name: 'Flicker', damageType: 'magic', power: 0, weight: 1, every: 3, applies: [{ status: 'evasive', turns: 2, self: true }] },
+      { name: 'Arc', damageType: 'magic', power: 1.3, weight: 1 },
     ],
     xp: 52,
     gold: [14, 22],
@@ -220,7 +243,9 @@ export const MONSTERS: MonsterDef[] = [
     element: 'water',
     defense: { melee: 9, pierce: 7, magic: 5 },
     resists: { water: 50, energy: -50 },
+    trait: 'Ambushes from the mud: its first blow hits hard.',
     attacks: [
+      { name: 'Ambush', damageType: 'melee', power: 1.8, weight: 1, opener: true },
       { name: 'Maul', damageType: 'melee', power: 1, weight: 3 },
       { name: 'Clammy Grip', damageType: 'melee', power: 0.9, weight: 2, applies: [{ status: 'chill', turns: 2, chance: 0.5 }] },
     ],
@@ -244,9 +269,11 @@ export const MONSTERS: MonsterDef[] = [
     element: 'dark',
     defense: { melee: 8, pierce: 10, magic: 8 },
     resists: { dark: 50, light: -50, water: 25 },
+    trait: 'Rises once at low HP, healing 30%.',
     attacks: [
       { name: 'Rusted Blade', damageType: 'pierce', power: 1, weight: 3 },
       { name: 'Grave Touch', damageType: 'magic', power: 1.1, weight: 2, applies: [{ status: 'shadow_rot', turns: 2, chance: 0.35 }] },
+      { name: 'Grave Rise', damageType: 'magic', power: 0, weight: 1, hpBelow: 0.3, heal: 0.3 },
     ],
     xp: 68,
     gold: [18, 28],
@@ -272,9 +299,11 @@ export const MONSTERS: MonsterDef[] = [
     // Lightning in scales: it shrugs off most things, but water shorts it out.
     defense: { melee: 10, pierce: 10, magic: 12 },
     resists: { energy: 75, wind: 25, earth: 25, water: -75, ice: -25 },
+    trait: 'Every 3rd move: Spark Breath (Shock).',
     attacks: [
       { name: 'Bite', damageType: 'pierce', power: 1, weight: 3 },
-      { name: 'Spark Breath', damageType: 'magic', power: 1.2, weight: 2, applies: [{ status: 'shock', turns: 2, chance: 0.3 }] },
+      { name: 'Spark Breath', damageType: 'magic', power: 1.6, weight: 1, every: 3, applies: [{ status: 'shock', turns: 2 }] },
+      { name: 'Claw', damageType: 'melee', power: 1.1, weight: 2 },
       { name: 'Skitter', damageType: 'pierce', power: 0, weight: 1, applies: [{ status: 'evasive', turns: 2, self: true }] },
     ],
     xp: 80,
@@ -284,6 +313,33 @@ export const MONSTERS: MonsterDef[] = [
       { itemId: 'greater_health_potion', chance: 0.08 },
       { itemId: 'storm_scale', chance: 0.5 },
       { itemId: 'essence_energy', chance: 0.3 },
+    ],
+  },
+  {
+    id: 'volt_eel',
+    name: 'Volt Eel',
+    level: 8,
+    tough: true,
+    look: { shape: 'beast', color: 0x2f7f8f, accent: 0xffe14d, scale: 0.9, art: 'mon_volt_eel' },
+    hp: 210,
+    stats: { str: 8, int: 12, dex: 10, end: 9 },
+    damage: [12, 18],
+    element: 'energy',
+    // Lives on lightning: Energy hits feed it. Earth grounds it out and water shorts it.
+    defense: { melee: 7, pierce: 6, magic: 10 },
+    resists: { energy: 150, earth: -75, water: -25 },
+    trait: 'Absorbs Energy: lightning heals it. Every 3rd move: Discharge.',
+    attacks: [
+      { name: 'Bite', damageType: 'pierce', power: 1, weight: 3 },
+      { name: 'Coil Squeeze', damageType: 'melee', power: 0.9, weight: 2, applies: [{ status: 'weaken', turns: 2, chance: 0.4 }] },
+      { name: 'Discharge', damageType: 'magic', power: 1.5, weight: 1, every: 3, applies: [{ status: 'shock', turns: 2 }] },
+    ],
+    xp: 72,
+    gold: [18, 28],
+    loot: 'fen',
+    drops: [
+      { itemId: 'mana_potion', chance: 0.2 },
+      { itemId: 'essence_energy', chance: 0.4 },
     ],
   },
   {
@@ -300,10 +356,12 @@ export const MONSTERS: MonsterDef[] = [
     defense: { melee: 6, pierce: 6, magic: 14 },
     resists: { water: 75, energy: -50, earth: 25 },
     immune: ['stun'],
+    // Boss test: burst damage. Her Regen undoes slow, careful play.
+    trait: 'Every 4th move she Wallows: heals 12%. Hit harder than she heals!',
     attacks: [
       { name: 'Mire Slap', damageType: 'melee', power: 1, weight: 4 },
       { name: 'Bile Spit', damageType: 'magic', power: 0.9, weight: 2, applies: [{ status: 'weaken', turns: 2, chance: 0.6 }] },
-      { name: 'Wallow', damageType: 'melee', power: 0, weight: 1, applies: [{ status: 'regen', turns: 2, self: true }] },
+      { name: 'Wallow', damageType: 'melee', power: 0, weight: 1, every: 4, heal: 0.12 },
       {
         name: 'Drag Under',
         damageType: 'melee',
@@ -312,6 +370,10 @@ export const MONSTERS: MonsterDef[] = [
         windup: 'The Bogmother sinks into the mire, reaching for your legs... (Defend or heal!)',
       },
     ],
+    heroic: {
+      text: 'Leech Swarm every 4th move: a long Poison.',
+      attacks: [{ name: 'Leech Swarm', damageType: 'magic', power: 0.7, weight: 1, every: 4, applies: [{ status: 'poison', turns: 4 }] }],
+    },
     xp: 350,
     gold: [120, 160],
     loot: 'bogmother',
@@ -335,6 +397,12 @@ export const MONSTERS: MonsterDef[] = [
     defense: { melee: 7, pierce: 7, magic: 15 },
     resists: { energy: 50, water: -50, wind: 25 },
     immune: ['stun'],
+    // Boss test: switching elements mid-fight. Told up front so you can pack for it.
+    trait: 'At half HP its Energy turns to Water: bring both, or go neutral.',
+    heroic: {
+      text: 'Opens with Overcharge: +30% damage for 3 turns.',
+      attacks: [{ name: 'Overcharge', damageType: 'magic', power: 0, weight: 1, opener: true, applies: [{ status: 'war_cry', turns: 3, self: true }] }],
+    },
     attacks: [
       { name: 'Coil Lash', damageType: 'melee', power: 1, weight: 4 },
       { name: 'Static Field', damageType: 'magic', power: 0.8, weight: 2, applies: [{ status: 'shock', turns: 2, chance: 0.6 }] },
@@ -343,6 +411,7 @@ export const MONSTERS: MonsterDef[] = [
         damageType: 'magic',
         power: 2.2,
         weight: 2,
+        every: 4,
         windup: 'Storm clouds gather around the Stormcoil... (Defend or heal!)',
       },
     ],
@@ -360,6 +429,7 @@ export const MONSTERS: MonsterDef[] = [
           damageType: 'melee',
           power: 2.3,
           weight: 2,
+          every: 4,
           windup: 'The Stormcoil rears up and pulls a wall of water behind it... (Defend or heal!)',
         },
       ],
@@ -384,9 +454,11 @@ export const MONSTERS: MonsterDef[] = [
     damage: [16, 22],
     defense: { melee: 8, pierce: 8, magic: 6 },
     resists: { fire: -50, earth: -25, energy: -25 },
+    trait: 'Opens with a Howl: +30% damage for 3 turns.',
     attacks: [
       { name: 'Bite', damageType: 'pierce', power: 1, weight: 3 },
-      { name: 'Howl', damageType: 'melee', power: 0, weight: 1, applies: [{ status: 'war_cry', turns: 2, self: true }] },
+      { name: 'Howl', damageType: 'melee', power: 0, weight: 1, opener: true, applies: [{ status: 'war_cry', turns: 3, self: true }] },
+      { name: 'Lunge', damageType: 'pierce', power: 1.2, weight: 1 },
     ],
     xp: 95,
     gold: [20, 30],
@@ -407,13 +479,16 @@ export const MONSTERS: MonsterDef[] = [
     damage: [15, 21],
     defense: { melee: 12, pierce: 10, magic: 5 },
     resists: { fire: -25, wind: -50 },
+    trait: 'Every 3rd move: winds up a Headlong Charge.',
     attacks: [
       { name: 'Butt', damageType: 'melee', power: 1, weight: 3 },
+      { name: 'Stomp', damageType: 'melee', power: 1.2, weight: 1 },
       {
         name: 'Headlong Charge',
         damageType: 'melee',
         power: 2.1,
         weight: 1,
+        every: 3,
         windup: 'The Crag Ram paws the snow and lowers its horns... (Defend!)',
       },
     ],
@@ -437,9 +512,11 @@ export const MONSTERS: MonsterDef[] = [
     element: 'wind',
     defense: { melee: 6, pierce: 6, magic: 12 },
     resists: { wind: 50, earth: -50, ice: -25 },
+    trait: 'Swirls out of reach every 3rd move (-40% to hit it).',
     attacks: [
       { name: 'Gust', damageType: 'magic', power: 1, weight: 3 },
-      { name: 'Swirl', damageType: 'magic', power: 0, weight: 1, applies: [{ status: 'evasive', turns: 2, self: true }] },
+      { name: 'Downdraft', damageType: 'magic', power: 1.3, weight: 1 },
+      { name: 'Swirl', damageType: 'magic', power: 0, weight: 1, every: 3, applies: [{ status: 'evasive', turns: 2, self: true }] },
     ],
     xp: 110,
     gold: [22, 34],
@@ -460,9 +537,11 @@ export const MONSTERS: MonsterDef[] = [
     element: 'ice',
     defense: { melee: 8, pierce: 8, magic: 12 },
     resists: { ice: 50, fire: -50, light: -25 },
+    trait: 'Mends once at half HP: heals 25%.',
     attacks: [
       { name: 'Frost Bolt', damageType: 'magic', power: 1, weight: 3, applies: [{ status: 'chill', turns: 2, chance: 0.3 }] },
-      { name: 'Frost Mend', damageType: 'magic', power: 0, weight: 1, applies: [{ status: 'regen', turns: 2, self: true }] },
+      { name: 'Ice Shard', damageType: 'magic', power: 1.3, weight: 1 },
+      { name: 'Frost Mend', damageType: 'magic', power: 0, weight: 1, hpBelow: 0.5, heal: 0.25 },
     ],
     xp: 125,
     gold: [25, 38],
@@ -487,9 +566,11 @@ export const MONSTERS: MonsterDef[] = [
     // Solid glacier: steel barely scratches it, but fire melts it and lightning shatters it.
     defense: { melee: 26, pierce: 26, magic: 8 },
     resists: { ice: 75, water: 25, earth: 25, fire: -75, energy: -50 },
+    trait: 'Hardens every 3rd move (-25% damage taken).',
     attacks: [
       { name: 'Glacier Fist', damageType: 'melee', power: 1, weight: 3 },
-      { name: 'Harden', damageType: 'melee', power: 0, weight: 1, applies: [{ status: 'bark_hide', turns: 2, self: true }] },
+      { name: 'Crush', damageType: 'melee', power: 1.3, weight: 1 },
+      { name: 'Harden', damageType: 'melee', power: 0, weight: 1, every: 3, applies: [{ status: 'bark_hide', turns: 2, self: true }] },
     ],
     xp: 180,
     gold: [35, 50],
@@ -510,7 +591,9 @@ export const MONSTERS: MonsterDef[] = [
     damage: [18, 24],
     element: 'fire',
     defense: { melee: 8, pierce: 8, magic: 8 },
-    resists: { fire: 50, ice: -50, water: -25 },
+    // Cave fire runs in its blood: Fire hits feed it, so leave the mountain's Fire blade at the cave mouth.
+    resists: { fire: 150, ice: -50, water: -25 },
+    trait: 'Absorbs Fire: flames heal it.',
     attacks: [
       { name: 'Bite', damageType: 'pierce', power: 1, weight: 3 },
       { name: 'Spit Flame', damageType: 'magic', power: 1.1, weight: 2, applies: [{ status: 'burn', turns: 2, chance: 0.3 }] },
@@ -537,7 +620,9 @@ export const MONSTERS: MonsterDef[] = [
     // Born in the hot springs: steam and stone shrug off most things, but cold and water choke its fire.
     defense: { melee: 12, pierce: 12, magic: 12 },
     resists: { fire: 75, earth: 25, wind: 25, ice: -75, water: -50 },
+    trait: 'Opens with a Steam Burst (Burn).',
     attacks: [
+      { name: 'Steam Burst', damageType: 'magic', power: 1.3, weight: 1, opener: true, applies: [{ status: 'burn', turns: 3 }] },
       { name: 'Bite', damageType: 'pierce', power: 1, weight: 3 },
       { name: 'Scald', damageType: 'magic', power: 1.2, weight: 2, applies: [{ status: 'burn', turns: 2, chance: 0.5 }] },
     ],
@@ -576,6 +661,13 @@ export const MONSTERS: MonsterDef[] = [
         windup: 'Old Snowmaw rears up and roars. Snow starts to slide off the slope above... (Defend or heal!)',
       },
     ],
+    // Boss test: bringing the counter (Fire for the shell).
+    heroic: {
+      text: 'Whiteout Roar every 4th move: Chill and Blind.',
+      attacks: [
+        { name: 'Whiteout Roar', damageType: 'magic', power: 0.6, weight: 1, every: 4, applies: [{ status: 'chill', turns: 2 }, { status: 'blind', turns: 2 }] },
+      ],
+    },
     xp: 700,
     gold: [220, 280],
     loot: 'snowmaw',
@@ -599,6 +691,12 @@ export const MONSTERS: MonsterDef[] = [
     defense: { melee: 8, pierce: 8, magic: 16 },
     resists: { ice: 50, wind: 25, fire: -50 },
     immune: ['stun'],
+    // Boss test: lasting the distance. Her blizzard half wears you down every other move.
+    trait: 'At half HP she turns Wind: Blizzard every 2nd move (Windchill).',
+    heroic: {
+      text: 'Shatter every 5th move: a heavy Ice blow.',
+      attacks: [{ name: 'Shatter', damageType: 'magic', element: 'ice', power: 1.8, weight: 1, every: 5 }],
+    },
     attacks: [
       { name: 'Ice Lance', damageType: 'magic', power: 1, weight: 4 },
       { name: 'Frostbind', damageType: 'magic', power: 0.8, weight: 2, applies: [{ status: 'weaken', turns: 2, chance: 0.6 }] },
@@ -607,6 +705,7 @@ export const MONSTERS: MonsterDef[] = [
         damageType: 'magic',
         power: 2.3,
         weight: 2,
+        every: 4,
         windup: 'The Frostbinder raises her stave. Ice crawls across the floor toward you... (Defend or heal!)',
       },
     ],
@@ -619,6 +718,7 @@ export const MONSTERS: MonsterDef[] = [
       attacks: [
         { name: 'Gale Slash', damageType: 'magic', power: 1, weight: 4 },
         { name: 'Whiteout', damageType: 'magic', power: 0.8, weight: 2, applies: [{ status: 'blind', turns: 2, chance: 0.6 }] },
+        { name: 'Blizzard', damageType: 'magic', power: 0.6, weight: 1, every: 2, applies: [{ status: 'windchill', turns: 3 }] },
         {
           name: 'Cyclone',
           damageType: 'magic',

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS } from '../config';
+import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
 import type { EquipSlot, NpcDef } from '../data/types';
@@ -86,21 +86,37 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
     c.add(new Button(scene, 960, 122, 'Inventory (I)', () => modal.close(openInventory), { width: 190, height: 48, fontSize: 19 }));
 
     // --- Skills ---
+    // Carried skills (◆) go into battle; click a learned skill to carry it or put it away.
+    const slots = BALANCE.skillSlots;
     c.add(addText(scene, 380, 190, 'Skills', { size: 22, bold: true, color: COLORS.textGold }));
+    c.add(addText(scene, 460, 194, `carried ${player.data.loadout.length} / ${slots}  ·  click to swap`, { size: 15, color: COLORS.textDim }));
     const perColumn = Math.ceil(player.classDef.skills.length / 3);
     player.classDef.skills.forEach((entry, i) => {
       const skill = db.skill(entry.skillId);
       const known = entry.level <= player.level;
+      const carried = known && player.isCarried(skill.id);
       const x = 380 + Math.floor(i / perColumn) * 230;
       const y = 230 + (i % perColumn) * 32;
-      const t = addText(scene, x, y, known ? skill.name : `Lv ${entry.level}  ${skill.name}`, {
+      const label = !known ? `Lv ${entry.level}  ${skill.name}` : `${carried ? '◆' : '◇'} ${skill.name}`;
+      const t = addText(scene, x, y, label, {
         size: 17,
-        color: known ? COLORS.textMagic : COLORS.textDim,
+        bold: carried,
+        color: carried ? COLORS.textMagic : known ? COLORS.text : COLORS.textDim,
       });
       const cd = skill.cooldown > 0 ? `, cooldown ${skill.cooldown}` : '';
-      t.setInteractive()
-        .on('pointerover', () => info.setText(`${skill.name} (${skill.mpCost} MP${cd}): ${skill.description}`))
+      const describe = () => info.setText(`${skill.name} (${skill.mpCost} MP${cd}): ${skill.description}`);
+      t.setInteractive({ useHandCursor: known })
+        .on('pointerover', describe)
         .on('pointerout', () => info.setText(''));
+      if (known) {
+        t.on('pointerup', () => {
+          const result = player.toggleCarry(skill.id);
+          onChange();
+          render();
+          if (result === 'full') info.setText(`All ${slots} skill slots are full: click a carried skill (◆) to put it away first.`);
+          else describe();
+        });
+      }
       c.add(t);
     });
   };

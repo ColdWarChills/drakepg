@@ -7,6 +7,7 @@ import { INN_SPAWN } from '../data/world';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
 import { makeMimic } from '../game/Chests';
 import { makeElite } from '../game/Elites';
+import { makeHeroic } from '../game/Heroic';
 import { LOOT_TIERS, pityBonus, tierOdds, type LootSource } from '../game/Loot';
 import { questNeedsKill, recordKill } from '../game/Quests';
 import { SaveSystem } from '../game/SaveSystem';
@@ -40,7 +41,7 @@ interface Style {
   big?: boolean;
 }
 
-const EFFECT_TAGS: Record<Effect, string> = { weak: 'WEAK!', resisted: 'Resisted', immune: 'Immune' };
+const EFFECT_TAGS: Record<Effect, string> = { weak: 'WEAK!', resisted: 'Resisted', immune: 'Immune', absorb: 'Absorbed' };
 const ELITE_GLOW = 0xffc23d;
 /** Loot line colors (Common uses the normal text color). */
 const LOOT_CSS = { rare: '#ffd34d', uncommon: '#7ddc7d' };
@@ -73,6 +74,9 @@ export class BattleScene extends Phaser.Scene {
   private affinityRow: Phaser.GameObjects.Container | null = null;
   private shellLine: Phaser.GameObjects.Text | null = null;
   private shellRegrew = false;
+  /** "Next: Gore ~9 dmg" and the enrage countdown, under the enemy's info lines. */
+  private intentLine: Phaser.GameObjects.Text | null = null;
+  private enrageText: Phaser.GameObjects.Text | null = null;
   /** Statuses as shown so far during playback (status id -> turns). The battle itself is already a turn ahead. */
   private shown: Record<Side, Map<string, number>> = { player: new Map(), enemy: new Map() };
 
@@ -89,9 +93,10 @@ export class BattleScene extends Phaser.Scene {
     this.back = data;
     this.zone = db.zone(data.zoneId);
     const base = data.mimic ? makeMimic(this.zone) : db.monster(data.monsterId);
-    this.monster = data.elite ? makeElite(base, data.elite) : base;
+    this.monster = data.elite ? makeElite(base, data.elite) : data.heroic ? makeHeroic(base) : base;
     this.battle = new Battle(session.player, this.monster);
-    if (this.monster.boss && !questNeedsKill(session.player, this.monster.id)) this.battle.rewardScale = BALANCE.bossRepeatRewards;
+    if (this.monster.isHeroic) this.battle.rewardScale = BALANCE.heroic.rewards;
+    else if (this.monster.boss && !questNeedsKill(session.player, this.monster.id)) this.battle.rewardScale = BALANCE.bossRepeatRewards;
     this.log = [];
     this.busy = true;
     this.skillPage = 0;
@@ -100,6 +105,8 @@ export class BattleScene extends Phaser.Scene {
     this.affinityRow = null;
     this.shellLine = null;
     this.shellRegrew = false;
+    this.intentLine = null;
+    this.enrageText = null;
     this.shown = { player: new Map(), enemy: new Map() };
 
     drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
@@ -181,13 +188,15 @@ export class BattleScene extends Phaser.Scene {
     this.playerMp = new Bar(this, 32, 108, 388, 22, COLORS.mp, 'MP ');
 
     const ex = this.scale.width - 436;
-    // Elites get an extra line explaining their affix; shelled bosses one for the shell.
+    // Elites get an extra line explaining their affix, shelled bosses one for the shell, monsters with a
+    // signature move one for that; every monster has the "Next:" line.
     const affix = m.elite ? db.affix(m.elite.affix) : null;
-    const infoLines = (affix ? 1 : 0) + (m.shell ? 1 : 0);
+    const heroic = m.isHeroic && m.heroic ? `Heroic: ${m.heroic.text}` : '';
+    const infoLines = (affix ? 1 : 0) + (m.shell ? 1 : 0) + (m.trait ? 1 : 0) + (heroic ? 1 : 0) + 1;
     const lootY = 136 + infoLines * 28;
     this.statusPanel(ex, 16, 420, 120 + infoLines * 28 + (m.loot ? 26 : 0));
     // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
-    const tags = [m.boss ? 'BOSS' : affix ? 'ELITE' : m.tough ? 'TOUGH' : ''].filter(Boolean);
+    const tags = [m.isHeroic ? 'HEROIC' : m.boss ? 'BOSS' : affix ? 'ELITE' : m.tough ? 'TOUGH' : ''].filter(Boolean);
     const head = addText(this, ex + 16, 26, [`${m.name}`, `Lv ${m.level}`, ...tags].join('  ·  '), {
       size: 22,
       bold: true,
@@ -198,14 +207,66 @@ export class BattleScene extends Phaser.Scene {
     this.enemyHp = new Bar(this, ex + 16, 68, 388, 26, COLORS.hp, 'HP ');
     this.drawAffinities(ex + 16, 108);
     if (affix) addText(this, ex + 16, 136, `${affix.name}: ${affix.description}`, { size: 15, bold: true, color: COLORS.textGold }).setOrigin(0, 0.5);
+    let lineY = 136 + (affix ? 28 : 0);
     if (m.shell) {
-      this.shellLine = addText(this, ex + 16, 136 + (affix ? 28 : 0), '', { size: 15, bold: true, color: '#bfe9ff' }).setOrigin(0, 0.5);
+      this.shellLine = addText(this, ex + 16, lineY, '', { size: 15, bold: true, color: '#bfe9ff' }).setOrigin(0, 0.5);
       this.refreshShell();
+      lineY += 28;
     }
+    if (m.trait) {
+      const trait = addText(this, ex + 16, lineY, m.trait, { size: 15, bold: true, color: '#e8c8ff' }).setOrigin(0, 0.5);
+      trait.setScale(Math.min(1, 388 / trait.width));
+      lineY += 28;
+    }
+    if (heroic) {
+      const line = addText(this, ex + 16, lineY, heroic, { size: 15, bold: true, color: COLORS.textGold }).setOrigin(0, 0.5);
+      line.setScale(Math.min(1, 388 / line.width));
+      lineY += 28;
+    }
+    this.intentLine = addText(this, ex + 16, lineY, '', { size: 16, bold: true }).setOrigin(0, 0.5);
+    this.enrageText = addText(this, ex + 404, lineY, '', { size: 15, bold: true, color: COLORS.textBad }).setOrigin(1, 0.5);
+    this.refreshIntent();
 
     if (m.loot) this.drawLootLine(ex + 16, lootY, m.loot);
 
     this.statusRows = { player: this.add.container(16, 152), enemy: this.add.container(ex, 152 + infoLines * 28 + (m.loot ? 26 : 0)) };
+  }
+
+  /** "Next: Root Crush ~31 dmg · Defend!" plus "Enrages in 3" / "Enraged +40%" on the right. */
+  private refreshIntent(): void {
+    if (!this.intentLine || !this.enrageText) return;
+    const b = this.battle;
+    const a = b.intent;
+    const charging = b.charging === a;
+    const dmg = b.intentDamage();
+    const statuses = (a.applies ?? []).map((x) => `${db.status(x.status).name}${x.chance && x.chance < 1 ? ` ${Math.round(x.chance * 100)}%` : ''}`);
+    let detail: string;
+    let color: string = COLORS.text;
+    if (a.windup && !charging) {
+      detail = 'winds up a big attack';
+      color = TOUGH_CSS;
+    } else if (a.heal) {
+      detail = `heals ${Math.round(a.heal * 100)}% HP`;
+      color = COLORS.textMagic;
+    } else if (dmg === null) {
+      const self = (a.applies ?? []).every((x) => x.self);
+      detail = statuses.length ? `${self ? 'buffs itself: ' : ''}${statuses.join(', ')}` : 'prepares';
+      color = COLORS.textMagic;
+    } else {
+      detail = [`~${dmg} dmg`, ...statuses.map((x) => `+ ${x}`)].join(' ');
+      if (charging) {
+        detail += ' · Defend or heal!';
+        color = COLORS.textBad;
+      } else if (a.power >= 1.5) {
+        color = TOUGH_CSS;
+      }
+    }
+    this.intentLine.setText(`Next: ${a.name}  ${detail}`).setColor(color);
+    const left = b.turnsToEnrage;
+    const warn = BALANCE.enrage.warn;
+    this.enrageText.setText(b.enrage > 0 ? `Enraged +${Math.round(b.enrage * 100)}%` : left <= warn ? `Enrages in ${left}` : '');
+    const room = 388 - (this.enrageText.text ? this.enrageText.width + 10 : 0);
+    this.intentLine.setScale(Math.min(1, room / this.intentLine.width));
   }
 
   /** "Frost Shell ◆◆◇: 80% less damage. Fire hits crack it." */
@@ -266,7 +327,8 @@ export class BattleScene extends Phaser.Scene {
     // A bonus to every element (Warded Elites) is shown once as "All +25" instead of listing all eight.
     const all = resists.all ?? 0;
     const weak = ELEMENTS.filter((e) => (resists[e] ?? 0) + all <= -25);
-    const strong = ELEMENTS.filter((e) => (resists[e] ?? 0) + all >= 25 && (resists[e] ?? 0) > 0);
+    const strong = ELEMENTS.filter((e) => (resists[e] ?? 0) + all >= 25 && (resists[e] ?? 0) > 0 && (resists[e] ?? 0) + all <= 100);
+    const absorbs = ELEMENTS.filter((e) => (resists[e] ?? 0) + all > 100);
     const parts: { text: string; color: string }[] = [];
     if (m.element) parts.push({ text: ELEMENT_LABELS[m.element], color: ELEMENT_TEXT[m.element] });
     const group = (label: string, list: Element[]) => {
@@ -276,6 +338,7 @@ export class BattleScene extends Phaser.Scene {
     };
     group('Weak:', weak);
     group('Resists:', strong);
+    group('Absorbs:', absorbs);
     if (all) parts.push({ text: `${parts.length ? '  ·  ' : ''}All ${all > 0 ? '+' : ''}${all}`, color: COLORS.textGold });
     this.affinityRow?.destroy();
     this.affinityRow = this.add.container(x, y);
@@ -369,9 +432,10 @@ export class BattleScene extends Phaser.Scene {
     const buttons: MenuButton[] = [];
 
     if (menu === 'main') {
+      const fresh = p.carriedSkills.filter((sk) => p.data.freshSkills.includes(sk.id)).length;
       buttons.push(
         { label: 'Attack', run: () => this.act(() => this.battle.attack()) },
-        { label: 'Skills', sub: p.data.freshSkills.length ? `${p.data.freshSkills.length} NEW` : undefined, run: () => this.showMenu('skills') },
+        { label: 'Skills', sub: fresh ? `${fresh} NEW` : undefined, run: () => this.showMenu('skills') },
         { label: 'Items', run: () => this.showMenu('items') },
         { label: 'Defend', sub: `-60% dmg, +MP`, run: () => this.act(() => this.battle.defend()) },
         {
@@ -382,7 +446,7 @@ export class BattleScene extends Phaser.Scene {
         },
       );
     } else if (menu === 'skills') {
-      const skills = p.knownSkills;
+      const skills = p.carriedSkills;
       if (skills.length <= SKILLS_PER_PAGE + 1) {
         buttons.push(...skills.map((s) => this.skillButton(s)));
       } else {
@@ -449,6 +513,7 @@ export class BattleScene extends Phaser.Scene {
     for (const event of events) await this.play(event);
     this.refreshBars();
     this.syncStatuses();
+    this.refreshIntent();
 
     if (this.battle.isOver) {
       await this.wait(600);
@@ -522,7 +587,9 @@ export class BattleScene extends Phaser.Scene {
           floatText(this, ENEMY_X, GROUND_Y - 300, broke ? `${this.monster.shell.name} broken!` : 'Cracked!', '#bfe9ff', broke ? 34 : 26);
           this.refreshShell();
         }
-        if (e.kind === 'hit') {
+        if (e.kind === 'hit' && e.absorbed) {
+          this.pushLog(`${who} ${e.move}, but ${e.source === 'player' ? enemyName : 'you'} absorb${e.source === 'player' ? 's' : ''} it: +${e.damage} HP!`);
+        } else if (e.kind === 'hit') {
           const notes = [e.crit ? ' Critical!' : '', e.effect === 'weak' ? ' Weak spot!' : '', e.effect === 'resisted' ? ' Resisted.' : '', e.effect === 'immune' ? ' Immune!' : ''].join('');
           this.pushLog(e.moveId === 'proc' ? `${e.move}! ${e.damage} damage.${notes}` : `${who} ${e.move}: ${e.damage} damage.${notes}`);
         } else {
@@ -533,7 +600,7 @@ export class BattleScene extends Phaser.Scene {
       }
       case 'heal': {
         const x = this.homeX(e.source);
-        const isSkill = db.hasSkill(e.moveId) || e.moveId === 'proc';
+        const isSkill = db.hasSkill(e.moveId) || e.moveId === 'proc' || e.source === 'enemy';
         const color = e.mp > 0 && e.hp === 0 ? 0x7ec8ff : isSkill ? 0x7dff9a : 0xff8a8a;
         // Lifesteal and weapon specials heal right after the blow, without a wind-up.
         const afterHit = e.moveId === 'proc' || (db.hasSkill(e.moveId) && db.skill(e.moveId).kind === 'damage');
@@ -547,7 +614,8 @@ export class BattleScene extends Phaser.Scene {
         fx.healSparkles(this, x, GROUND_Y, color);
         floatText(this, x, GROUND_Y - 220, restoreText(e), COLORS.textGood, 30);
         this.refreshBars();
-        this.pushLog(afterHit ? `${e.move} restores ${restoreText(e)}.` : `You use ${e.move}: ${restoreText(e)}.`);
+        const user = e.source === 'player' ? 'You use' : `${enemyName} uses`;
+        this.pushLog(afterHit ? `${e.move} restores ${restoreText(e)}.` : `${user} ${e.move}: ${restoreText(e)}.`);
         await this.wait(afterHit ? 350 : 650);
         break;
       }
@@ -642,6 +710,15 @@ export class BattleScene extends Phaser.Scene {
         await this.wait(700);
         break;
       }
+      case 'enrage': {
+        sfx.play(this, 'warning');
+        this.cameras.main.flash(200, 140, 0, 0);
+        floatText(this, ENEMY_X, GROUND_Y - 290, `Enraged! +${Math.round(e.bonus * 100)}% damage`, COLORS.textBad, 30);
+        this.pushLog(`The fight drags on: ${enemyName} is enraged (+${Math.round(e.bonus * 100)}% damage).`);
+        this.refreshIntent();
+        await this.wait(500);
+        break;
+      }
       case 'rage': {
         floatText(this, PLAYER_X + 70, GROUND_Y - 170, `Rage +${e.mp} MP`, COLORS.textMagic, 22);
         this.refreshBars();
@@ -660,6 +737,7 @@ export class BattleScene extends Phaser.Scene {
         floatText(this, ENEMY_X, GROUND_Y - 290, `${ELEMENT_LABELS[e.element]} form!`, ELEMENT_TEXT[e.element], 40);
         this.pushLog(e.text);
         this.drawAffinities(this.scale.width - 420, 108);
+        this.refreshIntent();
         await this.wait(1100);
         break;
       }
@@ -809,6 +887,13 @@ export class BattleScene extends Phaser.Scene {
     const maxHp = targetSide === 'enemy' ? this.battle.enemy.maxHp : this.battle.player.maxHp;
     const weight = Phaser.Math.Clamp(e.damage / maxHp, 0.05, 0.6);
     const palette = e.element ? style.colors : undefined;
+    if (e.absorbed) {
+      fx.healSparkles(this, x, GROUND_Y, 0x7dff9a);
+      sfx.play(this, 'heal');
+      floatText(this, x, GROUND_Y - 230, `+${e.damage}`, COLORS.textGood, 40, EFFECT_TAGS.absorb);
+      this.refreshBars();
+      return;
+    }
 
     if (style.kind === 'slash' || style.kind === 'enemy-melee') {
       const color = e.element ? style.colors[1] : e.source === 'enemy' ? this.monster.look.accent : 0xffffff;

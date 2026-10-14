@@ -353,7 +353,8 @@ export class RoomScene extends Phaser.Scene {
       ...news.skills.map((s) => {
         const element = s.element && s.element !== 'weapon' ? ` · ${ELEMENT_LABELS[s.element]}` : '';
         const cd = s.cooldown > 0 ? ` · cooldown ${s.cooldown}` : '';
-        return { title: `New skill: ${s.name}  (${s.mpCost} MP${element}${cd})`, text: s.description, color: COLORS.textMagic };
+        const slot = player.isCarried(s.id) ? '' : ` Your ${BALANCE.skillSlots} skill slots are full: carry it from the Character panel (C).`;
+        return { title: `New skill: ${s.name}  (${s.mpCost} MP${element}${cd})`, text: `${s.description}${slot}`, color: COLORS.textMagic };
       }),
     ];
     sfx.play(this, 'quest');
@@ -515,7 +516,9 @@ export class RoomScene extends Phaser.Scene {
     const actor = this.makeActor(fig, r.x, r.y, def.look.scale * 0.85);
     const diff = def.level - session.player.level;
     const color = diff >= 2 ? COLORS.textBad : diff === 1 ? COLORS.textGold : diff <= -2 ? COLORS.textDim : COLORS.text;
-    const label = addText(this, r.x, 0, `${def.name}  Lv ${def.level}${def.tough ? '  ·  Tough' : ''}`, { size: Math.round(15 * this.ls), bold: true, color, stroke: true }).setOrigin(0.5, 1);
+    // A shape as well as the color, so level vs yours reads without color: ▲▲ much higher, ▲ higher, ▼ much lower.
+    const mark = diff >= 2 ? '▲▲ ' : diff === 1 ? '▲ ' : diff <= -2 ? '▼ ' : '';
+    const label = addText(this, r.x, 0, `${def.name}  ${mark}Lv ${def.level}${def.tough ? '  ·  Tough' : ''}`, { size: Math.round(15 * this.ls), bold: true, color, stroke: true }).setOrigin(0.5, 1);
     const mob: Mob = { ...actor, uid: r.uid, def, label, state: 'idle', timer: Phaser.Math.FloatBetween(0.3, 1.5), target: null };
     mob.facing = r.x > this.player.x ? -1 : 1;
     if (r.elite) {
@@ -1269,7 +1272,8 @@ export class RoomScene extends Phaser.Scene {
     const q = questForNpc(player, npc.def.id);
     if (q?.status === 'ready') {
       const quest = q.quest;
-      lines = story ? quest.complete : [`${quest.name}: done! Here is your reward.`];
+      // Story text off still keeps the giver's voice: their first thank-you line.
+      lines = story ? quest.complete : [`${quest.name}: done!  ${quest.complete[0]}`];
       actions.push({ label: 'Complete', run: (close) => (close(), this.completeQuest(quest, npc)) });
       this.moveTarget = null;
       this.tweens.add({ targets: npc.fig, y: npc.fig.y - 10, duration: 100, yoyo: true });
@@ -1442,17 +1446,29 @@ export class RoomScene extends Phaser.Scene {
     if (!this.boss || this.modalOpen()) return;
     const def = this.boss.def;
     const rematch = !questNeedsKill(session.player, def.id);
-    const modal = new Modal(this, 700, 300, rematch ? `${def.name} (rematch)` : def.name);
+    const heroic = rematch && def.heroic;
+    const h = BALANCE.heroic;
+    const modal = new Modal(this, 760, heroic ? 360 : 300, rematch ? `${def.name} (rematch)` : def.name);
     const intro = this.room.boss?.intro ?? 'It turns toward you.';
     const text = rematch
-      ? `It is back. There is no running from this fight.\nRematch: ${Math.round(BALANCE.bossRepeatRewards * 100)}% XP and gold, full loot${featureOn(session.player, 'sigils') ? ' (Sigils drop more often from bosses)' : ''}.`
+      ? `It is back. There is no running from this fight.\nRematch: ${Math.round(BALANCE.bossRepeatRewards * 100)}% XP and gold, full loot${featureOn(session.player, 'sigils') ? ' (Sigils drop more often from bosses)' : ''}.` +
+        (heroic
+          ? `\nHeroic: +${h.levels} levels, +${Math.round((h.damage - 1) * 100)}% damage and a new move (${def.heroic!.text}) Full XP and gold, ${h.lootRolls} gear rolls.`
+          : '')
       : `${intro}\nThere is no running from this fight.`;
-    modal.content.add(addText(this, 350, 110, text, { size: rematch ? 19 : 22, align: 'center', wrap: 640 }).setOrigin(0.5));
-    modal.content.add(new Button(this, 230, 230, 'Fight', () => (modal.close(), this.startBossBattle()), { width: 220 }));
-    modal.content.add(new Button(this, 470, 230, 'Not yet', () => modal.close(), { width: 220 }));
+    modal.content.add(addText(this, 380, heroic ? 130 : 110, text, { size: rematch ? 18 : 22, align: 'center', wrap: 700 }).setOrigin(0.5));
+    const y = heroic ? 290 : 230;
+    if (heroic) {
+      modal.content.add(new Button(this, 150, y, 'Fight', () => (modal.close(), this.startBossBattle()), { width: 200 }));
+      modal.content.add(new Button(this, 380, y, 'Heroic', () => (modal.close(), this.startBossBattle(true)), { width: 200 }));
+      modal.content.add(new Button(this, 610, y, 'Not yet', () => modal.close(), { width: 200 }));
+    } else {
+      modal.content.add(new Button(this, 260, y, 'Fight', () => (modal.close(), this.startBossBattle()), { width: 220 }));
+      modal.content.add(new Button(this, 500, y, 'Not yet', () => modal.close(), { width: 220 }));
+    }
   }
 
-  private startBossBattle(): void {
+  private startBossBattle(heroic = false): void {
     if (!this.boss || this.leaving) return;
     this.leaving = true;
     this.prompt.setVisible(false);
@@ -1464,7 +1480,7 @@ export class RoomScene extends Phaser.Scene {
     cam.shake(500, 0.015);
     cam.flash(300, 255, 60, 60);
     cam.zoomTo(1.4, 600, 'Cubic.easeIn');
-    const data: BattleSceneData = { zoneId: this.room.zoneId!, monsterId: this.boss.def.id, roomId: this.room.id, x: this.player.x, y: this.player.y };
+    const data: BattleSceneData = { zoneId: this.room.zoneId!, monsterId: this.boss.def.id, roomId: this.room.id, x: this.player.x, y: this.player.y, heroic };
     this.time.delayedCall(600, () => goTo(this, SceneKeys.Battle, data, 300));
   }
 }

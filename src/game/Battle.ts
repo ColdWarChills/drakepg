@@ -10,8 +10,8 @@ import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rn
 
 export type Side = 'player' | 'enemy';
 
-/** How an element landed, for the "Weak!" / "Resisted" popups. */
-export type Effect = 'weak' | 'resisted' | 'immune';
+/** How an element landed, for the "Weak!" / "Resisted" popups. 'absorb': over 100 resistance heals instead. */
+export type Effect = 'weak' | 'resisted' | 'immune' | 'absorb';
 
 /**
  * What happened during a turn, in order. The battle scene plays these back as animations,
@@ -31,6 +31,8 @@ export type BattleEvent =
       effect?: Effect;
       /** This hit cracked the enemy's shell: pips left (0 = broken). */
       shellLeft?: number;
+      /** The target absorbed the element: `damage` is the HP it healed instead. */
+      absorbed?: boolean;
     }
   | { kind: 'miss'; source: Side; move: string; moveId: string; damageType: DamageType; element?: Element }
   | { kind: 'heal'; source: Side; move: string; moveId: string; hp: number; mp: number }
@@ -53,6 +55,8 @@ export type BattleEvent =
   | { kind: 'phase'; text: string; element: Element }
   /** The enemy's shell grew back. */
   | { kind: 'shell'; left: number; text: string }
+  /** The fight ran long: the enemy now deals `bonus` more damage (0.2 = +20%). */
+  | { kind: 'enrage'; bonus: number }
   | { kind: 'defeated'; side: Side };
 
 export type BattleState = 'player_turn' | 'victory' | 'defeat' | 'fled';
@@ -87,8 +91,17 @@ export class Battle {
   rewards: Rewards | null = null;
   /** XP and gold multiplier (repeat boss fights give less). Set before the battle ends. */
   rewardScale = 1;
-  /** Telegraphed attack the enemy will use on its next turn. */
+  /** Telegraphed attack the enemy is winding up; it lands on its next turn. */
   charging: MonsterAttack | null = null;
+  /** The move the enemy will make on its next turn, shown on the battle panel. */
+  intent: MonsterAttack;
+  /** Player turns taken so far. */
+  turn = 0;
+  /** Moves the enemy has picked so far (for `opener` and `every`). */
+  private picks = 0;
+  /** `hpBelow` moves already used (once per fight). */
+  private readonly usedOnce = new Set<string>();
+  private enrageShown = 0;
   /** Pips left on the enemy's shell (0 = none or broken). */
   shell = 0;
   private shellReformed = false;
@@ -103,6 +116,7 @@ export class Battle {
   ) {
     this.enemy = { def: monster, hp: monster.hp, maxHp: monster.hp };
     this.shell = monster.shell?.hits ?? 0;
+    this.intent = this.pickIntent();
   }
 
   get isOver(): boolean {
@@ -125,7 +139,8 @@ export class Battle {
     const base: Resists = side === 'player' ? this.player.resists : (this.enemy.def.resists ?? {});
     let r = (base[element] ?? 0) + (base.all ?? 0);
     for (const s of this.effects[side]) r += (s.def.resists?.[element] ?? 0) + (s.def.resists?.all ?? 0);
-    const max = side === 'player' ? BALANCE.maxPlayerResist : 100;
+    // Monsters can go over 100: they absorb that element and heal from it.
+    const max = side === 'player' ? BALANCE.maxPlayerResist : 200;
     return clamp(r, BALANCE.minResist, max);
   }
 
@@ -153,7 +168,7 @@ export class Battle {
   }
 
   canUseSkill(skillId: string): boolean {
-    return !this.isOver && this.player.mp >= db.skill(skillId).mpCost && !this.cooldowns.has(skillId);
+    return !this.isOver && this.player.isCarried(skillId) && this.player.mp >= db.skill(skillId).mpCost && !this.cooldowns.has(skillId);
   }
 
   useSkill(skillId: string): BattleEvent[] {
@@ -247,6 +262,7 @@ export class Battle {
   // --- Turn flow ---
 
   private endPlayerTurn(events: BattleEvent[]): BattleEvent[] {
+    this.turn += 1;
     if (this.checkOver(events)) return events;
     this.endTurn('player', events);
     // If the player starts their turn stunned, the enemy simply goes again.
@@ -266,7 +282,11 @@ export class Battle {
     this.startTurn('enemy', events);
     if (this.enemy.hp <= 0) return;
     if (this.consumeStun('enemy', events)) {
-      this.charging = null;
+      // A stun breaks a wind-up; the enemy picks something new.
+      if (this.charging) {
+        this.charging = null;
+        this.intent = this.pickIntent();
+      }
     } else {
       this.enemyAction(events);
     }
@@ -275,20 +295,28 @@ export class Battle {
 
   private enemyAction(events: BattleEvent[]): void {
     const m = this.enemy.def;
+    const bonus = this.enrage;
+    if (bonus > this.enrageShown) {
+      this.enrageShown = bonus;
+      events.push({ kind: 'enrage', bonus });
+    }
     let attack: MonsterAttack;
     if (this.charging) {
       attack = this.charging;
       this.charging = null;
     } else {
-      attack = weightedPick(this.rng, m.attacks, (a) => a.weight);
+      attack = this.intent;
       if (attack.windup) {
         this.charging = attack;
         events.push({ kind: 'windup', move: attack.name, text: attack.windup });
         return;
       }
     }
+    this.intent = this.pickIntent();
     const element = attack.element ?? m.element;
-    if (attack.power === 0) {
+    if (attack.heal) {
+      events.push({ kind: 'heal', source: 'enemy', move: attack.name, moveId: 'enemy', hp: this.healSide('enemy', Math.round(this.enemy.maxHp * attack.heal)), mp: 0 });
+    } else if (attack.power === 0) {
       events.push({ kind: 'buff', source: 'enemy', move: attack.name, moveId: 'enemy' });
     } else {
       const hit = this.strike('enemy', attack.name, 'enemy', attack.damageType, element, attack.power);
@@ -299,14 +327,70 @@ export class Battle {
     for (const a of attack.applies ?? []) this.pushApply(events, 'enemy', a, element, attack.damageType);
   }
 
+  /**
+   * The enemy's next move: its `opener` first, an `every` move on its turn, an `hpBelow` move once when hurt,
+   * else a weighted pick from its other moves. A wind-up in progress stays the intent.
+   */
+  private pickIntent(count = true): MonsterAttack {
+    if (this.charging) return this.charging;
+    const attacks = this.enemy.def.attacks;
+    const n = this.picks + 1;
+    if (count) this.picks = n;
+    const opener = n === 1 ? attacks.find((a) => a.opener) : undefined;
+    if (opener) return opener;
+    const timed = attacks.find((a) => a.every && n % a.every === 0);
+    if (timed) return timed;
+    const hurt = attacks.find((a) => a.hpBelow && !this.usedOnce.has(a.name) && this.enemy.hp <= this.enemy.maxHp * a.hpBelow);
+    if (hurt) {
+      this.usedOnce.add(hurt.name);
+      return hurt;
+    }
+    const pool = attacks.filter((a) => !a.opener && !a.every && !a.hpBelow);
+    return weightedPick(this.rng, pool.length ? pool : attacks, (a) => a.weight);
+  }
+
+  /** Damage multiplier the enemy has from a long fight (0 until the enrage turn). */
+  get enrage(): number {
+    return this.enrageAt(this.turn);
+  }
+
+  private enrageAt(turn: number): number {
+    const e = BALANCE.enrage;
+    const at = this.enemy.def.boss ? e.bossTurns : e.turns;
+    return Math.max(0, turn - at + 1) * e.step;
+  }
+
+  /** Player turns left before the enemy enrages (0 = already enraged). */
+  get turnsToEnrage(): number {
+    const e = BALANCE.enrage;
+    return Math.max(0, (this.enemy.def.boss ? e.bossTurns : e.turns) - this.turn);
+  }
+
+  /** Rough damage of the enemy's next move against the player (average roll, no crit, before Defend). Null if it doesn't hit. */
+  intentDamage(): number | null {
+    const a = this.intent;
+    if (a.power <= 0 || a.heal) return null;
+    const element = a.element ?? this.enemy.def.element;
+    const raw = this.baseHit('enemy', a.damageType) * a.power;
+    const { mult } = this.elementMultiplier('player', element);
+    // It strikes after your next action, which may push the enrage up a step.
+    const enraged = (1 + this.enrageAt(this.turn + 1)) / (1 + this.enrage);
+    return Math.max(1, Math.round(this.scaleHit('enemy', 'player', mitigate(raw, this.defenseOf('player', a.damageType)), mult) * enraged));
+  }
+
   /** Damage and healing over time. */
   private startTurn(side: Side, events: BattleEvent[]): void {
     for (const s of [...this.effects[side]]) {
       if (s.tick > 0) {
         const { mult, effect } = this.elementMultiplier(side, s.element);
-        const damage = mult > 0 && !(cheats.god && side === 'player') ? Math.max(1, Math.round(s.tick * mult)) : 0;
-        this.damage(side, damage);
-        events.push({ kind: 'tick', target: side, status: s.def.id, damage, heal: 0, element: s.element, effect });
+        if (mult < 0) {
+          const heal = this.healSide(side, Math.max(1, Math.round(s.tick * -mult)));
+          events.push({ kind: 'tick', target: side, status: s.def.id, damage: 0, heal, element: s.element, effect });
+        } else {
+          const damage = mult > 0 && !(cheats.god && side === 'player') ? Math.max(1, Math.round(s.tick * mult)) : 0;
+          this.damage(side, damage);
+          events.push({ kind: 'tick', target: side, status: s.def.id, damage, heal: 0, element: s.element, effect });
+        }
       }
       if (s.def.regen) {
         const heal = this.healSide(side, Math.round(this.maxHpOf(side) * s.def.regen));
@@ -397,6 +481,7 @@ export class Battle {
     // A wind-up started in the old form still lands in the old element.
     if (this.charging) this.charging = { ...this.charging, element: this.charging.element ?? def.element };
     this.enemy.def = { ...def, element: phase.element, resists: phase.resists, attacks: phase.attacks ?? def.attacks, phase: undefined };
+    this.intent = this.pickIntent(false);
     events.push({ kind: 'phase', text: phase.text, element: phase.element });
   }
 
@@ -437,7 +522,10 @@ export class Battle {
   }
 
   private rollOf(side: Side): [number, number] {
-    return side === 'player' ? this.player.weaponDamage : this.enemy.def.damage;
+    if (side === 'player') return this.player.weaponDamage;
+    const [min, max] = this.enemy.def.damage;
+    const m = this.enemy.def.boss ? BALANCE.bossDamage : BALANCE.mobDamage;
+    return [Math.round(min * m), Math.round(max * m)];
   }
 
   private defenseOf(side: Side, type: DamageType): number {
@@ -473,8 +561,16 @@ export class Battle {
   private elementMultiplier(target: Side, element: Element | undefined): { mult: number; effect?: Effect } {
     if (!element) return { mult: 1 };
     const r = this.resistOf(target, element);
-    const effect: Effect | undefined = r >= 100 ? 'immune' : r >= 25 ? 'resisted' : r <= -25 ? 'weak' : undefined;
+    const effect: Effect | undefined = r > 100 ? 'absorb' : r === 100 ? 'immune' : r >= 25 ? 'resisted' : r <= -25 ? 'weak' : undefined;
     return { mult: 1 - r / 100, effect };
+  }
+
+  /** Element, status modifiers, grit and enrage on a mitigated hit. */
+  private scaleHit(source: Side, target: Side, damage: number, mult: number): number {
+    damage *= mult * Math.max(0, 1 + this.mod(source, 'damageDealt')) * Math.max(0, 1 + this.mod(target, 'damageTaken'));
+    if (source === 'player') damage *= 1 + this.grit;
+    else damage *= 1 + this.enrage;
+    return damage;
   }
 
   /** One attack from `source` at the other side. Applies the damage. */
@@ -507,9 +603,13 @@ export class Battle {
 
     damage = mitigate(damage, this.defenseOf(target, damageType));
     const { mult, effect } = this.elementMultiplier(target, element);
-    damage *= mult * Math.max(0, 1 + this.mod(source, 'damageDealt')) * Math.max(0, 1 + this.mod(target, 'damageTaken'));
+    // Absorbed: the hit heals the target by the share over 100 instead.
+    if (mult < 0) {
+      const healed = this.healSide(target, Math.max(1, Math.round(this.scaleHit(source, target, damage, -mult))));
+      return { kind: 'hit', ...base, damage: healed, crit, effect, absorbed: true };
+    }
+    damage = this.scaleHit(source, target, damage, mult);
     if (target === 'player' && this.defending) damage *= BALANCE.defendDamage;
-    if (source === 'player') damage *= 1 + this.grit;
     const shell = this.enemy.def.shell;
     const shielded = target === 'enemy' && shell !== undefined && this.shell > 0;
     if (shielded) damage *= 1 - shell.reduction;
@@ -537,7 +637,8 @@ export class Battle {
       .filter((d) => chance(this.rng, d.chance))
       .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source, extras)));
     // Gear: one cascading tier roll (Elites and bosses always drop something). Missing a Rare builds up luck.
-    if (m.loot) {
+    // Heroic bosses roll gear more than once.
+    for (let i = 0; m.loot && i < (m.isHeroic ? BALANCE.heroic.lootRolls : 1); i++) {
       const pity = this.player.data.lootPity;
       const gear = rollLoot(m.loot, source, this.rng, pity[m.loot] ?? 0, extras);
       if (gear?.tier === 'rare') delete pity[m.loot];

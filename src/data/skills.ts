@@ -130,18 +130,17 @@ export const SKILLS: SkillDef[] = [
     fx: 'heavy',
   },
 
-  // --- Mage (magic; spells carry their own element) ---
+  // --- Mage (magic; Staff Bolt uses the staff's element, the other spells carry their own) ---
   {
     id: 'ember_bolt',
-    name: 'Ember Bolt',
-    description: '1.5x Fire damage. 30% chance to Burn for 2 turns.',
+    name: 'Staff Bolt',
+    description: "1.5x damage in your staff's element (neutral staff: no element).",
     mpCost: 6,
     cooldown: 0,
     kind: 'damage',
     damageType: 'magic',
-    element: 'fire',
+    element: 'weapon',
     power: 1.5,
-    applies: [{ status: 'burn', turns: 2, chance: 0.3 }],
   },
   {
     id: 'mend',
