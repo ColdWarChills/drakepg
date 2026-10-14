@@ -59,6 +59,7 @@ export const ZONES: ZoneDef[] = [
       { monsterId: 'bog_lurker', weight: 4 },
       { monsterId: 'sunken_revenant', weight: 3 },
       { monsterId: 'stormscale_drakeling', weight: 2 },
+      { monsterId: 'volt_eel', weight: 2 },
     ],
   },
   {

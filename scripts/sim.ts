@@ -1,5 +1,6 @@
 /**
  * Headless balance check: plays thousands of battles with a simple AI and prints win rates.
+ * Each cell also runs a random-button bot ("rnd"): if it does nearly as well as the smart AI, choices don't matter there.
  * Run with `npm run sim` (optionally `npm run sim -- 2000` for more battles per matchup).
  */
 import { BALANCE } from '../src/config';
@@ -8,6 +9,7 @@ import { ELEMENTS } from '../src/data/elements';
 import type { ClassId, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
 import { makeElite } from '../src/game/Elites';
+import { makeHeroic } from '../src/game/Heroic';
 import { LOOT_TIERS, rollLootTier, tierOdds, type LootSource } from '../src/game/Loot';
 import { LOOT_TABLES } from '../src/data/loot';
 import { rollGear, type GearDef, type SigilTier } from '../src/game/Items';
@@ -124,6 +126,7 @@ function act(b: Battle): void {
   const enemyHasStatus = (id: string) => b.statuses('enemy').some((s) => s.def.id === id);
   const selfHasStatus = (id: string) => b.statuses('player').some((s) => s.def.id === id);
 
+  // The enemy's next move is shown: brace for a wound-up blow.
   if (b.charging) {
     if (heal && hpPct < 0.6) return void b.useSkill(heal.id);
     return void b.defend();
@@ -156,6 +159,18 @@ function act(b: Battle): void {
   b.attack();
 }
 
+/** A player mashing buttons: any ready action at random, but drinks a potion when low. */
+function actRandom(b: Battle, rng: Rng): void {
+  const p = b.player;
+  if (p.hp / p.maxHp < 0.35) {
+    const potion = p.data.inventory[0]?.itemId;
+    if (potion && b.canUseItem(potion)) return void b.useItem(potion);
+  }
+  const skills = p.knownSkills.filter((s) => b.canUseSkill(s.id));
+  const options = [() => b.attack(), () => b.defend(), ...skills.map((s) => () => b.useSkill(s.id))];
+  options[Math.floor(rng.next() * options.length)]();
+}
+
 interface Result {
   wins: number;
   turns: number;
@@ -163,18 +178,20 @@ interface Result {
   potions: number;
 }
 
-function fight(row: Row, classId: ClassId, rng: Rng): Result {
+function fight(row: Row, classId: ClassId, rng: Rng, random = false): Result {
   const { level, monster: monsterId, elite, gear, potions } = row;
   const potion = row.potion ?? 'health_potion';
   const res: Result = { wins: 0, turns: 0, hpLeft: 0, potions: 0 };
-  const monster = elite ? makeElite(db.monster(monsterId), elite) : db.monster(monsterId);
+  const base = db.monster(monsterId);
+  const monster = elite ? makeElite(base, elite) : row.heroic ? makeHeroic(base) : base;
   for (let i = 0; i < RUNS; i++) {
     const p = makePlayer(classId, level, gear, potions, potion);
     if (row.losses) p.data.bossGrit[monster.id] = row.losses;
     const b = new Battle(p, monster, rng);
     let turns = 0;
     while (!b.isOver && turns < 60) {
-      act(b);
+      if (random) actRandom(b, rng);
+      else act(b);
       turns++;
     }
     if (b.state === 'victory') {
@@ -202,25 +219,29 @@ interface Row {
   potion?: string;
   /** Earlier losses to this boss (boss grit). */
   losses?: number;
+  /** Fight the Heroic rematch. */
+  heroic?: boolean;
 }
 
 function table(title: string, rows: Row[]): void {
   const rng = seeded(12345);
   console.log(`\n${title}`);
-  console.log(`${'monster'.padEnd(20)} lv gear     | ` + ['warrior', 'mage', 'rogue'].map((c) => c.padEnd(26)).join(' | '));
+  console.log(`${'monster'.padEnd(20)} lv gear     | ` + ['warrior', 'mage', 'rogue'].map((c) => c.padEnd(40)).join(' | '));
   for (const row of rows) {
     const cells = (['warrior', 'mage', 'rogue'] as ClassId[]).map((c) => {
       const r = fight(row, c, rng);
       const hp = r.wins ? r.hpLeft / r.wins : 0;
-      return `win${pct(r.wins / RUNS)} hp${pct(hp)} t${(r.turns / RUNS).toFixed(1).padStart(4)} pot${(r.potions / RUNS).toFixed(1)}`;
+      const rnd = fight(row, c, rng, true);
+      const rndHp = rnd.wins ? rnd.hpLeft / rnd.wins : 0;
+      return `win${pct(r.wins / RUNS)} hp${pct(hp)} t${(r.turns / RUNS).toFixed(1).padStart(4)} pot${(r.potions / RUNS).toFixed(1)} rnd${pct(rnd.wins / RUNS)}${pct(rndHp)}`;
     });
-    const name = row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.losses ? `${row.monster} grit${row.losses}` : row.monster;
+    const name = row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.losses ? `${row.monster} grit${row.losses}` : row.heroic ? `H.${row.monster}` : row.monster;
     console.log(`${name.padEnd(20)} ${String(row.level).padStart(2)} ${row.gear.label.padEnd(8)} | ${cells.join(' | ')}`);
   }
 }
 
 validateData();
-console.log(`${RUNS} battles per cell. win = win rate, hp = HP left after a win, t = turns, pot = potions used.`);
+console.log(`${RUNS} battles per cell. win = win rate, hp = HP left after a win, t = turns, pot = potions used, rnd = random-button bot's win rate and HP left.`);
 console.log(`Elements: ${ELEMENTS.join(', ')}`);
 
 /** Gear drop odds per kill: exact cascade math, checked against 100k simulated rolls. */
@@ -317,6 +338,9 @@ table('Chapter 2 trash (full HP each fight, 1 potion)', [
   { monster: 'sunken_revenant', level: 8, gear: SHOP2, potions: 1, potion: GREATER },
   { monster: 'stormscale_drakeling', level: 9, gear: SHOP2, potions: 1, potion: GREATER },
   { monster: 'stormscale_drakeling', level: 9, gear: WATER2, potions: 1, potion: GREATER },
+  { monster: 'volt_eel', level: 8, gear: SHOP2, potions: 1, potion: GREATER },
+  { monster: 'volt_eel', level: 8, gear: ENERGY2, potions: 1, potion: GREATER },
+  { monster: 'volt_eel', level: 8, gear: HEART, potions: 1, potion: GREATER },
 ]);
 
 table('Chapter 2 Elites (2 potions)', [
@@ -378,4 +402,12 @@ table('The Frostbinder (boss, Ice -> Wind at half HP, 3 potions)', [
   { monster: 'frostbinder', level: 14, gear: EARTH3, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 14, gear: STORM, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 15, gear: SHOP3, potions: 3, potion: SUPERIOR },
+]);
+
+table('Heroic rematches (3 potions, a few levels past the chapter)', [
+  { monster: 'thornheart', level: 7, gear: FIRE, potions: 3, heroic: true },
+  { monster: 'bogmother', level: 10, gear: SHOP2, potions: 3, potion: GREATER, heroic: true },
+  { monster: 'stormcoil', level: 12, gear: STORM, potions: 3, potion: GREATER, heroic: true },
+  { monster: 'old_snowmaw', level: 14, gear: FIRE3, potions: 3, potion: SUPERIOR, heroic: true },
+  { monster: 'frostbinder', level: 16, gear: FIRE3, potions: 3, potion: SUPERIOR, heroic: true },
 ]);

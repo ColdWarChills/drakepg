@@ -114,10 +114,27 @@ export const BALANCE = {
     honeDriftChance: 0.35,
     honeDrift: [3, 8] as [number, number],
   },
+  /**
+   * Damage multiplier for every non-boss monster (Elites and Mimics too). Monsters show their next move,
+   * so normal fights can hit hard enough that Defend and healing matter.
+   */
+  mobDamage: 2,
+  /** The same for bosses: high enough that reading their wind-ups and Defending is what wins. */
+  bossDamage: 1.3,
+  /**
+   * Long fights: from player turn `turns` (`bossTurns` vs bosses) on, the enemy enrages and deals `step` more
+   * damage every turn. The battle panel counts down the last `warn` turns.
+   */
+  enrage: { turns: 15, bossTurns: 30, step: 0.2, warn: 3 },
   /** Boss grit: each loss to a boss adds `step` damage against it, up to `max`. Beating it resets the count. */
   grit: { step: 0.05, max: 0.25 },
   /** XP and gold from beating a boss again after its quest no longer needs it. */
   bossRepeatRewards: 0.5,
+  /**
+   * Heroic rematch (src/game/Heroic.ts), open after a boss's quest: `levels` added, damage times `damage`, plus
+   * its heroic moves. XP and gold times `rewards` (instead of the repeat share), and `lootRolls` gear rolls.
+   */
+  heroic: { levels: 3, damage: 1.25, rewards: 1, lootRolls: 2 },
   /**
    * Elites: tougher roaming monsters with one affix (src/data/elites.ts). `chance` per roaming spawn
    * (`questChance` while a quest wants an Elite), at most `maxPerRoom`. `levels` is added to the shown level;
@@ -129,8 +146,8 @@ export const BALANCE = {
     questChance: 0.25,
     maxPerRoom: 1,
     levels: 1,
-    hp: 2,
-    damage: 1.25,
+    hp: 1.5,
+    damage: 1.1,
     rewards: 3,
     size: 1.2,
   },
