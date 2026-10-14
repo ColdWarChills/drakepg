@@ -45,3 +45,12 @@ Parked: 6 (hunter contracts), 7 (class trial), 8 (bad-luck threshold), 10 (syste
 - Loot table `road` (starter armor weighted 2x, starter weapons) drops on 35% of kills via `BALANCE.loot.tableMob`, a per-table override of the normal-monster odds.
 - Chapter 2/3 starts and saves with a broken location go to `TOWN_START`. The new-hero greeting now waits for the "New!" popup to close instead of being skipped.
 - Not final: monster names, stats and look (shape stand-ins, no art), room backdrops (procedural forest), Odo/Pell lines.
+
+## Map, Recall Scroll and quiet rooms (PLANS.md steps 1-3)
+
+- **Recall Scroll** (`recall_scroll`, new item type `scroll`): one way to the last town you walked into (`PlayerData.lastTown`), landing at the town's `town` spot. Not in battle, asks first, 20g in all three town shops; new heroes start with 5 (`BALANCE.startingRecallScrolls`). Read from the Inventory (Read button, double-click) or the Map. Rules in `src/game/Travel.ts`.
+- **Visited rooms** (`PlayerData.visited`) are recorded on every room entry (`visitRoom`). Save v12 migrates old saves: current room visited, the area's town as last town, plus 5 scrolls.
+- **Map** (M / Map button, `src/ui/mapPanel.ts`, rules in `src/game/WorldMap.ts`): one page per area (`src/data/map.ts`), hand-placed `map` spots on every room. Visited rooms show name and icons, neighbours show "?", blocked ways are dashed red, exits to other pages are arrows (tap to turn the page). Quest marks: ! / ? / gold ring on the room where an active kill quest's monster lives. M no longer mutes (sound stays in the Menu).
+- **Quiet-room features** (room data): `firstVisit` lines play once as a letterboxed scene (second camera for the bars so the room can zoom toward `panTo`; HUD hidden meanwhile); `inspect` props (note, sign, marks, bones; glint until read) open a narration box; `campfire` restores HP/MP once per visit (`session.restedAt`); `side: 'down'` exits lead off the bottom edge to side rooms. Props are shapes in `src/ui/props.ts`. New sounds: `recall`, `omen`, `page`.
+- **Hunters' Camp**: a placeholder side room below the Thornwood Path that uses all of it (lines are drafts for review).
+- Checked in the browser: new hero on the road (map shows the road page, recall greyed out), Brindlemoor sets the last town, down exit to the camp and back, first-visit scene, note, campfire rest, recall to Brindlemoor (scroll used, location saved), v11 -> v12 save upgrade and bad values cleaned. Build and sim pass (sim unchanged).

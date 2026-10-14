@@ -231,7 +231,13 @@ export interface StoneDef extends ItemBase {
   line: 'damage' | 'crit' | 'defense' | 'hp';
 }
 
-export type ItemDef = WeaponDef | ArmorDef | AccessoryDef | ConsumableDef | MaterialDef | StoneDef;
+/** Recall Scroll: takes you to the last town you visited (src/game/Travel.ts). Not usable in battle. Stacks in the bag. */
+export interface ScrollDef extends ItemBase {
+  type: 'scroll';
+  effect: 'recall';
+}
+
+export type ItemDef = WeaponDef | ArmorDef | AccessoryDef | ConsumableDef | MaterialDef | StoneDef | ScrollDef;
 
 /** What a set bonus gives. All of it is shown on the item card and the Character panel. */
 export interface SetBonus {
@@ -450,9 +456,12 @@ export interface NpcDef {
 }
 
 export interface RoomExit {
-  /** left/right: walk off the screen edge. back: a door, gate or cave mouth in the art at `x`; walk up into it. */
-  side: 'left' | 'right' | 'back';
-  /** Back exits: screen x of the doorway (it sits at the top of the walkable strip). */
+  /**
+   * left/right: walk off the screen edge. back: a door, gate or cave mouth in the art at `x`; walk up into it.
+   * down: a path off the bottom edge at `x` (side rooms); walk down into it.
+   */
+  side: 'left' | 'right' | 'back' | 'down';
+  /** Back and down exits: screen x of the doorway or path. */
   x?: number;
   /** Back exits: draw a gate or cave mouth there, for rooms whose art doesn't show one (yet). */
   frame?: 'gate' | 'cave';
@@ -487,6 +496,34 @@ export interface RoomDef {
   boss?: { monsterId: string; x: number; y: number; questId: string; intro?: string };
   /** Where you wake up after losing a battle here. Default: the Brindlemoor inn. */
   wakeAt?: { roomId: string; x: number; y: number };
+  /** A town: entering it makes it the Recall Scroll's destination, and a scroll lands you at this spot. */
+  town?: { x: number; y: number };
+  /** Hand-placed spot on its area's map (src/data/map.ts): grid columns and rows, x to the right, y down. */
+  map: { area: string; x: number; y: number };
+  /** Rest here once per visit: full HP and MP. */
+  campfire?: { x: number; y: number };
+  /** Things to look at: walk up and press E. */
+  inspect?: InspectDef[];
+  /** Shown once, the first time you enter (quiet rooms build up to what's ahead). Always shown, even with story text off. */
+  firstVisit?: { lines: string[]; /** The camera drifts toward this x while the lines show. */ panTo?: number };
+}
+
+/** Something in a room to look at: a note, a sign, claw marks. */
+export interface InspectDef {
+  id: string;
+  /** Short name over it, e.g. "Torn note". */
+  label: string;
+  x: number;
+  y: number;
+  /** How it's drawn until it has art. */
+  look: 'note' | 'sign' | 'marks' | 'bones';
+  lines: string[];
+}
+
+/** One map page: a chapter's rooms (src/data/map.ts). */
+export interface MapAreaDef {
+  id: string;
+  name: string;
 }
 
 /**

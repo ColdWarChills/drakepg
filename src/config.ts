@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -12,6 +12,8 @@ export const BALANCE = {
   restoreAfterBattle: false,
   /** Gold cost to rest at the inn. */
   innCost: 5,
+  /** Recall Scrolls a new hero starts with (src/game/Travel.ts); after that, town shops sell them. */
+  startingRecallScrolls: 5,
   /** Base hit chance before DEX difference is applied. */
   baseHitChance: 0.9,
   minHitChance: 0.6,

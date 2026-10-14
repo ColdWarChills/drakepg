@@ -155,6 +155,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'road_cart',
     name: 'Overturned Cart',
+    map: { area: 'road', x: 5, y: 0 },
     backdrop: { kind: 'forest' },
     walk: [540, 700],
     ambient: ['leaves'],
@@ -184,6 +185,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'road_mill',
     name: 'Old Mill Road',
+    map: { area: 'road', x: 4, y: 0 },
     backdrop: { kind: 'forest' },
     walk: [540, 700],
     ambient: ['dust'],
@@ -199,6 +201,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'road_ford',
     name: 'Willow Ford',
+    map: { area: 'road', x: 3, y: 0 },
     backdrop: { kind: 'forest' },
     walk: [540, 700],
     ambient: ['leaves', 'fireflies'],
@@ -214,6 +217,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'road_fields',
     name: 'Fallow Fields',
+    map: { area: 'road', x: 2, y: 0 },
     backdrop: { kind: 'forest', shade: 0.1 },
     walk: [540, 700],
     ambient: ['dust', 'leaves'],
@@ -229,6 +233,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'road_hedges',
     name: 'Hedgerow Lane',
+    map: { area: 'road', x: 1, y: 0 },
     backdrop: { kind: 'forest', shade: 0.2 },
     walk: [540, 700],
     ambient: ['leaves'],
@@ -244,6 +249,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'road_gate',
     name: 'Brindlemoor Gate',
+    map: { area: 'road', x: 0, y: 0 },
     backdrop: { kind: 'forest' },
     walk: [540, 700],
     ambient: ['dust'],
@@ -273,6 +279,8 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'brindlemoor',
     name: 'Brindlemoor',
+    map: { area: 'thornwood', x: 0, y: 1 },
+    town: { x: 620, y: 650 },
     background: 'bg_brindlemoor',
     backdrop: { kind: 'town' },
     walk: [590, 700],
@@ -310,6 +318,7 @@ export const ROOMS: RoomDef[] = [
           stock: [
             'health_potion',
             'mana_potion',
+            'recall_scroll',
             'iron_sword',
             'hunting_knife',
             'oak_staff',
@@ -358,6 +367,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'thornwood_path',
     name: 'Thornwood Path',
+    map: { area: 'thornwood', x: 1, y: 1 },
     background: 'bg_thornwood',
     backdrop: { kind: 'forest' },
     walk: [530, 700],
@@ -365,6 +375,7 @@ export const ROOMS: RoomDef[] = [
     exits: [
       { side: 'left', to: 'brindlemoor', label: 'Brindlemoor' },
       { side: 'right', to: 'thornwood_deep', label: 'Deep Thornwood' },
+      { side: 'down', x: 640, to: 'hunters_camp', label: "Hunters' Camp" },
     ],
     npcs: [
       {
@@ -384,9 +395,51 @@ export const ROOMS: RoomDef[] = [
     zoneId: 'thornwood',
     monsterCount: 3,
   },
+  // A quiet side room below the Thornwood Path (placeholder lines for review): no monsters, a campfire, a hint of the Hollow.
+  {
+    id: 'hunters_camp',
+    name: "Hunters' Camp",
+    map: { area: 'thornwood', x: 1, y: 2 },
+    background: 'bg_thornwood',
+    backdrop: { kind: 'forest', shade: 0.15 },
+    walk: [530, 700],
+    ambient: ['fireflies'],
+    exits: [{ side: 'back', x: 640, to: 'thornwood_path', label: 'Thornwood Path' }],
+    npcs: [],
+    campfire: { x: 400, y: 640 },
+    inspect: [
+      {
+        id: 'hunters_note',
+        label: 'Torn note',
+        x: 880,
+        y: 610,
+        look: 'note',
+        lines: [
+          'The boars are running the wrong way: out of the deep wood, not into it.',
+          'Whatever woke in the Hollow is not hunting them. It is pushing them out. We leave at first light. B.',
+        ],
+      },
+      {
+        id: 'hunters_marks',
+        label: 'Scored log',
+        x: 1110,
+        y: 660,
+        look: 'marks',
+        lines: ['Deep grooves across a fallen trunk. Not claws: roots, dragged through the wood like fingers.'],
+      },
+    ],
+    firstVisit: {
+      lines: [
+        'A hunters\' camp, left in a hurry. The fire pit is still warm.',
+        'Far off in the trees, something old creaks, like a door that has not opened in a hundred years.',
+      ],
+      panTo: 1000,
+    },
+  },
   {
     id: 'thornwood_deep',
     name: 'Deep Thornwood',
+    map: { area: 'thornwood', x: 2, y: 1 },
     background: ['bg_thornwood_deep', 'bg_thornwood'],
     backdrop: { kind: 'forest', shade: 0.35 },
     walk: [530, 700],
@@ -402,6 +455,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'thornheart_hollow',
     name: 'Thornheart Hollow',
+    map: { area: 'thornwood', x: 3, y: 1 },
     background: ['bg_thornheart_hollow', 'bg_thornwood_deep', 'bg_thornwood'],
     backdrop: { kind: 'forest', shade: 0.5 },
     walk: [530, 700],
@@ -416,6 +470,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'fen_road',
     name: 'Fen Road',
+    map: { area: 'fen', x: 4, y: 0 },
     background: 'bg_fen_road',
     backdrop: { kind: 'marsh' },
     walk: [540, 700],
@@ -431,6 +486,8 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'reedwatch',
     name: 'Reedwatch',
+    map: { area: 'fen', x: 3, y: 0 },
+    town: { x: 840, y: 650 },
     background: 'bg_reedwatch',
     backdrop: { kind: 'outpost' },
     walk: [590, 700],
@@ -464,6 +521,7 @@ export const ROOMS: RoomDef[] = [
           kind: 'shop',
           stock: [
             'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor',
+            'recall_scroll',
             'health_potion',
             'mana_potion',
             'greater_health_potion',
@@ -498,6 +556,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'sunken_causeway',
     name: 'Sunken Causeway',
+    map: { area: 'fen', x: 2, y: 0 },
     background: ['bg_sunken_causeway', 'bg_fen_road'],
     backdrop: { kind: 'marsh', shade: 0.25 },
     walk: [540, 700],
@@ -514,6 +573,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'bog_hollow',
     name: 'Bog Hollow',
+    map: { area: 'fen', x: 1, y: 0 },
     background: ['bg_bog_hollow', 'bg_sunken_causeway', 'bg_fen_road'],
     backdrop: { kind: 'marsh', shade: 0.35 },
     walk: [540, 700],
@@ -537,6 +597,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'drowned_shrine',
     name: 'Drowned Shrine',
+    map: { area: 'fen', x: 0, y: 0 },
     background: ['bg_drowned_shrine', 'bg_sunken_causeway', 'bg_fen_road'],
     backdrop: { kind: 'marsh', shade: 0.45 },
     walk: [540, 700],
@@ -557,6 +618,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'frostfang_pass',
     name: 'Frostfang Pass',
+    map: { area: 'frostfang', x: 0, y: 1 },
     background: 'bg_frostfang_pass',
     backdrop: { kind: 'snow' },
     walk: [540, 700],
@@ -573,6 +635,8 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'hearthold',
     name: 'Hearthold',
+    map: { area: 'frostfang', x: 1, y: 1 },
+    town: { x: 900, y: 650 },
     background: 'bg_hearthold',
     backdrop: { kind: 'village' },
     walk: [590, 700],
@@ -606,6 +670,7 @@ export const ROOMS: RoomDef[] = [
           kind: 'shop',
           stock: [
             'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor',
+            'recall_scroll',
             'superior_health_potion',
             'superior_mana_potion',
             'greater_health_potion',
@@ -649,6 +714,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'windscour_ridge',
     name: 'Windscour Ridge',
+    map: { area: 'frostfang', x: 2, y: 1 },
     background: ['bg_windscour_ridge', 'bg_frostfang_pass'],
     backdrop: { kind: 'snow', shade: 0.15 },
     walk: [540, 700],
@@ -666,6 +732,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'steamvent_caves',
     name: 'Steamvent Caves',
+    map: { area: 'frostfang', x: 2, y: 0 },
     background: 'bg_steamvent_caves',
     backdrop: { kind: 'cave' },
     walk: [540, 700],
@@ -679,6 +746,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'snowmaw_den',
     name: "Snowmaw's Den",
+    map: { area: 'frostfang', x: 3, y: 1 },
     background: ['bg_snowmaw_den', 'bg_windscour_ridge', 'bg_frostfang_pass'],
     backdrop: { kind: 'snow', shade: 0.3 },
     walk: [540, 700],
@@ -701,6 +769,7 @@ export const ROOMS: RoomDef[] = [
   {
     id: 'frozen_roost',
     name: 'The Frozen Roost',
+    map: { area: 'frostfang', x: 4, y: 1 },
     background: ['bg_frozen_roost', 'bg_windscour_ridge', 'bg_frostfang_pass'],
     backdrop: { kind: 'snow', shade: 0.4 },
     walk: [540, 700],

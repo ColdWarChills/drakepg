@@ -4,6 +4,7 @@ import { TOWN_START } from '../data/world';
 import type { EquipSlot } from '../data/types';
 import { EQUIP_SLOTS, isGearDef, sanitizeTraits, slotsFor, type Gear } from './Items';
 import { emptyEquipment, Player, STAT_KEYS, type PlayerData } from './Player';
+import { areaTown, RECALL_SCROLL } from './Travel';
 
 interface SaveFile {
   version: number;
@@ -71,6 +72,8 @@ export const SaveSystem = {
  *           so those are marked seen; unlocked systems still get announced once.
  * v9 -> v10: `loadout` (skills carried into battle); sanitize() gives old characters the default pick.
  * v10 -> v11: 8 equipment slots. The old `armor` slot becomes `body`; helm, gloves, boots, necklace and rings start empty.
+ * v11 -> v12: `visited` rooms (the map) and `lastTown` (Recall Scrolls). The room you stand in counts as visited, your
+ *             area's town becomes the last town, and you get the starting Recall Scrolls a new hero has.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -111,6 +114,17 @@ function migrate(file: SaveFile): SaveFile | null {
     const old = (file.player as unknown as { equipment?: Record<string, unknown> }).equipment ?? {};
     (file.player as unknown as { equipment: Record<string, unknown> }).equipment = { weapon: old.weapon ?? null, body: old.armor ?? null };
     file.version = 11;
+  }
+  if (file.version < 12) {
+    const p = file.player as Partial<PlayerData>;
+    const here = p.location && db.hasRoom(p.location.roomId) ? p.location.roomId : null;
+    const town = here ? areaTown(db.room(here).map.area) : undefined;
+    p.visited = [...new Set([here, town?.id].filter((id): id is string => !!id))];
+    p.lastTown = town?.id ?? null;
+    const inventory = Array.isArray(p.inventory) ? p.inventory : [];
+    if (!inventory.some((e) => e?.itemId === RECALL_SCROLL)) inventory.push({ itemId: RECALL_SCROLL, qty: BALANCE.startingRecallScrolls });
+    p.inventory = inventory;
+    file.version = 12;
   }
   return file;
 }
@@ -215,6 +229,8 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     seen: Array.isArray(raw.seen) ? raw.seen.filter((s): s is string => typeof s === 'string') : [],
     freshSkills: Array.isArray(raw.freshSkills) ? raw.freshSkills.filter((s): s is string => typeof s === 'string' && db.hasSkill(s)) : [],
     loadout: [],
+    visited: Array.isArray(raw.visited) ? [...new Set(raw.visited.filter((id): id is string => typeof id === 'string' && db.hasRoom(id)))] : [],
+    lastTown: typeof raw.lastTown === 'string' && db.hasRoom(raw.lastTown) && db.room(raw.lastTown).town ? raw.lastTown : null,
   };
 
   const player = new Player(data);

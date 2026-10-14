@@ -79,7 +79,7 @@ export interface PlayerData {
   baseStats: Stats;
   hp: number;
   mp: number;
-  /** Equipped gear. Changed from item ids to rolled gear in save version 4; 8 slots since version 10. */
+  /** Equipped gear. Changed from item ids to rolled gear in save version 4; 8 slots since version 11. */
   equipment: Record<EquipSlot, Gear | null>;
   /** Consumable stacks. */
   inventory: InventoryEntry[];
@@ -104,6 +104,10 @@ export interface PlayerData {
   freshSkills: string[];
   /** Skill ids carried into battle, at most `BALANCE.skillSlots`. Added in save version 10. */
   loadout: string[];
+  /** Rooms you've been to (the map). Added in save version 12. */
+  visited: string[];
+  /** The last town you walked into: where a Recall Scroll takes you. Null before the first town. Added in save version 12. */
+  lastTown: string | null;
 }
 
 export interface Rewards {
@@ -143,6 +147,7 @@ export class Player {
       inventory: [
         { itemId: 'health_potion', qty: 2 },
         { itemId: 'mana_potion', qty: 1 },
+        { itemId: 'recall_scroll', qty: BALANCE.startingRecallScrolls },
       ],
       gear: [],
       nextUid: 1,
@@ -155,6 +160,8 @@ export class Player {
       seen: [],
       freshSkills: [],
       loadout: [],
+      visited: [],
+      lastTown: null,
     });
     player.data.loadout = player.defaultLoadout();
     player.data.equipment.weapon = player.makeGear(cls.weapon);

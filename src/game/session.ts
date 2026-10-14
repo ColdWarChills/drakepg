@@ -49,12 +49,20 @@ export const session = {
   /** The next freshly filled monster room gets a Lucky Impling (testing: new characters, see `LUCKY_ON_NEW_GAME`). */
   luckyNext: false,
 
+  /** The room whose campfire you rested at on this visit (one rest per visit; a fight there doesn't end the visit). */
+  restedAt: null as string | null,
+
+  /** Notes and signs read this play session (their sparkle goes away). */
+  inspected: new Set<string>(),
+
   /** `fresh`: a brand-new character (not a loaded save). */
   start(player: Player, fresh = false): void {
     current = player;
     snapshot = null;
     rooms.clear();
     session.luckyNext = fresh && LUCKY_ON_NEW_GAME;
+    session.restedAt = null;
+    session.inspected.clear();
   },
 
   /** Remember a room you are leaving, so its dead monsters stay dead for a while. */

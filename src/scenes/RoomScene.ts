@@ -3,7 +3,7 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { ELEMENT_LABELS } from '../data/elements';
 import { ROOMS, START } from '../data/world';
-import type { Blocker, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
+import type { Blocker, InspectDef, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
 import { cheats } from '../game/cheats';
 import { featureOn, markSeen, unseenNews } from '../game/Features';
 import { makeElite, rollElite } from '../game/Elites';
@@ -12,6 +12,7 @@ import { Player } from '../game/Player';
 import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStarted, questStatus, questWantsElite, turnInQuest } from '../game/Quests';
 import { saveSettings, settings } from '../game/settings';
 import { SaveSystem } from '../game/SaveSystem';
+import { RECALL_SCROLL, recallCheck, useRecall, visitRoom } from '../game/Travel';
 import { defaultRng, weightedPick } from '../game/rng';
 import { MIMIC_UID, rollChest, rollChestLoot } from '../game/Chests';
 import { session, type Chest, type RoamingMonster } from '../game/session';
@@ -26,7 +27,9 @@ import { openCheatMenu } from '../ui/cheatMenu';
 import { openForge } from '../ui/forge';
 import { openInventory, openShop } from '../ui/inventory';
 import { lootName } from '../ui/itemUi';
-import { openCharacterPanel, openDialogue, type DialogueAction } from '../ui/panels';
+import { openMap } from '../ui/mapPanel';
+import { openCharacterPanel, openDialogue, openNarration, type DialogueAction } from '../ui/panels';
+import { drawCampfire, drawProp } from '../ui/props';
 import { addText, isTouchScreen, labelScale, toast } from '../ui/text';
 import { enterScene, goTo, SceneKeys, type BattleSceneData, type RoomSceneData } from './keys';
 
@@ -77,6 +80,9 @@ interface Mob extends Actor {
   target: { x: number; y: number } | null;
 }
 
+/** Things in a room you walk up to and use with E: a campfire, or something to look at. */
+type Thing = { kind: 'campfire'; x: number; y: number } | { kind: 'inspect'; def: InspectDef; x: number; y: number; fig: Phaser.GameObjects.Container };
+
 type Keys = Record<'W' | 'A' | 'S' | 'D' | 'UP' | 'DOWN' | 'LEFT' | 'RIGHT', Phaser.Input.Keyboard.Key>;
 
 let showedControls = false;
@@ -120,8 +126,14 @@ export class RoomScene extends Phaser.Scene {
   private promptText!: Phaser.GameObjects.Text;
   private moveTarget: { x: number; y: number } | null = null;
   private pendingNpc: Npc | null = null;
-  /** Back exit the player was sent walking to (click/tap); entered on arrival. */
-  private pendingBack: RoomExit | null = null;
+  /** Back or down exit the player was sent walking to (click/tap); entered on arrival. */
+  private pendingExit: RoomExit | null = null;
+  /** Campfire or note the player was sent walking to (click/tap); used on arrival. */
+  private pendingThing: Thing | null = null;
+  private things: Thing[] = [];
+  private mapModal: Modal | null = null;
+  /** A room's first-visit lines playing over the scene (blocks movement like a modal). */
+  private cutscene: { next: () => void; skip: () => void } | null = null;
   private safeUntil = 0;
   private leaving = false;
   private dustTimer = 0;
@@ -148,7 +160,11 @@ export class RoomScene extends Phaser.Scene {
     this.bossAsked = false;
     this.moveTarget = null;
     this.pendingNpc = null;
-    this.pendingBack = null;
+    this.pendingExit = null;
+    this.pendingThing = null;
+    this.things = [];
+    this.mapModal = null;
+    this.cutscene = null;
     this.chest = null;
     this.safeUntil = 0;
     this.leaving = false;
@@ -159,6 +175,9 @@ export class RoomScene extends Phaser.Scene {
     drawScenery(this, this.room.background, this.room.backdrop, top - 10);
     for (const kind of this.room.ambient ?? []) fx.ambient(this, [kind], kind === 'dust' || kind === 'mist' ? 1 : 1500);
     this.drawExits();
+    // A fight in the room doesn't end the visit; walking in again does (one campfire rest per visit).
+    if (data.via !== 'battle') session.restedAt = null;
+    this.drawThings();
 
     // Some people only show up once their chapter unlocks them (Hulda and her forge).
     for (const def of this.room.npcs) if (!def.feature || featureOn(session.player, def.feature)) this.addNpc(def);
@@ -177,20 +196,36 @@ export class RoomScene extends Phaser.Scene {
     kb.on('keydown-ESC', () => this.closeTopModal());
     kb.on('keydown-C', () => this.openCharacter());
     kb.on('keydown-I', () => this.toggleInventory());
-    kb.on('keydown-M', () => toast(this, sfx.toggleMute() ? 'Sound off' : 'Sound on', COLORS.textDim));
+    kb.on('keydown-M', () => this.toggleMap());
     // Hidden testing menu. On touch screens: tap the room name 5 times.
     kb.on('keydown-BACKTICK', () => this.openCheats());
     const talk = () => {
+      if (this.cutscene) return this.cutscene.next();
       if (this.modalOpen() || this.leaving) return;
       const target = this.nearestTarget();
       if (target === 'boss') this.confirmBoss();
       else if (target) this.interact(target);
+      else {
+        const thing = this.nearestThing();
+        if (thing) this.useThing(thing);
+      }
     };
     kb.on('keydown-E', talk);
     kb.on('keydown-SPACE', talk);
     this.input.on('pointerdown', this.onPointerDown, this);
 
+    const firstVisit = visitRoom(session.player, this.room.id);
     this.saveLocation();
+    if (data.via === 'spawn' && data.recalled) {
+      sfx.play(this, 'recall');
+      fx.healSparkles(this, this.player.x, this.player.y, 0xffe9a8);
+      toast(this, `You arrive in ${this.room.name}.`, COLORS.textGold);
+    }
+    if (firstVisit && this.room.firstVisit && data.via !== 'battle') {
+      // Wait out any popup, then play the room's opening lines.
+      const play = () => (this.modalOpen() ? this.time.delayedCall(300, play) : this.playFirstVisit());
+      this.time.delayedCall(600, play);
+    }
     if (data.via === 'spawn' && data.intro) {
       const elder = this.npcs.find((n) => n.def.role.kind === 'talk');
       // Wait out the "New!" popup (a new hero's first skill) so the greeting isn't skipped.
@@ -209,6 +244,10 @@ export class RoomScene extends Phaser.Scene {
       // Step out of the doorway, just below it.
       x = data.x ?? width / 2;
       y = this.room.walk[0] + 24;
+    } else if (data.via === 'exit' && data.side === 'down') {
+      // Climb back up from the path at the bottom edge.
+      x = data.x ?? width / 2;
+      y = this.room.walk[1] - 24;
     } else if (data.via === 'exit') {
       x = data.side === 'left' ? EDGE + 50 : width - EDGE - 50;
       y = data.y;
@@ -354,7 +393,7 @@ export class RoomScene extends Phaser.Scene {
     hit.on('pointerup', () => {
       if (this.modalOpen() || this.leaving) return;
       this.pendingNpc = null;
-      this.pendingBack = null;
+      this.pendingExit = null;
       this.moveTarget = { x: data.x + (this.player.x < data.x ? -40 : 40), y: data.y };
     });
     this.chest = { data, fig, hit };
@@ -586,6 +625,10 @@ export class RoomScene extends Phaser.Scene {
         this.drawBackExit(exit);
         continue;
       }
+      if (exit.side === 'down') {
+        this.drawDownExit(exit);
+        continue;
+      }
       const dir = exit.side === 'right' ? 1 : -1;
       const x = exit.side === 'right' ? width - 46 : 46;
       if (!this.exitOpen(exit)) {
@@ -636,9 +679,43 @@ export class RoomScene extends Phaser.Scene {
     hit.on('pointerup', () => {
       if (this.modalOpen() || this.leaving) return;
       this.pendingNpc = null;
-      this.pendingBack = exit;
+      this.pendingExit = exit;
       this.moveTarget = { x, y: top };
     });
+  }
+
+  /** A bobbing down-arrow at the bottom edge where a path leads off (side rooms); tap it to walk there. Hidden until it's open. */
+  private drawDownExit(exit: RoomExit): void {
+    if (!this.exitOpen(exit)) return;
+    const [, bottom] = this.room.walk;
+    const x = exit.x!;
+    const y = bottom + 2;
+    // A worn path running off the bottom of the screen.
+    const path = this.add.graphics().setDepth(1);
+    path.fillStyle(0x3b2a1a, 0.45).fillEllipse(x, bottom + 14, 170, 40);
+    path.fillStyle(0x3b2a1a, 0.3).fillEllipse(x, bottom - 14, 120, 26);
+    const c = this.add.container(x, y).setDepth(UI_DEPTH - 1);
+    const arrow = this.add.graphics();
+    arrow.fillStyle(0xf1c40f, 1).lineStyle(4, 0x3e2723, 1);
+    const pts = [new Phaser.Math.Vector2(-22, -12), new Phaser.Math.Vector2(0, 14), new Phaser.Math.Vector2(22, -12)];
+    arrow.fillPoints(pts, true).strokePoints(pts, true, true);
+    const label = addText(this, 34, -2, exit.label, { size: Math.round(16 * this.ls), bold: true, stroke: true }).setOrigin(0, 0.5);
+    c.add([arrow, label]);
+    this.tweens.add({ targets: arrow, y: 6, duration: 500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const hit = this.add.rectangle(x, y - 10, 140, 70, 0xffffff, 0).setInteractive({ useHandCursor: true }).setDepth(UI_DEPTH - 1);
+    hit.on('pointerup', () => {
+      if (this.modalOpen() || this.leaving) return;
+      this.pendingNpc = null;
+      this.pendingThing = null;
+      this.pendingExit = exit;
+      this.moveTarget = { x, y: bottom };
+    });
+  }
+
+  /** The down exit whose path the player is standing on (at the bottom of the walkable strip). */
+  private downExitAt(p: Actor): RoomExit | undefined {
+    const [, bottom] = this.room.walk;
+    return this.room.exits.find((e) => e.side === 'down' && this.exitOpen(e) && Math.abs(p.x - e.x!) < 70 && p.y >= bottom - 8);
   }
 
   /** A gate or cave mouth drawn at the top of the walkable strip, behind everyone. */
@@ -807,7 +884,8 @@ export class RoomScene extends Phaser.Scene {
       new Button(this, right - 70, y, label, run, { width: 140, height: 48, fontSize: 19 }).setDepth(UI_DEPTH);
     this.charBtn = btn(40, 'Character', () => this.openCharacter());
     this.invBtn = btn(98, 'Inventory', () => this.toggleInventory());
-    btn(156, 'Menu', () => this.openMenu());
+    btn(156, 'Map', () => this.toggleMap());
+    btn(214, 'Menu', () => this.openMenu());
 
     const title = addText(this, width / 2, 36, this.room.name, { size: 30, bold: true, color: COLORS.textGold, stroke: true })
       .setOrigin(0.5)
@@ -829,7 +907,7 @@ export class RoomScene extends Phaser.Scene {
       showedControls = true;
       const controls = isTouchScreen()
         ? 'Tap the ground to walk    Tap people to talk    Hold a battle button to read it'
-        : 'WASD / arrows: move    E / Space: talk    C: character    Click: walk there';
+        : 'WASD / arrows: move    E / Space: talk    C: character    M: map    Click: walk there';
       const hint = addText(this, width / 2, height - 18, controls, {
         size: Math.round(17 * Math.min(this.ls, 1.25)),
         stroke: true,
@@ -895,13 +973,16 @@ export class RoomScene extends Phaser.Scene {
       if (vx || vy) {
         this.moveTarget = null;
         this.pendingNpc = null;
+        this.pendingThing = null;
       } else if (this.moveTarget) {
         const dx = this.moveTarget.x - p.x;
         const dy = this.moveTarget.y - p.y;
         if (Math.abs(dx) < 6 && Math.abs(dy) < 6) {
           this.moveTarget = null;
           if (this.pendingNpc && this.inTalkRange(this.pendingNpc)) this.interact(this.pendingNpc);
+          if (this.pendingThing && this.thingInRange(this.pendingThing)) this.useThing(this.pendingThing);
           this.pendingNpc = null;
+          this.pendingThing = null;
         } else {
           const len = Math.hypot(dx, dy);
           vx = dx / len;
@@ -940,10 +1021,16 @@ export class RoomScene extends Phaser.Scene {
     if (shutL && p.x <= minX && vx < 0) this.bumpWall(shutL);
     // Back exits: walk up into the doorway (or arrive there after tapping it).
     const back = this.backExitAt(p);
-    if (back && (vy < 0 || this.pendingBack === back)) {
-      this.pendingBack = null;
+    if (back && (vy < 0 || this.pendingExit === back)) {
+      this.pendingExit = null;
       if (this.exitOpen(back)) return this.leave(back);
       this.bumpWall(back);
+    }
+    // Down exits: walk off the bottom edge along the path (or arrive there after tapping it).
+    const down = this.downExitAt(p);
+    if (down && (vy > 0 || this.pendingExit === down)) {
+      this.pendingExit = null;
+      return this.leave(down);
     }
     this.clampToWalk(p, minX, maxX);
     this.place(p, time);
@@ -1078,7 +1165,13 @@ export class RoomScene extends Phaser.Scene {
   private updatePrompt(blocked: boolean): void {
     const near = blocked ? null : this.nearestTarget();
     if (!near) {
-      this.prompt.setVisible(false);
+      const thing = blocked ? null : this.nearestThing();
+      if (!thing) {
+        this.prompt.setVisible(false);
+        return;
+      }
+      this.promptText.setText(`${this.keyHint}${thing.kind === 'campfire' ? 'Rest' : 'Look'}`);
+      this.prompt.setVisible(true).setPosition(thing.x, thing.y - (thing.kind === 'campfire' ? 130 : 80));
       return;
     }
     if (near === 'boss') {
@@ -1146,17 +1239,23 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private modalOpen(): boolean {
-    return this.children.list.some((c) => c instanceof Modal);
+    return !!this.cutscene || this.children.list.some((c) => c instanceof Modal);
   }
 
   private closeTopModal(): void {
+    if (this.cutscene) {
+      this.cutscene.skip();
+      return;
+    }
     const modals = this.children.list.filter((c): c is Modal => c instanceof Modal);
     modals[modals.length - 1]?.close();
   }
 
   private onPointerDown(_pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): void {
+    if (this.cutscene) return this.cutscene.next();
     if (over.length > 0 || this.modalOpen() || this.leaving) return;
     this.pendingNpc = null;
+    this.pendingThing = null;
     const [top, bottom] = this.room.walk;
     this.moveTarget = { x: _pointer.worldX, y: Phaser.Math.Clamp(_pointer.worldY, top, bottom) };
     // Little marker where you clicked.
@@ -1321,8 +1420,218 @@ export class RoomScene extends Phaser.Scene {
     }
     if (this.modalOpen() || this.leaving) return;
     this.moveTarget = null;
-    this.inventory = openInventory(this, session.player, this.refresh);
+    this.inventory = openInventory(this, session.player, this.refresh, () => this.readRecall());
     this.inventory.once(Phaser.GameObjects.Events.DESTROY, () => (this.inventory = null));
+  }
+
+  /** M or the Map button opens the map, and closes it again. */
+  private toggleMap(): void {
+    if (this.mapModal) {
+      this.mapModal.close();
+      return;
+    }
+    if (this.modalOpen() || this.leaving) return;
+    this.moveTarget = null;
+    this.mapModal = openMap(this, session.player, this.room.id, () => this.readRecall());
+    this.mapModal.once(Phaser.GameObjects.Events.DESTROY, () => (this.mapModal = null));
+  }
+
+  // --- Recall Scroll ---
+
+  /** Asks first (it's one way), then reads a scroll. Called from the inventory and the map. */
+  private readRecall(): void {
+    if (this.leaving) return;
+    const player = session.player;
+    const check = recallCheck(player, this.room.id);
+    if (!check.ok) {
+      sfx.play(this, 'denied');
+      toast(this, check.reason, COLORS.textDim);
+      return;
+    }
+    this.inventory?.close();
+    this.mapModal?.close();
+    const left = player.countItem(RECALL_SCROLL);
+    const modal = new Modal(this, 640, 280, 'Recall Scroll');
+    const text = `Read a scroll and return to ${check.town.name}?\nOne way: you walk back out from there.\n(${left} scroll${left === 1 ? '' : 's'} left)`;
+    modal.content.add(addText(this, 320, 120, text, { size: 20, align: 'center', wrap: 580 }).setOrigin(0.5).setLineSpacing(6));
+    modal.content.add(new Button(this, 200, 225, 'Read it', () => (modal.close(), this.recallTo()), { width: 220 }));
+    modal.content.add(new Button(this, 440, 225, 'Not now', () => modal.close(), { width: 220 }));
+  }
+
+  private recallTo(): void {
+    const dest = useRecall(session.player, this.room.id);
+    if (!dest || this.leaving) return;
+    this.leaving = true;
+    this.prompt.setVisible(false);
+    this.rememberRoom();
+    sfx.play(this, 'recall');
+    fx.healSparkles(this, this.player.x, this.player.y, 0xffe9a8);
+    this.tweens.add({ targets: this.player.fig, alpha: 0, scaleY: this.player.fig.scaleY * 1.3, duration: 500, ease: 'Cubic.easeIn' });
+    this.cameras.main.flash(400, 255, 240, 200);
+    // Save where you'll land, so a reload mid-fade doesn't undo the trip (the scroll is already spent).
+    session.player.data.location = { ...dest };
+    SaveSystem.save(session.player);
+    const data: RoomSceneData = { roomId: dest.roomId, via: 'spawn', x: dest.x, y: dest.y, recalled: true };
+    this.time.delayedCall(450, () => goTo(this, SceneKeys.Room, data, 300));
+  }
+
+  // --- Campfires and things to look at ---
+
+  private drawThings(): void {
+    const cf = this.room.campfire;
+    if (cf) {
+      const fire = drawCampfire(this, cf.x, cf.y);
+      const thing: Thing = { kind: 'campfire', x: cf.x, y: cf.y };
+      this.things.push(thing);
+      this.thingHit(fire, thing, 150, 120);
+    }
+    for (const def of this.room.inspect ?? []) {
+      const fig = drawProp(this, def, !session.inspected.has(def.id));
+      const thing: Thing = { kind: 'inspect', def, x: def.x, y: def.y, fig };
+      this.things.push(thing);
+      addText(this, def.x, def.y - (def.look === 'sign' ? 110 : 44), def.label, { size: Math.round(15 * this.ls), bold: true, stroke: true, color: COLORS.textDim })
+        .setOrigin(0.5, 1)
+        .setDepth(def.y + 1);
+      this.thingHit(fig, thing, 130, 90);
+    }
+  }
+
+  /** Tap a campfire or note: walk next to it, then use it. */
+  private thingHit(fig: Phaser.GameObjects.Container, thing: Thing, w: number, h: number): void {
+    const hit = this.add.rectangle(thing.x, thing.y - h / 2, w, h, 0xffffff, 0).setInteractive({ useHandCursor: true }).setDepth(fig.depth + 1);
+    hit.on('pointerup', () => {
+      if (this.modalOpen() || this.leaving) return;
+      if (this.thingInRange(thing)) return this.useThing(thing);
+      this.pendingNpc = null;
+      this.pendingExit = null;
+      this.pendingThing = thing;
+      const side = this.player.x < thing.x ? -1 : 1;
+      const [top, bottom] = this.room.walk;
+      this.moveTarget = { x: thing.x + side * 90, y: Phaser.Math.Clamp(thing.y, top, bottom) };
+    });
+  }
+
+  private thingInRange(thing: Thing): boolean {
+    return Math.abs(thing.x - this.player.x) < TALK_RANGE.x && Math.abs(thing.y - this.player.y) < TALK_RANGE.y;
+  }
+
+  private nearestThing(): Thing | null {
+    let best: Thing | null = null;
+    for (const t of this.things) if (this.thingInRange(t) && (!best || Math.abs(t.x - this.player.x) < Math.abs(best.x - this.player.x))) best = t;
+    return best;
+  }
+
+  private useThing(thing: Thing): void {
+    if (this.modalOpen() || this.leaving) return;
+    this.moveTarget = null;
+    this.player.facing = thing.x < this.player.x ? -1 : 1;
+    if (thing.kind === 'campfire') return this.restAtFire();
+    sfx.play(this, 'page');
+    if (!session.inspected.has(thing.def.id)) {
+      session.inspected.add(thing.def.id);
+      // The glint goes once it's been read.
+      for (const child of thing.fig.list) if (child instanceof Phaser.GameObjects.Image) child.destroy();
+    }
+    openNarration(this, thing.def.label, thing.def.lines);
+  }
+
+  /** One rest per visit: full HP and MP, free. */
+  private restAtFire(): void {
+    const player = session.player;
+    if (session.restedAt === this.room.id) {
+      toast(this, 'The fire has burned low. Come back another time.', COLORS.textDim);
+      return;
+    }
+    if (player.hp >= player.maxHp && player.mp >= player.maxMp) {
+      toast(this, 'You are already rested.', COLORS.textDim);
+      return;
+    }
+    session.restedAt = this.room.id;
+    player.restoreFull();
+    this.cameras.main.fadeOut(300, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      this.cameras.main.fadeIn(600, 0, 0, 0);
+      fx.healSparkles(this, this.player.x, this.player.y, 0xffb347);
+      sfx.play(this, 'heal');
+      toast(this, 'You rest by the fire. HP and MP restored.', COLORS.textGood);
+      this.refresh();
+    });
+  }
+
+  // --- First visit ---
+
+  /** A quiet room's opening: dark bars, a low sound, the camera drifts toward what's ahead, and a few lines. */
+  private playFirstVisit(): void {
+    const fv = this.room.firstVisit;
+    if (!fv || this.leaving || this.cutscene) return;
+    const { width, height } = this.scale;
+    this.moveTarget = null;
+    sfx.play(this, 'omen');
+
+    // The bars and text are drawn by a second camera, so the room can zoom while they stay put.
+    const layer = this.add.container(0, 0).setDepth(UI_DEPTH + 50);
+    const topBar = this.add.rectangle(0, -70, width, 70, 0x000000).setOrigin(0);
+    const bottomBar = this.add.rectangle(0, height, width, 150, 0x000000, 0.88).setOrigin(0);
+    const text = addText(this, width / 2, height - 88, '', { size: 24, align: 'center', wrap: 1040 }).setOrigin(0.5).setLineSpacing(6).setAlpha(0);
+    const hint = addText(this, width - 24, height - 16, isTouchScreen() ? 'Tap to continue' : 'E / Space / click: continue', { size: 14, color: COLORS.textDim })
+      .setOrigin(1, 1)
+      .setAlpha(0);
+    layer.add([topBar, bottomBar, text, hint]);
+    const ui = this.cameras.add(0, 0, width, height);
+    ui.ignore(this.children.list.filter((o) => o !== layer));
+    const main = this.cameras.main;
+    main.ignore(layer);
+    // The room's own buttons and labels would zoom too: hide them for the scene.
+    const hidden = this.children.list.filter((o) => o !== layer && (o as unknown as { depth: number }).depth >= UI_DEPTH - 3 && (o as unknown as { visible: boolean }).visible);
+    hidden.forEach((o) => (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(false));
+
+    this.tweens.add({ targets: topBar, y: 0, duration: 400, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: bottomBar, y: height - 150, duration: 400, ease: 'Cubic.easeOut' });
+    const zoom = 1.15;
+    const half = width / (2 * zoom);
+    const panX = Phaser.Math.Clamp(fv.panTo ?? width / 2, half, width - half);
+    main.pan(panX, height / 2 + 20, 2400, 'Sine.easeInOut');
+    main.zoomTo(zoom, 2400, 'Sine.easeInOut');
+
+    const lines = fv.lines;
+    const show = (i: number) => {
+      text.setText(lines[i]).setAlpha(0);
+      this.tweens.add({ targets: text, alpha: 1, duration: 450 });
+    };
+    const finish = () => {
+      if (!this.cutscene) return;
+      this.cutscene = null;
+      main.pan(width / 2, height / 2, 600, 'Sine.easeInOut');
+      main.zoomTo(1, 600, 'Sine.easeInOut');
+      this.tweens.add({ targets: topBar, y: -70, duration: 400 });
+      this.tweens.add({
+        targets: [bottomBar, text, hint],
+        alpha: 0,
+        duration: 400,
+        onComplete: () => {
+          layer.destroy();
+          this.cameras.remove(ui);
+          hidden.forEach((o) => o.active && (o as unknown as Phaser.GameObjects.Components.Visible).setVisible(true));
+        },
+      });
+    };
+    // A short pause before taps count, so the key that walked you in doesn't skip the first line.
+    let ready = this.time.now + 700;
+    let line = 0;
+    this.cutscene = {
+      next: () => {
+        if (this.time.now < ready) return;
+        ready = this.time.now + 250;
+        line += 1;
+        if (line >= lines.length) finish();
+        else show(line);
+      },
+      skip: finish,
+    };
+    this.time.delayedCall(400, () => {
+      show(0);
+      this.tweens.add({ targets: hint, alpha: 1, duration: 400, delay: 600 });
+    });
   }
 
   private interact(npc: Npc, intro = false): void {

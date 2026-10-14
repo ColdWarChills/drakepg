@@ -18,9 +18,10 @@ export const SceneKeys = {
  * - battle: back from a fight; restores the room as it was
  */
 export type RoomSceneData =
-  | { roomId: string; via: 'spawn'; x: number; y: number; intro?: boolean }
-  /** Arriving through an exit: `side` is where you appear (for a back exit, at its `x`). */
-  | { roomId: string; via: 'exit'; side: 'left' | 'right' | 'back'; x?: number; y: number }
+  /** `recalled`: arriving by Recall Scroll (a shimmer on arrival). */
+  | { roomId: string; via: 'spawn'; x: number; y: number; intro?: boolean; recalled?: boolean }
+  /** Arriving through an exit: `side` is where you appear (for a back or down exit, at its `x`). */
+  | { roomId: string; via: 'exit'; side: 'left' | 'right' | 'back' | 'down'; x?: number; y: number }
   /** `escaped`: the monster ran away (it's gone from the room). */
   | { roomId: string; via: 'battle'; outcome: 'victory' | 'fled' | 'escaped'; x: number; y: number };
 

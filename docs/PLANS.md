@@ -6,15 +6,17 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
-Proposed build order:
-1. Recall Scroll
-2. Room features: quiet rooms, campfire, down exit, saving visited rooms
-3. Map
+Build order (steps 1-3 are built, see "Done" at the bottom):
+1. ~~Recall Scroll~~
+2. ~~Room features: quiet rooms, campfire, down exit, saving visited rooms~~
+3. ~~Map~~
 4. Chapter 1-3 room layouts plus drafted story lines for review
 5. Sim and pacing check, art queue entries
 
-- **Open:** go on everything, or start with 1-3?
+- **Next:** step 4. Use the new room data (`campfire`, `inspect`, `firstVisit`, `side: 'down'` exits, `map` spots) to lay out ~8/9/10 rooms per chapter. Draft the lines, then the designer reviews them.
+- **Review:** the Hunters' Camp (below the Thornwood Path) is a placeholder side room showing every feature. Its lines (first-visit scene, the torn note, the scored log) are drafts.
 - **Playtest by hand** (only the sim and screenshots have checked these so far):
+  - Map, Recall Scroll, Hunters' Camp: does the first-visit scene feel good or slow? Is the campfire too generous?
   - Prologue road: is 6 rooms the right length? Monster HP 20-24 (about 2 hits) and a 35% gear drop (`BALANCE.loot.tableMob.road`)?
   - Does the "Next:" intent line read at a glance? Does enrage (turn 15, bosses 30) feel fair?
   - Is the drop reveal too slow when farming normal monsters?
@@ -32,35 +34,26 @@ Proposed build order:
 - **Proposed:** room count goes from 3/4/5 (+ town) to about 8/9/10 (+ town).
 - **Proposed:** room mix: ~50% combat, ~25% quiet/story, ~25% optional side rooms (chest, Elite or lore).
 - **Proposed:** rhythm: 2-3 combat rooms, then a quiet room. The room before each boss is always a quiet anticipation room.
-- **Proposed:** quiet rooms have a one-time scene on first entry (a few lines, a sound, a camera pan) and things to inspect (a note, claw marks, a wrecked camp) that hint at the next boss.
-- **Proposed:** campfire in some quiet rooms: restores HP/MP once per visit.
-- **Proposed:** new "down" exit (walk off the bottom edge) next to the existing left/right/back exits, for side rooms.
+- **Built:** quiet rooms with a one-time scene on first entry (dark bars, a low sound, the camera drifts toward `panTo`, a few lines; shown even with story text off) and things to inspect (note, sign, marks, bones) that hint at the next boss.
+- **Built:** campfire in a room restores HP/MP once per visit (a fight in the room doesn't end the visit).
+- **Built:** "down" exit (walk off the bottom edge at `x`) for side rooms; the side room's way back is a back exit.
 - **Proposed:** new rooms reuse their area's backgrounds at first; about 20 new background prompts go to `art/QUEUE.md` (~30 credits).
 - **Proposed:** target lengths about 35 / 55 / 70 min (rough estimates).
 - **Open:** approve the room plan, or change the targets?
-- **Open:** campfires yes or no?
+- **Open:** keep campfires after a playtest? (Built, easy to remove per room.)
 - **Open:** Claude drafts the story lines for the new rooms from the existing Ch1-3 story, you review. OK?
 
-## Map
+## Map (built 2026-10-14)
 
-- **Decided:** add a map.
-- **Proposed:** opens with **M** or a HUD button. Shows one area at a time as a node graph: rooms as dots, exits as lines.
-- **Proposed:** unvisited neighbours show as "?". Icons for town, boss and campfire. "You are here" marker and active quest target markers.
-- **Proposed:** each room gets a hand-placed map position in its data.
-- **Proposed:** visited rooms are saved (see Save changes).
+- Built as proposed: **M** or the Map button; one area per page (Old Road, Brindlemoor and the Thornwood, Mirewater Fen, Frostfang Mountains); rooms as dots, exits as lines; "?" for unvisited neighbours; icons for town, boss, campfire; "You" marker; quest marks (! pick up, ? turn in, gold ring = an active quest's monster lives here); dashed red = blocked; arrows to other pages.
+- **Changed:** M used to mute the sound. Sound is now only in the Menu.
+- **Open:** sealed back exits (like the mountain gate before its quest) stay hidden on the map, same as in the room. OK?
 
-## Recall Scroll (teleport)
+## Recall Scroll (built 2026-10-14)
 
-- **Decided:** a scroll that teleports you back to the previous town.
-- **Decided:** new characters get 5. After that they are bought in shops.
-- **Proposed:** one-way to the last town visited, no return trip (walking back keeps the "push on or turn back" tension).
-- **Proposed:** can't be used in battle.
-- **Proposed:** sold in every town shop for 20g (a health potion is 15g).
-- **Open:** confirm price and one-way.
-
-## Save changes for the above
-
-- **Proposed:** add `visited` rooms and `lastTown` to `PlayerData`, bump `SAVE_VERSION` to **12** with a `migrate()` step (v11 is now the 8 equipment slots). Old saves get their current room marked visited and their area's town as the last town.
+- Built with the proposed defaults: one way to the last town you walked into, not in battle, 20g in every town shop, new characters start with 5 (`BALANCE.startingRecallScrolls`). Read it from the Inventory or the Map; it asks first.
+- **Open:** confirm price and one-way after a playtest.
+- Old saves (before v12) also got 5 scrolls, so existing characters can try it.
 
 ## Prologue road (built as a placeholder)
 
@@ -134,3 +127,4 @@ Proposed build order:
 ## Done since these notes were written
 
 - 2026-10-14: #7 combat pass, #8 prologue road, roll stones + tier caps, and the 8 slots / sets / Lucky Impling branch are all merged and live. `LUCKY_ON_NEW_GAME` is off.
+- 2026-10-14: build steps 1-3: Recall Scroll, quiet-room features (first-visit scene, inspect, campfire, down exits), saved visited rooms and last town (save v12), and the map. Placeholder side room: Hunters' Camp.

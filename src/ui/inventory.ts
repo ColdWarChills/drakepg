@@ -4,7 +4,7 @@ import { reroll, rerollableLines, stoneFor, stonesNeeded } from '../game/Stones'
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
-import type { ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, StoneDef } from '../data/types';
+import type { ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, ScrollDef, StoneDef } from '../data/types';
 import { EQUIP_SLOTS, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, ROLL_LABELS, SLOT_LABELS, slotsFor, type Gear, type GearDef, type GearTraits } from '../game/Items';
 import { activeSetBonuses, setCounts } from '../game/Sets';
 import type { Player } from '../game/Player';
@@ -45,7 +45,7 @@ type SortMode = 'newest' | 'grade' | 'type' | 'value';
 
 type Entry =
   | { kind: 'gear'; key: string; gear: Gear; def: GearDef; slot: EquipSlot | null }
-  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef | StoneDef; qty: number }
+  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef | StoneDef | ScrollDef; qty: number }
   | { kind: 'stock'; key: string; def: ItemDef };
 
 const W = 1240;
@@ -91,15 +91,16 @@ const SORTS: { sort: SortMode; label: string }[] = [
   { sort: 'type', label: 'Type' },
   { sort: 'value', label: 'Value' },
 ];
-const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, accessory: 2, consumable: 3, stone: 4, material: 5 };
+const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, accessory: 2, consumable: 3, scroll: 4, stone: 5, material: 6 };
 /** Grades below this are offered by "Sell junk" (Standard and Fair). */
 const JUNK_BELOW = 40;
 
 /** Remembered while the game runs, so the inventory reopens the way you left it. */
 const remembered = { tab: 'all' as Tab, sort: 'newest' as SortMode };
 
-export function openInventory(scene: Phaser.Scene, player: Player, onChange: () => void): Modal {
-  return new InventoryView(scene, player, 'bag', 'Inventory', [], onChange).modal;
+/** `onRecall`: reading a Recall Scroll (the room handles the trip; without it the scroll can't be read here). */
+export function openInventory(scene: Phaser.Scene, player: Player, onChange: () => void, onRecall?: () => void): Modal {
+  return new InventoryView(scene, player, 'bag', 'Inventory', [], onChange, onRecall).modal;
 }
 
 export function openShop(scene: Phaser.Scene, player: Player, title: string, stock: string[], onChange: () => void): Modal {
@@ -126,6 +127,7 @@ class InventoryView {
     title: string,
     private readonly stock: string[],
     private readonly onChange: () => void,
+    private readonly onRecall?: () => void,
   ) {
     this.modal = new Modal(scene, W, H, title, () => {});
     // A small move turns a press into a drag; less than that is a click.
@@ -147,7 +149,7 @@ class InventoryView {
   private bagEntries(): Entry[] {
     const p = this.player;
     const gear: Entry[] = p.data.gear.map((g) => ({ kind: 'gear', key: g.uid, gear: g, def: gearDef(g), slot: null }));
-    const stacks: Entry[] = p.data.inventory.map((e) => ({ kind: 'stack', key: `stack:${e.itemId}`, def: db.item(e.itemId) as ConsumableDef | MaterialDef | StoneDef, qty: e.qty }));
+    const stacks: Entry[] = p.data.inventory.map((e) => ({ kind: 'stack', key: `stack:${e.itemId}`, def: db.item(e.itemId) as ConsumableDef | MaterialDef | StoneDef | ScrollDef, qty: e.qty }));
     // Newest first; uids count up.
     gear.reverse();
     return [...gear, ...stacks];
@@ -162,8 +164,8 @@ class InventoryView {
     const all: Entry[] =
       this.mode === 'buy' ? this.stock.map((id) => ({ kind: 'stock', key: `stock:${id}`, def: db.item(id) })) : this.bagEntries();
     // Materials live in their own pouch (no bag slots), so only their tab shows them.
-    // Stones sit with the potions under Items.
-    const tabOf = (t: ItemDef['type']) => (t === 'stone' ? 'consumable' : t);
+    // Stones and scrolls sit with the potions under Items.
+    const tabOf = (t: ItemDef['type']) => (t === 'stone' || t === 'scroll' ? 'consumable' : t);
     const filtered = remembered.tab === 'all' ? all.filter((e) => e.def.type !== 'material') : all.filter((e) => tabOf(e.def.type) === remembered.tab);
     // Sigils rank above every grade: Eclipse 300+, Dusk 200+, Dawn 100+.
     const sigilRank = (e: Entry) => (e.kind === 'gear' && e.gear.sigil ? (SIGIL_TIERS.indexOf(e.gear.sigil) + 1) * 100 : 0);
@@ -444,6 +446,7 @@ class InventoryView {
       if (entry.slot) this.unequip(entry.slot);
       else this.equip(entry);
     } else if (entry.kind === 'stack' && entry.def.type === 'consumable') this.use(entry.def);
+    else if (entry.kind === 'stack' && entry.def.type === 'scroll') this.onRecall?.();
   }
 
   // --- Actions ---
@@ -533,7 +536,7 @@ class InventoryView {
       card.add(sig);
       headY += sig.height + 2;
     }
-    const kind = isGearDef(entry.def) ? kindLabel(entry.def) : { material: 'Material', stone: 'Roll stone', consumable: 'Potion' }[entry.def.type];
+    const kind = isGearDef(entry.def) ? kindLabel(entry.def) : { material: 'Material', stone: 'Roll stone', consumable: 'Potion', scroll: 'Scroll' }[entry.def.type];
     // Gear shows its tier, which also sets how many modifier lines it can carry.
     const tiered = isGearDef(entry.def) ? `Tier ${entry.def.tier} ${kind}` : kind;
     const sub = entry.kind === 'gear' ? `${tiered} · ${gradeLabel(info)}${entry.slot ? ' · Equipped' : ''}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : tiered;
@@ -630,6 +633,8 @@ class InventoryView {
       } else if (entry.kind === 'stack' && entry.def.type === 'consumable') {
         const def = entry.def;
         buttons.push({ label: 'Use', run: () => this.use(def) });
+      } else if (entry.kind === 'stack' && entry.def.type === 'scroll' && this.onRecall) {
+        buttons.push({ label: 'Read', run: () => this.onRecall!() });
       }
     } else if (this.mode === 'buy' && entry.kind === 'stock') {
       buttons.push({ label: `Buy ${entry.def.price} g`, run: () => this.buy(entry.def), enabled: this.player.gold >= entry.def.price });

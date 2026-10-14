@@ -215,6 +215,14 @@ export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): P
     g.lineStyle(2, shade(color, 0.5)).strokePoints(pts, true);
     g.fillStyle(shade(color, 0.6)).fillRect(-16 * s, 6 * s, 32 * s, 5 * s);
     g.fillStyle(0xffffff, 0.18).fillRect(-12 * s, -14 * s, 6 * s, 18 * s);
+  } else if (def.type === 'scroll') {
+    // A rolled parchment with a wax seal.
+    g.fillStyle(shade(color, 0.75)).fillEllipse(-20 * s, 0, 10 * s, 40 * s).fillEllipse(20 * s, 0, 10 * s, 40 * s);
+    g.fillStyle(color).fillRect(-20 * s, -18 * s, 40 * s, 36 * s);
+    g.lineStyle(2, shade(color, 0.5)).strokeRect(-20 * s, -18 * s, 40 * s, 36 * s);
+    g.lineStyle(2 * s, shade(color, 0.55)).lineBetween(-12 * s, -8 * s, 12 * s, -8 * s).lineBetween(-12 * s, 0, 8 * s, 0);
+    g.fillStyle(0xb03a2e).fillCircle(8 * s, 10 * s, 7 * s);
+    g.fillStyle(0xffffff, 0.35).fillCircle(6 * s, 8 * s, 2 * s);
   } else if (def.type === 'material' || def.type === 'stone') {
     // A faceted chunk.
     const pts = [[0, -24], [20, -8], [14, 20], [-14, 20], [-20, -8]].map(([x, y]) => new Phaser.Math.Vector2(x * s, y * s));
@@ -322,6 +330,9 @@ export function itemLines(def: ItemDef, g: GearTraits = { rolls: {} }): string[]
     case 'material':
     case 'stone':
       return [def.description];
+    case 'scroll':
+      // The card's description says it all.
+      return [];
   }
 }
 

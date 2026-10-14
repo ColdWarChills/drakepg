@@ -849,6 +849,16 @@ export const ITEMS: ItemDef[] = [
     stats: { dex: 4 },
     proc: { name: 'Tailwind', chance: 0.15, power: 0, applies: [{ status: 'evasive', turns: 2, self: true }] },
   },
+  // Travel (src/game/Travel.ts), sold in every town shop.
+  {
+    id: 'recall_scroll',
+    type: 'scroll',
+    name: 'Recall Scroll',
+    description: 'Takes you back to the last town you visited. One way: you walk back out. Not in battle.',
+    price: 20,
+    iconColor: 0xe8d9a8,
+    effect: 'recall',
+  },
   // Roll stones (src/game/Stones.ts), sold in every shop.
   {
     id: 'stone_of_might',

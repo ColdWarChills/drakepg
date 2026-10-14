@@ -4,6 +4,7 @@ import { ELITE_AFFIXES } from './elites';
 import { FEATURES } from './features';
 import { ITEMS } from './items';
 import { LOOT_TABLES } from './loot';
+import { MAP_AREAS } from './map';
 import { MONSTERS } from './monsters';
 import { QUESTS } from './quests';
 import { SETS } from './sets';
@@ -134,15 +135,20 @@ export function validateData(): void {
     q.rewards.items?.forEach((id) => db.item(id));
     Object.values(q.rewards.classItems ?? {}).forEach((id) => db.item(id));
   }
+  const mapSpots = new Set<string>();
   for (const r of ROOMS) {
     if (r.zoneId) db.zone(r.zoneId);
+    if (!MAP_AREAS.some((a) => a.id === r.map.area)) throw new Error(`Room ${r.id}: unknown map area ${r.map.area}`);
+    const spot = `${r.map.area}:${r.map.x},${r.map.y}`;
+    if (mapSpots.has(spot)) throw new Error(`Room ${r.id}: another room already sits at map spot ${spot}`);
+    mapSpots.add(spot);
     if (r.boss) {
       db.monster(r.boss.monsterId);
       db.quest(r.boss.questId);
     }
     for (const exit of r.exits) {
       db.room(exit.to);
-      if (exit.side === 'back' && exit.x === undefined) throw new Error(`Room ${r.id}: back exit to ${exit.to} needs an x`);
+      if ((exit.side === 'back' || exit.side === 'down') && exit.x === undefined) throw new Error(`Room ${r.id}: ${exit.side} exit to ${exit.to} needs an x`);
       if (exit.requiresQuest) db.quest(exit.requiresQuest);
     }
     for (const npc of r.npcs) {

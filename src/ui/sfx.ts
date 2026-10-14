@@ -30,7 +30,10 @@ export type Sfx =
   | 'equip'
   | 'rare'
   | 'sigil'
-  | 'eclipse';
+  | 'eclipse'
+  | 'recall'
+  | 'omen'
+  | 'page';
 
 const MUTE_KEY = 'drakepg.muted';
 const VOLUME = 0.45;
@@ -226,6 +229,21 @@ export function play(scene: Phaser.Scene, name: Sfx): void {
       [220, 262, 330, 415].forEach((n, i) => tone(ctx, t + 0.15 + i * 0.05, 'sawtooth', n, n * 2, 1.4, 0.05));
       arpeggio(ctx, t + 0.7, [880, 1047, 1319, 1661, 2093, 2637], 0.08, 'sine', 0.14, 0.7);
       hiss(ctx, t + 0.7, 1.4, 0.06, 'highpass', 5000, 11000);
+      break;
+    case 'recall':
+      // A Recall Scroll: paper whoosh, then a soft rising bell.
+      hiss(ctx, t, 0.35, 0.25, 'bandpass', 800, 3000, 1.5);
+      arpeggio(ctx, t + 0.15, [392, 523, 659, 784, 1047], 0.09, 'sine', 0.18, 0.6);
+      hiss(ctx, t + 0.4, 0.8, 0.04, 'highpass', 4000, 9000);
+      break;
+    case 'omen':
+      // A quiet room's first visit: a low swell and a far-off creak.
+      tone(ctx, t, 'sine', 98, 92, 1.8, 0.22);
+      tone(ctx, t + 0.05, 'triangle', 147, 139, 1.6, 0.06);
+      tone(ctx, t + 0.9, 'sawtooth', 70, 55, 0.5, 0.05);
+      break;
+    case 'page':
+      hiss(ctx, t, 0.18, 0.12, 'bandpass', 2500, 1200, 1.2);
       break;
   }
 }

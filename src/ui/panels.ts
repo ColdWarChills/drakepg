@@ -135,7 +135,16 @@ export interface DialogueAction {
 
 /** NPC dialogue box. Pages through `lines` (default: the NPC's own), then shows the actions. */
 export function openDialogue(scene: Phaser.Scene, npc: NpcDef, actions: DialogueAction[], lines: string[] = npc.dialogue): Modal {
-  const modal = new Modal(scene, 860, 320, `${npc.name}, ${npc.title}`);
+  return pagedText(scene, `${npc.name}, ${npc.title}`, lines, actions, 'Goodbye');
+}
+
+/** Narration with no speaker: a room's first-visit scene, a note you read, a campfire. Same box as dialogue. */
+export function openNarration(scene: Phaser.Scene, title: string, lines: string[], actions: DialogueAction[] = [], closeLabel = 'Close'): Modal {
+  return pagedText(scene, title, lines, actions, closeLabel);
+}
+
+function pagedText(scene: Phaser.Scene, title: string, lines: string[], actions: DialogueAction[], closeLabel: string): Modal {
+  const modal = new Modal(scene, 860, 320, title);
   let line = 0;
 
   const render = () => {
@@ -145,7 +154,7 @@ export function openDialogue(scene: Phaser.Scene, npc: NpcDef, actions: Dialogue
 
     const isLast = line >= lines.length - 1;
     const buttons: DialogueAction[] = isLast
-      ? [...actions, { label: 'Goodbye', run: () => modal.close() }]
+      ? [...actions, { label: closeLabel, run: () => modal.close() }]
       : [{ label: 'Next', run: () => { line += 1; render(); } }];
 
     const width = 220;
