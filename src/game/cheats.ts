@@ -16,9 +16,14 @@ export const cheats = {
   oneHit: false,
   /** Every roaming monster spawns as an Elite. */
   elites: false,
+  /** Every monster room has a Lucky Impling. */
+  lucky: false,
   /** Every chapter unlock (forge, Sigils, chests...) is open. */
   allFeatures: false,
 };
+
+/** Testing: a new character meets a Lucky Impling in the first monster room it enters. Remove when done testing. */
+export const LUCKY_ON_NEW_GAME = false;
 
 /** Level up `count` times (stat points and skills as usual). */
 export function addLevels(player: Player, count: number): void {
@@ -94,6 +99,8 @@ export interface ChapterStart {
   after?: string;
   weapon?: Record<ClassId, string>;
   armor?: Record<ClassId, string>;
+  /** Helm, gloves and boots worn too. */
+  kit?: Record<ClassId, string[]>;
   potions?: [string, number][];
   gold?: number;
 }
@@ -106,6 +113,11 @@ export const CHAPTER_STARTS: ChapterStart[] = [
     after: 'heart_of_thorns',
     weapon: { warrior: 'thornheart_blade', mage: 'heartwood_staff', rogue: 'briar_fang' },
     armor: { warrior: 'leather_armor', mage: 'apprentice_robe', rogue: 'leather_armor' },
+    kit: {
+      warrior: ['leather_cap', 'leather_gloves', 'leather_boots'],
+      mage: ['apprentice_hood', 'apprentice_wraps', 'apprentice_slippers'],
+      rogue: ['leather_cap', 'leather_gloves', 'leather_boots'],
+    },
     potions: [['health_potion', 5], ['mana_potion', 3]],
     gold: 300,
   },
@@ -115,6 +127,11 @@ export const CHAPTER_STARTS: ChapterStart[] = [
     after: 'eye_of_the_storm',
     weapon: { warrior: 'thunderhead_maul', mage: 'stormcoil_scepter', rogue: 'coilfang' },
     armor: { warrior: 'scale_mail', mage: 'reedweave_robe', rogue: 'scale_mail' },
+    kit: {
+      warrior: ['scale_coif', 'scale_gauntlets', 'scale_boots'],
+      mage: ['reedweave_hood', 'reedweave_wraps', 'reedweave_slippers'],
+      rogue: ['scale_coif', 'scale_gauntlets', 'scale_boots'],
+    },
     potions: [['greater_health_potion', 5], ['greater_mana_potion', 3]],
     gold: 800,
   },
@@ -134,7 +151,7 @@ export function applyChapterStart(player: Player, start: ChapterStart): void {
   for (let i = 0; player.data.statPoints > 0; i++) player.spendStatPoint(plan[i % plan.length]);
   if (start.after) completeQuestChain(player, db.quest(start.after));
   // Gear rolled like a decent drop (40% lines), worn right away; the starter gear goes.
-  for (const id of [start.weapon?.[cls], start.armor?.[cls]]) {
+  for (const id of [start.weapon?.[cls], start.armor?.[cls], ...(start.kit?.[cls] ?? [])]) {
     if (!id) continue;
     const def = db.item(id);
     if (!isGearDef(def)) continue;

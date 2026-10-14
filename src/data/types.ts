@@ -173,18 +173,46 @@ export interface WeaponDef extends ItemBase {
   size?: number;
 }
 
+/** Where an armor piece is worn. Default: body. */
+export type ArmorSlot = 'body' | 'helm' | 'gloves' | 'boots';
+
 export interface ArmorDef extends ItemBase {
   type: 'armor';
   /** Power band and how many modifier lines it can carry (`BALANCE.modifierSlots`). */
   tier: number;
+  /** Default 'body'. */
+  slot?: ArmorSlot;
   defense: Defenses;
   resists?: Resists;
   stats?: Partial<Stats>;
+  /** Set this piece belongs to (src/data/sets.ts). */
+  set?: string;
   /**
-   * Wearing it, a hero is drawn from `char_<class>_<armor id>` (empty-handed, like `char_<class>_bare`) when that art
-   * exists. Its fist anchors default to the class's bare art; set them here per class once the art is measured.
+   * Body armor only: wearing it, a hero is drawn from `char_<class>_<armor id>` (empty-handed, like `char_<class>_bare`)
+   * when that art exists. Its fist anchors default to the class's bare art; set them here per class once measured.
    */
   hands?: Partial<Record<ClassId, Hand[]>>;
+}
+
+export type AccessorySlot = 'ring' | 'necklace';
+
+/**
+ * Rings and necklaces: no defense, just lines. Every number here scales with the Power roll, a Sigil and the
+ * smith's +, so a 100% ring is half again as strong as a shop-quality one.
+ */
+export interface AccessoryDef extends ItemBase {
+  type: 'accessory';
+  slot: AccessorySlot;
+  /** Power band and how many modifier lines it can carry (`BALANCE.modifierSlots`). */
+  tier: number;
+  stats?: Partial<Stats>;
+  /** Flat Max HP / Max MP. */
+  hp?: number;
+  mp?: number;
+  /** Crit chance in percent. */
+  crit?: number;
+  resists?: Resists;
+  set?: string;
 }
 
 export interface ConsumableDef extends ItemBase {
@@ -203,7 +231,32 @@ export interface StoneDef extends ItemBase {
   line: 'damage' | 'crit' | 'defense' | 'hp';
 }
 
-export type ItemDef = WeaponDef | ArmorDef | ConsumableDef | MaterialDef | StoneDef;
+export type ItemDef = WeaponDef | ArmorDef | AccessoryDef | ConsumableDef | MaterialDef | StoneDef;
+
+/** What a set bonus gives. All of it is shown on the item card and the Character panel. */
+export interface SetBonus {
+  /** Pieces worn to turn it on. */
+  pieces: number;
+  stats?: Partial<Stats>;
+  /** Percent Max HP. */
+  hpPct?: number;
+  /** Crit chance in percent. */
+  crit?: number;
+  resists?: Resists;
+  /** Percent damage dealt. */
+  damagePct?: number;
+  /** Percent defense (all types). */
+  defensePct?: number;
+}
+
+/** A named set of gear pieces (armor or accessories) with bonuses for wearing several. */
+export interface SetDef {
+  id: string;
+  name: string;
+  /** Item ids. Each of them names this set in its `set`. */
+  pieces: string[];
+  bonuses: SetBonus[];
+}
 
 /** A smith recipe: materials and gold in, one rolled piece of gear out. */
 export interface RecipeDef {
@@ -213,7 +266,7 @@ export interface RecipeDef {
   materials: { itemId: string; qty: number }[];
   gold: number;
 }
-export type EquipSlot = 'weapon' | 'armor';
+export type EquipSlot = 'weapon' | 'helm' | 'body' | 'gloves' | 'boots' | 'necklace' | 'ring1' | 'ring2';
 
 export interface MonsterAttack {
   name: string;
@@ -266,6 +319,13 @@ export interface MonsterDef {
   tough?: boolean;
   /** Pays out like a treasure chest (mimics): gear uses `BALANCE.loot.chest` odds. */
   chestLoot?: boolean;
+  /**
+   * A rare Lucky spawn (src/game/Lucky.ts): lots of gold, and a `BALANCE.lucky.sigilChance` shot at a Sigil piece
+   * of its loot table instead of the normal gear roll.
+   */
+  lucky?: boolean;
+  /** Runs away on this many-th of its own turns (a stun holds it for that turn). */
+  escapeAfter?: number;
   /** Only on Elite copies made by `makeElite` (src/game/Elites.ts), never in monsters.ts. */
   elite?: EliteInfo;
   /** Changes once, the first time its HP drops to `at` (share of max HP) or below. */
@@ -319,6 +379,8 @@ export type LootTier = 'rare' | 'uncommon' | 'common';
 export interface LootTableDef {
   id: string;
   tiers: Record<LootTier, { itemId: string; weight?: number }[]>;
+  /** The area's gear set: Elites and bosses here may also drop one of its pieces (`BALANCE.setDrop`). */
+  set?: string;
 }
 
 /** One Elite affix. Lives in elites.ts; every effect shows in the battle UI through `description`. */

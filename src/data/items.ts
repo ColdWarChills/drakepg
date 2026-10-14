@@ -1,4 +1,5 @@
 import { MATERIALS } from './crafting';
+import { EQUIPMENT } from './equipment';
 import type { ItemDef } from './types';
 
 export const ITEMS: ItemDef[] = [
@@ -469,7 +470,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Good against claws and blades.',
     price: 80,
     iconColor: 0x8a5a32,
-    defense: { melee: 9, pierce: 10, magic: 4 },
+    defense: { melee: 6, pierce: 7, magic: 3 },
     stats: { end: 1 },
   },
   {
@@ -480,7 +481,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Woven with warding runes. Shrugs off a little fire.',
     price: 90,
     iconColor: 0x4b3f9e,
-    defense: { melee: 4, pierce: 4, magic: 12 },
+    defense: { melee: 3, pierce: 3, magic: 8 },
     resists: { fire: 15 },
     stats: { int: 2 },
   },
@@ -494,7 +495,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Overlapping steel scales. Heavy, but it stops a lot.',
     price: 260,
     iconColor: 0x78909c,
-    defense: { melee: 14, pierce: 15, magic: 6 },
+    defense: { melee: 10, pierce: 11, magic: 4 },
     stats: { end: 1 },
   },
   {
@@ -505,7 +506,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Woven from warded marsh reeds. Turns spells aside.',
     price: 270,
     iconColor: 0x558b2f,
-    defense: { melee: 6, pierce: 6, magic: 18 },
+    defense: { melee: 4, pierce: 4, magic: 13 },
     stats: { int: 3 },
   },
   {
@@ -516,7 +517,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Oiled lurker hide. Water runs right off it.',
     price: 300,
     iconColor: 0x4e6b4a,
-    defense: { melee: 13, pierce: 14, magic: 7 },
+    defense: { melee: 9, pierce: 10, magic: 5 },
     resists: { water: 15 },
     stats: { end: 1 },
   },
@@ -528,7 +529,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Threads of wisp-silk ground the lightning.',
     price: 300,
     iconColor: 0x7e57c2,
-    defense: { melee: 6, pierce: 6, magic: 17 },
+    defense: { melee: 4, pierce: 4, magic: 12 },
     resists: { energy: 15 },
     stats: { int: 2 },
   },
@@ -604,7 +605,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Thick plates over a fur lining. Keeps out claws and cold.',
     price: 620,
     iconColor: 0x607d8b,
-    defense: { melee: 21, pierce: 22, magic: 9 },
+    defense: { melee: 15, pierce: 15, magic: 6 },
     stats: { end: 2 },
   },
   {
@@ -615,7 +616,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Mountain wool stitched with warding runes.',
     price: 620,
     iconColor: 0xeceff1,
-    defense: { melee: 9, pierce: 9, magic: 27 },
+    defense: { melee: 6, pierce: 6, magic: 19 },
     stats: { int: 4 },
   },
   // Ice (drops and recipes: the counter for the Steamvent Caves)
@@ -728,7 +729,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Wolf pelt over boiled leather. Cold slides right off.',
     price: 700,
     iconColor: 0x9e9e9e,
-    defense: { melee: 18, pierce: 19, magic: 10 },
+    defense: { melee: 13, pierce: 13, magic: 7 },
     resists: { ice: 15 },
     stats: { end: 1 },
   },
@@ -740,7 +741,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Woven on the windiest ridge in the Frostfangs.',
     price: 700,
     iconColor: 0xa5d6a7,
-    defense: { melee: 8, pierce: 8, magic: 25 },
+    defense: { melee: 6, pierce: 6, magic: 18 },
     resists: { wind: 15 },
     stats: { int: 3 },
   },
@@ -885,6 +886,8 @@ export const ITEMS: ItemDef[] = [
     iconColor: 0x43a047,
     line: 'hp',
   },
+  // Helms, gloves, boots, rings, necklaces and set pieces (src/data/equipment.ts)
+  ...EQUIPMENT,
   // Materials (src/data/crafting.ts)
   ...MATERIALS,
 ];

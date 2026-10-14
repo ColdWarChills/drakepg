@@ -4,7 +4,7 @@ export const GAME_HEIGHT = 720;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -40,9 +40,16 @@ export const BALANCE = {
   /**
    * Rolled gear: each line of a weapon or armor rolls a quality from 0 to 100%. Shop gear is always 0%.
    * These are the bonuses at 100%: damage/defense/hp are a share of the base, crit is added to crit chance,
-   * proc multiplies the weapon special's chance.
+   * proc multiplies the weapon special's chance, power scales everything an accessory gives.
    */
-  gearRolls: { damage: 0.5, crit: 0.05, proc: 0.5, defense: 0.5, hp: 0.15 },
+  gearRolls: { damage: 0.5, crit: 0.05, proc: 0.5, defense: 0.5, hp: 0.15, power: 0.5 },
+  /** How much of an armor piece's Max HP line counts, by slot: a full set of perfect rolls gives +21% Max HP. */
+  armorHpShare: { body: 0.7, helm: 0.3, gloves: 0.2, boots: 0.2 },
+  /**
+   * Gear sets (src/data/sets.ts): an Elite or boss killed in an area with a set (its loot table's `set`) may also
+   * drop one of the set's pieces. Shown on the battle panel's loot line.
+   */
+  setDrop: { elite: 0.25, boss: 0.4 },
   /** Dropped line quality = random ^ rollCurve. 1.5: median ~35%, ~7% of lines roll 90%+. */
   rollCurve: 1.5,
   /** Bag slots. Each gear piece or potion stack takes one; equipped gear and materials don't count. */
@@ -158,6 +165,24 @@ export const BALANCE = {
     damage: 1.1,
     rewards: 3,
     size: 1.2,
+  },
+  /**
+   * Lucky Implings (src/game/Lucky.ts): a rare roaming spawn in any monster room from the start, at most one per room
+   * (`chance` per spawn). It runs from you (`runSpeed`, px/s) and escapes on its `escapeAfter`-th turn in battle.
+   * Sized to the area: `hp` x the area monsters' average HP, their best DEX + `dex` (hard to hit), `xp`/`gold` x their
+   * average. A win has a `sigilChance` shot at a Sigil piece of the area's gear, tier picked by `sigilTiers`.
+   */
+  lucky: {
+    chance: 0.015,
+    runSpeed: 230,
+    escapeAfter: 3,
+    hp: 0.6,
+    dex: 12,
+    damage: 0.5,
+    xp: 1.5,
+    gold: 5,
+    sigilChance: 0.1,
+    sigilTiers: { dawn: 0.8, dusk: 0.17, eclipse: 0.03 },
   },
 
   /**

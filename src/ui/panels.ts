@@ -2,11 +2,12 @@ import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
-import type { EquipSlot, NpcDef } from '../data/types';
-import { gearDef } from '../game/Items';
+import type { NpcDef } from '../data/types';
+import { EQUIP_SLOTS, gearDef } from '../game/Items';
+import { activeSetBonuses, setCounts } from '../game/Sets';
 import { STAT_KEYS, STAT_LABELS, type Player } from '../game/Player';
 import { Button } from './Button';
-import { defenseText, gradeInfo, lootName, resistText } from './itemUi';
+import { defenseText, gradeInfo, lootName, resistText, setBonusText } from './itemUi';
 import { Modal } from './Modal';
 import { addText } from './text';
 
@@ -62,27 +63,26 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
     const d = { melee: player.defenseFor('melee'), pierce: player.defenseFor('pierce'), magic: player.defenseFor('magic') };
     const lines = [
       `Attack  ${minDmg}-${maxDmg} ${DAMAGE_TYPE_LABELS[player.weaponDamageType]} · ${element ? ELEMENT_LABELS[element] : 'Neutral'}`,
-      `Crit  ${(player.critChance * 100).toFixed(1)}%`,
+      `Crit  ${(player.critChance * 100).toFixed(1)}%${player.damageBonus ? `  ·  Damage +${Math.round(player.damageBonus * 100)}%` : ''}`,
       defenseText(d),
       resistText(player.resists, 'Resists  ') || 'Resists  none',
       `Gold  ${player.gold}`,
+      ...activeSetBonuses(player.data.equipment).map((a) => `${a.set.name} (${a.bonus.pieces}): ${setBonusText(a.bonus)}`),
     ];
     c.add(addText(scene, 40, 380, lines.join('\n'), { size: 17 }).setLineSpacing(6));
 
     // --- Equipped (details and changes in the inventory) ---
     c.add(addText(scene, 380, 70, 'Equipped', { size: 22, bold: true, color: COLORS.textGold }));
-    (['weapon', 'armor'] as EquipSlot[]).forEach((slot, i) => {
-      const g = player.data.equipment[slot];
-      const y = 108 + i * 30;
-      c.add(addText(scene, 380, y, slot === 'weapon' ? 'Weapon' : 'Armor', { size: 17, color: COLORS.textDim }));
-      if (!g) {
-        c.add(addText(scene, 470, y, '(none)', { size: 17, color: COLORS.textDim }));
-        return;
-      }
-      const def = gearDef(g);
-      const gi = gradeInfo(def, g);
-      c.add(addText(scene, 470, y, lootName(def, g), { size: 17, bold: true, color: gi.nameCss }));
-    });
+    // The weapon by name; the other 7 slots as a count, plus the sets being worn.
+    const weapon = player.data.equipment.weapon;
+    c.add(addText(scene, 380, 108, 'Weapon', { size: 17, color: COLORS.textDim }));
+    if (weapon) {
+      const def = gearDef(weapon);
+      c.add(addText(scene, 470, 108, lootName(def, weapon), { size: 17, bold: true, color: gradeInfo(def, weapon).nameCss }));
+    } else c.add(addText(scene, 470, 108, '(none)', { size: 17, color: COLORS.textDim }));
+    const worn = EQUIP_SLOTS.filter((s) => s !== 'weapon' && player.data.equipment[s]).length;
+    const sets = [...setCounts(player.data.equipment)].map(([id, n]) => `${db.set(id).name} ${n}/${db.set(id).pieces.length}`);
+    c.add(addText(scene, 380, 138, [`Gear  ${worn}/${EQUIP_SLOTS.length - 1} slots`, ...sets].join('  ·  '), { size: 17, color: COLORS.textDim }));
     c.add(new Button(scene, 960, 122, 'Inventory (I)', () => modal.close(openInventory), { width: 190, height: 48, fontSize: 19 }));
 
     // --- Skills ---

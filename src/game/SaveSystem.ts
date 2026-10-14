@@ -2,8 +2,8 @@ import { BALANCE, SAVE_KEY, SAVE_VERSION } from '../config';
 import { db } from '../data/db';
 import { TOWN_START } from '../data/world';
 import type { EquipSlot } from '../data/types';
-import { isGearDef, sanitizeTraits, type Gear } from './Items';
-import { Player, STAT_KEYS, type PlayerData } from './Player';
+import { EQUIP_SLOTS, isGearDef, sanitizeTraits, slotsFor, type Gear } from './Items';
+import { emptyEquipment, Player, STAT_KEYS, type PlayerData } from './Player';
 
 interface SaveFile {
   version: number;
@@ -69,6 +69,8 @@ export const SaveSystem = {
  * v7 -> v8: `bossGrit` (losses per boss); sanitize() starts it empty.
  * v8 -> v9: `seen` and `freshSkills` (unlock popups, NEW skill tags). Old characters already know their skills,
  *           so those are marked seen; unlocked systems still get announced once.
+ * v9 -> v10: `loadout` (skills carried into battle); sanitize() gives old characters the default pick.
+ * v10 -> v11: 8 equipment slots. The old `armor` slot becomes `body`; helm, gloves, boots, necklace and rings start empty.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -88,7 +90,7 @@ function migrate(file: SaveFile): SaveFile | null {
       if (isGearDef(db.item(e.itemId))) for (let i = 0; i < Math.min(50, e.qty); i++) gear.push(toGear(e.itemId)!);
       else inventory.push(e);
     }
-    file.player = { ...file.player, equipment, inventory, gear, nextUid: uid } as PlayerData;
+    file.player = { ...file.player, equipment, inventory, gear, nextUid: uid } as unknown as PlayerData;
     file.version = 4;
   }
   if (file.version < 5) file.version = 5;
@@ -105,6 +107,11 @@ function migrate(file: SaveFile): SaveFile | null {
   }
   // v9 -> v10: `loadout` (skills carried into battle). Old characters get the default pick in sanitize.
   if (file.version < 10) file.version = 10;
+  if (file.version < 11) {
+    const old = (file.player as unknown as { equipment?: Record<string, unknown> }).equipment ?? {};
+    (file.player as unknown as { equipment: Record<string, unknown> }).equipment = { weapon: old.weapon ?? null, body: old.armor ?? null };
+    file.version = 11;
+  }
   return file;
 }
 
@@ -134,7 +141,7 @@ function sanitizeGear(raw: unknown, slot?: EquipSlot): Gear | null {
   const g = raw as Partial<Gear>;
   if (typeof g.itemId !== 'string' || !db.hasItem(g.itemId) || typeof g.uid !== 'string') return null;
   const def = db.item(g.itemId);
-  if (!isGearDef(def) || (slot && def.type !== slot)) return null;
+  if (!isGearDef(def) || (slot && !slotsFor(def).includes(slot))) return null;
   const gear: Gear = { uid: g.uid, itemId: g.itemId, ...sanitizeTraits(def, g) };
   if (g.locked === true) gear.locked = true;
   if (g.isNew === true) gear.isNew = true;
@@ -161,9 +168,15 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
   const baseStats = { ...fresh.baseStats };
   for (const key of STAT_KEYS) baseStats[key] = num(raw.baseStats?.[key], baseStats[key]);
 
-  const weapon = sanitizeGear(raw.equipment?.weapon, 'weapon');
-  const armor = sanitizeGear(raw.equipment?.armor, 'armor');
-  const seen = new Set([weapon?.uid, armor?.uid]);
+  const equipment = emptyEquipment();
+  const seen = new Set<string>();
+  for (const slot of EQUIP_SLOTS) {
+    const g = sanitizeGear(raw.equipment?.[slot], slot);
+    if (g && !seen.has(g.uid)) {
+      equipment[slot] = g;
+      seen.add(g.uid);
+    }
+  }
   const gear: Gear[] = [];
   for (const g of Array.isArray(raw.gear) ? raw.gear : []) {
     const clean = sanitizeGear(g);
@@ -183,7 +196,7 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     baseStats,
     hp: num(raw.hp, 1),
     mp: num(raw.mp, 0),
-    equipment: { weapon, armor },
+    equipment,
     inventory: (Array.isArray(raw.inventory) ? raw.inventory : [])
       .filter((e) => e && db.hasItem(e.itemId) && !isGearDef(db.item(e.itemId)) && num(e.qty, 0) > 0)
       .map((e) => ({ itemId: e.itemId, qty: Math.floor(e.qty) })),

@@ -6,6 +6,7 @@ import { grantFor } from './Items';
 import { featureOn } from './Features';
 import { questWantsItem } from './Quests';
 import { rollLoot } from './Loot';
+import { luckySigil } from './Lucky';
 import { statFor, type Player, type Rewards } from './Player';
 import { chance, clamp, defaultRng, randInt, weightedPick, type Rng } from './rng';
 
@@ -58,9 +59,12 @@ export type BattleEvent =
   | { kind: 'shell'; left: number; text: string }
   /** The fight ran long: the enemy now deals `bonus` more damage (0.2 = +20%). */
   | { kind: 'enrage'; bonus: number }
+  /** The enemy ran away (a Lucky Impling's turns ran out). */
+  | { kind: 'escape' }
   | { kind: 'defeated'; side: Side };
 
-export type BattleState = 'player_turn' | 'victory' | 'defeat' | 'fled';
+/** `escaped`: the enemy ran away. */
+export type BattleState = 'player_turn' | 'victory' | 'defeat' | 'fled' | 'escaped';
 
 export interface Enemy {
   def: MonsterDef;
@@ -106,6 +110,8 @@ export class Battle {
   /** Pips left on the enemy's shell (0 = none or broken). */
   shell = 0;
   private shellReformed = false;
+  /** Turns the enemy has acted (not stunned), for `escapeAfter`. */
+  private enemyTurns = 0;
   private defending = false;
   private readonly cooldowns = new Map<string, number>();
   private readonly effects: Record<Side, ActiveStatus[]> = { player: [], enemy: [] };
@@ -133,6 +139,12 @@ export class Battle {
   /** Turns until the skill can be used again (0 = ready). */
   cooldownLeft(skillId: string): number {
     return this.cooldowns.get(skillId) ?? 0;
+  }
+
+  /** Enemy turns left before it runs away (on that turn it flees instead of acting), or undefined if it never does. */
+  get escapeIn(): number | undefined {
+    const n = this.enemy.def.escapeAfter;
+    return n ? Math.max(0, n - this.enemyTurns) : undefined;
   }
 
   /** Current resistance to an element, including buffs and debuffs. */
@@ -288,6 +300,10 @@ export class Battle {
         this.charging = null;
         this.intent = this.pickIntent();
       }
+    } else if (this.enemy.def.escapeAfter && ++this.enemyTurns >= this.enemy.def.escapeAfter) {
+      events.push({ kind: 'escape' });
+      this.state = 'escaped';
+      return;
     } else {
       this.enemyAction(events);
     }
@@ -433,6 +449,7 @@ export class Battle {
   }
 
   private checkOver(events: BattleEvent[]): boolean {
+    if (this.state === 'escaped') return true;
     this.checkPhase(events);
     const grit = this.player.data.bossGrit;
     const id = this.enemy.def.id;
@@ -566,10 +583,10 @@ export class Battle {
     return { mult: 1 - r / 100, effect };
   }
 
-  /** Element, status modifiers, grit and enrage on a mitigated hit. */
+  /** Element, status modifiers, grit, set damage bonus and enrage on a mitigated hit. */
   private scaleHit(source: Side, target: Side, damage: number, mult: number): number {
     damage *= mult * Math.max(0, 1 + this.mod(source, 'damageDealt')) * Math.max(0, 1 + this.mod(target, 'damageTaken'));
-    if (source === 'player') damage *= 1 + this.grit;
+    if (source === 'player') damage *= (1 + this.grit) * (1 + this.player.damageBonus);
     else damage *= 1 + this.enrage;
     return damage;
   }
@@ -633,6 +650,10 @@ export class Battle {
     // Materials, Sigils and mods only drop once their chapter has unlocked them.
     const materials = featureOn(this.player, 'materials');
     const extras = featureOn(this.player, 'sigils');
+    const xp = Math.round(m.xp * this.rewardScale);
+    const gold = () => Math.round(randInt(this.rng, m.gold[0], m.gold[1]) * this.rewardScale);
+    // A Lucky Impling has no normal drops: gold, and a shot at a Sigil (even before Sigils unlock).
+    if (m.lucky) return { xp, gold: gold(), items: m.loot && chance(this.rng, BALANCE.lucky.sigilChance) ? [luckySigil(m.loot, this.rng)] : [] };
     const items = m.drops
       .filter((d) => materials || db.item(d.itemId).type !== 'material' || questWantsItem(this.player, d.itemId))
       .filter((d) => chance(this.rng, d.chance))
@@ -645,12 +666,14 @@ export class Battle {
       if (gear?.tier === 'rare') delete pity[m.loot];
       else pity[m.loot] = (pity[m.loot] ?? 0) + 1;
       if (gear) items.push(gear.grant);
+      // Elites and bosses may also drop a piece of the area's set.
+      const set = db.lootTable(m.loot).set;
+      if (set && (source === 'elite' || source === 'boss') && chance(this.rng, BALANCE.setDrop[source])) {
+        const pieces = db.set(set).pieces;
+        items.push(grantFor(pieces[randInt(this.rng, 0, pieces.length - 1)], this.rng, source, extras));
+      }
     }
-    return {
-      xp: Math.round(m.xp * this.rewardScale),
-      gold: Math.round(randInt(this.rng, m.gold[0], m.gold[1]) * this.rewardScale),
-      items,
-    };
+    return { xp, gold: gold(), items };
   }
 }
 

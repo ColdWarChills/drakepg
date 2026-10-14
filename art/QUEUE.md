@@ -1,4 +1,4 @@
-# Art queue: 131 images
+# Art queue: 88 images left
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
@@ -36,6 +36,7 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `mon_vent_wyrmling` (Ch3, tough)
 - [ ] `mon_old_snowmaw` (Ch3 mini-boss)
 - [ ] `mon_frostbinder` (Ch3 boss)
+- [ ] `mon_lucky_impling` (rare spawn, any area)
 
 **3. Backgrounds** (11)
 - [ ] `bg_fen_road` (Ch2 monster area)
@@ -51,45 +52,45 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `bg_frozen_roost` (Ch3 boss arena)
 
 **4. Weapons** (29)
-- [ ] `wpn_heartwood_staff` (Thornheart drop)
-- [ ] `wpn_briar_fang` (Thornheart drop)
-- [ ] `wpn_steel_broadsword` (Ch2)
-- [ ] `wpn_yew_staff` (Ch2)
-- [ ] `wpn_fenwatch_stiletto` (Ch2)
-- [ ] `wpn_tidebreaker` (Ch2)
-- [ ] `wpn_stormcleaver` (Ch2)
-- [ ] `wpn_tidecaller_rod` (Ch2)
-- [ ] `wpn_sparkglass_wand` (Ch2)
-- [ ] `wpn_brinefang` (Ch2)
-- [ ] `wpn_sparkfang` (Ch2)
-- [ ] `wpn_thunderhead_maul` (Ch2)
-- [ ] `wpn_stormcoil_scepter` (Ch2)
-- [ ] `wpn_coilfang` (Ch2)
-- [ ] `wpn_tempered_longsword` (Ch3 shop)
-- [ ] `wpn_larchwood_staff` (Ch3 shop)
-- [ ] `wpn_ridgerunner_kris` (Ch3 shop)
-- [ ] `wpn_frostbite` (Ch3 Ice)
-- [ ] `wpn_hoarfrost_staff` (Ch3 Ice)
-- [ ] `wpn_icicle_kris` (Ch3 Ice)
-- [ ] `wpn_hearthfire_blade` (Ch3 Fire)
-- [ ] `wpn_kindling_rod` (Ch3 Fire)
-- [ ] `wpn_salamander_kris` (Ch3 Fire)
-- [ ] `wpn_snowmaw_cleaver` (Snowmaw drop)
-- [ ] `wpn_mawtooth_staff` (Snowmaw drop)
-- [ ] `wpn_snowmaw_claw` (Snowmaw drop)
-- [ ] `wpn_whiteout` (Frostbinder drop)
-- [ ] `wpn_squall_stave` (Frostbinder drop)
-- [ ] `wpn_galecutter` (Frostbinder drop)
+- [x] `wpn_heartwood_staff` (Thornheart drop)
+- [x] `wpn_briar_fang` (Thornheart drop)
+- [x] `wpn_steel_broadsword` (Ch2)
+- [x] `wpn_yew_staff` (Ch2)
+- [x] `wpn_fenwatch_stiletto` (Ch2)
+- [x] `wpn_tidebreaker` (Ch2)
+- [x] `wpn_stormcleaver` (Ch2)
+- [x] `wpn_tidecaller_rod` (Ch2)
+- [x] `wpn_sparkglass_wand` (Ch2)
+- [x] `wpn_brinefang` (Ch2)
+- [x] `wpn_sparkfang` (Ch2)
+- [x] `wpn_thunderhead_maul` (Ch2)
+- [x] `wpn_stormcoil_scepter` (Ch2)
+- [x] `wpn_coilfang` (Ch2)
+- [x] `wpn_tempered_longsword` (Ch3 shop)
+- [x] `wpn_larchwood_staff` (Ch3 shop)
+- [x] `wpn_ridgerunner_kris` (Ch3 shop)
+- [x] `wpn_frostbite` (Ch3 Ice)
+- [x] `wpn_hoarfrost_staff` (Ch3 Ice)
+- [x] `wpn_icicle_kris` (Ch3 Ice)
+- [x] `wpn_hearthfire_blade` (Ch3 Fire)
+- [x] `wpn_kindling_rod` (Ch3 Fire)
+- [x] `wpn_salamander_kris` (Ch3 Fire)
+- [x] `wpn_snowmaw_cleaver` (Snowmaw drop)
+- [x] `wpn_mawtooth_staff` (Snowmaw drop)
+- [x] `wpn_snowmaw_claw` (Snowmaw drop)
+- [x] `wpn_whiteout` (Frostbinder drop)
+- [x] `wpn_squall_stave` (Frostbinder drop)
+- [x] `wpn_galecutter` (Frostbinder drop)
 
-**5. Item icons** (36)
-- [ ] `icon_travel_garb`
-- [ ] `icon_novice_robe`
-- [ ] `icon_leather_armor`
-- [ ] `icon_apprentice_robe`
-- [ ] `icon_scale_mail`
-- [ ] `icon_reedweave_robe`
-- [ ] `icon_marshhide_vest`
-- [ ] `icon_stormweave_robe`
+**5. Item icons** (78)
+- [x] `icon_travel_garb`
+- [x] `icon_novice_robe`
+- [x] `icon_leather_armor`
+- [x] `icon_apprentice_robe`
+- [x] `icon_scale_mail`
+- [x] `icon_reedweave_robe`
+- [x] `icon_marshhide_vest`
+- [x] `icon_stormweave_robe`
 - [ ] `icon_health_potion`
 - [ ] `icon_mana_potion`
 - [ ] `icon_greater_health_potion`
@@ -102,10 +103,10 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `icon_storm_scale`
 - [ ] `icon_superior_health_potion`
 - [ ] `icon_superior_mana_potion`
-- [ ] `icon_ridgeplate`
-- [ ] `icon_fleecewool_robe`
-- [ ] `icon_frostpelt_vest`
-- [ ] `icon_galeweave_robe`
+- [x] `icon_ridgeplate`
+- [x] `icon_fleecewool_robe`
+- [x] `icon_frostpelt_vest`
+- [x] `icon_galeweave_robe`
 - [ ] `icon_frost_pelt`
 - [ ] `icon_ram_horn`
 - [ ] `icon_rime_shard`
@@ -118,6 +119,48 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `icon_essence_energy`
 - [ ] `icon_essence_light`
 - [ ] `icon_essence_dark`
+- [x] `icon_leather_cap`
+- [x] `icon_leather_gloves`
+- [x] `icon_leather_boots`
+- [x] `icon_apprentice_hood`
+- [x] `icon_apprentice_wraps`
+- [x] `icon_apprentice_slippers`
+- [x] `icon_copper_band`
+- [x] `icon_moonstone_ring`
+- [x] `icon_fox_ring`
+- [x] `icon_oak_pendant`
+- [x] `icon_scale_coif`
+- [x] `icon_scale_gauntlets`
+- [x] `icon_scale_boots`
+- [x] `icon_reedweave_hood`
+- [x] `icon_reedweave_wraps`
+- [x] `icon_reedweave_slippers`
+- [x] `icon_silver_band`
+- [x] `icon_tidepearl_ring`
+- [x] `icon_eelskin_ring`
+- [x] `icon_stormglass_amulet`
+- [x] `icon_ridgeplate_helm`
+- [x] `icon_ridgeplate_gauntlets`
+- [x] `icon_ridgeplate_boots`
+- [x] `icon_fleecewool_hood`
+- [x] `icon_fleecewool_mittens`
+- [x] `icon_fleecewool_boots`
+- [x] `icon_gold_band`
+- [x] `icon_rimeglass_ring`
+- [x] `icon_wolfclaw_ring`
+- [x] `icon_hearthstone_pendant`
+- [x] `icon_thornwarden_helm`
+- [x] `icon_thornwarden_gloves`
+- [x] `icon_thornwarden_boots`
+- [x] `icon_thornwarden_band`
+- [x] `icon_stormwatch_helm`
+- [x] `icon_stormwatch_gloves`
+- [x] `icon_stormwatch_boots`
+- [x] `icon_stormwatch_amulet`
+- [x] `icon_frostward_helm`
+- [x] `icon_frostward_gloves`
+- [x] `icon_frostward_boots`
+- [x] `icon_frostward_ring`
 
 **6. Armor outfits (lowest priority)** (30)
 - [ ] `char_warrior_leather_armor`
@@ -286,6 +329,11 @@ A huge ancient shaggy mountain beast like a giant snow bear crossed with a yak, 
 ### `mon_frostbinder` · 3:4 · Ch3 boss
 ```
 An elegant ice sorceress in flowing white and pale blue robes, long silver hair blowing in the wind, a crown of ice shards, holding a tall stave topped with a swirling blue crystal, a cold calm smile, snowflakes swirling around her. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_lucky_impling` · 1:1 · rare spawn
+```
+A tiny mischievous winged imp made of shiny gold, round and chubby like a coin purse, small emerald-green bat wings, a big toothy grin, sparkling green eyes, hugging a bulging sack of gold coins that spill out, a four-leaf clover tucked behind one pointed ear. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
 
 ---
@@ -684,6 +732,216 @@ A single small teardrop-shaped glass vial with a silver cap, holding a swirling 
 ### `icon_essence_dark` · 1:1
 ```
 A single small teardrop-shaped glass vial with a silver cap, holding a swirling glowing essence of swirling deep purple shadow smoke with tiny violet sparks, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_leather_cap` · 1:1
+```
+A single empty simple brown boiled-leather cap with stitched seams and a short neck guard, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_leather_gloves` · 1:1
+```
+An empty pair of brown leather gloves with stitched cuffs, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_leather_boots` · 1:1
+```
+An empty pair of sturdy brown leather boots with laces, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_apprentice_hood` · 1:1
+```
+A single empty deep red cloth hood with glowing orange warding runes along the rim, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_apprentice_wraps` · 1:1
+```
+An empty pair of deep red cloth hand wraps with small glowing orange runes, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_apprentice_slippers` · 1:1
+```
+An empty pair of soft deep red cloth slippers with orange rune stitching, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_copper_band` · 1:1
+```
+A single plain polished copper ring, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_moonstone_ring` · 1:1
+```
+A single silver ring set with a milky blue-white moonstone, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_fox_ring` · 1:1
+```
+A single silver ring shaped like a tiny curled orange fox, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_oak_pendant` · 1:1
+```
+A single carved wooden acorn pendant on a leather cord, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_scale_coif` · 1:1
+```
+A single empty hood of small overlapping polished steel scales with leather trim, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_scale_gauntlets` · 1:1
+```
+An empty pair of steel-scaled gauntlets over padded leather, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_scale_boots` · 1:1
+```
+An empty pair of heavy boots covered in overlapping steel scales, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_reedweave_hood` · 1:1
+```
+A single empty hood woven from dried green-gold marsh reeds with faint glowing blue runes, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_reedweave_wraps` · 1:1
+```
+An empty pair of hand wraps woven from dried green-gold reeds with tiny blue runes, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_reedweave_slippers` · 1:1
+```
+An empty pair of light slippers woven from dried green-gold reeds, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_silver_band` · 1:1
+```
+A single polished silver ring band, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_tidepearl_ring` · 1:1
+```
+A single silver ring set with a glistening pale blue pearl, tiny water droplets on it, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_eelskin_ring` · 1:1
+```
+A single ring of dark teal eel skin wrapped around a silver band, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_stormglass_amulet` · 1:1
+```
+A single amulet of fused yellow glass with a tiny lightning spark trapped inside, on a copper chain, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_ridgeplate_helm` · 1:1
+```
+A single empty thick steel helm lined with white fur, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_ridgeplate_gauntlets` · 1:1
+```
+An empty pair of thick steel gauntlets with white fur cuffs, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_ridgeplate_boots` · 1:1
+```
+An empty pair of thick steel boots with spiked soles and white fur tops, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_fleecewool_hood` · 1:1
+```
+A single empty thick cream wool hood with blue stitched warding runes, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_fleecewool_mittens` · 1:1
+```
+An empty pair of thick cream wool mittens with blue stitched runes, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_fleecewool_boots` · 1:1
+```
+An empty pair of cream wool boots with fur tops and blue stitched runes, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_gold_band` · 1:1
+```
+A single heavy plain gold ring band, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_rimeglass_ring` · 1:1
+```
+A single silver ring set with a clear pale blue ice crystal, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_wolfclaw_ring` · 1:1
+```
+A single ring made from a curved white wolf claw bound in silver, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_hearthstone_pendant` · 1:1
+```
+A single pendant with a warm glowing red-orange stone in a bronze setting on a chain, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_thornwarden_helm` · 1:1
+```
+A single empty helm grown from dark bark and brambles with a few small green leaves, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_thornwarden_gloves` · 1:1
+```
+An empty pair of gloves made of bark and vines with thorny knuckles, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_thornwarden_boots` · 1:1
+```
+An empty pair of boots made of bark and moss, laced with thin roots, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_thornwarden_band` · 1:1
+```
+A single ring made of a living green thorny vine with one small leaf, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_stormwatch_helm` · 1:1
+```
+A single empty dark blue oiled-leather helm with a copper crest and tiny yellow sparks, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_stormwatch_gloves` · 1:1
+```
+An empty pair of dark blue oiled-hide gloves with copper studs, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_stormwatch_boots` · 1:1
+```
+An empty pair of dark blue waterproof boots with copper buckles, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_stormwatch_amulet` · 1:1
+```
+A single amulet of a blue-and-yellow storm scale on a copper chain, crackling faintly, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_frostward_helm` · 1:1
+```
+A single empty pale silver-blue rime-steel helm with frost patterns, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_frostward_gloves` · 1:1
+```
+An empty pair of pale rime-steel gauntlets with white fur cuffs and frost on them, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_frostward_boots` · 1:1
+```
+An empty pair of pale rime-steel boots with frost on them, no person inside, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `icon_frostward_ring` · 1:1
+```
+A single white gold ring set with a sliver of glacier ice, shown alone as a game inventory icon. 2D fantasy RPG item art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors. Centered, seen from the front, the whole item visible and filling most of the square with a small empty margin. No hands, no character, no stand, no text. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
 
 ---

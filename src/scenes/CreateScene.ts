@@ -189,7 +189,7 @@ export class CreateScene extends Phaser.Scene {
     // Chapter 1 begins on the prologue road; later chapter starts are already in town.
     const at = this.chapter === 1 ? START : TOWN_START;
     player.data.location = { ...at };
-    session.start(player);
+    session.start(player, true);
     SaveSystem.save(player);
     sfx.play(this, 'quest');
     goTo(this, SceneKeys.Room, { ...at, via: 'spawn', intro: this.chapter === 1 }, 400);

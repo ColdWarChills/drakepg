@@ -21,7 +21,8 @@ export type RoomSceneData =
   | { roomId: string; via: 'spawn'; x: number; y: number; intro?: boolean }
   /** Arriving through an exit: `side` is where you appear (for a back exit, at its `x`). */
   | { roomId: string; via: 'exit'; side: 'left' | 'right' | 'back'; x?: number; y: number }
-  | { roomId: string; via: 'battle'; outcome: 'victory' | 'fled'; x: number; y: number };
+  /** `escaped`: the monster ran away (it's gone from the room). */
+  | { roomId: string; via: 'battle'; outcome: 'victory' | 'fled' | 'escaped'; x: number; y: number };
 
 export interface BattleSceneData {
   zoneId: string;

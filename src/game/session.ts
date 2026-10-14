@@ -1,3 +1,4 @@
+import { LUCKY_ON_NEW_GAME } from './cheats';
 import { Player } from './Player';
 
 /** A monster roaming a room. Lives only in memory (rooms are remembered for this play session, not saved). */
@@ -45,10 +46,15 @@ export const session = {
     return current;
   },
 
-  start(player: Player): void {
+  /** The next freshly filled monster room gets a Lucky Impling (testing: new characters, see `LUCKY_ON_NEW_GAME`). */
+  luckyNext: false,
+
+  /** `fresh`: a brand-new character (not a loaded save). */
+  start(player: Player, fresh = false): void {
     current = player;
     snapshot = null;
     rooms.clear();
+    session.luckyNext = fresh && LUCKY_ON_NEW_GAME;
   },
 
   /** Remember a room you are leaving, so its dead monsters stay dead for a while. */
