@@ -492,6 +492,8 @@ export interface RoomDef {
   /** Monsters roaming here come from this zone; battles use its scenery. */
   zoneId?: string;
   monsterCount?: number;
+  /** Side rooms: a real chest (never a mimic) always stands here when the room first fills each play session; refills roll as usual. Needs the chests feature. */
+  chest?: { x: number; y: number };
   /** A boss standing in the room once its quest is accepted. It stays after the quest for rematches (less XP and gold). */
   boss?: { monsterId: string; x: number; y: number; questId: string; intro?: string };
   /** Where you wake up after losing a battle here. Default: the Brindlemoor inn. */

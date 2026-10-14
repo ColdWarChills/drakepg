@@ -91,12 +91,14 @@ export function openMap(scene: Phaser.Scene, player: Player, here: string, onRec
       ];
       g.fillStyle(stub.open ? GOLD : 0x7a3b33, 1).fillPoints(head, true);
       const known = areas.some((a) => a.id === stub.area.id);
-      const label = addText(scene, ex + dx * 22, ey + dy * 22 + (dx ? 0 : dy * 6), stub.label, {
+      // Side arrows: the label sits under the arrow's tip, kept inside the panel on wide pages.
+      const label = addText(scene, ex, dx ? ey + 14 : ey + dy * 28, stub.label, {
         size: 15,
         bold: true,
         color: known ? COLORS.textGold : COLORS.textDim,
         stroke: true,
-      }).setOrigin(dx < 0 ? 1 : dx > 0 ? 0 : 0.5, dy < 0 ? 1 : dy > 0 ? 0 : 0.5);
+      }).setOrigin(0.5, dy < 0 ? 1 : 0);
+      label.x = Phaser.Math.Clamp(label.x, label.width / 2 + 12, W - label.width / 2 - 12);
       c.add(label);
       // A page you know: tap the arrow to turn to it.
       if (known) {
@@ -109,7 +111,7 @@ export function openMap(scene: Phaser.Scene, player: Player, here: string, onRec
       }
     }
 
-    for (const node of map.nodes) drawNode(scene, c, node, at(node), anim);
+    for (const node of map.nodes) drawNode(scene, c, node, at(node), anim, Math.min(170, cell - 12));
 
     legend(scene, c);
     recallRow(scene, c, player, here, () => (modal.close(), onRecall()));
@@ -118,7 +120,14 @@ export function openMap(scene: Phaser.Scene, player: Player, here: string, onRec
   return modal;
 }
 
-function drawNode(scene: Phaser.Scene, c: Phaser.GameObjects.Container, node: MapNode, p: { x: number; y: number }, anim: Phaser.GameObjects.GameObject[]): void {
+function drawNode(
+  scene: Phaser.Scene,
+  c: Phaser.GameObjects.Container,
+  node: MapNode,
+  p: { x: number; y: number },
+  anim: Phaser.GameObjects.GameObject[],
+  nameWrap: number,
+): void {
   if (node.quest === 'target') {
     const ring = scene.add.circle(p.x, p.y, NODE_R + 10).setStrokeStyle(4, GOLD, 0.9);
     c.add(ring);
@@ -150,7 +159,7 @@ function drawNode(scene: Phaser.Scene, c: Phaser.GameObjects.Container, node: Ma
   if (node.visited && node.icons.includes('campfire')) drawFlame(g, p.x + NODE_R * 0.75, p.y + NODE_R * 0.7, 0.8);
 
   if (node.visited) {
-    const name = addText(scene, p.x, p.y + NODE_R + 8, node.room.name, { size: 15, bold: node.here, color: node.here ? '#b8ffcb' : COLORS.text, stroke: true, align: 'center', wrap: 170 }).setOrigin(0.5, 0);
+    const name = addText(scene, p.x, p.y + NODE_R + 8, node.room.name, { size: 15, bold: node.here, color: node.here ? '#b8ffcb' : COLORS.text, stroke: true, align: 'center', wrap: nameWrap }).setOrigin(0.5, 0);
     c.add(name);
   }
   if (node.here) c.add(addText(scene, p.x, p.y - NODE_R - 6, 'You', { size: 15, bold: true, color: '#b8ffcb', stroke: true }).setOrigin(0.5, 1));

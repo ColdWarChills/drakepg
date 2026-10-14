@@ -304,7 +304,7 @@ export class RoomScene extends Phaser.Scene {
     if (!roaming) {
       roaming = [];
       for (let i = 0; i < (room.monsterCount ?? 0); i++) roaming.push(this.newRoamer(roaming));
-      chest = this.newChest(roaming);
+      chest = this.newChest(roaming, true);
       // Testing: a new character's first monster room has a Lucky Impling.
       if (session.luckyNext && roaming.length && !roaming.some((m) => isLucky(m.monsterId))) {
         session.luckyNext = false;
@@ -337,10 +337,12 @@ export class RoomScene extends Phaser.Scene {
     return { uid: this.nextUid++, monsterId, elite, ...pos };
   }
 
-  /** Maybe a treasure chest, placed away from the monsters. */
-  private newChest(taken: RoamingMonster[]): Chest | null {
+  /** Maybe a treasure chest, placed away from the monsters. A side room's own chest is always there on its first fill. */
+  private newChest(taken: RoamingMonster[], first = false): Chest | null {
     const player = session.player;
-    const roll = featureOn(player, 'chests') ? rollChest() : null;
+    if (!featureOn(player, 'chests')) return null;
+    if (first && this.room.chest) return { ...this.room.chest, mimic: false };
+    const roll = rollChest();
     return roll ? { ...this.findSpawnPoint(taken), mimic: roll.mimic && featureOn(player, 'mimics') } : null;
   }
 

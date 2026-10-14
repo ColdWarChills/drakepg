@@ -6,17 +6,18 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
-Build order (steps 1-3 are built, see "Done" at the bottom):
+Build order (all built, see "Done" at the bottom):
 1. ~~Recall Scroll~~
 2. ~~Room features: quiet rooms, campfire, down exit, saving visited rooms~~
 3. ~~Map~~
-4. Chapter 1-3 room layouts plus drafted story lines for review
-5. Sim and pacing check, art queue entries
+4. ~~Chapter 1-3 room layouts plus drafted story lines for review~~
+5. ~~Sim and pacing check, art queue entries~~
 
-- **Next:** step 4. Use the new room data (`campfire`, `inspect`, `firstVisit`, `side: 'down'` exits, `map` spots) to lay out ~8/9/10 rooms per chapter. Draft the lines, then the designer reviews them.
-- **Review:** the Hunters' Camp (below the Thornwood Path) is a placeholder side room showing every feature. Its lines (first-visit scene, the torn note, the scored log) are drafts.
-- **Playtest by hand** (only the sim and screenshots have checked these so far):
-  - Map, Recall Scroll, Hunters' Camp: does the first-visit scene feel good or slow? Is the campfire too generous?
+- **Review:** every new line (first-visit scenes, notes, signs) is a draft, listed in `docs/ROOM_LINES.md`. Mark what to change; the next chat edits `src/data/world.ts` and deletes that file once approved. Includes the Hunters' Camp lines.
+- **Decide:** the chapters are still shorter than the targets (see "Longer chapters"). Add side quests, or accept the length?
+- **Playtest by hand** (only the sim, the pace bot and screenshots have checked these so far):
+  - New rooms: one timed run per chapter (the pace bot's minutes are guesses). Do the quiet rooms feel good or slow? Are campfires before every boss too generous?
+  - Map, Recall Scroll: is the map readable now that pages have 7-9 rooms in a row?
   - Prologue road: is 6 rooms the right length? Monster HP 20-24 (about 2 hits) and a 35% gear drop (`BALANCE.loot.tableMob.road`)?
   - Does the "Next:" intent line read at a glance? Does enrage (turn 15, bosses 30) feel fair?
   - Is the drop reveal too slow when farming normal monsters?
@@ -25,23 +26,22 @@ Build order (steps 1-3 are built, see "Done" at the bottom):
 
 ## Longer chapters (Ch1-3)
 
-- **Decided:** make chapters much longer than now (estimate today: Ch1 15-20 min, Ch2 30-40, Ch3 30-40; not playtested).
+- **Decided:** make chapters much longer than now (estimate before the new rooms: Ch1 15-20 min, Ch2 30-40, Ch3 30-40; not playtested).
 - **Decided:** early chapters level up a bit faster, so players feel powerful early, but fights stay risky.
 - **Decided:** add rooms to Chapters 1-3 (not only from Chapter 4 on).
 - **Decided:** not every room has monsters. Some rooms only move the plot along and build anticipation.
 - **Decided:** the early game is easy for every class: kill simple monsters, farm, grind, collect gear.
-- **Proposed:** the length comes from rooms and story beats, not grind. Keep the XP curve; spread about the same number of monsters over more rooms (1-3 per combat room instead of 3-4).
-- **Proposed:** room count goes from 3/4/5 (+ town) to about 8/9/10 (+ town).
-- **Proposed:** room mix: ~50% combat, ~25% quiet/story, ~25% optional side rooms (chest, Elite or lore).
-- **Proposed:** rhythm: 2-3 combat rooms, then a quiet room. The room before each boss is always a quiet anticipation room.
-- **Built:** quiet rooms with a one-time scene on first entry (dark bars, a low sound, the camera drifts toward `panTo`, a few lines; shown even with story text off) and things to inspect (note, sign, marks, bones) that hint at the next boss.
-- **Built:** campfire in a room restores HP/MP once per visit (a fight in the room doesn't end the visit).
-- **Built:** "down" exit (walk off the bottom edge at `x`) for side rooms; the side room's way back is a back exit.
-- **Proposed:** new rooms reuse their area's backgrounds at first; about 20 new background prompts go to `art/QUEUE.md` (~30 credits).
+- **Built (2026-10-14) as proposed:** 8/9/10 rooms (+ town) for Chapters 1/2/3; about half combat (2-3 monsters each), the rest quiet or side rooms; 2-3 combat rooms, then a quiet room; a quiet room with a campfire right before every boss. Same quests and XP curve. New rooms reuse their area's backgrounds; 15 background prompts are in `art/QUEUE.md`.
+  - Ch1: Thornwood Path (+ Hunters' Camp below), Fallen Oak, Woodcutters' Clearing (quiet), Deep Thornwood (+ Bramble Hideout below: bandits), Briar Wall (quiet, campfire, the thorn wall), Thornheart Hollow.
+  - Ch2: Fen Road, Reedwatch, Sunken Causeway (+ Eel Pools below: Tough eels and a sure chest), Whispering Reeds, Stilt Village (quiet), Bog Hollow, Stormlit Flats, Shrine Steps (quiet), Drowned Shrine.
+  - Ch3: Frostfang Pass, Hearthold, Windscour Ridge (+ Steamvent Caves, now with a sure chest, + Hot Springs past them: quiet), The High Trail, Ranger's Lookout (quiet), Snowmaw's Den, Whiteout Ledge (the acolytes), Roost Stair (quiet), The Frozen Roost.
+  - Quest gates moved to the quiet room before each boss (thorns, reeds, snowdrifts), so you see the pre-boss room before the quest.
+- **Pace bot (`npm run pace`, guessed seconds per action; it fights everything it walks past):** old layout -> new: Ch1 28 -> 32 min, Ch2 33 -> 41, Ch3 46 -> 49. Level at each boss barely moved (Thornheart L5 at hero 5-7, Bogmother L8 at 8-10, Stormcoil L10 at 9-12, Snowmaw L12 at 13-18, Frostbinder L14 at 14-19). Most of the time is quest farming, which more rooms don't change.
+- **Proposed:** to reach the targets without more grind, give each chapter 1-2 short side quests that use the new rooms (e.g. a Woodcutters' Clearing sign quest, the Eel Pools, the Ranger's log leading to a small reward). About +10 min per chapter.
 - **Proposed:** target lengths about 35 / 55 / 70 min (rough estimates).
-- **Open:** approve the room plan, or change the targets?
+- **Open:** side quests (above), or accept the current length after a timed run?
 - **Open:** keep campfires after a playtest? (Built, easy to remove per room.)
-- **Open:** Claude drafts the story lines for the new rooms from the existing Ch1-3 story, you review. OK?
+- **Open:** sure chests in side rooms (`room.chest`, first fill each session, never a mimic): keep? Only the Eel Pools and Steamvent Caves have one; Chapter 1 has none because chests unlock after it.
 
 ## Map (built 2026-10-14)
 
@@ -89,7 +89,7 @@ Build order (steps 1-3 are built, see "Done" at the bottom):
 - **Open:** Ch2-3 bosses are too soft: the random-button bot still wins 75-95%. Options: fixed `every` beats on their big attacks (worked for the Thornheart), or a per-chapter `bossDamage`.
 - **Open:** monsters were not rebalanced after the equipment/sets update. Sim: a full set + jewelry gives ~20-30% fewer boss turns and +5-17% HP left.
 - **Open:** Lucky Impling catch rates in the sim: Warrior ~9-85%, Mage ~18-87%, Rogue ~39-100% (worst in late areas). Tune later.
-- **Open:** the longer chapters need a pacing check (sim + one timed run).
+- **Open:** the longer chapters need one timed run by hand (the pace bot is done, see "Longer chapters").
 - **Open:** no roll stone for the Power line of rings and necklaces.
 - Watch: Old Snowmaw without Fire is a 0-58% win for every class (intended: the quest before her collects Fire Essence).
 - Watch: stacked-affix Elites on Tough monsters are harsh (Frenzied Ash Imp at level 3: 6-72%; Ironhide Drakeling: 15-77%). They can be fled.
@@ -98,7 +98,7 @@ Build order (steps 1-3 are built, see "Done" at the bottom):
 ## Art
 
 - **Decided:** keep generating with Higgsfield for now; redo the art later with Qwen at home if the polished look reads as AI. Files swap by key, so nothing in code changes.
-- **Open:** about 88 images left in `art/QUEUE.md` (NPCs, monsters, backgrounds, potions, materials, armor outfits). Road art isn't queued yet (see Prologue road).
+- **Open:** about 100 images left in `art/QUEUE.md` (NPCs, monsters, 26 backgrounds incl. the 15 new rooms, potions, materials, armor outfits). Road art isn't queued yet (see Prologue road).
 - **Open:** look-alike icons: Rimeglass Ring vs Frostward Ring, Tidepearl Ring vs Moonstone Ring. Regenerate one of each (~3 credits)?
 - Dropped: Volt Eel art (the eel was only a sample). Its prompt `mon_volt_eel` is still in the queue.
 
@@ -128,3 +128,4 @@ Build order (steps 1-3 are built, see "Done" at the bottom):
 
 - 2026-10-14: #7 combat pass, #8 prologue road, roll stones + tier caps, and the 8 slots / sets / Lucky Impling branch are all merged and live. `LUCKY_ON_NEW_GAME` is off.
 - 2026-10-14: build steps 1-3: Recall Scroll, quiet-room features (first-visit scene, inspect, campfire, down exits), saved visited rooms and last town (save v12), and the map. Placeholder side room: Hunters' Camp.
+- 2026-10-14: build steps 4-5: Chapter 1-3 room layouts (8/9/10 rooms), drafted lines (`docs/ROOM_LINES.md`), sure chests in side rooms, `npm run pace`, 15 background prompts in `art/QUEUE.md`.

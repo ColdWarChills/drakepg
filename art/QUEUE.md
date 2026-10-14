@@ -1,4 +1,4 @@
-# Art queue: 88 images left
+# Art queue: 103 images left
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
@@ -38,7 +38,7 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `mon_frostbinder` (Ch3 boss)
 - [ ] `mon_lucky_impling` (rare spawn, any area)
 
-**3. Backgrounds** (11)
+**3. Backgrounds** (26)
 - [ ] `bg_fen_road` (Ch2 monster area)
 - [ ] `bg_reedwatch` (Ch2 outpost town)
 - [ ] `bg_sunken_causeway` (Ch2 monster area)
@@ -50,6 +50,21 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `bg_steamvent_caves` (Ch3 side cave)
 - [ ] `bg_snowmaw_den` (Ch3 mini-boss arena)
 - [ ] `bg_frozen_roost` (Ch3 boss arena)
+- [ ] `bg_hunters_camp` (Ch1 side room (quiet, campfire))
+- [ ] `bg_fallen_oak` (Ch1 monster area)
+- [ ] `bg_woodcutters_clearing` (Ch1 quiet room)
+- [ ] `bg_bramble_hideout` (Ch1 side room (bandit den))
+- [ ] `bg_briar_wall` (Ch1 quiet room before the boss)
+- [ ] `bg_whispering_reeds` (Ch2 monster area)
+- [ ] `bg_eel_pools` (Ch2 side room)
+- [ ] `bg_stilt_village` (Ch2 quiet room before the mini-boss)
+- [ ] `bg_stormlit_flats` (Ch2 monster area)
+- [ ] `bg_shrine_steps` (Ch2 quiet room before the final boss)
+- [ ] `bg_hot_springs` (Ch3 side room (quiet, campfire))
+- [ ] `bg_high_trail` (Ch3 monster area)
+- [ ] `bg_rangers_lookout` (Ch3 quiet room before the mini-boss)
+- [ ] `bg_whiteout_ledge` (Ch3 monster area)
+- [ ] `bg_roost_stair` (Ch3 quiet room before the final boss)
 
 **4. Weapons** (29)
 - [x] `wpn_heartwood_staff` (Thornheart drop)
@@ -395,6 +410,81 @@ A deep snowy hollow between cliffs: huge gnawed bones half buried in snow, a gia
 ### `bg_frozen_roost` · 16:9 · Ch3 boss arena
 ```
 A mountaintop dragon roost: a vast frozen plateau, and in the background an enormous sleeping dragon with dark red scales trapped inside a towering wall of blue ice, ice pillars with glowing runes, blizzard sky. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt; the bottom third is open, flat ground for characters to walk on. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_hunters_camp` · 16:9 · Ch1 side room (quiet, campfire)
+```
+A small abandoned hunters' camp in a forest hollow at dusk: a lean-to of branches, animal hides stretched on wooden frames, a ring of stones for a fire pit in the left third, a fallen log at the right with deep grooves scored across it, fireflies. The bottom 30% of the image is flat forest floor running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_fallen_oak` · 16:9 · Ch1 monster area
+```
+A forest path where a giant ancient oak has fallen across the background, its roots torn out of the ground in a huge earthy disk, moss and ferns, shafts of warm light through the canopy. The bottom 30% of the image is flat forest floor running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_woodcutters_clearing` · 16:9 · Ch1 quiet room
+```
+A forest clearing full of fresh tree stumps, axes still stuck in some of them, stacked logs and an abandoned saw-horse, new green shoots already sprouting from the stumps, the forest growing dark and dense toward the right edge. The bottom 30% of the image is flat forest floor running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_bramble_hideout` · 16:9 · Ch1 side room (bandit den); keep a gap in the middle
+```
+A hidden bandit camp inside a tunnel of thick brambles: stolen crates and barrels, a patched tarp tent, cloaks drying on a rope, and in the exact middle at the back a narrow gap in the brambles where a path leads out, at the back edge of the walkable ground. The bottom 30% of the image is flat trampled earth running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_briar_wall` · 16:9 · Ch1 quiet room before the boss
+```
+A dark forest path that ends at the right edge in a towering wall of black thorny vines as tall as a house, woven tight, a faint green glow between the thorns, old deer bones caught in the vines, fireflies in the gloom. The bottom 30% of the image is flat forest floor running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_whispering_reeds` · 16:9 · Ch2 monster area
+```
+A maze of very tall reeds and cattails in a fen at dusk, narrow channels of dark water between them, drifting mist, small glowing sparks floating in the reeds. The bottom 30% of the image is flat, muddy ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_eel_pools` · 16:9 · Ch2 side room; keep a path in the middle
+```
+A cluster of deep black pools among mossy rocks in a fen, faint blue electric crackles on the water, a leaning wooden warning post on the left, and in the exact middle at the back a narrow plank path leading away, at the back edge of the walkable ground. The bottom 30% of the image is flat, muddy ground running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_stilt_village` · 16:9 · Ch2 quiet room before the mini-boss
+```
+An abandoned fishing hamlet: wooden huts on tall stilts above a marsh, doors hanging open, small boats tied up high on the stilts out of the water, fishing nets, one thick stilt gnawed halfway through, mist; at the far left a wide dark pool with a huge ripple on it. The bottom 30% of the image is flat wooden boardwalk running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_stormlit_flats` · 16:9 · Ch2 monster area
+```
+Wide flat mudflats under a violent storm: shallow water, scorched black rocks, a dead tree split by lightning, bolts of lightning in purple-black clouds, slanting rain. The bottom 30% of the image is flat, wet mud running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_shrine_steps` · 16:9 · Ch2 quiet room before the final boss
+```
+Ancient worn stone steps leading down into dark floodwater at the left, broken statues with a coiled serpent scratched over their carvings, small offerings of coins and fish bones on the top step, sideways rain, lightning striking a stone far off at the left. The bottom 30% of the image is flat, wet stone running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_hot_springs` · 16:9 · Ch3 side room (quiet, campfire)
+```
+Inside a cave: a large steaming hot spring pool with turquoise water, smooth warm rocks around it, soft orange light from volcanic vents, steam drifting up, a few red crystals. The bottom 30% of the image is flat rock floor running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_high_trail` · 16:9 · Ch3 monster area
+```
+A narrow high mountain trail along a cliff: snow, wind-blown ice, chunks of broken blue ice like shattered statues, a sheer drop with clouds below on the far side, pale winter sky. The bottom 30% of the image is flat packed snow running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_rangers_lookout` · 16:9 · Ch3 quiet room before the mini-boss
+```
+A small wooden rangers' lookout hut half buried in snow on a ledge, its door hanging open with deep claw marks, a cold fire pit, a lookout platform on stilts; at the right edge, the dark mouth of a den between cliffs. The bottom 30% of the image is flat packed snow running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_whiteout_ledge` · 16:9 · Ch3 monster area
+```
+A high icy ledge in a blizzard: swirling snow, blue ice spires with faintly glowing runes, a few stone cairns half buried in drifts, everything far away lost in white. The bottom 30% of the image is flat packed snow running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
+```
+
+### `bg_roost_stair` · 16:9 · Ch3 quiet room before the final boss
+```
+Ancient wide stone steps cut into a snowy mountainside, climbing toward the right, tall pillars of blue ice with glowing runes on both sides, a cold blue light at the top right. The bottom 30% of the image is flat snowy stone running across the full width. 2D side-scrolling game background, hand-painted cartoon fantasy style like early-2000s Flash adventure games: bold outlines, soft painted shading, rich saturated colors. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI. Match the art style of the reference image exactly.
 ```
 
 ---

@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "sim": "rolldown scripts/sim.ts -p node -f esm -o .sim/sim.mjs && node .sim/sim.mjs"
+    "sim": "rolldown scripts/sim.ts -p node -f esm -o .sim/sim.mjs && node .sim/sim.mjs",
+    "pace": "rolldown scripts/pace.ts -p node -f esm -o .sim/pace.mjs && node .sim/pace.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1"
