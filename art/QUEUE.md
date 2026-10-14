@@ -1,4 +1,4 @@
-# Art queue: 130 images
+# Art queue: 131 images
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
@@ -17,13 +17,14 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [ ] `npc_gunnar` (Ch3, Hearthold trader (shop))
 - [ ] `npc_hearthkeeper_moll` (Ch3, Hearthold innkeeper)
 
-**2. Monsters** (17)
+**2. Monsters** (18)
 - [ ] `mon_barkshell_beetle` (Ch1, tough)
 - [ ] `mon_mire_toad` (Ch2)
 - [ ] `mon_spark_wisp` (Ch2)
 - [ ] `mon_bog_lurker` (Ch2)
 - [ ] `mon_sunken_revenant` (Ch2)
 - [ ] `mon_stormscale_drakeling` (Ch2, tough)
+- [ ] `mon_volt_eel` (Ch2, tough)
 - [ ] `mon_bogmother` (Ch2 mini-boss)
 - [ ] `mon_stormcoil` (Ch2 boss)
 - [ ] `mon_drift_wolf` (Ch3)
@@ -260,6 +261,11 @@ A cultist in pale blue hooded robes edged with frost, face hidden in shadow exce
 ### `mon_glacier_golem` · 3:4 · Ch3, tough
 ```
 A hulking golem made of blocks of translucent blue glacier ice, glowing runes carved into its chest, huge fists, snow piled on its shoulders. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_volt_eel` · 4:3 · Ch2
+```
+A long teal swamp eel rearing up out of a puddle, yellow lightning crackling along its fins and spine, small glowing yellow eyes, open mouth with needle teeth. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
 
 ### `mon_ember_salamander` · 4:3 · Ch3
