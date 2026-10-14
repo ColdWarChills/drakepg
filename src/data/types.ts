@@ -50,6 +50,8 @@ export interface StatusDef {
   critChance?: number;
   /** Subtracted from the hit chance of anyone attacking the holder. */
   evasion?: number;
+  /** Color of its battle visuals. Default: its damage element's color, else red (harmful) or green. */
+  tint?: number;
 }
 
 /** How a character is drawn: art if it exists, otherwise placeholder shapes. */

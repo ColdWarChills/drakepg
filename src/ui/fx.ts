@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import type { Ambient } from '../data/types';
+import { ELEMENT_COLORS } from '../data/elements';
+import type { Ambient, Element } from '../data/types';
 
 /**
  * Juice: particles, slashes, projectiles, flashes, hit-stop. Textures are drawn in code at boot
@@ -8,6 +9,7 @@ import type { Ambient } from '../data/types';
 
 type Emitter = Phaser.GameObjects.Particles.ParticleEmitter;
 type EmitterConfig = Phaser.Types.GameObjects.Particles.ParticleEmitterConfig;
+type Point = { x: number; y: number };
 
 const TEX = {
   soft: 'fx_soft',
@@ -16,7 +18,14 @@ const TEX = {
   leaf: 'fx_leaf',
   coin: 'fx_coin',
   ring: 'fx_ring',
+  rock: 'fx_rock',
+  plus: 'fx_plus',
+  chevron: 'fx_chevron',
+  streak: 'fx_streak',
 } as const;
+
+/** Particles that point where they fly (shards, droplets, streaks). The texture's long side is vertical. */
+const ALONG_VELOCITY = { onEmit: () => 0, onUpdate: (p: Phaser.GameObjects.Particles.Particle) => Phaser.Math.RadToDeg(Math.atan2(p.velocityY, p.velocityX)) + 90 };
 
 /** Emit from random points inside a rectangle (relative to the emitter). */
 function randomRect(x: number, y: number, w: number, h: number): Phaser.Types.GameObjects.Particles.ParticleEmitterRandomZoneConfig {
@@ -80,6 +89,35 @@ export function createFxTextures(scene: Phaser.Scene): void {
   g.lineStyle(6, 0xffffff, 1);
   g.strokeCircle(32, 32, 28);
   g.generateTexture(TEX.ring, 64, 64);
+  g.clear();
+
+  // Rock chunk (earth hits), lit from the top left.
+  g.fillStyle(0xbbbbbb, 1);
+  g.fillPoints([new Phaser.Math.Vector2(3, 6), new Phaser.Math.Vector2(9, 1), new Phaser.Math.Vector2(16, 3), new Phaser.Math.Vector2(19, 11), new Phaser.Math.Vector2(13, 18), new Phaser.Math.Vector2(4, 16)], true);
+  g.fillStyle(0xffffff, 1);
+  g.fillPoints([new Phaser.Math.Vector2(4, 7), new Phaser.Math.Vector2(9, 3), new Phaser.Math.Vector2(14, 5), new Phaser.Math.Vector2(9, 10)], true);
+  g.generateTexture(TEX.rock, 20, 20);
+  g.clear();
+
+  // Plus sign (healing).
+  g.fillStyle(0xffffff, 1);
+  g.fillRoundedRect(7, 0, 8, 22, 3);
+  g.fillRoundedRect(0, 7, 22, 8, 3);
+  g.generateTexture(TEX.plus, 22, 22);
+  g.clear();
+
+  // Chevron pointing up (buffs rise, debuffs sink flipped).
+  g.fillStyle(0xffffff, 1);
+  g.fillPoints([new Phaser.Math.Vector2(0, 14), new Phaser.Math.Vector2(14, 0), new Phaser.Math.Vector2(28, 14), new Phaser.Math.Vector2(28, 22), new Phaser.Math.Vector2(14, 8), new Phaser.Math.Vector2(0, 22)], true);
+  g.generateTexture(TEX.chevron, 28, 22);
+  g.clear();
+
+  // Long thin streak (speed lines, crit rays).
+  for (let i = 0; i < 4; i++) {
+    g.fillStyle(0xffffff, 0.25 + i * 0.25);
+    g.fillEllipse(48, 3, 96 - i * 20, 6 - i);
+  }
+  g.generateTexture(TEX.streak, 96, 6);
   g.destroy();
 }
 
@@ -142,7 +180,8 @@ export function slash(scene: Phaser.Scene, x: number, y: number, dir: 1 | -1, co
   g.beginPath();
   g.arc(0, 0, r - 4, -0.9, 0.9);
   g.strokePath();
-  g.setScale(0.5 * dir, 0.5).setRotation(-0.8 * dir + tilt).setBlendMode(Phaser.BlendModes.ADD);
+  // Starts near full size: a hit-stop freezes tweens right after contact, and the frozen frame should show the cut.
+  g.setScale(0.8 * dir, 0.8).setRotation(-0.5 * dir + tilt).setBlendMode(Phaser.BlendModes.ADD);
   scene.tweens.add({
     targets: g,
     scaleX: 1.15 * dir,
@@ -155,37 +194,63 @@ export function slash(scene: Phaser.Scene, x: number, y: number, dir: 1 | -1, co
   });
 }
 
-/** Glowing ball that flies in an arc and resolves when it lands. */
+/**
+ * A spell flying from `from` to `to`; resolves when it lands. Its shape follows the element: a glowing orb (fire,
+ * water, light, dark, neutral), an ice shard, a tumbling rock, a spinning gust, or an instant lightning bolt.
+ */
 export function projectile(
   scene: Phaser.Scene,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
+  from: Point,
+  to: Point,
   colors: number[],
   duration = 420,
+  element?: Element,
 ): Promise<void> {
+  if (element === 'energy') {
+    // Lightning doesn't fly: it cracks across in a blink.
+    return new Promise((resolve) => {
+      lightning(scene, from, to, colors[1], 1);
+      scene.time.delayedCall(70, () => lightning(scene, from, to, colors[2] ?? colors[1], 0.6));
+      scene.time.delayedCall(Math.min(150, duration / 2), () => {
+        explosion(scene, to.x, to.y, colors);
+        resolve();
+      });
+    });
+  }
   return new Promise((resolve) => {
-    const core = scene.add.image(from.x, from.y, TEX.soft).setTint(colors[1] ?? colors[0]).setScale(2.2).setDepth(902).setBlendMode('ADD');
+    const kind = element === 'ice' ? 'shard' : element === 'earth' ? 'rock' : element === 'wind' ? 'gust' : 'orb';
+    const tex = kind === 'shard' ? TEX.spark : kind === 'rock' ? TEX.rock : kind === 'gust' ? TEX.ring : TEX.soft;
+    const core = scene.add.image(from.x, from.y, tex).setDepth(902);
+    if (kind === 'rock') core.setTint(colors[1]).setScale(2.4);
+    else core.setTint(colors[1] ?? colors[0]).setBlendMode('ADD').setScale(kind === 'shard' ? 1.8 : kind === 'gust' ? 1.2 : 2.2);
     const trail = scene.add.particles(0, 0, TEX.soft, {
       follow: core,
-      lifespan: 320,
+      lifespan: kind === 'rock' ? 260 : 320,
       speed: { min: 5, max: 40 },
-      scale: { start: 1.6, end: 0 },
-      alpha: { start: 0.9, end: 0 },
-      color: colors,
-      blendMode: 'ADD',
+      scale: { start: kind === 'shard' ? 0.9 : 1.6, end: 0 },
+      alpha: { start: kind === 'rock' ? 0.5 : 0.9, end: 0 },
+      color: kind === 'rock' ? [0xd9c8a9, 0x8a6a2c] : colors,
+      blendMode: kind === 'rock' ? 'NORMAL' : 'ADD',
       frequency: 12,
     });
     trail.setDepth(901);
+    // Rocks are lobbed high, shards and gusts fly nearly straight.
+    const lift = kind === 'rock' ? 160 : kind === 'orb' ? 70 : 20;
     const arc = { t: 0 };
     scene.tweens.add({
       targets: arc,
       t: 1,
       duration,
-      ease: 'Sine.easeIn',
+      ease: kind === 'rock' ? 'Linear' : 'Sine.easeIn',
       onUpdate: () => {
+        const px = core.x;
+        const py = core.y;
         core.x = Phaser.Math.Linear(from.x, to.x, arc.t);
-        core.y = Phaser.Math.Linear(from.y, to.y, arc.t) - Math.sin(arc.t * Math.PI) * 70;
-        core.setScale(2.2 + Math.sin(arc.t * 40) * 0.25);
+        core.y = Phaser.Math.Linear(from.y, to.y, arc.t) - Math.sin(arc.t * Math.PI) * lift;
+        if (kind === 'shard') core.setRotation(Math.atan2(core.y - py, core.x - px) + Math.PI / 2);
+        else if (kind === 'rock') core.setAngle(arc.t * 540);
+        else if (kind === 'gust') core.setAngle(arc.t * 1080).setScale(1.2 + arc.t * 0.6, (1.2 + arc.t * 0.6) * 0.45);
+        else core.setScale(2.2 + Math.sin(arc.t * 40) * 0.25);
       },
       onComplete: () => {
         core.destroy();
@@ -196,6 +261,30 @@ export function projectile(
       },
     });
   });
+}
+
+/** A jagged lightning bolt between two points that flickers out. `width` 1 = a full bolt. */
+export function lightning(scene: Phaser.Scene, from: Point, to: Point, color: number, width = 1): void {
+  const g = scene.add.graphics().setDepth(903).setBlendMode(Phaser.BlendModes.ADD);
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy);
+  const nx = -dy / len;
+  const ny = dx / len;
+  const steps = Math.max(5, Math.round(len / 40));
+  const points: Phaser.Math.Vector2[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const off = i === 0 || i === steps ? 0 : Phaser.Math.Between(-26, 26);
+    points.push(new Phaser.Math.Vector2(from.x + dx * t + nx * off, from.y + dy * t + ny * off));
+  }
+  g.lineStyle(14 * width, color, 0.35);
+  g.strokePoints(points);
+  g.lineStyle(6 * width, color, 0.9);
+  g.strokePoints(points);
+  g.lineStyle(2.5 * width, 0xffffff, 1);
+  g.strokePoints(points);
+  scene.tweens.add({ targets: g, alpha: { from: 1, to: 0 }, duration: 200, ease: 'Stepped', easeParams: [3], onComplete: () => g.destroy() });
 }
 
 export function explosion(scene: Phaser.Scene, x: number, y: number, colors: number[]): void {
@@ -390,27 +479,501 @@ export function dust(scene: Phaser.Scene, x: number, y: number, amount = 3, dept
 export function hitStop(scene: Phaser.Scene, ms: number): void {
   scene.tweens.timeScale = 0.02;
   scene.time.timeScale = 0.02;
+  // Restored even if the scene has stopped meanwhile: a restarted scene reuses the same tween and time managers.
   window.setTimeout(() => {
-    if (!scene.sys.isActive()) return;
-    scene.tweens.timeScale = 1;
-    scene.time.timeScale = 1;
+    if (scene.tweens) scene.tweens.timeScale = 1;
+    if (scene.time) scene.time.timeScale = 1;
   }, ms);
 }
 
-/** Flash a figure (Container from drawFigure) pure white for a moment. */
-export function whiteFlash(scene: Phaser.Scene, fig: Phaser.GameObjects.Container, ms = 90): void {
-  const restore: (() => void)[] = [];
-  for (const child of fig.list) {
-    if (child instanceof Phaser.GameObjects.Image) {
-      child.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);
-      restore.push(() => child.clearTint().setTintMode(Phaser.TintModes.MULTIPLY));
-    } else if (child instanceof Phaser.GameObjects.Shape && child.isFilled && child.fillAlpha === 1) {
-      const color = child.fillColor;
-      child.setFillStyle(0xffffff);
-      restore.push(() => child.setFillStyle(color));
+/**
+ * Flash a figure (Container from drawFigure) one solid color for a moment: white by default, or `then` right after
+ * the white (an element's color, a heal's green).
+ */
+export function whiteFlash(scene: Phaser.Scene, fig: Phaser.GameObjects.Container, ms = 90, color = 0xffffff, then?: number): void {
+  // Flashes can overlap (combo hits): the look from before the first one is kept, and only the last one restores it.
+  let restore = fig.getData('flashRestore') as (() => void)[] | undefined;
+  if (!restore) {
+    restore = [];
+    for (const child of fig.list) {
+      if (child instanceof Phaser.GameObjects.Image) {
+        // A Phase form's tint (or none) comes back afterwards.
+        const tint = child.isTinted ? child.tintTopLeft : null;
+        restore.push(() => (tint === null ? child.clearTint() : child.setTint(tint)).setTintMode(Phaser.TintModes.MULTIPLY));
+      } else if (child instanceof Phaser.GameObjects.Shape && child.isFilled && child.fillAlpha === 1) {
+        const fill = child.fillColor;
+        restore.push(() => child.setFillStyle(fill));
+      }
+    }
+    fig.setData('flashRestore', restore);
+  }
+  const paint = (c: number) => {
+    for (const child of fig.list) {
+      if (child instanceof Phaser.GameObjects.Image) child.setTint(c).setTintMode(Phaser.TintModes.FILL);
+      else if (child instanceof Phaser.GameObjects.Shape && child.isFilled && child.fillAlpha === 1) child.setFillStyle(c);
+    }
+  };
+  const token = ((fig.getData('flashToken') as number | undefined) ?? 0) + 1;
+  fig.setData('flashToken', token);
+  const latest = () => fig.active && fig.getData('flashToken') === token;
+  paint(color);
+  if (then !== undefined) scene.time.delayedCall(ms / 2, () => latest() && paint(then));
+  scene.time.delayedCall(ms, () => {
+    if (!latest()) return;
+    restore.forEach((r) => r());
+    fig.setData('flashRestore', undefined);
+  });
+}
+
+/** A see-through silhouette of a figure that fades out (lunges, dodges). The caller draws the copy; this fades it. */
+export function fadeGhost(scene: Phaser.Scene, ghost: Phaser.GameObjects.Container, color: number, alpha = 0.45, ms = 260): void {
+  for (const child of ghost.list) {
+    if (child instanceof Phaser.GameObjects.Image) child.setTint(color).setTintMode(Phaser.TintModes.FILL);
+    else if (child instanceof Phaser.GameObjects.Shape) {
+      if (child.isFilled && child.fillAlpha === 1) child.setFillStyle(color);
+      else child.setVisible(false);
+    } else if (child instanceof Phaser.GameObjects.Graphics) child.setVisible(false);
+  }
+  ghost.setAlpha(alpha);
+  scene.tweens.add({ targets: ghost, alpha: 0, duration: ms, ease: 'Quad.easeIn', onComplete: () => ghost.destroy() });
+}
+
+/** Wind lines streaking behind a fast-moving figure. `dir` 1 = moving right. */
+export function speedLines(scene: Phaser.Scene, x: number, y: number, dir: 1 | -1, color = 0xffffff): void {
+  burst(scene, x, y, TEX.streak, 7, {
+    emitZone: randomRect(-30, -150, 60, 140),
+    speedX: { min: -900 * dir, max: -500 * dir },
+    scaleX: { start: 1.1, end: 0.3 },
+    scaleY: 0.8,
+    alpha: { start: 0.55, end: 0 },
+    lifespan: 200,
+    tint: color,
+    blendMode: 'ADD',
+  });
+}
+
+/** Three parallel claw rakes (monster melee). `dir` 1 = raking from the left. */
+export function clawMarks(scene: Phaser.Scene, x: number, y: number, dir: 1 | -1, color: number): void {
+  for (let i = 0; i < 3; i++) {
+    const g = scene.add.graphics().setPosition(x + (i - 1) * 26 * dir, y + (i - 1) * 8).setDepth(901).setBlendMode(Phaser.BlendModes.ADD);
+    g.lineStyle(12, color, 0.75);
+    g.lineBetween(-50 * dir, -70, 50 * dir, 70);
+    g.lineStyle(4, 0xffffff, 1);
+    g.lineBetween(-44 * dir, -60, 44 * dir, 60);
+    g.setScale(0.75);
+    scene.tweens.add({
+      targets: g,
+      scale: 1.05,
+      alpha: { from: 1, to: 0 },
+      delay: i * 30,
+      duration: 230,
+      ease: 'Cubic.easeOut',
+      onComplete: () => g.destroy(),
+    });
+  }
+}
+
+/** Critical hit: a bright star flash with rays bursting out around it. */
+export function critFlare(scene: Phaser.Scene, x: number, y: number, color: number): void {
+  const flash = scene.add.image(x, y, TEX.star).setTint(0xffffff).setBlendMode('ADD').setDepth(903).setScale(3).setAngle(Phaser.Math.Between(0, 45));
+  scene.tweens.add({ targets: flash, scale: 7, alpha: { from: 1, to: 0 }, angle: flash.angle + 30, duration: 260, ease: 'Cubic.easeOut', onComplete: () => flash.destroy() });
+  burst(scene, x, y, TEX.streak, 14, {
+    speed: { min: 700, max: 1100 },
+    angle: { min: 0, max: 360 },
+    rotate: { onEmit: () => 0, onUpdate: (p) => Phaser.Math.RadToDeg(Math.atan2(p.velocityY, p.velocityX)) },
+    scaleX: { start: 1.4, end: 0.4 },
+    scaleY: 1.4,
+    alpha: { start: 1, end: 0 },
+    lifespan: 220,
+    color: [0xffffff, color],
+    blendMode: 'ADD',
+  });
+}
+
+/**
+ * What an element looks like when it lands, on top of the normal sparks. `power` 0-1 scales the size
+ * (a small Burn tick is about 0.3, a crit or weak hit 1).
+ */
+export function elementBurst(scene: Phaser.Scene, x: number, y: number, element: Element, power = 0.6): void {
+  const c = ELEMENT_COLORS[element];
+  const n = (k: number) => Math.max(2, Math.round(k * (0.5 + power)));
+  switch (element) {
+    case 'fire':
+      // Flames licking upward, then a little smoke.
+      burst(scene, x, y + 20, TEX.soft, n(16), {
+        emitZone: randomRect(-50, -20, 100, 40),
+        speedY: { min: -320, max: -120 },
+        speedX: { min: -50, max: 50 },
+        scale: { start: 1.6, end: 0 },
+        alpha: { start: 0.9, end: 0 },
+        lifespan: 520,
+        color: [c[1], c[2], c[3]],
+      });
+      burst(scene, x, y + 10, TEX.soft, n(6), {
+        speedY: { min: -200, max: -80 },
+        speedX: { min: -30, max: 30 },
+        scale: { start: 1, end: 0 },
+        lifespan: 360,
+        color: [c[0], c[1]],
+        blendMode: 'ADD',
+      });
+      burst(scene, x, y - 40, TEX.soft, n(5), {
+        speedY: { min: -90, max: -40 },
+        speedX: { min: -30, max: 30 },
+        scale: { start: 1, end: 2.4 },
+        alpha: { start: 0.35, end: 0 },
+        lifespan: 800,
+        tint: 0x3a2a24,
+      });
+      break;
+    case 'ice':
+      // Shards burst out and a frost star flashes.
+      burst(scene, x, y, TEX.spark, n(14), {
+        speed: { min: 220, max: 520 },
+        angle: { min: 0, max: 360 },
+        rotate: ALONG_VELOCITY,
+        scaleX: { start: 0.9, end: 0.2 },
+        scaleY: { start: 1.6, end: 0.4 },
+        gravityY: 600,
+        lifespan: 520,
+        color: [0xffffff, c[1], c[2]],
+      });
+      {
+        const star = scene.add.image(x, y, TEX.star).setTint(c[1]).setBlendMode('ADD').setDepth(902).setScale(1);
+        scene.tweens.add({ targets: star, scale: 4 + power * 3, angle: 45, alpha: { from: 1, to: 0 }, duration: 380, ease: 'Cubic.easeOut', onComplete: () => star.destroy() });
+      }
+      burst(scene, x, y, TEX.soft, n(8), {
+        emitZone: randomRect(-70, -70, 140, 140),
+        speedY: { min: 10, max: 60 },
+        scale: { start: 0.5, end: 0 },
+        lifespan: 900,
+        tint: 0xffffff,
+        blendMode: 'ADD',
+      });
+      break;
+    case 'water':
+      // A splash of droplets that fall back down, and a ripple on the ground.
+      burst(scene, x, y, TEX.spark, n(18), {
+        speed: { min: 200, max: 460 },
+        angle: { min: 200, max: 340 },
+        rotate: ALONG_VELOCITY,
+        scaleX: 0.7,
+        scaleY: { start: 1, end: 0.5 },
+        gravityY: 1300,
+        lifespan: 650,
+        color: [c[1], c[2], c[2]],
+        alpha: { start: 1, end: 0.3 },
+      });
+      burst(scene, x, y, TEX.ring, n(5), {
+        speed: { min: 40, max: 160 },
+        scale: { start: 0.15, end: 0.45 },
+        alpha: { start: 0.9, end: 0 },
+        lifespan: 500,
+        tint: c[0],
+      });
+      shockwave(scene, x, y + 120, c[1], 2.2 + power, 0.3);
+      break;
+    case 'wind':
+      // Leaves and air whipping around the target.
+      burst(scene, x, y, TEX.leaf, n(10), {
+        emitZone: { type: 'edge', source: new Phaser.Geom.Circle(0, 0, 60), quantity: n(10) },
+        speedX: { min: -260, max: 260 },
+        speedY: { min: -260, max: 60 },
+        rotate: { start: 0, end: 720 },
+        scale: { start: 1.1, end: 0.3 },
+        lifespan: 600,
+        color: [c[1], c[2], 0xffffff],
+      });
+      for (let i = 0; i < 2; i++) {
+        const ring = scene.add.image(x, y - 10 + i * 30, TEX.ring).setTint(c[1]).setBlendMode('ADD').setDepth(901).setScale(0.6, 0.25);
+        scene.tweens.add({
+          targets: ring,
+          scaleX: 3 + power * 1.5,
+          scaleY: 1 + power * 0.5,
+          angle: i ? -40 : 40,
+          alpha: { from: 0.9, to: 0 },
+          delay: i * 60,
+          duration: 360,
+          ease: 'Cubic.easeOut',
+          onComplete: () => ring.destroy(),
+        });
+      }
+      break;
+    case 'earth':
+      // Rock chunks thrown up, a dust cloud and a ground thump.
+      burst(scene, x, y + 40, TEX.rock, n(10), {
+        speed: { min: 220, max: 480 },
+        angle: { min: 215, max: 325 },
+        rotate: { start: 0, end: 540 },
+        scale: { min: 0.8, max: 1.6 },
+        gravityY: 1500,
+        lifespan: 700,
+        color: [c[0], c[1], c[2]],
+      });
+      burst(scene, x, y + 110, TEX.soft, n(10), {
+        emitZone: randomRect(-80, -10, 160, 20),
+        speedX: { min: -120, max: 120 },
+        speedY: { min: -60, max: -10 },
+        scale: { start: 1.6, end: 3 },
+        alpha: { start: 0.45, end: 0 },
+        lifespan: 700,
+        tint: c[1],
+      });
+      shockwave(scene, x, y + 120, c[1], 2.6 + power, 0.3);
+      break;
+    case 'energy':
+      // Little arcs crackling over the target.
+      for (let i = 0; i < Math.round(2 + power * 2); i++) {
+        scene.time.delayedCall(i * 45, () => {
+          const a = Phaser.Math.FloatBetween(0, Math.PI * 2);
+          const r = Phaser.Math.Between(50, 90);
+          lightning(scene, { x: x + Math.cos(a) * r, y: y + Math.sin(a) * r }, { x: x + Phaser.Math.Between(-15, 15), y: y + Phaser.Math.Between(-15, 15) }, c[2], 0.45);
+        });
+      }
+      burst(scene, x, y, TEX.spark, n(12), {
+        speed: { min: 300, max: 700 },
+        angle: { min: 0, max: 360 },
+        rotate: ALONG_VELOCITY,
+        scale: { start: 0.8, end: 0 },
+        lifespan: 240,
+        color: [0xffffff, c[1], c[3]],
+        blendMode: 'ADD',
+      });
+      break;
+    case 'light': {
+      // A pillar of light falls on the target and stars ring out.
+      const pillar = scene.add.image(x, y - 40, TEX.soft).setTint(c[2]).setBlendMode('ADD').setDepth(898).setScale(1.5, 14).setAlpha(0);
+      scene.tweens.chain({
+        targets: pillar,
+        tweens: [
+          { alpha: 0.9, scaleX: 2.5 + power * 1.5, duration: 90, ease: 'Cubic.easeOut' },
+          { alpha: 0, scaleX: 0.5, duration: 380, ease: 'Sine.easeIn' },
+        ],
+        onComplete: () => pillar.destroy(),
+      });
+      burst(scene, x, y, TEX.star, n(10), {
+        speed: { min: 120, max: 320 },
+        angle: { min: 0, max: 360 },
+        rotate: { min: 0, max: 180 },
+        scale: { start: 1, end: 0 },
+        lifespan: 520,
+        color: [0xffffff, c[1], c[2]],
+        blendMode: 'ADD',
+      });
+      break;
+    }
+    case 'dark': {
+      // Shadow wisps pulled into the target, then a dark pop.
+      burst(scene, x, y, TEX.soft, n(16), {
+        emitZone: { type: 'edge', source: new Phaser.Geom.Circle(0, 0, 110), quantity: n(16) },
+        moveToX: 0,
+        moveToY: 0,
+        scale: { start: 1.4, end: 0.2 },
+        alpha: { start: 0.2, end: 1 },
+        lifespan: 260,
+        color: [c[1], c[2], c[3]],
+      });
+      const ring = scene.add.image(x, y, TEX.ring).setTint(c[1]).setDepth(901).setScale(3.4);
+      scene.tweens.add({ targets: ring, scale: 0.3, alpha: { from: 0.2, to: 1 }, duration: 240, ease: 'Cubic.easeIn', onComplete: () => ring.destroy() });
+      scene.time.delayedCall(240, () =>
+        burst(scene, x, y, TEX.soft, n(10), {
+          speed: { min: 80, max: 260 },
+          scale: { start: 1.6, end: 0 },
+          alpha: { start: 0.9, end: 0 },
+          lifespan: 420,
+          color: [c[0], c[1], c[2]],
+          blendMode: 'ADD',
+        }),
+      );
+      break;
     }
   }
-  scene.time.delayedCall(ms, () => restore.forEach((r) => r()));
+}
+
+/**
+ * Element pulled into a target that absorbs it (the reverse of a burst), with a heal glow.
+ */
+export function absorbInto(scene: Phaser.Scene, x: number, y: number, colors: number[]): void {
+  burst(scene, x, y, TEX.soft, 18, {
+    emitZone: { type: 'edge', source: new Phaser.Geom.Circle(0, 0, 130), quantity: 18 },
+    moveToX: 0,
+    moveToY: 0,
+    scale: { start: 1.2, end: 0.3 },
+    lifespan: 380,
+    color: colors,
+    blendMode: 'ADD',
+  });
+}
+
+/**
+ * Magic circle on the ground under a caster, spinning while the spell charges. Returned so the caller can
+ * put it behind the caster.
+ */
+export function castCircle(scene: Phaser.Scene, x: number, y: number, color: number, ms = 400): Phaser.GameObjects.Container {
+  const g = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
+  g.lineStyle(4, color, 0.9);
+  g.strokeCircle(0, 0, 80);
+  g.lineStyle(2, color, 0.7);
+  g.strokeCircle(0, 0, 64);
+  // Six rune ticks between the rings, and a hexagram inside.
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    g.fillStyle(color, 1).fillCircle(Math.cos(a) * 72, Math.sin(a) * 72, 4);
+  }
+  const tri = (rot: number) =>
+    [0, 1, 2].map((k) => new Phaser.Math.Vector2(Math.cos(rot + (k / 3) * Math.PI * 2) * 60, Math.sin(rot + (k / 3) * Math.PI * 2) * 60));
+  g.lineStyle(2, color, 0.6);
+  g.strokePoints(tri(-Math.PI / 2), true);
+  g.strokePoints(tri(Math.PI / 2), true);
+  // The holder squashes it flat onto the ground; the circle spins inside.
+  const holder = scene.add.container(x, y, [g]).setScale(0.2, 0.08).setAlpha(0);
+  scene.tweens.add({ targets: holder, scaleX: 1, scaleY: 0.32, alpha: 1, duration: Math.min(180, ms / 2), ease: 'Back.easeOut' });
+  scene.tweens.add({ targets: g, angle: 120, duration: ms + 250 });
+  scene.tweens.add({ targets: holder, alpha: 0, delay: ms, duration: 250, onComplete: () => holder.destroy() });
+  return holder;
+}
+
+/** Rising rings and a column of glow around a figure (buffs, war cries). */
+export function aura(scene: Phaser.Scene, x: number, feetY: number, color: number): void {
+  for (let i = 0; i < 3; i++) {
+    const ring = scene.add.image(x, feetY - 10, TEX.ring).setTint(color).setBlendMode('ADD').setDepth(901).setScale(2.6, 0.8).setAlpha(0);
+    scene.tweens.add({
+      targets: ring,
+      y: feetY - 200,
+      scaleX: 1.6,
+      scaleY: 0.5,
+      alpha: { from: 0.9, to: 0 },
+      delay: i * 90,
+      duration: 520,
+      ease: 'Sine.easeOut',
+      onComplete: () => ring.destroy(),
+    });
+  }
+  const column = scene.add.image(x, feetY - 110, TEX.soft).setTint(color).setBlendMode('ADD').setDepth(898).setScale(4, 9).setAlpha(0);
+  scene.tweens.add({ targets: column, alpha: { from: 0.5, to: 0 }, scaleX: 2, duration: 650, ease: 'Sine.easeIn', onComplete: () => column.destroy() });
+}
+
+/** Chevrons over a head: rising for a buff, sinking for a debuff. */
+export function statusMark(scene: Phaser.Scene, x: number, y: number, color: number, up: boolean): void {
+  for (let i = 0; i < 3; i++) {
+    const c = scene.add
+      .image(x + (i - 1) * 34, y + (up ? 30 : -30), TEX.chevron)
+      .setTint(color)
+      .setDepth(902)
+      .setFlipY(!up)
+      .setAlpha(0)
+      .setScale(1.1);
+    scene.tweens.chain({
+      targets: c,
+      tweens: [
+        { alpha: 1, duration: 90, delay: i * 70 },
+        { y: c.y + (up ? -60 : 60), alpha: 0, duration: 520, ease: 'Sine.easeIn' },
+      ],
+      onComplete: () => c.destroy(),
+    });
+  }
+}
+
+/** Stars circling over a stunned head. */
+export function stunStars(scene: Phaser.Scene, x: number, y: number, ms = 900): void {
+  for (let i = 0; i < 3; i++) {
+    const star = scene.add.image(x, y, TEX.star).setTint(0xffe066).setBlendMode('ADD').setDepth(902).setScale(1.1);
+    const orbit = { a: (i / 3) * Math.PI * 2 };
+    scene.tweens.add({
+      targets: orbit,
+      a: orbit.a + Math.PI * 4,
+      duration: ms,
+      onUpdate: () => star.setPosition(x + Math.cos(orbit.a) * 50, y + Math.sin(orbit.a) * 14).setScale(Math.sin(orbit.a) > 0 ? 1.2 : 0.8),
+      onComplete: () => star.destroy(),
+    });
+    scene.tweens.add({ targets: star, alpha: 0, delay: ms - 200, duration: 200 });
+  }
+}
+
+/** Plus signs floating up (healing), in `color`. */
+export function healPluses(scene: Phaser.Scene, x: number, feetY: number, color: number): void {
+  burst(scene, x, feetY - 60, TEX.plus, 8, {
+    emitZone: randomRect(-70, -120, 140, 130),
+    speedY: { min: -140, max: -60 },
+    scale: { start: 0.9, end: 0.2 },
+    alpha: { start: 1, end: 0 },
+    lifespan: 800,
+    tint: [color, 0xffffff],
+  });
+}
+
+/** Motes streaming from one point to another (lifesteal: life pulled out of the target). */
+export function drain(scene: Phaser.Scene, from: Point, to: Point, color: number): void {
+  burst(scene, from.x, from.y, TEX.soft, 16, {
+    emitZone: randomRect(-40, -50, 80, 100),
+    moveToX: to.x - from.x,
+    moveToY: to.y - from.y,
+    delay: { min: 0, max: 160 },
+    scale: { start: 1.1, end: 0.4 },
+    alpha: { start: 1, end: 0.6 },
+    lifespan: 320,
+    color: [color, 0xffffff],
+    blendMode: 'ADD',
+  });
+}
+
+/** A status taking hold (or ticking): a cloud and bubbles in its color around the body. */
+export function statusPuff(scene: Phaser.Scene, x: number, y: number, color: number): void {
+  burst(scene, x, y, TEX.soft, 12, {
+    emitZone: randomRect(-60, -60, 120, 120),
+    speed: { min: 10, max: 60 },
+    scale: { start: 1.6, end: 0.2 },
+    alpha: { start: 0.6, end: 0 },
+    lifespan: 600,
+    tint: color,
+  });
+  burst(scene, x, y, TEX.ring, 7, {
+    emitZone: randomRect(-50, -40, 100, 80),
+    speedY: { min: -120, max: -50 },
+    speedX: { min: -20, max: 20 },
+    scale: { start: 0.12, end: 0.3 },
+    alpha: { start: 1, end: 0 },
+    lifespan: 600,
+    tint: color,
+    blendMode: 'ADD',
+  });
+}
+
+/** Sparks glancing off a raised guard (a Defend that soaks a hit). `dir` 1 = the blow came from the left. */
+export function deflect(scene: Phaser.Scene, x: number, y: number, dir: 1 | -1, color: number): void {
+  burst(scene, x, y, TEX.spark, 16, {
+    speed: { min: 260, max: 560 },
+    angle: dir === 1 ? { min: 150, max: 260 } : { min: -80, max: 30 },
+    rotate: ALONG_VELOCITY,
+    scale: { start: 0.9, end: 0 },
+    gravityY: 500,
+    lifespan: 380,
+    color: [0xffffff, color],
+    blendMode: 'ADD',
+  });
+}
+
+/** A body breaking apart into motes that drift up (monster deaths). */
+export function dissolve(scene: Phaser.Scene, x: number, feetY: number, w: number, h: number, colors: number[]): void {
+  burst(scene, x, feetY, TEX.soft, 34, {
+    emitZone: randomRect(-w / 2, -h, w, h),
+    speedY: { min: -180, max: -40 },
+    speedX: { min: -40, max: 40 },
+    scale: { start: 0.9, end: 0 },
+    alpha: { start: 1, end: 0 },
+    lifespan: 900,
+    color: colors,
+    blendMode: 'ADD',
+  });
+  burst(scene, x, feetY, TEX.star, 8, {
+    emitZone: randomRect(-w / 2, -h, w, h),
+    speedY: { min: -120, max: -30 },
+    scale: { start: 0.7, end: 0 },
+    rotate: { min: 0, max: 180 },
+    lifespan: 700,
+    tint: 0xffffff,
+    blendMode: 'ADD',
+  });
 }
 
 /** Looping background particles for a room or screen. Returns the emitters. */

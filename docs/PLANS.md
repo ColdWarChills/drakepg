@@ -23,6 +23,7 @@ Build order (all built, see "Done" at the bottom):
   - Is the drop reveal too slow when farming normal monsters?
   - Is the 5-slot skill swap in the Character panel clear?
   - 8 equipment slots, sets, Lucky Impling.
+  - Battle effects (built 2026-10-14): too much or too little? Do farming fights feel slower? Easy to tone down per effect in `src/ui/fx.ts`.
 
 ## Longer chapters (Ch1-3)
 
@@ -127,4 +128,5 @@ Build order (all built, see "Done" at the bottom):
 
 - 2026-10-14: #7 combat pass, #8 prologue road, roll stones + tier caps, and the 8 slots / sets / Lucky Impling branch are all merged and live. `LUCKY_ON_NEW_GAME` is off.
 - 2026-10-14: build steps 1-3: Recall Scroll, quiet-room features (first-visit scene, inspect, campfire, down exits), saved visited rooms and last town (save v12), and the map. Placeholder side room: Hunters' Camp.
+- 2026-10-14: battle effects pass (wind-ups, element impacts, crits, combos, statuses, deaths), see `docs/IMPROVEMENTS_2026-10.md`.
 - 2026-10-14: build steps 4-5: Chapter 1-3 room layouts (8/9/10 rooms), drafted lines (`docs/ROOM_LINES.md`), sure chests in side rooms, `npm run pace`, 15 background prompts in `art/QUEUE.md`.

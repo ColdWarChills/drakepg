@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS } from '../data/elements';
-import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, ZoneDef } from '../data/types';
+import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, StatusDef, ZoneDef } from '../data/types';
 import { INN_SPAWN } from '../data/world';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
 import { makeMimic } from '../game/Chests';
@@ -32,6 +32,12 @@ const LOG_LINES = 4;
 const CHEST = 120;
 /** Skills shown per page of the Skills menu (the other slots are More / Back). */
 const SKILLS_PER_PAGE = 4;
+/** Panels, bars and menus sit above hit effects (which use ~900) so particles never cover numbers. Coins (950) still fly over. */
+const HUD_DEPTH = 940;
+/** Defend bubble color. */
+const GUARD_COLOR = 0x8ec5ff;
+/** Claw rakes and lunge trails of monster attacks without an element (their own colors can be too dark to glow). */
+const MONSTER_HIT_COLOR = 0xff6b5a;
 
 type Menu = 'main' | 'skills' | 'items';
 type MenuButton = { label: string; sub?: string; enabled?: boolean; hover?: string; run: () => void };
@@ -40,8 +46,28 @@ type MenuButton = { label: string; sub?: string; enabled?: boolean; hover?: stri
 interface Style {
   kind: 'slash' | 'heavy' | 'bolt' | 'proc' | 'enemy-melee' | 'enemy-spit';
   colors: number[];
+  element?: Element;
   big?: boolean;
 }
+
+/**
+ * Where a hit sits in a multi-hit move (Flurry, Thousand Cuts): the attacker lunges in on the first hit,
+ * stays in reach for the next ones, and goes home after the last.
+ */
+interface Chain {
+  first: boolean;
+  last: boolean;
+}
+
+const SINGLE: Chain = { first: true, last: true };
+/** Where each hit's number pops in a combo (x, y offsets), so quick hits don't cover each other. */
+const COMBO_SPOTS = [
+  [0, 0],
+  [70, -30],
+  [-70, -12],
+  [36, -58],
+  [-36, -44],
+];
 
 const EFFECT_TAGS: Record<Effect, string> = { weak: 'WEAK!', resisted: 'Resisted', immune: 'Immune', absorb: 'Absorbed' };
 const ELITE_GLOW = 0xffc23d;
@@ -86,6 +112,12 @@ export class BattleScene extends Phaser.Scene {
   private enrageText: Phaser.GameObjects.Text | null = null;
   /** "Runs away in 2 turns" (Lucky Implings). */
   private escapeLine: Phaser.GameObjects.Text | null = null;
+  /** The target's knockback in flight, stopped when the next blow lands (combo hits). */
+  private recoil: Phaser.Tweens.Tween | null = null;
+  /** Hits so far in the current combo (spreads out their numbers). */
+  private comboHits = 0;
+  /** How far the enemy's floating text starts lower, so it pops under a tall info panel (Elites, bosses). */
+  private enemyTextShift = 0;
   /** Statuses as shown so far during playback (status id -> turns). The battle itself is already a turn ahead. */
   private shown: Record<Side, Map<string, number>> = { player: new Map(), enemy: new Map() };
 
@@ -111,6 +143,7 @@ export class BattleScene extends Phaser.Scene {
     this.skillPage = 0;
     this.chargeAura = null;
     this.shield = null;
+    this.recoil = null;
     this.affinityRow = null;
     this.shellLine = null;
     this.shellRegrew = false;
@@ -128,8 +161,10 @@ export class BattleScene extends Phaser.Scene {
     }
     this.enemyFig = drawFigure(this, this.scale.width + 200, GROUND_Y, this.monster.look, -1);
 
+    const hudFrom = this.children.list.length;
     this.drawStatus();
     this.drawBottomPanel();
+    for (const obj of this.children.list.slice(hudFrom)) (obj as Phaser.GameObjects.Image).setDepth?.(HUD_DEPTH);
     this.refreshBars(false);
     const elite = this.monster.elite ? db.affix(this.monster.elite.affix) : null;
     this.pushLog(
@@ -206,7 +241,10 @@ export class BattleScene extends Phaser.Scene {
     const heroic = m.isHeroic && m.heroic ? `Heroic: ${m.heroic.text}` : '';
     const infoLines = (affix ? 1 : 0) + (m.shell ? 1 : 0) + (m.trait ? 1 : 0) + (heroic ? 1 : 0) + (m.escapeAfter ? 1 : 0) + 1;
     const lootY = 136 + infoLines * 28;
-    this.statusPanel(ex, 16, 420, 120 + infoLines * 28 + (m.loot ? 26 : 0));
+    const panelH = 120 + infoLines * 28 + (m.loot ? 26 : 0);
+    this.statusPanel(ex, 16, 420, panelH);
+    // Status names (the highest text, at GROUND_Y - 280) start under the panel and its status chips.
+    this.enemyTextShift = Phaser.Math.Clamp(16 + panelH + 50 - (GROUND_Y - 280), 0, 90);
     // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
     const tags = [m.isHeroic ? 'HEROIC' : m.boss ? 'BOSS' : affix ? 'ELITE' : m.lucky ? 'LUCKY' : m.tough ? 'TOUGH' : ''].filter(Boolean);
     const head = addText(this, ex + 16, 26, [`${m.name}`, `Lv ${m.level}`, ...tags].join('  ·  '), {
@@ -400,7 +438,7 @@ export class BattleScene extends Phaser.Scene {
     group('Absorbs:', absorbs);
     if (all) parts.push({ text: `${parts.length ? '  ·  ' : ''}All ${all > 0 ? '+' : ''}${all}`, color: COLORS.textGold });
     this.affinityRow?.destroy();
-    this.affinityRow = this.add.container(x, y);
+    this.affinityRow = this.add.container(x, y).setDepth(HUD_DEPTH);
     let cx = 0;
     for (const part of parts) {
       const t = addText(this, cx, 0, part.text, { size: 15, bold: true, color: part.color }).setOrigin(0, 0.5);
@@ -569,7 +607,7 @@ export class BattleScene extends Phaser.Scene {
     this.menuButtons = [];
     this.menu.removeAll(true);
     this.logText.setText(this.log.join('\n'));
-    for (const event of events) await this.play(event);
+    for (let i = 0; i < events.length; i++) await this.play(events[i], events[i - 1], events[i + 1]);
     this.refreshBars();
     this.syncStatuses();
     this.refreshIntent();
@@ -600,23 +638,53 @@ export class BattleScene extends Phaser.Scene {
     return element ? ELEMENT_COLORS[element] : NEUTRAL_COLORS;
   }
 
+  /** Top of a figure's body (art or shapes) and its width, for marks over the head and death effects. */
+  private bodyOf(side: Side): { top: number; width: number } {
+    const fig = this.figOf(side);
+    let top = GROUND_Y - 120;
+    let width = 80;
+    for (const part of fig.list) {
+      if (!(part instanceof Phaser.GameObjects.Image || part instanceof Phaser.GameObjects.Shape) || !part.visible) continue;
+      const b = part.getBounds();
+      top = Math.min(top, b.top);
+      width = Math.max(width, b.width);
+    }
+    return { top: Phaser.Math.Clamp(top, GROUND_Y - 300, GROUND_Y - 120), width: Math.min(width, 260) };
+  }
+
+  /** Color of a status's visuals: its own tint, else its damage element's, else red or green. */
+  private statusColor(def: StatusDef, element?: Element): number {
+    if (def.tint !== undefined) return def.tint;
+    const el = element ?? (def.dot?.element && def.dot.element !== 'weapon' ? def.dot.element : undefined);
+    if (el) return ELEMENT_COLORS[el][1];
+    return def.harmful ? 0xff6b6b : 0x7dff9a;
+  }
+
   private styleOf(e: { source: Side; moveId: string; damageType: DamageType; element?: Element }): Style {
     const colors = this.colorsOf(e.element);
+    const element = e.element;
     if (e.source === 'enemy') {
       return {
         kind: e.damageType === 'magic' ? 'enemy-spit' : 'enemy-melee',
         colors: e.element ? colors : [0xffffff, this.monster.look.color, this.monster.look.accent],
+        element,
       };
     }
-    if (e.moveId === 'proc') return { kind: 'proc', colors };
-    if (e.moveId === 'attack') return { kind: e.damageType === 'magic' ? 'bolt' : 'slash', colors };
+    if (e.moveId === 'proc') return { kind: 'proc', colors, element };
+    if (e.moveId === 'attack') return { kind: e.damageType === 'magic' ? 'bolt' : 'slash', colors, element };
     const skill = db.skill(e.moveId);
-    if (e.damageType === 'magic') return { kind: 'bolt', colors, big: skill.fx === 'heavy' };
-    return { kind: skill.fx === 'heavy' ? 'heavy' : 'slash', colors };
+    if (e.damageType === 'magic') return { kind: 'bolt', colors, element, big: skill.fx === 'heavy' };
+    return { kind: skill.fx === 'heavy' ? 'heavy' : 'slash', colors, element };
   }
 
-  private async play(e: BattleEvent): Promise<void> {
-    await this.playEvent(e);
+  /** Player hits of the same skill in a row (multi-hit skills); monster moves and weapon specials stand alone. */
+  private sameMove(a: BattleEvent | undefined, b: BattleEvent): boolean {
+    if (!a || (a.kind !== 'hit' && a.kind !== 'miss') || (b.kind !== 'hit' && b.kind !== 'miss')) return false;
+    return a.source === 'player' && b.source === 'player' && a.moveId === b.moveId && a.moveId !== 'proc';
+  }
+
+  private async play(e: BattleEvent, prev?: BattleEvent, next?: BattleEvent): Promise<void> {
+    await this.playEvent(e, { first: !this.sameMove(prev, e), last: !next || !this.sameMove(e, next) });
     // An enemy action resolves the player's guard and the boss's wind-up.
     const enemyActed = e.kind === 'windup' || ((e.kind === 'hit' || e.kind === 'miss' || e.kind === 'buff') && e.source === 'enemy');
     if (enemyActed) {
@@ -627,24 +695,30 @@ export class BattleScene extends Phaser.Scene {
       if (this.shield) {
         const s = this.shield;
         this.shield = null;
+        this.tweens.killTweensOf(s);
         this.tweens.add({ targets: s, alpha: 0, scale: 1.4, duration: 250, onComplete: () => s.destroy() });
       }
     }
   }
 
-  private async playEvent(e: BattleEvent): Promise<void> {
+  private async playEvent(e: BattleEvent, chain: Chain = SINGLE): Promise<void> {
     const enemyName = this.monster.name;
     switch (e.kind) {
       case 'hit':
       case 'miss': {
+        this.comboHits = chain.first ? 0 : this.comboHits + 1;
         const style = this.styleOf(e);
-        await this.attackAnim(e.source, style, () => (e.kind === 'hit' ? this.impact(e, style) : this.dodge(e.source === 'player' ? 'enemy' : 'player')));
+        const target: Side = e.source === 'player' ? 'enemy' : 'player';
+        await this.attackAnim(e.source, style, () => (e.kind === 'hit' ? this.impact(e, style, chain) : this.dodge(target)), chain);
         const who = e.source === 'player' ? 'You use' : `${enemyName} uses`;
         if (e.kind === 'hit' && e.shellLeft !== undefined && this.monster.shell) {
           const broke = e.shellLeft === 0;
           sfx.play(this, broke ? 'explode' : 'hit');
-          if (broke) fx.shockwave(this, ENEMY_X, GROUND_Y, 0xbfe9ff, 3, 0.3);
-          floatText(this, ENEMY_X, GROUND_Y - 300, broke ? `${this.monster.shell.name} broken!` : 'Cracked!', '#bfe9ff', broke ? 34 : 26);
+          if (broke) {
+            fx.shockwave(this, ENEMY_X, GROUND_Y, 0xbfe9ff, 3, 0.3);
+            fx.elementBurst(this, ENEMY_X, GROUND_Y - CHEST, 'ice', 1);
+          }
+          floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 300), broke ? `${this.monster.shell.name} broken!` : 'Cracked!', '#bfe9ff', broke ? 34 : 26);
           this.refreshShell();
         }
         if (e.kind === 'hit' && e.absorbed) {
@@ -655,41 +729,56 @@ export class BattleScene extends Phaser.Scene {
         } else {
           this.pushLog(e.source === 'player' ? `You use ${e.move}, but miss.` : `${enemyName} uses ${e.move}, but misses.`);
         }
-        await this.wait(e.moveId === 'proc' ? 200 : 380);
+        // Combo hits follow each other quickly; the last one gets the usual pause.
+        await this.wait(!chain.last ? 120 : e.moveId === 'proc' ? 200 : 340);
         break;
       }
       case 'heal': {
         const x = this.homeX(e.source);
+        const fig = this.figOf(e.source);
         const isSkill = db.hasSkill(e.moveId) || e.moveId === 'proc' || e.source === 'enemy';
         const color = e.mp > 0 && e.hp === 0 ? 0x7ec8ff : isSkill ? 0x7dff9a : 0xff8a8a;
         // Lifesteal and weapon specials heal right after the blow, without a wind-up.
-        const afterHit = e.moveId === 'proc' || (db.hasSkill(e.moveId) && db.skill(e.moveId).kind === 'damage');
-        if (!afterHit && isSkill) {
+        const lifesteal = db.hasSkill(e.moveId) && db.skill(e.moveId).kind === 'damage';
+        const afterHit = e.moveId === 'proc' || lifesteal;
+        if (lifesteal) {
+          // Life pulled out of the target into the attacker.
+          const from = this.homeX(e.source === 'player' ? 'enemy' : 'player');
+          fx.drain(this, { x: from, y: GROUND_Y - CHEST }, { x, y: GROUND_Y - CHEST }, 0xff6b8a);
+          await this.wait(260);
+        } else if (!afterHit && isSkill) {
           sfx.play(this, 'charge');
+          this.children.moveBelow(fx.castCircle(this, x, GROUND_Y, color, 280), fig);
           await fx.chargeUp(this, x + 30, GROUND_Y - CHEST, color, 280);
         } else if (!afterHit) {
-          await this.tween({ targets: this.figOf(e.source), y: GROUND_Y - 20, duration: 120, yoyo: true });
+          // A potion: a little hop.
+          await this.tween({ targets: fig, y: GROUND_Y - 20, duration: 120, yoyo: true });
         }
         sfx.play(this, 'heal');
         fx.healSparkles(this, x, GROUND_Y, color);
-        floatText(this, x, GROUND_Y - 220, restoreText(e), COLORS.textGood, 30);
+        fx.healPluses(this, x, GROUND_Y, color);
+        fx.whiteFlash(this, fig, 140, color);
+        floatText(this, x, this.textY(e.source, GROUND_Y - 220), restoreText(e), COLORS.textGood, 30);
         this.refreshBars();
         const user = e.source === 'player' ? 'You use' : `${enemyName} uses`;
         this.pushLog(afterHit ? `${e.move} restores ${restoreText(e)}.` : `${user} ${e.move}: ${restoreText(e)}.`);
-        await this.wait(afterHit ? 350 : 650);
+        await this.wait(afterHit ? 350 : 600);
         break;
       }
       case 'buff': {
         const x = this.homeX(e.source);
         if (e.moveId === 'proc') {
-          floatText(this, ENEMY_X, GROUND_Y - 270, `${e.move}!`, COLORS.textGold, 26);
+          floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 270), `${e.move}!`, COLORS.textGold, 26);
           this.pushLog(`${e.move}!`);
           await this.wait(250);
           break;
         }
+        const color = e.source === 'player' ? 0xffe08a : this.monster.look.accent;
         sfx.play(this, 'charge');
-        await fx.chargeUp(this, x, GROUND_Y - CHEST, e.source === 'player' ? 0xffe08a : this.monster.look.accent, 320);
-        fx.shockwave(this, x, GROUND_Y, 0xffe08a, 2.2, 0.35);
+        this.children.moveBelow(fx.castCircle(this, x, GROUND_Y, color, 320), this.figOf(e.source));
+        await fx.chargeUp(this, x, GROUND_Y - CHEST, color, 320);
+        fx.shockwave(this, x, GROUND_Y, color, 2.2, 0.35);
+        fx.aura(this, x, GROUND_Y, color);
         this.pushLog(`${e.source === 'player' ? 'You use' : `${enemyName} uses`} ${e.move}.`);
         await this.wait(200);
         break;
@@ -697,7 +786,17 @@ export class BattleScene extends Phaser.Scene {
       case 'status': {
         const def = db.status(e.status);
         const x = this.homeX(e.target);
-        floatText(this, x, GROUND_Y - 280, def.name, def.harmful ? COLORS.textBad : COLORS.textGood, 26);
+        const color = this.statusColor(def);
+        const head = this.bodyOf(e.target).top;
+        floatText(this, x, this.textY(e.target, GROUND_Y - 280), def.name, def.harmful ? COLORS.textBad : COLORS.textGood, 26);
+        if (def.stun) {
+          sfx.play(this, 'stun');
+          fx.stunStars(this, x, head - 10);
+        } else {
+          if (def.harmful) sfx.play(this, 'debuff');
+          fx.statusMark(this, x, head - 20, color, !def.harmful);
+          if (def.harmful) fx.statusPuff(this, x, GROUND_Y - CHEST, color);
+        }
         this.shown[e.target].set(def.id, Math.max(this.shown[e.target].get(def.id) ?? 0, e.turns));
         this.refreshStatuses();
         const target = e.target === 'player' ? 'You are' : `${enemyName} is`;
@@ -706,7 +805,8 @@ export class BattleScene extends Phaser.Scene {
         break;
       }
       case 'immune': {
-        floatText(this, this.homeX(e.target), GROUND_Y - 280, 'Immune', COLORS.textDim, 26);
+        sfx.play(this, 'block');
+        floatText(this, this.homeX(e.target), this.textY(e.target, GROUND_Y - 280), 'Immune', COLORS.textDim, 26);
         this.pushLog(`${this.nameOf(e.target)} shrugs off ${db.status(e.status).name}.`);
         await this.wait(300);
         break;
@@ -714,16 +814,23 @@ export class BattleScene extends Phaser.Scene {
       case 'tick': {
         const def = db.status(e.status);
         const x = this.homeX(e.target);
+        const fig = this.figOf(e.target);
         if (e.damage > 0 || e.heal === 0) {
           const color = e.element ? ELEMENT_TEXT[e.element] : COLORS.textBad;
-          fx.hitSparks(this, x, GROUND_Y - CHEST, true, false, this.colorsOf(e.element));
-          fx.whiteFlash(this, this.figOf(e.target), 70);
+          const tint = this.statusColor(def, e.element);
+          // Burn flickers with flames, Spores puff earth, Poison bubbles, Bleed drips.
+          if (e.element && def.tint === undefined) fx.elementBurst(this, x, GROUND_Y - CHEST, e.element, 0.25);
+          else fx.statusPuff(this, x, GROUND_Y - CHEST, tint);
+          fx.hitSparks(this, x, GROUND_Y - CHEST, true, false, def.tint !== undefined ? [0xffffff, tint, tint] : this.colorsOf(e.element));
+          fx.whiteFlash(this, fig, 100, 0xffffff, tint);
           sfx.play(this, 'hit');
-          floatText(this, x, GROUND_Y - 220, `${e.damage}`, color, 28, e.effect ? EFFECT_TAGS[e.effect] : def.name);
+          this.tweens.add({ targets: fig, angle: e.target === 'player' ? -4 : 4, duration: 60, yoyo: true, onComplete: () => fig.setAngle(0) });
+          floatText(this, x, this.textY(e.target, GROUND_Y - 220), `${e.damage}`, color, 28, e.effect ? EFFECT_TAGS[e.effect] : def.name);
           this.pushLog(`${def.name}: ${e.damage} damage to ${e.target === 'player' ? 'you' : enemyName}.`);
         } else {
           fx.healSparkles(this, x, GROUND_Y, 0x7dff9a);
-          floatText(this, x, GROUND_Y - 220, `+${e.heal}`, COLORS.textGood, 28, def.name);
+          fx.healPluses(this, x, GROUND_Y, 0x7dff9a);
+          floatText(this, x, this.textY(e.target, GROUND_Y - 220), `+${e.heal}`, COLORS.textGood, 28, def.name);
           this.pushLog(`${def.name}: ${e.target === 'player' ? 'you heal' : `${enemyName} heals`} ${e.heal} HP.`);
         }
         this.refreshBars();
@@ -737,7 +844,9 @@ export class BattleScene extends Phaser.Scene {
       }
       case 'stunned': {
         const fig = this.figOf(e.side);
-        floatText(this, this.homeX(e.side), GROUND_Y - 280, 'Stunned!', COLORS.textGold, 30);
+        sfx.play(this, 'stun');
+        fx.stunStars(this, this.homeX(e.side), this.bodyOf(e.side).top - 10, 700);
+        floatText(this, this.homeX(e.side), this.textY(e.side, GROUND_Y - 280), 'Stunned!', COLORS.textGold, 30);
         this.pushLog(e.side === 'player' ? 'You are stunned and lose your turn!' : `${enemyName} is stunned!`);
         this.shown[e.side].delete('stun');
         this.refreshStatuses();
@@ -748,11 +857,17 @@ export class BattleScene extends Phaser.Scene {
       }
       case 'defend': {
         sfx.play(this, 'open');
-        this.shield?.destroy();
-        this.shield = this.add.circle(PLAYER_X, GROUND_Y - 110, 120).setStrokeStyle(6, 0x8ec5ff, 0.9).setFillStyle(0x8ec5ff, 0.12);
+        if (this.shield) {
+          this.tweens.killTweensOf(this.shield);
+          this.shield.destroy();
+        }
+        this.shield = this.add.circle(PLAYER_X, GROUND_Y - 110, 120).setStrokeStyle(6, GUARD_COLOR, 0.9).setFillStyle(GUARD_COLOR, 0.12);
         this.shield.setScale(0.2);
         this.tweens.add({ targets: this.shield, scale: 1, duration: 220, ease: 'Back.easeOut' });
-        floatText(this, PLAYER_X, GROUND_Y - 230, e.mp > 0 ? `Defend  +${e.mp} MP` : 'Defend', COLORS.textMagic, 28);
+        // A slow shimmer while it holds.
+        this.tweens.add({ targets: this.shield, fillAlpha: 0.22, duration: 500, delay: 220, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        fx.aura(this, PLAYER_X, GROUND_Y, GUARD_COLOR);
+        floatText(this, PLAYER_X, GROUND_Y - 290, e.mp > 0 ? `Defend  +${e.mp} MP` : 'Defend', COLORS.textMagic, 28);
         this.pushLog('You brace yourself.');
         this.refreshBars();
         await this.wait(350);
@@ -762,7 +877,7 @@ export class BattleScene extends Phaser.Scene {
         sfx.play(this, 'warning');
         this.pushLog(e.text);
         this.cameras.main.shake(350, 0.006);
-        floatText(this, ENEMY_X, GROUND_Y - 260, `${e.move}!`, COLORS.textBad, 34);
+        floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 260), `${e.move}!`, COLORS.textBad, 34);
         this.chargeAura = this.add.image(ENEMY_X, GROUND_Y - 120, 'fx_soft').setTint(0xff3b3b).setBlendMode('ADD').setScale(8).setAlpha(0.5);
         this.chargeAura.setDepth(-0.5);
         this.tweens.add({ targets: this.chargeAura, scale: 10, alpha: 0.8, duration: 450, yoyo: true, repeat: -1 });
@@ -773,7 +888,7 @@ export class BattleScene extends Phaser.Scene {
       case 'enrage': {
         sfx.play(this, 'warning');
         this.cameras.main.flash(200, 140, 0, 0);
-        floatText(this, ENEMY_X, GROUND_Y - 290, `Enraged! +${Math.round(e.bonus * 100)}% damage`, COLORS.textBad, 30);
+        floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 290), `Enraged! +${Math.round(e.bonus * 100)}% damage`, COLORS.textBad, 30);
         this.pushLog(`The fight drags on: ${enemyName} is enraged (+${Math.round(e.bonus * 100)}% damage).`);
         this.refreshIntent();
         await this.wait(500);
@@ -793,8 +908,9 @@ export class BattleScene extends Phaser.Scene {
         this.cameras.main.shake(450, 0.012);
         fx.shockwave(this, ENEMY_X, GROUND_Y, colors[1], 4, 0.4);
         fx.explosion(this, ENEMY_X, GROUND_Y - CHEST, colors);
+        fx.elementBurst(this, ENEMY_X, GROUND_Y - CHEST, e.element, 1);
         for (const part of this.enemyFig.list) if (part instanceof Phaser.GameObjects.Image) part.setTint(colors[1]);
-        floatText(this, ENEMY_X, GROUND_Y - 290, `${ELEMENT_LABELS[e.element]} form!`, ELEMENT_TEXT[e.element], 40);
+        floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 290), `${ELEMENT_LABELS[e.element]} form!`, ELEMENT_TEXT[e.element], 40);
         this.pushLog(e.text);
         this.drawAffinities(this.scale.width - 420, 108);
         this.refreshIntent();
@@ -805,7 +921,7 @@ export class BattleScene extends Phaser.Scene {
         this.shellRegrew = true;
         sfx.play(this, 'warning');
         fx.shockwave(this, ENEMY_X, GROUND_Y, 0xbfe9ff, 4, 0.35);
-        floatText(this, ENEMY_X, GROUND_Y - 290, `${this.monster.shell?.name ?? 'Shell'} grows back!`, '#bfe9ff', 32);
+        floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 290), `${this.monster.shell?.name ?? 'Shell'} grows back!`, '#bfe9ff', 32);
         this.pushLog(e.text);
         this.refreshShell();
         await this.wait(900);
@@ -835,7 +951,7 @@ export class BattleScene extends Phaser.Scene {
         this.tweens.killTweensOf(fig);
         this.pushLog(`${enemyName} darts away with its gold!`);
         sfx.play(this, 'miss');
-        floatText(this, ENEMY_X, GROUND_Y - 260, 'Got away!', LUCKY_CSS, 34);
+        floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 260), 'Got away!', LUCKY_CSS, 34);
         fx.healSparkles(this, fig.x, GROUND_Y, 0xffe066);
         await this.tween({ targets: fig, y: GROUND_Y - 60, duration: 160, yoyo: true, ease: 'Quad.easeOut' });
         for (let i = 0; i < 4; i++) this.time.delayedCall(i * 80, () => fx.dust(this, fig.x, GROUND_Y, 3));
@@ -845,12 +961,32 @@ export class BattleScene extends Phaser.Scene {
       case 'defeated': {
         const fig = this.figOf(e.side);
         this.tweens.killTweensOf(fig);
+        this.recoil = null;
         if (e.side === 'enemy') {
+          const m = this.monster;
+          const body = this.bodyOf('enemy');
+          const colors = m.element ? ELEMENT_COLORS[m.element] : [0xffffff, m.look.color, m.look.accent];
           this.pushLog(`${enemyName} is defeated!`);
-          fx.hitStop(this, 160);
-          fx.whiteFlash(this, fig, 220);
-          await this.wait(200);
-          fx.deathPoof(this, fig.x, GROUND_Y - 60, this.monster.look.color);
+          fx.hitStop(this, m.boss ? 260 : 160);
+          fx.whiteFlash(this, fig, 260);
+          // Knocked back off its feet.
+          await this.tween({ targets: fig, x: ENEMY_X + 40, angle: 10, duration: 200, ease: 'Quad.easeOut' });
+          if (m.boss) {
+            // A boss goes down in a chain of blasts.
+            for (let i = 0; i < 3; i++) {
+              const bx = ENEMY_X + Phaser.Math.Between(-body.width / 2, body.width / 2);
+              const by = Phaser.Math.Between(body.top + 20, GROUND_Y - 40);
+              fx.explosion(this, bx, by, colors);
+              fx.whiteFlash(this, fig, 90);
+              sfx.play(this, 'explode');
+              this.cameras.main.shake(160, 0.01);
+              await this.wait(200);
+            }
+            this.cameras.main.flash(260, 255, 255, 255);
+            fx.shockwave(this, ENEMY_X, GROUND_Y, colors[1], 5, 0.35);
+          }
+          fx.deathPoof(this, fig.x, GROUND_Y - 60, m.look.color);
+          fx.dissolve(this, fig.x, GROUND_Y, body.width * 0.8, GROUND_Y - body.top, colors);
           sfx.play(this, 'explode');
           this.cameras.main.shake(200, 0.008);
           const gold = this.battle.rewards?.gold ?? 0;
@@ -868,68 +1004,129 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  /** Swing the weapons a figure holds (if its art shows them). */
-  private swing(fig: Phaser.GameObjects.Container, big = false): void {
-    const weapons = (fig.getData('weapons') as Phaser.GameObjects.Image[] | undefined) ?? [];
-    for (const w of weapons) {
-      const base = w.getData('angle') as number;
-      this.tweens.add({ targets: w, angle: base + (big ? 110 : 75), duration: big ? 140 : 110, yoyo: true, ease: 'Quad.easeOut' });
+  /** Cock the weapons a figure holds back (if its art shows them), ready to swing. */
+  private cock(fig: Phaser.GameObjects.Container, ms: number): void {
+    for (const w of (fig.getData('weapons') as Phaser.GameObjects.Image[] | undefined) ?? []) {
+      this.tweens.killTweensOf(w);
+      this.tweens.add({ targets: w, angle: (w.getData('angle') as number) - 40, duration: ms, ease: 'Quad.easeOut' });
     }
   }
 
+  /** Swing the weapons a figure holds through the target and settle back. */
+  private swing(fig: Phaser.GameObjects.Container, big = false): void {
+    for (const w of (fig.getData('weapons') as Phaser.GameObjects.Image[] | undefined) ?? []) {
+      const base = w.getData('angle') as number;
+      this.tweens.killTweensOf(w);
+      this.tweens.chain({
+        targets: w,
+        tweens: [
+          { angle: base + (big ? 110 : 80), duration: big ? 110 : 80, ease: 'Quad.easeIn' },
+          { angle: base, duration: big ? 220 : 160, ease: 'Quad.easeOut' },
+        ],
+      });
+    }
+  }
+
+  /** Lean back (and cock the weapon) before a lunge: the anticipation that sells the blow. */
+  private windUp(fig: Phaser.GameObjects.Container, dir: number, ms: number, big = false): Promise<void> {
+    this.cock(fig, ms);
+    return this.tween({ targets: fig, x: fig.x - (big ? 30 : 20) * dir, angle: -(big ? 9 : 6) * dir, duration: ms, ease: 'Quad.easeOut' });
+  }
+
+  /** A fading silhouette of a figure where it stands now (behind it). */
+  private ghost(side: Side, color: number, alpha = 0.4, ms = 240): void {
+    const fig = this.figOf(side);
+    const copy = side === 'player' ? drawFigure(this, fig.x, fig.y, this.playerLook, 1, session.player.weapon) : drawFigure(this, fig.x, fig.y, this.monster.look, -1);
+    copy.setScale(fig.scaleX, fig.scaleY).setAngle(fig.angle);
+    this.children.moveBelow(copy, fig);
+    fx.fadeGhost(this, copy, color, alpha, ms);
+  }
+
+  /** Afterimages trailing a lunge that takes `ms`. */
+  private afterimages(side: Side, ms: number, color: number): void {
+    for (let i = 0; i < 3; i++) this.time.delayedCall((ms / 3) * i + 20, () => this.ghost(side, color, 0.35 - i * 0.07, 220));
+  }
+
   /** Attacker's animation. `onContact` fires at the moment the blow lands. */
-  private async attackAnim(source: Side, style: Style, onContact: () => void): Promise<void> {
+  private async attackAnim(source: Side, style: Style, onContact: () => void, chain: Chain = SINGLE): Promise<void> {
     const fig = this.figOf(source);
     const dir = source === 'player' ? 1 : -1;
     const home = this.homeX(source);
     const target = { x: this.homeX(source === 'player' ? 'enemy' : 'player'), y: GROUND_Y - CHEST };
+    const trail = style.element ? style.colors[1] : source === 'player' ? 0x9fd3ff : MONSTER_HIT_COLOR;
+    const reach = target.x - 170 * dir;
+
+    // Combo hits after the first: already in reach, a quick step back and in, then the next blow.
+    if (!chain.first && style.kind !== 'bolt' && style.kind !== 'proc') {
+      await this.tween({ targets: fig, x: reach - 26 * dir, duration: 60, yoyo: true, ease: 'Quad.easeOut' });
+      sfx.play(this, 'slash');
+      this.swing(fig);
+      onContact();
+      if (chain.last) await this.tween({ targets: fig, x: home, angle: 0, duration: 240, ease: 'Quad.easeOut' });
+      return;
+    }
 
     switch (style.kind) {
       case 'slash':
       case 'enemy-melee': {
+        await this.windUp(fig, dir, 80);
+        sfx.play(this, 'whoosh');
+        this.afterimages(source, 150, trail);
+        fx.speedLines(this, fig.x, GROUND_Y, dir as 1 | -1, trail);
+        await this.tween({ targets: fig, x: reach, angle: 4 * dir, duration: 150, ease: 'Quad.easeIn' });
+        fx.dust(this, reach, GROUND_Y, 3);
         sfx.play(this, 'slash');
-        await this.tween({ targets: fig, x: target.x - 170 * dir, duration: 180, ease: 'Quad.easeIn' });
         this.swing(fig);
         onContact();
-        await this.tween({ targets: fig, x: home, duration: 260, ease: 'Quad.easeOut' });
+        if (chain.last) await this.tween({ targets: fig, x: home, angle: 0, duration: 240, ease: 'Quad.easeOut' });
         break;
       }
       case 'heavy': {
+        // Crouch, leap, crash down.
+        await this.windUp(fig, dir, 130, true);
         fx.dust(this, fig.x, GROUND_Y, 5);
+        sfx.play(this, 'whoosh');
+        this.afterimages(source, 300, trail);
         const hop = { t: 0 };
         const startX = fig.x;
         const endX = target.x - 180 * dir;
         await this.tween({
           targets: hop,
           t: 1,
-          duration: 340,
+          duration: 300,
           ease: 'Sine.easeIn',
           onUpdate: () => {
             fig.x = Phaser.Math.Linear(startX, endX, hop.t);
             fig.y = GROUND_Y - Math.sin(hop.t * Math.PI) * 130;
-            fig.angle = hop.t * 12 * dir;
+            fig.angle = -9 * dir + hop.t * 21 * dir;
           },
         });
         fig.y = GROUND_Y;
-        fig.angle = 0;
         sfx.play(this, 'slash');
         this.swing(fig, true);
         onContact();
         fx.dust(this, fig.x, GROUND_Y, 10);
-        await this.tween({ targets: fig, x: home, duration: 320, ease: 'Quad.easeOut' });
+        this.cameras.main.shake(180, 0.01);
+        if (chain.last) await this.tween({ targets: fig, x: home, angle: 0, duration: 300, ease: 'Quad.easeOut' });
         break;
       }
       case 'bolt':
       case 'enemy-spit': {
-        const hand = { x: fig.x + 50 * dir, y: GROUND_Y - CHEST - 10 };
         const spit = style.kind === 'enemy-spit';
-        await this.tween({ targets: fig, x: home - 20 * dir, duration: 120 });
-        sfx.play(this, 'charge');
-        await fx.chargeUp(this, hand.x, hand.y, style.colors[1], spit ? 180 : style.big ? 520 : 300);
-        sfx.play(this, 'fireball');
+        if (chain.first) {
+          await this.tween({ targets: fig, x: home - 20 * dir, duration: 120 });
+          const charge = spit ? 180 : style.big ? 520 : 300;
+          sfx.play(this, 'charge');
+          this.children.moveBelow(fx.castCircle(this, home, GROUND_Y, style.colors[1], charge), fig);
+          await fx.chargeUp(this, fig.x + 50 * dir, GROUND_Y - CHEST - 10, style.colors[1], charge);
+        }
+        const hand = { x: fig.x + 50 * dir, y: GROUND_Y - CHEST - 10 };
+        sfx.play(this, style.element === 'energy' ? 'zap' : 'fireball');
+        // Combo bolts fly faster, without a new wind-up.
+        const flight = !chain.first ? 260 : spit ? 360 : style.big ? 520 : 420;
         await Promise.all([
-          this.tween({ targets: fig, x: home + 20 * dir, duration: 120, ease: 'Back.easeOut' }),
-          fx.projectile(this, hand, target, style.colors, spit ? 360 : style.big ? 520 : 420),
+          chain.first ? this.tween({ targets: fig, x: home + 20 * dir, duration: 120, ease: 'Back.easeOut' }) : Promise.resolve(),
+          fx.projectile(this, hand, target, style.colors, flight, style.element),
         ]);
         sfx.play(this, 'explode');
         if (style.big) {
@@ -937,7 +1134,7 @@ export class BattleScene extends Phaser.Scene {
           this.cameras.main.shake(260, 0.012);
         }
         onContact();
-        await this.tween({ targets: fig, x: home, duration: 200 });
+        if (chain.last) await this.tween({ targets: fig, x: home, duration: 200 });
         break;
       }
       case 'proc': {
@@ -949,7 +1146,7 @@ export class BattleScene extends Phaser.Scene {
     }
   }
 
-  private impact(e: Extract<BattleEvent, { kind: 'hit' }>, style: Style): void {
+  private impact(e: Extract<BattleEvent, { kind: 'hit' }>, style: Style, chain: Chain = SINGLE): void {
     const targetSide: Side = e.source === 'player' ? 'enemy' : 'player';
     const fig = this.figOf(targetSide);
     const dir = e.source === 'player' ? 1 : -1;
@@ -960,34 +1157,78 @@ export class BattleScene extends Phaser.Scene {
     const weight = Phaser.Math.Clamp(e.damage / maxHp, 0.05, 0.6);
     const palette = e.element ? style.colors : undefined;
     if (e.absorbed) {
+      // The element soaks in and heals it.
+      fx.absorbInto(this, x, y, style.colors);
       fx.healSparkles(this, x, GROUND_Y, 0x7dff9a);
+      fx.whiteFlash(this, fig, 160, 0x7dff9a);
       sfx.play(this, 'heal');
-      floatText(this, x, GROUND_Y - 230, `+${e.damage}`, COLORS.textGood, 40, EFFECT_TAGS.absorb);
+      floatText(this, x, this.textY(targetSide, GROUND_Y - 230), `+${e.damage}`, COLORS.textGood, 40, EFFECT_TAGS.absorb);
       this.refreshBars();
       return;
     }
+    const dull = e.effect === 'resisted' || e.effect === 'immune';
+    const guarded = targetSide === 'player' && this.shield !== null;
+    const big = e.crit || e.effect === 'weak' || style.kind === 'heavy' || !!style.big;
+    // Combo hits in the middle of a chain land lighter, so long skills stay snappy.
+    const quick = !chain.last;
 
-    if (style.kind === 'slash' || style.kind === 'enemy-melee') {
-      const color = e.element ? style.colors[1] : e.source === 'enemy' ? this.monster.look.accent : 0xffffff;
+    // The blow itself: a crescent from the hero's weapon, claw rakes from a monster.
+    if (style.kind === 'slash') {
+      const color = e.element ? style.colors[1] : 0xffffff;
       this.twinFlip = !this.twinFlip;
       fx.slash(this, x, y, dir as 1 | -1, color, this.twinFlip ? 0.35 : -0.35);
+    } else if (style.kind === 'enemy-melee') {
+      fx.clawMarks(this, x, y, dir as 1 | -1, e.element ? style.colors[1] : MONSTER_HIT_COLOR);
     } else if (style.kind === 'heavy') {
       const color = e.element ? style.colors[1] : 0xffe08a;
       fx.slash(this, x, y, dir as 1 | -1, color, 0.6, true);
       fx.shockwave(this, x, GROUND_Y, color, 3, 0.3);
     }
-    fx.hitSparks(this, x, y, magic, e.crit, palette);
-    sfx.play(this, e.crit || style.kind === 'heavy' || style.big ? 'crit' : 'hit');
-    fx.whiteFlash(this, fig);
-    fx.hitStop(this, e.crit || style.kind === 'heavy' ? 120 : 60);
-    this.cameras.main.shake(e.crit ? 220 : 140, 0.004 + weight * 0.03);
 
-    // Knockback.
-    this.tweens.add({ targets: fig, x: x + 28 * dir, duration: 70, yoyo: true, ease: 'Quad.easeOut' });
+    // Sparks, then the element on top: flames, shards, splash, gust, rocks, crackle, light or shadow.
+    fx.hitSparks(this, x, y, magic, e.crit, dull ? [0xdddddd, 0x999999, 0x666666] : palette);
+    if (e.element && !dull) fx.elementBurst(this, x, y, e.element, big ? 1 : 0.35 + weight);
+    if (e.effect === 'weak') fx.shockwave(this, x, y, palette ? palette[1] : 0xffe08a, 3.2, 1);
+    if (e.crit) {
+      fx.critFlare(this, x, y, palette ? palette[1] : 0xffe08a);
+      const cam = this.cameras.main;
+      cam.zoomTo(1.03, 60, 'Quad.easeOut', true, (_c: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+        if (progress === 1) cam.zoomTo(1, 180, 'Quad.easeOut', true);
+      });
+    }
+    if (guarded && this.shield) {
+      // The Defend bubble takes the blow.
+      fx.deflect(this, x - 90 * dir, y, dir as 1 | -1, GUARD_COLOR);
+      this.shield.setStrokeStyle(10, 0xffffff, 1);
+      const s = this.shield;
+      this.time.delayedCall(90, () => s.active && s.setStrokeStyle(6, GUARD_COLOR, 0.9));
+      sfx.play(this, 'block');
+    }
+
+    sfx.play(this, big ? 'crit' : 'hit');
+    if (e.element && !dull) sfx.play(this, sfx.ELEMENT_SFX[e.element]);
+    fx.whiteFlash(this, fig, big ? 140 : 100, 0xffffff, palette && !dull ? palette[1] : undefined);
+    fx.hitStop(this, quick ? 35 : e.crit ? 130 : big ? 110 : 60);
+    this.cameras.main.shake(e.crit ? 220 : 140, (guarded || dull ? 0.002 : 0.004) + weight * (quick ? 0.012 : 0.03));
+
+    // Knockback and a recoil tilt, bigger for heavier blows. A new blow cuts the last one's short.
+    this.recoil?.stop();
+    fig.setPosition(x, GROUND_Y).setAngle(0);
+    const push = guarded ? 8 : 16 + weight * 60 + (e.crit ? 18 : 0);
+    this.recoil = this.tweens.add({
+      targets: fig,
+      x: x + push * dir,
+      angle: (guarded ? 2 : 5 + weight * 10) * dir,
+      duration: 80,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+      onComplete: () => fig.setAngle(0),
+    });
 
     const color = e.element ? ELEMENT_TEXT[e.element] : magic ? COLORS.textMagic : e.source === 'enemy' ? COLORS.textBad : '#ffffff';
-    const tags = [e.crit ? 'CRIT!' : '', e.effect ? EFFECT_TAGS[e.effect] : ''].filter(Boolean).join(' ');
-    floatText(this, x, GROUND_Y - 230, `${e.damage}`, color, e.crit || e.effect === 'weak' ? 50 : 36, tags || undefined);
+    const tags = [e.crit ? 'CRIT!' : '', e.effect ? EFFECT_TAGS[e.effect] : '', guarded ? 'Guarded' : ''].filter(Boolean).join(' ');
+    const [ox, oy] = this.numberSpot();
+    floatText(this, x + ox, this.textY(targetSide, GROUND_Y - 230) + oy, `${e.damage}`, color, e.crit || e.effect === 'weak' ? 50 : 36, tags || undefined);
     this.refreshBars();
   }
 
@@ -995,9 +1236,23 @@ export class BattleScene extends Phaser.Scene {
     sfx.play(this, 'miss');
     const fig = this.figOf(side);
     const away = side === 'enemy' ? 1 : -1;
+    // An afterimage stays where it stood as it sidesteps.
+    this.ghost(side, 0x9fd3ff, 0.45, 300);
     fx.slash(this, this.homeX(side) - 60 * away, GROUND_Y - CHEST, -away as 1 | -1, 0xffffff, 0);
+    fx.dust(this, this.homeX(side), GROUND_Y, 4);
     this.tweens.add({ targets: fig, x: this.homeX(side) + 60 * away, duration: 120, yoyo: true, hold: 120, ease: 'Quad.easeOut' });
-    floatText(this, this.homeX(side), GROUND_Y - 220, 'Miss', COLORS.textDim, 30);
+    const [ox, oy] = this.numberSpot();
+    floatText(this, this.homeX(side) + ox, this.textY(side, GROUND_Y - 220) + oy, 'Miss', COLORS.textDim, 30);
+  }
+
+  /** Where floating text over a side starts: the enemy's starts lower under a tall info panel. */
+  private textY(side: Side, y: number): number {
+    return side === 'enemy' ? y + this.enemyTextShift : y;
+  }
+
+  /** Offset for this hit's number: the usual spot, or the next free one in a combo. */
+  private numberSpot(): number[] {
+    return COMBO_SPOTS[this.comboHits % COMBO_SPOTS.length];
   }
 
   private tween(config: Phaser.Types.Tweens.TweenBuilderConfig): Promise<void> {

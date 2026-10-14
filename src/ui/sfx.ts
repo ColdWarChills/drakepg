@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { Element } from '../data/types';
 
 /**
  * Sound effects synthesized with WebAudio, so there are no audio files to source.
@@ -33,7 +34,31 @@ export type Sfx =
   | 'eclipse'
   | 'recall'
   | 'omen'
-  | 'page';
+  | 'page'
+  | 'whoosh'
+  | 'block'
+  | 'debuff'
+  | 'stun'
+  | 'burn'
+  | 'freeze'
+  | 'splash'
+  | 'gust'
+  | 'quake'
+  | 'zap'
+  | 'holy'
+  | 'void';
+
+/** The extra layer an element's hit adds on top of the normal hit sound. */
+export const ELEMENT_SFX: Record<Element, Sfx> = {
+  fire: 'burn',
+  ice: 'freeze',
+  water: 'splash',
+  wind: 'gust',
+  earth: 'quake',
+  energy: 'zap',
+  light: 'holy',
+  dark: 'void',
+};
 
 const MUTE_KEY = 'drakepg.muted';
 const VOLUME = 0.45;
@@ -244,6 +269,57 @@ export function play(scene: Phaser.Scene, name: Sfx): void {
       break;
     case 'page':
       hiss(ctx, t, 0.18, 0.12, 'bandpass', 2500, 1200, 1.2);
+      break;
+    case 'whoosh':
+      // A quick lunge through the air.
+      hiss(ctx, t, 0.14, 0.22, 'bandpass', 900 * v, 2600, 1.5);
+      break;
+    case 'block':
+      // Blow glancing off a guard: a dull knock and a bright ring.
+      tone(ctx, t, 'sine', 140 * v, 70, 0.1, 0.45);
+      tone(ctx, t, 'triangle', 1900 * v, 1750, 0.3, 0.12);
+      tone(ctx, t, 'triangle', 2850 * v, 2700, 0.2, 0.06);
+      break;
+    case 'debuff':
+      tone(ctx, t, 'triangle', 520 * v, 260, 0.25, 0.12);
+      tone(ctx, t + 0.06, 'sine', 390 * v, 190, 0.25, 0.08);
+      break;
+    case 'stun':
+      // Dizzy bird chirps.
+      [1568, 1319, 1568].forEach((n, i) => tone(ctx, t + i * 0.07, 'sine', n * v, n * v * 1.06, 0.07, 0.08));
+      break;
+    case 'burn':
+      hiss(ctx, t, 0.35, 0.3, 'bandpass', 700 * v, 2400, 0.8);
+      hiss(ctx, t + 0.05, 0.25, 0.12, 'highpass', 3000, 6000);
+      break;
+    case 'freeze':
+      // Ice cracking: glassy tinkles.
+      [2637, 3136, 2349].forEach((n, i) => tone(ctx, t + i * 0.035, 'triangle', n * v, n * v * 0.97, 0.18, 0.06));
+      hiss(ctx, t, 0.08, 0.2, 'highpass', 5000, 8000);
+      break;
+    case 'splash':
+      hiss(ctx, t, 0.3, 0.3, 'lowpass', 2400 * v, 500, 1.2);
+      tone(ctx, t, 'sine', 600 * v, 1400, 0.08, 0.1);
+      break;
+    case 'gust':
+      hiss(ctx, t, 0.4, 0.22, 'bandpass', 500 * v, 1800, 2.5);
+      break;
+    case 'quake':
+      tone(ctx, t, 'sine', 70 * v, 35, 0.4, 0.6);
+      hiss(ctx, t, 0.35, 0.3, 'lowpass', 600, 80);
+      break;
+    case 'zap':
+      tone(ctx, t, 'sawtooth', 1800 * v, 200, 0.12, 0.1);
+      hiss(ctx, t, 0.15, 0.25, 'highpass', 3000, 1500);
+      tone(ctx, t + 0.06, 'square', 900 * v, 120, 0.08, 0.06);
+      break;
+    case 'holy':
+      [1047, 1319, 1568].forEach((n) => tone(ctx, t, 'sine', n * v, n * v, 0.45, 0.06));
+      hiss(ctx, t, 0.3, 0.06, 'highpass', 5000, 9000);
+      break;
+    case 'void':
+      tone(ctx, t, 'sine', 220 * v, 55, 0.35, 0.35);
+      tone(ctx, t, 'sawtooth', 110 * v, 60, 0.3, 0.05);
       break;
   }
 }
