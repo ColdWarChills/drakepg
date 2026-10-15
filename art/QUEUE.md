@@ -2,7 +2,9 @@
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
-**How:** Higgsfield, model **Nano Banana**, **Unlimited ON**, count 1. Set the aspect ratio listed. Attach the style reference named in each section (click **+**).
+**How (local, preferred):** with ComfyUI + Qwen-Image 2.1 running on the designer's PC, `python3 scripts/qwen_batch.py <key> ...` (or `--pending`) rewrites these prompts for Qwen (real transparent background, the game's own art as style references) and writes `art/raw/<key>.png`; `--variants 4` writes options to `art/review/<key>/` instead; `--prepare` also runs `prepare_art.py`.
+
+**How (Higgsfield):** model **Nano Banana**, **Unlimited ON**, count 1. Set the aspect ratio listed. Attach the style reference named in each section (click **+**).
 Save each result as its **file name** (the key, any extension) in `art/raw/`, then run `python3 scripts/prepare_art.py <key>`. It removes the flat magenta/green background, trims and resizes; the game picks the file up by name.
 Missing art never breaks anything: the game draws stand-in shapes until a file exists. Tick the boxes as images land.
 

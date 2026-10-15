@@ -7,9 +7,13 @@ File names decide what happens (see art/PROMPTS.md for the list):
   icon_*        -> inventory icon: like a sprite, but fit inside 256x256.
   anything else -> sprite: flat background color removed, trimmed, resized to 480px tall, saved as WebP.
 
+Sprites that already have a transparent background (PNG with alpha, e.g. from Qwen-Image 2.1 via
+scripts/qwen_batch.py) skip the background removal: faint alpha noise is cleared, then they are trimmed the same way.
+
 Usage:
   python3 scripts/prepare_art.py            # process everything in art/raw/
   python3 scripts/prepare_art.py mon_mossling bg_thornwood   # only these keys
+  (keys in HAND_EDITED are skipped unless --force is given)
 
 Needs Pillow and numpy.
 """
@@ -45,6 +49,15 @@ SPILL_FADE = 2.5  # ...and how fast green-dominated pixels there fade out
 # Magenta-keyed art that needs the same spill pass (glows over magenta leave pink specks). Opt-in, so the
 # subject's own pinks and purples near the edge stay untouched everywhere else.
 MAGENTA_SPILL = {"icon_stormwatch_amulet", "mon_stormcoil", "mon_rime_acolyte", "mon_frostbinder"}
+# Processed files fixed by hand afterwards (key-color spill in steam, glows and glass). A full run skips them, so the
+# fix isn't lost; `--force` reprocesses them anyway (a new raw image for one of these: remove it from this list).
+HAND_EDITED = {
+    "npc_hearthkeeper_moll", "mon_spark_wisp", "mon_sunken_revenant", "mon_rime_acolyte", "mon_ember_salamander",
+    "icon_mana_potion", "icon_superior_mana_potion", "icon_essence_light",
+}
+# Transparent sources: alpha below this (0-255) is cleared. Qwen-Image 2.1 leaves values of 1-9 over about a
+# third of the "empty" canvas, which would otherwise stretch the trim box to the whole image.
+ALPHA_FLOOR = 10
 EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
@@ -146,7 +159,9 @@ def _outfit_base(key: str) -> Path | None:
 
 
 def process_sprite(src: Path, key: str) -> Path:
-    rgb = np.asarray(Image.open(src).convert("RGB")).astype(np.float32)
+    source = Image.open(src)
+    rgb = np.asarray(source.convert("RGB")).astype(np.float32)
+    given_alpha = _real_alpha(source)
 
     # Outfits (see _outfit_base) are cut out and cropped like their bare art, with the same trim box.
     base_alpha = base_bg = None
@@ -157,7 +172,12 @@ def process_sprite(src: Path, key: str) -> Path:
             _, base_alpha, _, base_bg = _cutout(base_rgb, base.stem)
         else:
             print(f"  WARNING: {base.stem} is a different size, trimmed on its own (re-measure the hand anchors)")
-    clean, alpha, key_color, bg = _cutout(rgb, key, base_bg)
+    if given_alpha is not None:
+        alpha = given_alpha
+        clean = np.where(alpha[..., None] > 0, rgb, 0)
+        key_color, bg = None, alpha == 0
+    else:
+        clean, alpha, key_color, bg = _cutout(rgb, key, base_bg)
     rgba = np.dstack([clean, alpha * 255]).astype(np.uint8)
     img = Image.fromarray(rgba, "RGBA")
 
@@ -184,8 +204,24 @@ def process_sprite(src: Path, key: str) -> Path:
 
     out = OUT / f"{key}.webp"
     img.save(out, quality=90, method=6)
-    print(f"  background color {key_color.round().astype(int).tolist()}, removed {bg.mean():.0%} of pixels")
+    if key_color is None:
+        print(f"  transparent source, alpha below {ALPHA_FLOOR} cleared ({bg.mean():.0%} of pixels empty)")
+    else:
+        print(f"  background color {key_color.round().astype(int).tolist()}, removed {bg.mean():.0%} of pixels")
     return out
+
+
+def _real_alpha(img: Image.Image) -> np.ndarray | None:
+    """The image's own alpha (0-1, faint noise and stray specks cleared) when it has a transparent background;
+    None for opaque images, which go through the flat-color background removal instead."""
+    if img.mode not in ("RGBA", "LA", "PA") and "transparency" not in img.info:
+        return None
+    a = np.asarray(img.convert("RGBA"))[..., 3]
+    if (a < ALPHA_FLOOR).mean() < 0.01:
+        return None
+    alpha = np.where(a < ALPHA_FLOOR, 0, a).astype(np.float32) / 255
+    _drop_specks(alpha)
+    return alpha
 
 
 def _cutout(rgb: np.ndarray, key: str, base_bg: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -245,7 +281,9 @@ def _cutout(rgb: np.ndarray, key: str, base_bg: np.ndarray | None = None) -> tup
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    wanted = set(sys.argv[1:])
+    args = sys.argv[1:]
+    force = "--force" in args
+    wanted = {a for a in args if a != "--force"}
     sources = sorted(p for p in RAW.iterdir() if p.suffix.lower() in EXTS)
     if wanted:
         sources = [p for p in sources if p.stem in wanted]
@@ -254,6 +292,9 @@ def main() -> None:
         return
     for src in sources:
         key = src.stem
+        if key in HAND_EDITED and not force:
+            print(f"{src.name}: skipped, its processed file was touched up by hand (--force redoes it)")
+            continue
         print(f"{src.name}")
         for old in OUT.glob(f"{key}.*"):
             old.unlink()
