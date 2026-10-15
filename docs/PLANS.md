@@ -132,6 +132,8 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 
 ## Decisions to keep
 
+- Engine (2026-10-15): stay on Phaser in the browser for now. A Unity port was floated (the designer finds testing easier there) and set aside: it's a full rewrite, and the cloud chats can't run Unity. The game is made for the designer's own enjoyment; selling a few copies (itch.io, or Steam as a wrapped web build) is optional, and disclosing the AI art on a store is fine.
+- **Open:** what's hard to test in the browser build? The testing menu (backtick, or tap the room name 5x) covers levels, gold, items, travel, quests and unlocks; add what's missing.
 - Skills stay simple (Silkroad style): skills just do damage. No interrupts, silences or similar for now.
 - Enrage, not a hard turn limit. Heroic adds no HP. Only specific monsters absorb (resist 150).
 - Element names stay Earth and Energy.
