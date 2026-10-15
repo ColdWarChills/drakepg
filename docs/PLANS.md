@@ -6,6 +6,9 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
+- **Discuss first (designer, 2026-10-15):** the designer wants more control over style and direction ("I just get what you spit out"). The Adventurers' Guild was built on Claude's defaults; review it together (ranks, hunt kinds, numbers, clerks, how the board looks) before building more. From now on, for new systems and UI: show a few short options or a mockup and let the designer pick, then build.
+- **Save version clash:** the Guild took save v14. Uncommitted work in the PC checkout (prologue gate guards, `guardsBeaten`, Light Bolt / Gas Shot skills) also bumped to v14; when it lands, make it v15 with its own `migrate()` step after the Guild's.
+
 Build order (all built, see "Done" at the bottom):
 1. ~~Recall Scroll~~
 2. ~~Room features: quiet rooms, campfire, down exit, saving visited rooms~~
