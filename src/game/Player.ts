@@ -3,7 +3,9 @@ import { db } from '../data/db';
 import { START } from '../data/world';
 import {
   accessoryValue,
+  ALL_SLOTS,
   EQUIP_SLOTS,
+  fitsSlot,
   gearDef,
   isGearDef,
   lineBonus,
@@ -79,7 +81,7 @@ export interface PlayerData {
   baseStats: Stats;
   hp: number;
   mp: number;
-  /** Equipped gear. Changed from item ids to rolled gear in save version 4; 8 slots since version 11. */
+  /** Equipped gear. Changed from item ids to rolled gear in save version 4; 8 slots since version 11, plus the spare weapon since 13. */
   equipment: Record<EquipSlot, Gear | null>;
   /** Consumable stacks. */
   inventory: InventoryEntry[];
@@ -127,7 +129,7 @@ const UNARMED: [number, number] = [2, 4];
 
 /** Every slot empty. */
 export function emptyEquipment(): Record<EquipSlot, Gear | null> {
-  return Object.fromEntries(EQUIP_SLOTS.map((s) => [s, null])) as Record<EquipSlot, Gear | null>;
+  return Object.fromEntries(ALL_SLOTS.map((s) => [s, null])) as Record<EquipSlot, Gear | null>;
 }
 
 export class Player {
@@ -192,6 +194,37 @@ export class Player {
   get weapon(): WeaponDef | null {
     const g = this.data.equipment.weapon;
     return g ? (gearDef(g) as WeaponDef) : null;
+  }
+
+  /** The second weapon, carried for a swap (its stats don't count until it's in hand). */
+  get spareWeapon(): WeaponDef | null {
+    const g = this.data.equipment.spare;
+    return g ? (gearDef(g) as WeaponDef) : null;
+  }
+
+  /** Attack range with the spare weapon in hand (its stats and lines counted, like after a swap). For UI and the sim. */
+  get spareAttackRange(): [number, number] | null {
+    return this.data.equipment.spare ? this.withSpareInHand(() => this.attackRange) : null;
+  }
+
+  /** Run `fn` as if the weapons were swapped, then swap back. Nothing else changes. */
+  private withSpareInHand<T>(fn: () => T): T {
+    const e = this.data.equipment;
+    [e.weapon, e.spare] = [e.spare, e.weapon];
+    try {
+      return fn();
+    } finally {
+      [e.weapon, e.spare] = [e.spare, e.weapon];
+    }
+  }
+
+  /** Put the spare weapon in hand and carry the old one as the spare (either may be empty). False with neither. */
+  swapWeapons(): boolean {
+    const e = this.data.equipment;
+    if (!e.spare && !e.weapon) return false;
+    [e.weapon, e.spare] = [e.spare, e.weapon];
+    this.clampVitals();
+    return true;
   }
 
   /** Sigil of the equipped weapon, for the glow in the hero's hands. */
@@ -553,7 +586,7 @@ export class Player {
   }
 
   equippedSlot(uid: string): EquipSlot | null {
-    for (const slot of EQUIP_SLOTS) if (this.data.equipment[slot]?.uid === uid) return slot;
+    for (const slot of ALL_SLOTS) if (this.data.equipment[slot]?.uid === uid) return slot;
     return null;
   }
 
@@ -564,15 +597,15 @@ export class Player {
   }
 
   /**
-   * Equip gear from the bag, into `slot` if it fits there (rings: either ring slot), else its usual slot.
-   * The previously equipped piece takes its place in the bag.
+   * Equip gear from the bag, into `slot` if it fits there (rings: either ring slot, weapons: the spare slot), else its
+   * usual slot. The previously equipped piece takes its place in the bag.
    */
   equip(uid: string, slot?: EquipSlot): boolean {
     const index = this.data.gear.findIndex((g) => g.uid === uid);
     if (index < 0) return false;
     const gear = this.data.gear[index];
     const def = gearDef(gear);
-    if (!slot || !slotsFor(def).includes(slot)) slot = this.slotFor(def);
+    if (!slot || !fitsSlot(def, slot)) slot = this.slotFor(def);
     const previous = this.data.equipment[slot];
     delete gear.isNew;
     this.data.equipment[slot] = gear;

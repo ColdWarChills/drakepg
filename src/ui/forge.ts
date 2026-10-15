@@ -17,7 +17,7 @@ import {
   salvage,
   salvageYield,
 } from '../game/Forge';
-import { EQUIP_SLOTS, gearDef, gradeTier, rollKeys, ROLL_LABELS, type Gear } from '../game/Items';
+import { ALL_SLOTS, gearDef, gradeTier, rollKeys, ROLL_LABELS, type Gear } from '../game/Items';
 import type { Player } from '../game/Player';
 import { Button } from './Button';
 import { GRADE_COLORS, gradeInfo, gradeLabel, itemLines, itemName, lootName } from './itemUi';
@@ -111,7 +111,7 @@ export function openForge(scene: Phaser.Scene, player: Player, title: string, re
     }
 
     // Gear list on the left, the selected piece on the right. Worn gear first.
-    const worn = EQUIP_SLOTS.map((s) => player.data.equipment[s]).filter((g): g is Gear => !!g);
+    const worn = ALL_SLOTS.map((s) => player.data.equipment[s]).filter((g): g is Gear => !!g);
     const list = tab === 'salvage' ? player.data.gear.filter((g) => canSalvage(player, g)) : [...worn, ...player.data.gear];
     if (selected && !list.some((g) => g.uid === selected)) selected = null;
     if (!selected && list.length) selected = list[0].uid;

@@ -87,8 +87,9 @@ Build order (all built, see "Done" at the bottom):
 
 Facts from the code at the time: Warrior and Rogue skills take the equipped weapon's element and damage type (daggers are pierce, so Rogue skills scale on DEX); only 11 skills, mostly the Mage's, have a fixed element. Stormcoil (Energy -> Water) and the Frostbinder (-> Wind) change element mid-fight. Gear has no "+element damage" line, only a resist per element. Stat points can't be refunded (only the cheat menu can). Monster weaknesses are -50 to -75, resists up to +75.
 
-- **Decided:** mid-fight weapon swap: carry two weapons and switch in battle. Players won't own the best weapon of every element, so it keeps pushing upgrades. A weaker backup in the right element still beats a strong weapon in the wrong one, so the backup doesn't have to be top tier.
-- **Proposed:** the swap costs the turn (like a potion). A free swap would mean swapping to the weakness every turn.
+- **Built (2026-10-15):** mid-fight weapon swap (Spare slot, Swap costs the turn), see `docs/IMPROVEMENTS_2026-10.md`. Why: players won't own the best weapon of every element, so it keeps pushing upgrades; a weaker backup in the right element still beats a strong weapon in the wrong one.
+- **Open:** the spare slot unlocks after Chapter 1 (with Elites and chests), so the Stormcoil is the first boss it matters for. Keep, or from the start?
+- **Playtest:** is the Swap button clear? Does a swap feel worth a turn outside the two-form bosses?
 - **Proposed:** skills come from drops and town vendors, not only from levels, even some early ones. Not all of them strong. The strongest ones come from known sources (a boss's first kill, Heroic rematches, a Lucky Impling, a side room's sure chest), not random trash drops (bad-luck protection rarely kicks in).
 - **Proposed:** element skill families: the same skill in different elements (beam of fire, of water, of light...), so a player can build e.g. a fire Rogue. The shape is per class (e.g. Warrior strike, Rogue knives, Mage beam), the elements are shared. Damage type follows the class's weapon, so a Rogue's element skills scale on DEX, a Mage's on INT.
 - **Proposed:** a spellbook that shows every skill: unknown ones as dark pages with a hint where to find them, tabs per element (HoMM3-like).
@@ -98,7 +99,6 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - **Open:** a paid respec at a trainer, so a failed hybrid isn't permanent?
 - **Open:** a "+element damage" gear line or element sets, so an element build is more than weapon + skills.
 - **Open:** weight weapon drops toward the player's class, so stat-locked drops don't pile up?
-- To do when built: a second weapon slot changes `PlayerData` (save bump + migrate); the battle HUD shows both weapons with a Weak/Resisted preview; the sim's bot has to swap.
 - Dropped: replacing levels with gear-only power. Levels stay.
 
 ## Combat and balance
@@ -150,3 +150,4 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - 2026-10-14: build steps 1-3: Recall Scroll, quiet-room features (first-visit scene, inspect, campfire, down exits), saved visited rooms and last town (save v12), and the map. Placeholder side room: Hunters' Camp.
 - 2026-10-14: battle effects pass (wind-ups, element impacts, crits, combos, statuses, deaths), see `docs/IMPROVEMENTS_2026-10.md`.
 - 2026-10-14: build steps 4-5: Chapter 1-3 room layouts (8/9/10 rooms), drafted lines (`docs/ROOM_LINES.md`), sure chests in side rooms, `npm run pace`, 15 background prompts in `art/QUEUE.md`.
+- 2026-10-15: spare weapon and mid-fight Swap (save v13), see `docs/IMPROVEMENTS_2026-10.md`.

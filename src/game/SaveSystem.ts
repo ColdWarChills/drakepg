@@ -2,7 +2,7 @@ import { BALANCE, SAVE_KEY, SAVE_VERSION } from '../config';
 import { db } from '../data/db';
 import { TOWN_START } from '../data/world';
 import type { EquipSlot } from '../data/types';
-import { EQUIP_SLOTS, isGearDef, sanitizeTraits, slotsFor, type Gear } from './Items';
+import { ALL_SLOTS, fitsSlot, isGearDef, sanitizeTraits, type Gear } from './Items';
 import { emptyEquipment, Player, STAT_KEYS, type PlayerData } from './Player';
 import { areaTown, RECALL_SCROLL } from './Travel';
 
@@ -74,6 +74,7 @@ export const SaveSystem = {
  * v10 -> v11: 8 equipment slots. The old `armor` slot becomes `body`; helm, gloves, boots, necklace and rings start empty.
  * v11 -> v12: `visited` rooms (the map) and `lastTown` (Recall Scrolls). The room you stand in counts as visited, your
  *             area's town becomes the last town, and you get the starting Recall Scrolls a new hero has.
+ * v12 -> v13: `equipment.spare` (a second weapon to swap to); sanitize() starts it empty.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -126,6 +127,7 @@ function migrate(file: SaveFile): SaveFile | null {
     p.inventory = inventory;
     file.version = 12;
   }
+  if (file.version < 13) file.version = 13;
   return file;
 }
 
@@ -155,7 +157,7 @@ function sanitizeGear(raw: unknown, slot?: EquipSlot): Gear | null {
   const g = raw as Partial<Gear>;
   if (typeof g.itemId !== 'string' || !db.hasItem(g.itemId) || typeof g.uid !== 'string') return null;
   const def = db.item(g.itemId);
-  if (!isGearDef(def) || (slot && !slotsFor(def).includes(slot))) return null;
+  if (!isGearDef(def) || (slot && !fitsSlot(def, slot))) return null;
   const gear: Gear = { uid: g.uid, itemId: g.itemId, ...sanitizeTraits(def, g) };
   if (g.locked === true) gear.locked = true;
   if (g.isNew === true) gear.isNew = true;
@@ -184,7 +186,7 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
 
   const equipment = emptyEquipment();
   const seen = new Set<string>();
-  for (const slot of EQUIP_SLOTS) {
+  for (const slot of ALL_SLOTS) {
     const g = sanitizeGear(raw.equipment?.[slot], slot);
     if (g && !seen.has(g.uid)) {
       equipment[slot] = g;

@@ -5,7 +5,7 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
 import type { ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, ScrollDef, StoneDef } from '../data/types';
-import { EQUIP_SLOTS, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, ROLL_LABELS, SLOT_LABELS, slotsFor, type Gear, type GearDef, type GearTraits } from '../game/Items';
+import { ALL_SLOTS, EQUIP_SLOTS, fitsSlot, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, ROLL_LABELS, SLOT_LABELS, type Gear, type GearDef, type GearTraits } from '../game/Items';
 import { activeSetBonuses, setCounts } from '../game/Sets';
 import type { Player } from '../game/Player';
 import { Button } from './Button';
@@ -63,7 +63,7 @@ const CARD_Y = 70;
 const CARD_W = 358;
 const CARD_H = 590;
 const SLOT_BG = 0x2a2236;
-/** The hero's equipment slots: left column armor, right column weapon and jewelry. */
+/** The hero's equipment slots: left column armor, right column weapon and jewelry; the spare weapon beside the weapon. */
 const EQ = 58;
 const EQ_POS: Record<EquipSlot, { x: number; y: number }> = {
   helm: { x: 42, y: 112 },
@@ -74,6 +74,7 @@ const EQ_POS: Record<EquipSlot, { x: number; y: number }> = {
   necklace: { x: 258, y: 178 },
   ring1: { x: 258, y: 244 },
   ring2: { x: 258, y: 310 },
+  spare: { x: 192, y: 112 },
 };
 const EMPTY_BORDER = 0x4a3f5a;
 
@@ -184,9 +185,15 @@ class InventoryView {
     }
   }
 
+  /** The hero's slots: the worn ones, plus the spare weapon once weapon swaps are open (or one is already carried). */
+  private get heroSlots(): EquipSlot[] {
+    const spare = featureOn(this.player, 'weapon_swap') || !!this.player.data.equipment.spare;
+    return spare ? ALL_SLOTS : EQUIP_SLOTS;
+  }
+
   private find(key: string | null): Entry | null {
     if (!key) return null;
-    return this.entries.find((e) => e.key === key) ?? EQUIP_SLOTS.map((s) => this.equippedEntry(s)).find((e) => e?.key === key) ?? null;
+    return this.entries.find((e) => e.key === key) ?? this.heroSlots.map((s) => this.equippedEntry(s)).find((e) => e?.key === key) ?? null;
   }
 
   // --- Layout ---
@@ -262,13 +269,18 @@ class InventoryView {
     hero.setScale(hero.scaleX * 0.8, hero.scaleY * 0.8);
     c.add(hero);
 
-    for (const slot of EQUIP_SLOTS) c.add(this.slot(EQ_POS[slot].x, EQ_POS[slot].y, this.equippedEntry(slot), slot, EQ));
+    for (const slot of this.heroSlots) c.add(this.slot(EQ_POS[slot].x, EQ_POS[slot].y, this.equippedEntry(slot), slot, EQ));
+    // A filled spare slot looks like any weapon: name it.
+    if (player.data.equipment.spare) c.add(addText(scene, EQ_POS.spare.x, EQ_POS.spare.y - EQ / 2 - 3, 'Spare', { size: 12, color: COLORS.textDim }).setOrigin(0.5, 1));
 
     const [min, max] = player.attackRange;
     const element = player.weaponElement;
     const d = { melee: player.defenseFor('melee'), pierce: player.defenseFor('pierce'), magic: player.defenseFor('magic') };
+    const spare = player.spareWeapon;
+    const spareRange = player.spareAttackRange;
     const lines = [
       `Attack ${min}-${max} ${DAMAGE_TYPE_LABELS[player.weaponDamageType]} · ${element ? ELEMENT_LABELS[element] : 'Neutral'}`,
+      ...(spare && spareRange ? [`Spare ${spareRange[0]}-${spareRange[1]} ${DAMAGE_TYPE_LABELS[spare.damageType]} · ${spare.element ? ELEMENT_LABELS[spare.element] : 'Neutral'}`] : []),
       `Crit ${(player.critChance * 100).toFixed(1)}%${player.damageBonus ? ` · Damage +${Math.round(player.damageBonus * 100)}%` : ''}`,
       defenseText(d),
       `Max HP ${player.maxHp} · Max MP ${player.maxMp}`,
@@ -409,8 +421,7 @@ class InventoryView {
       this.dragging = true;
       ghost = drawItemIcon(scene, entry.def, 70).setPosition(pointer.x, pointer.y).setDepth(5200).setAlpha(0.85);
       bg.setAlpha(0.4);
-      const fits = slotsFor(entry.def);
-      for (const t of this.equipSlots) if (!entry.slot && fits.includes(t.slot)) t.bg.setStrokeStyle(4, 0xffffff);
+      for (const t of this.equipSlots) if (!entry.slot && fitsSlot(entry.def, t.slot)) t.bg.setStrokeStyle(4, 0xffffff);
     });
     bg.on('drag', (pointer: Phaser.Input.Pointer) => ghost?.setPosition(pointer.x, pointer.y));
     bg.on('dragend', (pointer: Phaser.Input.Pointer) => {
@@ -420,9 +431,12 @@ class InventoryView {
       ghost = null;
       bg.setAlpha(1);
       const heroSide = pointer.x < this.modal.content.x + 300;
-      // Dropped on a slot it fits (a ring on the second ring slot): there. Anywhere else on the hero side: its usual slot.
+      // Dropped on a slot it fits (a ring on the second ring slot, a weapon on the spare slot): there. Anywhere else on
+      // the hero side: its usual slot. The weapon in hand dropped on the spare slot (or back) swaps the two.
       const target = this.equipSlots.find((t) => t.bg.getBounds().contains(pointer.x, pointer.y))?.slot;
+      const swap = (entry.slot === 'weapon' && target === 'spare') || (entry.slot === 'spare' && target === 'weapon');
       if (!entry.slot && heroSide) this.equip(entry, target);
+      else if (swap) this.swapWeapons();
       else if (entry.slot && this.gridZone.getBounds().contains(pointer.x, pointer.y)) this.unequip(entry.slot);
       else this.render();
     });
@@ -460,6 +474,13 @@ class InventoryView {
     if (!this.player.equip(entry.gear.uid, slot)) return;
     play(this.scene, 'equip');
     this.selected = entry.gear.uid;
+    this.changed();
+  }
+
+  /** The spare weapon into the hand and the old one to the spare slot (either may be empty). */
+  private swapWeapons(): void {
+    if (!this.player.swapWeapons()) return this.render();
+    play(this.scene, 'equip');
     this.changed();
   }
 
@@ -539,7 +560,8 @@ class InventoryView {
     const kind = isGearDef(entry.def) ? kindLabel(entry.def) : { material: 'Material', stone: 'Roll stone', consumable: 'Potion', scroll: 'Scroll' }[entry.def.type];
     // Gear shows its tier, which also sets how many modifier lines it can carry.
     const tiered = isGearDef(entry.def) ? `Tier ${entry.def.tier} ${kind}` : kind;
-    const sub = entry.kind === 'gear' ? `${tiered} · ${gradeLabel(info)}${entry.slot ? ' · Equipped' : ''}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : tiered;
+    const worn = entry.kind === 'gear' && entry.slot ? (entry.slot === 'spare' ? ' · Spare' : ' · Equipped') : '';
+    const sub = entry.kind === 'gear' ? `${tiered} · ${gradeLabel(info)}${worn}` : entry.kind === 'stack' ? `${kind} · x${entry.qty}` : tiered;
     const subText = addText(scene, left + 92, headY, sub, { size: 15, color: COLORS.textDim });
     card.add(subText);
 
@@ -595,6 +617,9 @@ class InventoryView {
 
     y += 6;
     line(entry.def.description, COLORS.textDim, 15);
+    if (entry.kind === 'gear' && entry.slot === 'spare') {
+      line('Spare weapon: its lines count once it is in your hand. Swap in battle (costs your turn) or here.', COLORS.textMagic, 15);
+    }
 
     // The item's set: pieces (worn ones ticked) and bonuses (active ones lit).
     const set = isGearDef(entry.def) ? setCard(entry.def.id, this.player.data.equipment) : null;
@@ -630,6 +655,12 @@ class InventoryView {
     if (this.mode === 'bag') {
       if (entry.kind === 'gear') {
         buttons.push(entry.slot ? { label: 'Unequip', run: () => this.unequip(entry.slot!) } : { label: 'Equip', run: () => this.equip(entry) });
+        // Weapons: carry one as the spare, or swap the hand and the spare.
+        const spareOpen = this.heroSlots.includes('spare');
+        if (spareOpen && entry.def.type === 'weapon' && !entry.slot) buttons.push({ label: 'As spare', run: () => this.equip(entry, 'spare') });
+        if (spareOpen && (entry.slot === 'spare' || (entry.slot === 'weapon' && this.player.data.equipment.spare))) {
+          buttons.push({ label: 'Swap', run: () => this.swapWeapons() });
+        }
       } else if (entry.kind === 'stack' && entry.def.type === 'consumable') {
         const def = entry.def;
         buttons.push({ label: 'Use', run: () => this.use(def) });
@@ -652,9 +683,10 @@ class InventoryView {
         },
       });
     }
-    const bw = 150;
+    const bw = buttons.length > 2 ? 104 : 150;
+    const gap = buttons.length > 2 ? 8 : 12;
     buttons.forEach((b, i) => {
-      const x = CARD_X + CARD_W / 2 + (i - (buttons.length - 1) / 2) * (bw + 12);
+      const x = CARD_X + CARD_W / 2 + (i - (buttons.length - 1) / 2) * (bw + gap);
       const btn = new Button(scene, x, CARD_Y + CARD_H - 40, b.label, b.run, { width: bw, height: 48, fontSize: 18 });
       if (b.enabled === false) btn.setEnabled(false);
       card.add(btn);

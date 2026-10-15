@@ -19,6 +19,12 @@ export const FEATURES: FeatureDef[] = [
     unlockedBy: 'heart_of_thorns',
   },
   {
+    id: 'weapon_swap',
+    name: 'Spare weapon',
+    text: 'Carry a second weapon in the Spare slot (Inventory) and swap to it mid-fight with Swap. It costs your turn, so bring one of the element your foe is weak to.',
+    unlockedBy: 'heart_of_thorns',
+  },
+  {
     id: 'materials',
     name: 'Materials',
     text: 'Monsters now drop parts and elemental essences. They sit in their own pouch (Inventory, Materials tab). Keep them: they will matter soon.',

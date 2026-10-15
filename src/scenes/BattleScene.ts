@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
-import { ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS } from '../data/elements';
+import { DAMAGE_TYPE_LABELS, ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS } from '../data/elements';
 import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, StatusDef, ZoneDef } from '../data/types';
 import { INN_SPAWN } from '../data/world';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
 import { makeMimic } from '../game/Chests';
 import { makeElite } from '../game/Elites';
+import { featureOn } from '../game/Features';
 import { makeHeroic } from '../game/Heroic';
 import { SIGIL_NAMES, SIGIL_TIERS } from '../game/Items';
 import { LOOT_TIERS, pityBonus, tierOdds, type LootSource } from '../game/Loot';
@@ -34,6 +35,9 @@ const CHEST = 120;
 const SKILLS_PER_PAGE = 4;
 /** Panels, bars and menus sit above hit effects (which use ~900) so particles never cover numbers. Coins (950) still fly over. */
 const HUD_DEPTH = 940;
+/** How an element lands, for the weapon tag and the Swap button. */
+const EFFECT_LABELS: Record<Effect, string> = { weak: 'Weak!', resisted: 'Resisted', immune: 'Immune', absorb: 'Absorbs!' };
+const EFFECT_CSS: Record<Effect, string> = { weak: COLORS.textGood, resisted: COLORS.textBad, immune: COLORS.textBad, absorb: COLORS.textBad };
 /** Defend bubble color. */
 const GUARD_COLOR = 0x8ec5ff;
 /** Claw rakes and lunge trails of monster attacks without an element (their own colors can be too dark to glow). */
@@ -112,6 +116,8 @@ export class BattleScene extends Phaser.Scene {
   private enrageText: Phaser.GameObjects.Text | null = null;
   /** "Runs away in 2 turns" (Lucky Implings). */
   private escapeLine: Phaser.GameObjects.Text | null = null;
+  /** Top right of the hero panel: the weapon's element and how it lands on the enemy, with boss grit left of it. */
+  private weaponTag: Phaser.GameObjects.Container | null = null;
   /** The target's knockback in flight, stopped when the next blow lands (combo hits). */
   private recoil: Phaser.Tweens.Tween | null = null;
   /** Hits so far in the current combo (spreads out their numbers). */
@@ -150,6 +156,7 @@ export class BattleScene extends Phaser.Scene {
     this.intentLine = null;
     this.enrageText = null;
     this.escapeLine = null;
+    this.weaponTag = null;
     this.shown = { player: new Map(), enemy: new Map() };
 
     drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
@@ -220,17 +227,7 @@ export class BattleScene extends Phaser.Scene {
     const m = this.monster;
     this.statusPanel(16, 16, 420, 120);
     addText(this, 32, 26, `${p.name}  ·  Lv ${p.level}`, { size: 22, bold: true });
-    const weaponEl = p.weaponElement;
-    const elText = addText(this, 420, 30, weaponEl ? ELEMENT_LABELS[weaponEl] : 'Neutral', {
-      size: 16,
-      bold: true,
-      color: weaponEl ? ELEMENT_TEXT[weaponEl] : COLORS.textDim,
-    }).setOrigin(1, 0);
-    // Boss grit from earlier losses, left of the weapon element.
-    const grit = this.battle.grit;
-    if (grit > 0) {
-      addText(this, 420 - elText.width - 14, 30, `Grit +${Math.round(grit * 100)}%`, { size: 16, bold: true, color: COLORS.textGold }).setOrigin(1, 0);
-    }
+    this.refreshWeaponTag();
     this.playerHp = new Bar(this, 32, 74, 388, 26, COLORS.hp, 'HP ');
     this.playerMp = new Bar(this, 32, 108, 388, 22, COLORS.mp, 'MP ');
 
@@ -323,6 +320,28 @@ export class BattleScene extends Phaser.Scene {
     this.enrageText.setText(b.enrage > 0 ? `Enraged +${Math.round(b.enrage * 100)}%` : left <= warn ? `Enrages in ${left}` : '');
     const room = 388 - (this.enrageText.text ? this.enrageText.width + 10 : 0);
     this.intentLine.setScale(Math.min(1, room / this.intentLine.width));
+  }
+
+  /** "Grit +20%   Water · Weak!": the weapon in hand, how its element lands now, and boss grit. Redrawn after swaps and form changes. */
+  private refreshWeaponTag(): void {
+    const p = this.battle.player;
+    this.weaponTag?.destroy();
+    const tag = this.add.container(420, 30).setDepth(HUD_DEPTH);
+    this.weaponTag = tag;
+    const element = p.weaponElement;
+    const effect = this.battle.effectOn(element);
+    const parts: { text: string; color: string }[] = [];
+    const grit = this.battle.grit;
+    if (grit > 0) parts.push({ text: `Grit +${Math.round(grit * 100)}%    `, color: COLORS.textGold });
+    parts.push({ text: element ? ELEMENT_LABELS[element] : 'Neutral', color: element ? ELEMENT_TEXT[element] : COLORS.textDim });
+    if (effect) parts.push({ text: ` · ${EFFECT_LABELS[effect]}`, color: EFFECT_CSS[effect] });
+    // Right-aligned: lay out from the right edge leftwards.
+    let x = 0;
+    for (const part of [...parts].reverse()) {
+      const t = addText(this, x, 0, part.text, { size: 16, bold: true, color: part.color }).setOrigin(1, 0);
+      tag.add(t);
+      x -= t.width;
+    }
   }
 
   /** "Frost Shell ◆◆◇: 80% less damage. Fire hits crack it." */
@@ -523,6 +542,28 @@ export class BattleScene extends Phaser.Scene {
     };
   }
 
+  /** Swap to the spare weapon: its element and how it would land, or a hint when there's no spare. */
+  private swapButton(): MenuButton {
+    const p = this.battle.player;
+    const spare = p.spareWeapon;
+    const range = p.spareAttackRange;
+    if (!p.data.equipment.spare || !range) {
+      return { label: 'Swap', sub: 'No spare', enabled: false, hover: 'Swap: put a second weapon in the Spare slot (Inventory) to switch to it mid-fight.', run: () => {} };
+    }
+    const element = spare?.element;
+    const effect = this.battle.effectOn(element);
+    const elName = element ? ELEMENT_LABELS[element] : 'Neutral';
+    const name = spare?.name ?? 'bare hands';
+    const type = DAMAGE_TYPE_LABELS[spare?.damageType ?? 'melee'];
+    return {
+      label: 'Swap',
+      sub: `${elName}${effect ? ` · ${EFFECT_LABELS[effect]}` : ''}`,
+      enabled: this.battle.canSwapWeapon,
+      hover: `Swap to your ${name} (${range[0]}-${range[1]} ${type}, ${elName}${effect ? `, ${EFFECT_LABELS[effect]}` : ''}). Costs your turn.`,
+      run: () => this.act(() => this.battle.swapWeapon()),
+    };
+  }
+
   private showMenu(menu: Menu): void {
     this.menu.removeAll(true);
     const p = this.battle.player;
@@ -542,6 +583,7 @@ export class BattleScene extends Phaser.Scene {
           run: () => this.act(() => this.battle.flee()),
         },
       );
+      if (featureOn(p, 'weapon_swap') || p.data.equipment.spare) buttons.push(this.swapButton());
     } else if (menu === 'skills') {
       const skills = p.carriedSkills;
       if (skills.length <= SKILLS_PER_PAGE + 1) {
@@ -612,6 +654,7 @@ export class BattleScene extends Phaser.Scene {
     this.syncStatuses();
     this.refreshIntent();
     this.refreshEscape();
+    this.refreshWeaponTag();
 
     if (this.battle.isOver) {
       await this.wait(600);
@@ -873,6 +916,31 @@ export class BattleScene extends Phaser.Scene {
         await this.wait(350);
         break;
       }
+      case 'swap': {
+        // A quick turn: the hero spins away, comes back holding the other weapon.
+        const p = this.battle.player;
+        const old = this.playerFig;
+        this.tweens.killTweensOf(old);
+        sfx.play(this, 'equip');
+        await this.tween({ targets: old, scaleX: 0, duration: 110, ease: 'Quad.easeIn' });
+        old.destroy();
+        const scale = this.playerLook.scale;
+        this.playerFig = drawFigure(this, PLAYER_X, GROUND_Y, this.playerLook, 1, p.weapon, p.weaponSigil);
+        this.playerFig.setScale(0, scale);
+        await this.tween({ targets: this.playerFig, scaleX: scale, duration: 140, ease: 'Back.easeOut' });
+        this.idle(this.playerFig, scale);
+        const color = e.element ? ELEMENT_COLORS[e.element][1] : 0xffffff;
+        fx.aura(this, PLAYER_X, GROUND_Y, color);
+        if (e.element) fx.elementBurst(this, PLAYER_X + 60, GROUND_Y - CHEST, e.element, 0.4);
+        const label = e.effect ? `${e.weapon}  ${EFFECT_LABELS[e.effect]}` : e.weapon;
+        floatText(this, PLAYER_X, GROUND_Y - 290, label, e.element ? ELEMENT_TEXT[e.element] : COLORS.text, 28);
+        const how = { weak: ` ${enemyName} is weak to it!`, resisted: ` ${enemyName} resists it.`, immune: ` ${enemyName} is immune to it.`, absorb: ` ${enemyName} absorbs it!` };
+        const said = e.effect ? how[e.effect] : '';
+        this.pushLog(`You swap to your ${e.weapon}${e.element ? ` (${ELEMENT_LABELS[e.element]})` : ''}.${said}`);
+        this.refreshWeaponTag();
+        await this.wait(350);
+        break;
+      }
       case 'windup': {
         sfx.play(this, 'warning');
         this.pushLog(e.text);
@@ -914,6 +982,7 @@ export class BattleScene extends Phaser.Scene {
         this.pushLog(e.text);
         this.drawAffinities(this.scale.width - 420, 108);
         this.refreshIntent();
+        this.refreshWeaponTag();
         await this.wait(1100);
         break;
       }

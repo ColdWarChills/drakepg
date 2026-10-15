@@ -49,6 +49,8 @@ export type BattleEvent =
   | { kind: 'stunned'; side: Side }
   | { kind: 'flee'; success: boolean }
   | { kind: 'defend'; mp: number }
+  /** The hero swapped to the spare weapon (`weapon` is now in hand). `effect`: how its element fares against the enemy. */
+  | { kind: 'swap'; weapon: string; element?: Element; effect?: Effect }
   /** Enemy is winding up a telegraphed attack that lands next turn. */
   | { kind: 'windup'; move: string; text: string }
   /** MP from Rage (a Warrior taking a hit). */
@@ -251,6 +253,25 @@ export class Battle {
     this.defending = true;
     const mp = this.player.restoreMp(BALANCE.defendMp);
     return this.endPlayerTurn([{ kind: 'defend', mp }]);
+  }
+
+  /** A spare weapon to swap to. */
+  get canSwapWeapon(): boolean {
+    return !this.isOver && !!this.player.data.equipment.spare;
+  }
+
+  /** Swap the weapon in hand with the spare. Costs the turn, like a potion. */
+  swapWeapon(): BattleEvent[] {
+    if (!this.canSwapWeapon) return [];
+    const p = this.player;
+    p.swapWeapons();
+    const element = p.weaponElement;
+    return this.endPlayerTurn([{ kind: 'swap', weapon: p.weapon?.name ?? 'bare hands', element, effect: this.effectOn(element) }]);
+  }
+
+  /** How an element would land on the enemy right now ("Weak!", "Resisted"...). For the UI and the sim. */
+  effectOn(element: Element | undefined): Effect | undefined {
+    return this.elementMultiplier('enemy', element).effect;
   }
 
   get canFlee(): boolean {

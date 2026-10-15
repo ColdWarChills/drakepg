@@ -274,7 +274,8 @@ export interface RecipeDef {
   materials: { itemId: string; qty: number }[];
   gold: number;
 }
-export type EquipSlot = 'weapon' | 'helm' | 'body' | 'gloves' | 'boots' | 'necklace' | 'ring1' | 'ring2';
+/** `spare`: a second weapon, carried but not worn (no stats) until swapped into the hand (in battle or the inventory). */
+export type EquipSlot = 'weapon' | 'helm' | 'body' | 'gloves' | 'boots' | 'necklace' | 'ring1' | 'ring2' | 'spare';
 
 export interface MonsterAttack {
   name: string;

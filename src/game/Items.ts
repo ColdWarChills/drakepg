@@ -43,8 +43,11 @@ export const MOD_POOLS: Record<GearDef['type'], ModKey[]> = {
   accessory: ['str', 'int', 'dex', 'end', 'crit', 'hp', 'mp', 'resist'],
 };
 
-/** Every equipment slot, in display order. */
+/** Every worn equipment slot, in display order. Their stats count; the spare weapon's don't. */
 export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helm', 'body', 'gloves', 'boots', 'necklace', 'ring1', 'ring2'];
+
+/** The worn slots plus the spare weapon: everywhere equipped gear can sit. */
+export const ALL_SLOTS: EquipSlot[] = [...EQUIP_SLOTS, 'spare'];
 
 export const SLOT_LABELS: Record<EquipSlot, string> = {
   weapon: 'Weapon',
@@ -55,6 +58,7 @@ export const SLOT_LABELS: Record<EquipSlot, string> = {
   necklace: 'Necklace',
   ring1: 'Ring',
   ring2: 'Ring',
+  spare: 'Spare\nweapon',
 };
 
 /** Where an armor piece goes (body when it doesn't say). */
@@ -62,7 +66,12 @@ export function armorSlot(def: ArmorDef): ArmorSlot {
   return def.slot ?? 'body';
 }
 
-/** The equipment slots a piece can go in: two for rings, one for everything else. */
+/** Can the piece go in `slot`? Weapons also fit the spare slot. */
+export function fitsSlot(def: GearDef, slot: EquipSlot): boolean {
+  return slot === 'spare' ? def.type === 'weapon' : slotsFor(def).includes(slot);
+}
+
+/** The equipment slots a piece can go in: two for rings, one for everything else (weapons: the hand, see `fitsSlot`). */
 export function slotsFor(def: GearDef): EquipSlot[] {
   if (def.type === 'weapon') return ['weapon'];
   if (def.type === 'armor') return [armorSlot(def)];

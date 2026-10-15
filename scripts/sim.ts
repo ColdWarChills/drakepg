@@ -7,7 +7,7 @@
 import { BALANCE } from '../src/config';
 import { db, validateData } from '../src/data/db';
 import { ELEMENTS } from '../src/data/elements';
-import type { ClassId, SkillDef, StatKey } from '../src/data/types';
+import type { ClassId, Element, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
 import { makeElite } from '../src/game/Elites';
 import { makeHeroic } from '../src/game/Heroic';
@@ -40,6 +40,8 @@ interface Loadout {
   kit?: Record<ClassId, string[]>;
   /** Skills carried on top of the class heal (the newest others fill the rest), e.g. a Mage's Fire spells for Old Snowmaw. */
   carry?: Partial<Record<ClassId, string[]>>;
+  /** A second weapon in the spare slot (same roll quality): the AI swaps to it when it lands clearly better. */
+  spare?: Record<ClassId, string>;
 }
 
 const STARTER: Loadout = {
@@ -101,6 +103,9 @@ const FIRE3: Loadout = {
   carry: { mage: ['meteor', 'ember_bolt'] },
 };
 const EARTH3: Loadout = { ...HEART, label: 'heart3', armor: SHOP3.armor };
+/** Both halves of a two-form boss: a weapon for each form, swapped mid-fight. */
+const WATER2_SWAP: Loadout = { ...WATER2, label: 'w2+e2', spare: ENERGY2.weapon };
+const FIRE3_SWAP: Loadout = { ...FIRE3, label: 'f3+h3', spare: HEART.weapon };
 const SUPERIOR = 'superior_health_potion';
 
 /** Helm, gloves and boots worn with each shop body armor (the same tier, heavy or light). Starter armor has none. */
@@ -129,6 +134,12 @@ function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: num
     p.data.gear.push(piece);
     p.equip(piece.uid);
   }
+  const spare = gear.spare?.[classId];
+  if (spare) {
+    const piece = p.makeGear(spare, { rolls: rollGear(db.item(spare) as GearDef, undefined, gear.quality ?? 0, gear.sigil), sigil: gear.sigil });
+    p.data.gear.push(piece);
+    p.equip(piece.uid, 'spare');
+  }
   p.data.gear = [];
   if (potions > 0) p.addItem(potion, potions);
   p.restoreFull();
@@ -144,6 +155,12 @@ function skillValue(b: Battle, s: SkillDef): number {
 }
 
 const BUFFS = new Set(['war_cry', 'iron_skin', 'stone_skin', 'smoke_bomb']);
+
+/** Rough value of a basic attack with this damage range and element against the enemy right now. */
+function weaponValue(b: Battle, range: [number, number], element: Element | undefined): number {
+  const mult = element ? 1 - b.resistOf('enemy', element) / 100 : 1;
+  return ((range[0] + range[1]) / 2) * mult;
+}
 
 /** Pick and perform one action. */
 function act(b: Battle): void {
@@ -163,6 +180,11 @@ function act(b: Battle): void {
     if (heal) return void b.useSkill(heal.id);
     const potion = b.player.data.inventory[0]?.itemId;
     if (potion && b.canUseItem(potion)) return void b.useItem(potion);
+  }
+  // The spare weapon lands clearly better (the boss changed form): swap, it costs the turn.
+  const spareRange = p.spareAttackRange;
+  if (b.canSwapWeapon && spareRange && weaponValue(b, spareRange, p.spareWeapon?.element) > 1.3 * weaponValue(b, p.attackRange, p.weaponElement)) {
+    return void b.swapWeapon();
   }
   const enemyHpPct = b.enemy.hp / b.enemy.maxHp;
   const longFight = b.enemy.maxHp > p.maxHp;
@@ -196,6 +218,7 @@ function actRandom(b: Battle, rng: Rng): void {
   }
   const skills = p.carriedSkills.filter((s) => b.canUseSkill(s.id));
   const options = [() => b.attack(), () => b.defend(), ...skills.map((s) => () => b.useSkill(s.id))];
+  if (b.canSwapWeapon) options.push(() => b.swapWeapon());
   options[Math.floor(rng.next() * options.length)]();
 }
 
@@ -401,6 +424,7 @@ table('Stormcoil (boss, changes Energy -> Water at half HP, 3 potions)', [
   { monster: 'stormcoil', level: 10, gear: SHOP2, potions: 3, potion: GREATER },
   { monster: 'stormcoil', level: 10, gear: WATER2, potions: 3, potion: GREATER },
   { monster: 'stormcoil', level: 10, gear: ENERGY2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: WATER2_SWAP, potions: 3, potion: GREATER },
   { monster: 'stormcoil', level: 11, gear: SHOP2, potions: 3, potion: GREATER },
   { monster: 'stormcoil', level: 10, gear: SHOP2_100, potions: 3, potion: GREATER },
 ]);
@@ -437,6 +461,7 @@ table('The Frostbinder (boss, Ice -> Wind at half HP, 3 potions)', [
   { monster: 'frostbinder', level: 14, gear: SHOP3, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 14, gear: FIRE3, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 14, gear: EARTH3, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 14, gear: FIRE3_SWAP, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 14, gear: STORM, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 15, gear: SHOP3, potions: 3, potion: SUPERIOR },
 ]);
