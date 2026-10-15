@@ -153,10 +153,12 @@ export function validateData(): void {
     mapSpots.add(spot);
     if (r.boss) {
       db.monster(r.boss.monsterId);
-      db.quest(r.boss.questId);
+      Object.values(r.boss.byClass ?? {}).forEach((id) => db.monster(id));
+      if (r.boss.questId) db.quest(r.boss.questId);
     }
     for (const exit of r.exits) {
       db.room(exit.to);
+      if (exit.guarded && (!r.boss || r.boss.questId)) throw new Error(`Room ${r.id}: guarded exit to ${exit.to} needs a gate guard (a boss with no quest)`);
       if ((exit.side === 'back' || exit.side === 'down') && exit.x === undefined) throw new Error(`Room ${r.id}: ${exit.side} exit to ${exit.to} needs an x`);
       if (exit.requiresQuest) db.quest(exit.requiresQuest);
     }

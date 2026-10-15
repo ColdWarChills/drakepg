@@ -10,6 +10,15 @@ import type { LootTableDef } from './types';
  */
 export const LOOT_TABLES: LootTableDef[] = [
   {
+    // Gate guards on the road (bosses: always drop): the armor the hero set out without.
+    id: 'gate_garb',
+    tiers: { common: [{ itemId: 'travel_garb' }], uncommon: [], rare: [] },
+  },
+  {
+    id: 'gate_robe',
+    tiers: { common: [{ itemId: 'novice_robe' }], uncommon: [], rare: [] },
+  },
+  {
     // The road to Brindlemoor: starter gear, armor most often (heroes set out with only a weapon).
     // Drops far more often than other tables (`BALANCE.loot.tableMob.road`).
     id: 'road',

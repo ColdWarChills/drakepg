@@ -42,8 +42,9 @@ export const CLASSES: ClassDef[] = [
     weapon: 'worn_staff',
     armor: 'novice_robe',
     skills: [
-      { skillId: 'ember_bolt', level: 1 },
+      { skillId: 'light_bolt', level: 1 },
       { skillId: 'mend', level: 2 },
+      { skillId: 'ember_bolt', level: 2 },
       { skillId: 'frost_lance', level: 3 },
       { skillId: 'meteor', level: 5 },
       { skillId: 'spark_chain', level: 6 },
@@ -73,7 +74,8 @@ export const CLASSES: ClassDef[] = [
     weapon: 'rusty_dagger',
     armor: 'travel_garb',
     skills: [
-      { skillId: 'twin_cut', level: 1 },
+      { skillId: 'gas_shot', level: 1 },
+      { skillId: 'twin_cut', level: 2 },
       { skillId: 'bandage', level: 2 },
       { skillId: 'flurry', level: 3 },
       { skillId: 'envenom', level: 4 },

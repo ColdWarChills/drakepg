@@ -111,7 +111,9 @@ export interface PlayerData {
   visited: string[];
   /** The last town you walked into: where a Recall Scroll takes you. Null before the first town. Added in save version 12. */
   lastTown: string | null;
-  /** Adventurers' Guild rank, rank points, board and taken hunts (src/game/Guild.ts). Added in save version 14. */
+  /** Rooms whose gate guard (a room boss without a quest) is beaten for good. Added in save version 14. */
+  guardsBeaten: string[];
+  /** Adventurers' Guild rank, rank points, board and taken hunts (src/game/Guild.ts). Added in save version 15. */
   guild: GuildState;
 }
 
@@ -167,6 +169,7 @@ export class Player {
       loadout: [],
       visited: [],
       lastTown: null,
+      guardsBeaten: [],
       guild: { rank: 0, points: 0, board: [], hunts: [], done: 0 },
     });
     player.data.loadout = player.defaultLoadout();

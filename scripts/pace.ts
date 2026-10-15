@@ -34,6 +34,7 @@ import { emptyEquipment, Player } from '../src/game/Player';
 import { acceptQuest, questStarted, questStatus, questWantsElite, recordKill, turnInQuest } from '../src/game/Quests';
 import { visitRoom } from '../src/game/Travel';
 import { chance, seeded, weightedPick, type Rng } from '../src/game/rng';
+import { isGuard, recordGuard, roomBoss } from '../src/game/Travel';
 
 const RUNS = Number(process.argv[2] ?? 10);
 
@@ -201,6 +202,8 @@ class Run {
       if (room.firstVisit) this.clock += TIME.scene;
       this.clock += (room.inspect?.length ?? 0) * TIME.inspect;
     }
+    const guard = isGuard(room) ? roomBoss(this.p, room) : null;
+    if (guard) this.guard(room, guard);
     if (!room.zoneId || !room.monsterCount) return;
     let state = this.rooms.get(id);
     if (!state) {
@@ -212,6 +215,21 @@ class Run {
       for (let i = Math.min(back, room.monsterCount - state.monsters.length); i > 0; i--) state.monsters.push(this.spawn(room));
     }
     while (state.monsters.length) this.fight(room, state.monsters.shift()!);
+  }
+
+  /** A gate guard: fought until beaten; a loss wakes you one room back, so walk in again. */
+  guard(room: RoomDef, monsterId: string): void {
+    const def = db.monster(monsterId);
+    this.bossLevels.push(`${def.name} L${def.level}: hero L${this.p.level}`);
+    for (let tries = 0; tries < 10; tries++) {
+      if (this.battle(def, 2).state === 'victory') {
+        this.gain(def.xp);
+        recordGuard(this.p, room.id, def.id);
+        return;
+      }
+      this.losses++;
+      this.clock += TIME.room;
+    }
   }
 
   spawn(room: RoomDef): Roamer {
@@ -402,7 +420,11 @@ function act(b: Battle): void {
   for (const s of skills) {
     if (s.kind !== 'damage' || p.mp - s.mpCost < reserve) continue;
     const element = !s.element || s.element === 'weapon' ? p.weaponElement : s.element;
-    const value = s.power * (s.hits ?? 1) * (element ? 1 - b.resistOf('enemy', element) / 100 : 1);
+    const weak = b.enemy.def.weakTo ?? {};
+    let value = s.power * (s.hits ?? 1) * (element ? 1 - b.resistOf('enemy', element) / 100 : 1) * (s.blunt ? 1 + (weak.blunt ?? 0) / 100 : 1);
+    // Poison on a monster weak to it, if it isn't poisoned already.
+    const poisons = s.applies?.some((a) => a.status === 'poison' && !a.self);
+    if (poisons && weak.poison && !b.statuses('enemy').some((x) => x.def.id === 'poison')) value += 0.8 * (1 + weak.poison / 100);
     if (value > bestValue) {
       best = s;
       bestValue = value;
@@ -468,7 +490,11 @@ for (const classId of classes) {
       bot.bossLevels = [];
       bot.outfit(ch.gear[classId], ch.spare?.[classId]);
       bot.potion = ch.potion;
-      if (ch.name === 'Prologue') bot.walkTo('brindlemoor');
+      // The hero starts in the first room of the road: its pests count too.
+      if (ch.name === 'Prologue') {
+        bot.enter('road_cart');
+        bot.walkTo('brindlemoor');
+      }
       else bot.clock += TIME.shop;
       for (const q of ch.quests) bot.quest(q);
       const t: Totals = {

@@ -105,6 +105,8 @@ export interface SkillDef {
   critBonus?: number;
   /** Heal this share of the damage dealt. */
   lifesteal?: number;
+  /** A crushing skill: hits harder on monsters weak to Blunt (`MonsterDef.weakTo`). */
+  blunt?: boolean;
   applies?: Apply[];
   /** Battle visual. Defaults: melee/pierce -> 'slash', magic -> 'bolt', heal -> 'heal', buff -> 'buff'. */
   fx?: SkillFx;
@@ -313,6 +315,8 @@ export interface MonsterDef {
   element?: Element;
   defense: Defenses;
   resists?: Resists;
+  /** Weak spots besides elements, as % extra damage: Blunt skills, and Poison ticks. Shown on the "Weak:" line. */
+  weakTo?: { blunt?: number; poison?: number };
   /** Status ids that never stick (bosses ignore stuns). */
   immune?: string[];
   attacks: MonsterAttack[];
@@ -481,6 +485,8 @@ export interface RoomExit {
   label: string;
   /** Exit stays blocked until this quest is accepted (or done). */
   requiresQuest?: string;
+  /** Exit stays blocked while the room's gate guard (a `boss` without a quest) stands. */
+  guarded?: boolean;
   /** What blocks it until then. Default thorns. */
   blocker?: Blocker;
 }
@@ -505,8 +511,12 @@ export interface RoomDef {
   monsterCount?: number;
   /** Side rooms: a real chest (never a mimic) always stands here when the room first fills each play session; refills roll as usual. Needs the chests feature. */
   chest?: { x: number; y: number };
-  /** A boss standing in the room once its quest is accepted. It stays after the quest for rematches (less XP and gold). */
-  boss?: { monsterId: string; x: number; y: number; questId: string; intro?: string };
+  /**
+   * A boss standing in the room. With `questId`: there once that quest is accepted, and it stays after the quest for
+   * rematches (less XP and gold). Without: a gate guard, there from the start and gone for good once beaten
+   * (`PlayerData.guardsBeaten`); exits marked `guarded` stay shut while it stands. `byClass`: a different monster per class.
+   */
+  boss?: { monsterId: string; byClass?: Partial<Record<ClassId, string>>; x: number; y: number; questId?: string; intro?: string };
   /** Where you wake up after losing a battle here. Default: the Brindlemoor inn. */
   wakeAt?: { roomId: string; x: number; y: number };
   /** A town: entering it makes it the Recall Scroll's destination, and a scroll lands you at this spot. */

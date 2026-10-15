@@ -1,8 +1,24 @@
 # Room lines (drafts for review)
 
-Every first-visit scene and inspectable thing in Chapters 1-3, copied from `src/data/world.ts` (2026-10-14). All of it is a draft: mark what to change, and the next chat edits the room data and deletes this file once it's approved.
+Every first-visit scene and inspectable thing on the road and in Chapters 1-3, copied from `src/data/world.ts` (2026-10-14). All of it is a draft: mark what to change, and the next chat edits the room data and deletes this file once it's approved.
 
 Scene = the letterboxed lines shown the first time you walk in. Other bullets = things you walk up to and read (E).
+
+## The Old Road (prologue)
+
+**Overturned Cart** (Odo)
+- Odo: Brindlemoor is just up the road, west. The hedges are full of pests, but they barely bite. Pick up what they drop: you will want more than a weapon.
+- Odo: Something big came out of the hedges last night and tipped my cart. It went toward the town gate.
+- Odo: Me? I will sit here with my broken wheel until someone from town comes by. Go on.
+
+**Brindlemoor Gate** (gate guard, Pell)
+- Scene: Brindlemoor's gate, barred shut.
+- Scene: Something big squats in front of it, breathing slow and heavy.
+- Pell: Brindlemoor is shut! That thing sat down right in front of the gate, and I climbed out over the wall.
+- Pell: Steel alone will take all day. Every beast has a weak spot: look at what it is weak to, and hit it there.
+- Pell: Once it is gone: Tobin sells gear, Ilsa has beds, and Elder Maren always has work for a new blade.
+- Before the fight: It squats in front of the gate and will not budge.
+- Traits: Stone shell: Blunt blows crack it. Use Heavy Strike! / Made of shadow: Light burns it. Use Light Bolt! / Thick hide: Poison eats through. Use Gas Shot!
 
 ## Brindlemoor and the Thornwood
 
