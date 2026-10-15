@@ -147,7 +147,16 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 
 ## Art
 
-- **Decided:** keep generating with Higgsfield for now; redo the art later with Qwen at home if the polished look reads as AI. Files swap by key, so nothing in code changes.
+- **Decided (2026-10-15, art Q&A): run art direction tests before redoing the graphics.**
+  - Why it looks "480p": the game draws at 1280x720 and the canvas is stretched to the screen; backgrounds are stored at 1280x720 and sprites at 480px tall. Target is the designer's **1440p monitor**: render at the screen's real size and keep art at **2x** (2560x1440 backgrounds, ~960px sprites). Frame drops also need finding. Runs in parallel with the art tests.
+  - **4 directions to test:** Flash cartoon, Painterly, HD pixel art, Storybook ink.
+  - **Same test set per direction:** battle screen mock (hero vs monster on a room background, HUD on top), the 3 class heroes (bare), a monster trio (cute trash, tough, boss), one exploration room and 4 item icons, plus a cut-out rig test (one hero split into parts, short idle + attack).
+  - **Judge by what reads as AI to the designer:** too much detail, inconsistent style between images, nonsense details (melted straps, broken hands, armor that doesn't connect). Glossy is fine.
+  - **Style source:** Civitai style LoRAs on the local Qwen for the tests; after the pick, train our own LoRA on the best ~20 images so all later art matches. Any license is fine for tests; the final style must be sell-safe (our own LoRA covers that).
+  - **Animation:** cut-out rigs (parts that swing/bend, old-Flash-RPG style). Favors Flash cartoon and Painterly; pixel art suffers when parts rotate. Rigged art needs parts, so the redo makes sprites as part sheets.
+  - **Cinematics:** more in-engine scenes (like first-visit: letterbox, pans, characters moving) and boss intros (close-up splash, name, sound hit). No AI video clips, no full-screen story panels for now.
+  - **Open:** which direction wins; then the redo order. The 13 paused armor outfits wait for this (a new hero look redoes all of them anyway).
+- **Was decided:** keep generating with Higgsfield for now; redo the art later with Qwen at home if the polished look reads as AI. Files swap by key, so nothing in code changes. (Superseded by the direction tests above.)
 - **Set up (2026-10-15):** ComfyUI 0.40 portable + Qwen-Image 2.1 int8 on the designer's PC (`C:\Users\Epic\ComfyUI_windows_portable`, start with `run_nvidia_gpu.bat`, UI at http://127.0.0.1:8188). RTX 5070 Ti: ~20-50 s per image (Higgsfield ~8 min). It writes a real alpha channel (no magenta/green keying) and takes up to 10 reference images; with `mon_thornback_boar` + `mon_mossling` as style refs, a test Mire Toad matched the game's look. Generate with `scripts/qwen_batch.py` (in this repo).
 - **Built (2026-10-15):** `scripts/qwen_batch.py` runs `art/QUEUE.md` prompts on the local ComfyUI with the game's art as style references, and `prepare_art.py` takes transparent PNGs. See `docs/IMPROVEMENTS_2026-10.md`.
 - **Open:** what to redo with Qwen (the 13 paused outfits, the road art, anything that reads as AI), and whether new art should only come from it from now on.
@@ -165,7 +174,7 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 
 ## Decisions to keep
 
-- Engine (2026-10-15): stay on Phaser in the browser for now. A Unity port was floated (the designer finds testing easier there) and set aside: it's a full rewrite, and the cloud chats can't run Unity. The game is made for the designer's own enjoyment; selling a few copies (itch.io, or Steam as a wrapped web build) is optional, and disclosing the AI art on a store is fine.
+- Engine (2026-10-15): stay on Phaser in the browser for now. A Unity port was floated (the designer finds testing easier there) and set aside: it's a full rewrite, and the cloud chats can't run Unity. The game is made for the designer's own enjoyment; selling a few copies (itch.io, or Steam as a wrapped web build) is optional, and disclosing the AI art on a store is fine. Re-asked 2026-10-15: **Unity, but later**: finish the content in Phaser, port once the design stops changing. Make new art large enough (2x masters, rig parts) to carry over.
 - Testing tools (2026-10-15): no pause/play/inspector (dropped as bloat). Built instead: Rates x1-x10 in the testing menu, to see drops and level fast.
 - Skills stay simple (Silkroad style): skills just do damage. No interrupts, silences or similar for now.
 - Enrage, not a hard turn limit. Heroic adds no HP. Only specific monsters absorb (resist 150).
