@@ -4,3 +4,5 @@ dist/
 .DS_Store
 .vite/
 .sim/
+art/review/
+__pycache__/

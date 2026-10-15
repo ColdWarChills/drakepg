@@ -104,10 +104,11 @@ npm run preview  # serve the dist/ build locally
 ### Art
 
 1. Generate images with the prompts in [`art/PROMPTS.md`](art/PROMPTS.md) and put them in `art/raw/`, named by key (e.g. `mon_mossling.png`). Everything still missing, with ready prompts in priority order: [`art/QUEUE.md`](art/QUEUE.md).
-2. Run `python3 scripts/prepare_art.py` (needs Pillow + numpy). It removes flat backgrounds from sprites, trims, resizes, and writes WebP files to `src/assets/art/`.
+   With ComfyUI + Qwen-Image 2.1 running locally, `python3 scripts/qwen_batch.py <key>` generates queue images straight into `art/raw/` (transparent PNGs, the game's art as style references; `--variants 4` for options in `art/review/`).
+2. Run `python3 scripts/prepare_art.py` (needs Pillow + numpy). It removes flat backgrounds from sprites (or uses a PNG's own transparency), trims, resizes, and writes WebP files to `src/assets/art/`. Keys whose processed file was touched up by hand (`HAND_EDITED` in the script) are skipped unless `--force`.
 3. Every file in `src/assets/art/` is loaded at boot by its file name. Point data at it with `look.art`, `zone.background` or `room.background`. Item icons need no data: `icon_<item id>` replaces the drawn icon in the inventory, shop and forge (fit in 256x256).
 
-Armor outfits: wearing an armor, a hero is drawn from `char_<class>_<armor id>` (empty-handed like the bare art) when it exists, else the default look. Its fists default to the class's `bare.hands`; if they moved, set `hands` per class on the armor in `items.ts`. Prompts are at the end of `art/PROMPTS.md`.
+Armor outfits: wearing an armor, a hero is drawn from `char_<class>_<armor id>` (empty-handed like the bare art) when it exists, else the default look. Its fists default to the class's `bare.hands`; `prepare_art.py` crops outfits exactly like the bare art, so as long as the outfit is an edit of the bare image at the same size, they stay put (otherwise set `hands` per class on the armor in `items.ts`). Prompts are at the end of `art/PROMPTS.md` and `art/QUEUE.md`.
 
 Weapons in hand: heroes have weaponless art (`char_<class>_bare`, made by editing the hero image to empty fists). `look.bare.hands` in `classes.ts` holds each fist's pixel position in that processed image and the weapon's idle angle; **re-measure them if the bare art is regenerated**. Weapon images are `wpn_<id>`, drawn upright with the handle at the bottom (the script makes them 320px tall); a weapon's `art`, `grip` (0 = top, 1 = bottom of the image: where the fist holds it) and `size` (length relative to the hero) are set in `items.ts`. Weapons are drawn behind the body so the fist covers the grip. A weapon without art falls back to the hero's original picture.
 
