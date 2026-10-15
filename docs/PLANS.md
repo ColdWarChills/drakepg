@@ -40,9 +40,33 @@ Build order (all built, see "Done" at the bottom):
   - Quest gates moved to the quiet room before each boss (thorns, reeds, snowdrifts), so you see the pre-boss room before the quest.
 - **Pace bot (`npm run pace`, guessed seconds per action; it fights everything it walks past):** old layout -> new: Ch1 28 -> 32 min, Ch2 33 -> 41, Ch3 46 -> 49. Level at each boss barely moved (Thornheart L5 at hero 5-7, Bogmother L8 at 8-10, Stormcoil L10 at 9-12, Snowmaw L12 at 13-18, Frostbinder L14 at 14-19). Most of the time is quest farming, which more rooms don't change.
 - **Decided (2026-10-14):** no side quests now. Build the base first (rooms, systems); quests and side quests come with the story pass. The length gap to the targets waits until then.
+- **Changed (2026-10-15):** the errand quests became Adventurers' Guild hunts (see below); only the story quests are left.
 - **Proposed:** target lengths about 35 / 55 / 70 min (rough estimates).
 - **Open:** keep campfires after a playtest? (Built, easy to remove per room.)
 - **Open:** sure chests in side rooms (`room.chest`, first fill each session, never a mimic): keep? Only the Eel Pools and Steamvent Caves have one; Chapter 1 has none because chests unlock after it.
+
+## Adventurers' Guild (built 2026-10-15)
+
+- **Decided (designer, 2026-10-15):** remove most quests. Instead, ranked adventurers: everything is done at an Adventurers' Guild person (just an NPC for now). Early on you can only take the lowest hunts, which fit what you can reach. Hunts are "kill X monsters" or "bring X items from one place" (any monster there can drop them). You can take hunts up to 2 ranks above your own. Hunts match the player's level and strength. S rank is late game; now and then a big S-rank mission.
+- **Built with these defaults** (all easy to change, see `docs/IMPROVEMENTS_2026-10.md`):
+  - Ranks F, E, D, C, B, A, S. 3/4/5/6/8/10 rank points to the next one. A hunt gives 1 point at your rank, +1 per rank above, none below.
+  - A Guild Clerk in each town (Tamsin, Ivo, Edda), one shared board: 5 notices, hold up to 3.
+  - Hunt kinds: kill 5 (3 of a Tough monster), gather 4 (50% per kill in that area), Elite bounty (after Chapter 1).
+  - Hunt rank from monster level: F 1-2, E 3-5, D 6-8, C 9-11, B 12-14, A 15-19, S 20+; Tough or Elite one rank higher. Pays the XP and gold of the kills it takes.
+  - Kept 7 story quests (each chapter's opener and bosses). Removed the 8 errands. Boss quests need a rank: Thornheart E, Bogmother D, Old Snowmaw C. Promotions give the armor the errands used to give.
+- **Pace bot** (it takes the 3 hunts with the most points each trip): Ch1 32 -> 23 min (3 hunts, Rank E), Ch2 41 -> 60 min (3 hunts, Rank D), Ch3 49 -> 68 min (4-5 hunts, Rank C). Boss levels barely moved: Thornheart at hero L4-6 (was 5-7), Bogmother 8-14, Stormcoil 9-15, Snowmaw 13-19, Frostbinder 14-20.
+- **Not built:** S-rank hunts (no monster is level 20+ yet) and the "now and then a big S-rank mission".
+- **Open:** what is a big S mission (a Heroic boss? a named monster? a timed event?), and how often?
+- **Open:** a rank-up test (a fight at the Guild) on top of the points?
+- **Open:** one clerk in Brindlemoor only, or one per town (built: one per town)?
+- **Open:** Chapter 1 is shorter now (a D-rank Ash Imp hunt gives 3 points, so Rank E can take one trip). Raise F -> E to 4-5 points?
+- **Open:** a paid "new notices" button, so a board you don't like can be rerolled before a turn-in?
+- To do: art for the 3 clerks (`look` shapes now) and icons for the 10 hunt items (drawn icons now). Not in `art/QUEUE.md` yet.
+- Playtest: is 50% per kill for gather items right? Are Tough hunts (3 Ash Imps at Rank F) too risky that early?
+
+## UI
+
+- **Decided (designer, 2026-10-15):** the UI needs an overhaul. Do it after the Qwen (ComfyUI) art setup.
 
 ## Map (built 2026-10-14)
 
@@ -126,7 +150,6 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 
 ## Parked
 
-- **#6 Hunter contracts:** contracts replace quests; the player picks what to hunt; monsters not met yet show as a blacked-out "?" card. Delayed. Open: who hands them out (a board, an NPC)? Rewards per contract? Do the chapter story beats stay as fixed quests?
 - **#7 Class choice before seeing combat:** not important now. Options: a free class swap until the end of Chapter 1, or a one-fight trial per class on the Create screen.
 - **#8 Bad-luck protection kicks in too late:** agreed, not urgent. `pityAfter` is 80 dry kills per area; a chapter is roughly 40-50 normal kills, so it may never trigger. Options: lower to 25-30, count across all areas, or cut it.
 - **#9 Endgame:** no goal yet, on purpose. Heroic boss tier is built. Open: more tiers later (new moves each, never more HP)?
@@ -156,4 +179,5 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - 2026-10-14: build steps 4-5: Chapter 1-3 room layouts (8/9/10 rooms), drafted lines (`docs/ROOM_LINES.md`), sure chests in side rooms, `npm run pace`, 15 background prompts in `art/QUEUE.md`.
 - 2026-10-15: spare weapon and mid-fight Swap (save v13), see `docs/IMPROVEMENTS_2026-10.md`.
 - 2026-10-15: testing Rates x1/x2/x5/x10 (XP, gold, drop chances) in the testing menu.
+- 2026-10-15: Adventurers' Guild: ranks F-S, hunts from a Guild Clerk in each town, 8 errand quests removed (save v14). Was parked as #6 Hunter contracts.
 - 2026-10-15: Higgsfield art run: 3 Hearthold NPCs, 16 monsters, 25 backgrounds, 24 item icons and 17 armor outfits, see `docs/IMPROVEMENTS_2026-10.md`.

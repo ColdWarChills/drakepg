@@ -16,6 +16,7 @@ import {
 } from '../game/cheats';
 import { isGearDef, SIGIL_NAMES, SIGIL_TIERS, type SigilTier } from '../game/Items';
 import type { Player } from '../game/Player';
+import { MAX_RANK, newGuild, rankId } from '../game/Guild';
 import { questStatus } from '../game/Quests';
 import { hasArt } from './art';
 import { Button } from './Button';
@@ -260,8 +261,11 @@ export function openCheatMenu(scene: Phaser.Scene, player: Player, hooks: CheatH
       button(x, y, `${q.name} (${tag})`, () => (completeQuestChain(player, q), changed(`${q.name}: done`)), 290, status === 'done' ? ON : undefined);
     });
     const qTop = top + 40 + Math.ceil(db.quests().length / 3) * 46 + 10;
-    button(40, qTop, 'Finish active quests', () => changed(`${finishActiveQuests(player)} quest(s) ready to turn in`), 220);
+    button(40, qTop, 'Finish quests + hunts', () => changed(`${finishActiveQuests(player)} quest(s)/hunt(s) ready to turn in`), 220);
     button(280, qTop, 'Reset all quests', () => ((player.data.quests = {}), changed('Quests reset')), 200, DANGER);
+    const guild = player.data.guild;
+    button(500, qTop, `Guild rank ${rankId(guild.rank)} +1`, () => ((guild.rank = Math.min(MAX_RANK, guild.rank + 1)), (guild.points = 0), changed(`Guild rank ${rankId(guild.rank)}`)), 200);
+    button(720, qTop, 'Reset guild', () => ((player.data.guild = newGuild()), changed('Guild reset to Rank F')), 160, DANGER);
   };
 
   render();

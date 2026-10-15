@@ -1,17 +1,19 @@
 import { db } from '../data/db';
 import type { MonsterDef, QuestDef, SkillDef } from '../data/types';
 import { cheats } from './cheats';
+import { hasRank } from './Guild';
 import { grantFor } from './Items';
 import type { Player, Rewards } from './Player';
 
 /**
  * - locked: prerequisite not done yet
+ * - rank: prerequisite done, but the Adventurers' Guild hasn't ranked you high enough yet
  * - available: can be accepted from the giver
  * - active: accepted, objective not met
  * - ready: objective met, turn in at the giver
  * - done: turned in
  */
-export type QuestStatus = 'locked' | 'available' | 'active' | 'ready' | 'done';
+export type QuestStatus = 'locked' | 'rank' | 'available' | 'active' | 'ready' | 'done';
 
 /** How far along the objective is: kills counted so far, or items of the kind in the bag (capped at the target). */
 export function questProgress(player: Player, quest: QuestDef): number {
@@ -25,6 +27,7 @@ export function questStatus(player: Player, quest: QuestDef): QuestStatus {
   if (state?.status === 'done') return 'done';
   if (state?.status === 'active') return questProgress(player, quest) >= quest.objective.count ? 'ready' : 'active';
   if (quest.requires && player.data.quests[quest.requires]?.status !== 'done') return 'locked';
+  if (quest.requiresRank && !hasRank(player, quest.requiresRank)) return 'rank';
   return 'available';
 }
 
@@ -59,14 +62,19 @@ export function questDone(player: Player, questId: string): boolean {
   return player.data.quests[questId]?.status === 'done';
 }
 
-/** The quest this NPC has something to say about, most urgent first: ready > available > active. */
+/** The quest this NPC has something to say about, most urgent first: ready > available > active > waiting on a rank. */
 export function questForNpc(player: Player, npcId: string): { quest: QuestDef; status: QuestStatus } | null {
   const mine = db.quests().filter((q) => q.giver === npcId).map((quest) => ({ quest, status: questStatus(player, quest) }));
-  for (const wanted of ['ready', 'available', 'active'] as const) {
+  for (const wanted of ['ready', 'available', 'active', 'rank'] as const) {
     const hit = mine.find((q) => q.status === wanted);
     if (hit) return hit;
   }
   return null;
+}
+
+/** The next story quest, if all that stands in its way is a Guild rank. For the tracker and the giver. */
+export function questWaitingOnRank(player: Player): QuestDef | null {
+  return db.quests().find((q) => questStatus(player, q) === 'rank') ?? null;
 }
 
 /** Quests in progress, for the on-screen tracker. */

@@ -427,9 +427,17 @@ export interface ZoneDef {
   background?: ArtRef;
   backdrop: Backdrop;
   encounters: { monsterId: string; weight: number }[];
+  /** Guild gather hunts here ask for this item (src/data/guild.ts); any monster of the area drops it while one is on. */
+  gather?: string;
 }
 
-export type NpcRole = { kind: 'talk' } | { kind: 'shop'; stock: string[] } | { kind: 'inn' } | { kind: 'forge'; recipes: string[] };
+export type NpcRole =
+  | { kind: 'talk' }
+  | { kind: 'shop'; stock: string[] }
+  | { kind: 'inn' }
+  | { kind: 'forge'; recipes: string[] }
+  /** The Adventurers' Guild board: hunts and ranks (src/game/Guild.ts). Every clerk shares one board. */
+  | { kind: 'guild' };
 
 /** A system that opens up later in the game (src/data/features.ts). */
 export interface FeatureDef {
@@ -531,6 +539,9 @@ export interface MapAreaDef {
   name: string;
 }
 
+/** Adventurers' Guild ranks, lowest first (`BALANCE.guild.ranks`). */
+export type RankId = 'F' | 'E' | 'D' | 'C' | 'B' | 'A' | 'S';
+
 /**
  * kill: defeat `count` of `monsterId`, or of any Elite with `elite` (both: Elites of that monster).
  * collect: have `count` of `itemId` (a potion or material) when you talk to the giver; they are taken on turn-in.
@@ -546,6 +557,8 @@ export interface QuestDef {
   giver: string;
   /** Quest that must be completed first. */
   requires?: string;
+  /** Adventurers' Guild rank needed before it is offered (src/game/Guild.ts). */
+  requiresRank?: RankId;
   objective: QuestObjective;
   /** Short tracker text, e.g. "Mosslings defeated". */
   goal: string;

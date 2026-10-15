@@ -20,6 +20,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [1, 3],
     background: 'bg_thornwood',
     backdrop: { kind: 'forest' },
+    gather: 'briarberry',
     encounters: [
       { monsterId: 'mossling', weight: 5 },
       { monsterId: 'thornback_boar', weight: 4 },
@@ -32,6 +33,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [2, 5],
     background: ['bg_thornwood_deep', 'bg_thornwood'],
     backdrop: { kind: 'forest', shade: 0.35 },
+    gather: 'scorched_twig',
     encounters: [
       { monsterId: 'thornback_boar', weight: 2 },
       { monsterId: 'bramble_bandit', weight: 4 },
@@ -46,6 +48,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [3, 4],
     background: ['bg_bramble_hideout', 'bg_thornwood_deep', 'bg_thornwood'],
     backdrop: { kind: 'forest', shade: 0.4 },
+    gather: 'stolen_trinket',
     encounters: [
       { monsterId: 'bramble_bandit', weight: 5 },
       { monsterId: 'thornback_boar', weight: 1 },
@@ -67,6 +70,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [6, 7],
     background: 'bg_fen_road',
     backdrop: { kind: 'marsh' },
+    gather: 'bog_lily',
     encounters: [
       { monsterId: 'mire_toad', weight: 5 },
       { monsterId: 'spark_wisp', weight: 3 },
@@ -78,6 +82,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [7, 9],
     background: ['bg_sunken_causeway', 'bg_fen_road'],
     backdrop: { kind: 'marsh', shade: 0.25 },
+    gather: 'drowned_coin',
     encounters: [
       { monsterId: 'spark_wisp', weight: 2 },
       { monsterId: 'bog_lurker', weight: 4 },
@@ -105,6 +110,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [9, 10],
     background: ['bg_stormlit_flats', 'bg_sunken_causeway', 'bg_fen_road'],
     backdrop: { kind: 'marsh', shade: 0.4 },
+    gather: 'storm_glass_shard',
     encounters: [
       { monsterId: 'spark_wisp', weight: 3 },
       { monsterId: 'sunken_revenant', weight: 3 },
@@ -134,6 +140,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [10, 11],
     background: 'bg_frostfang_pass',
     backdrop: { kind: 'snow' },
+    gather: 'lichen_tuft',
     encounters: [
       { monsterId: 'drift_wolf', weight: 5 },
       { monsterId: 'crag_ram', weight: 4 },
@@ -145,6 +152,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [11, 13],
     background: ['bg_windscour_ridge', 'bg_frostfang_pass'],
     backdrop: { kind: 'snow', shade: 0.15 },
+    gather: 'binding_rune',
     encounters: [
       { monsterId: 'drift_wolf', weight: 1 },
       { monsterId: 'gust_sprite', weight: 4 },
@@ -158,6 +166,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [12, 13],
     background: 'bg_steamvent_caves',
     backdrop: { kind: 'cave' },
+    gather: 'cinder_cap',
     encounters: [
       { monsterId: 'ember_salamander', weight: 5 },
       { monsterId: 'vent_wyrmling', weight: 2 },
@@ -178,6 +187,7 @@ export const ZONES: ZoneDef[] = [
     recommendedLevel: [13, 14],
     background: ['bg_whiteout_ledge', 'bg_windscour_ridge', 'bg_frostfang_pass'],
     backdrop: { kind: 'snow', shade: 0.25 },
+    gather: 'frost_seal',
     encounters: [
       { monsterId: 'rime_acolyte', weight: 4 },
       { monsterId: 'gust_sprite', weight: 3 },
@@ -412,6 +422,17 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0xa93226, accent: 0xf5cba7, scale: 1, art: 'npc_ilsa' },
         role: { kind: 'inn' },
         dialogue: ['A warm bed and a hot meal. You look like you need both.'],
+      },
+      {
+        // The Adventurers' Guild board (src/game/Guild.ts). Every town has a clerk; they share one board.
+        id: 'guild_tamsin',
+        name: 'Tamsin',
+        title: 'Guild Clerk',
+        x: 680,
+        y: 605,
+        look: { shape: 'humanoid', color: 0x2e7d5b, accent: 0xf0d9a8, scale: 1 },
+        role: { kind: 'guild' },
+        dialogue: ["Adventurers' Guild. Pick a notice, bring proof, get paid. Do enough and the Guild ranks you up."],
       },
     ],
   },
@@ -726,6 +747,16 @@ export const ROOMS: RoomDef[] = [
         role: { kind: 'inn' },
         dialogue: ['Sit, rest, dry your boots. The fen takes its toll on everyone.'],
       },
+      {
+        id: 'guild_ivo',
+        name: 'Ivo',
+        title: 'Guild Clerk',
+        x: 385,
+        y: 605,
+        look: { shape: 'humanoid', color: 0x2e7d5b, accent: 0x8d6e63, scale: 1 },
+        role: { kind: 'guild' },
+        dialogue: ['Same board as Brindlemoor, just wetter. Hunts in, coin out.'],
+      },
     ],
   },
   {
@@ -1022,6 +1053,16 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0xc62828, accent: 0xffe0b2, scale: 1, art: 'npc_hearthkeeper_moll' },
         role: { kind: 'inn' },
         dialogue: ['Come in, come in, shut the door! The fire is the only warm thing left on this mountain.'],
+      },
+      {
+        id: 'guild_edda',
+        name: 'Edda',
+        title: 'Guild Clerk',
+        x: 425,
+        y: 605,
+        look: { shape: 'humanoid', color: 0x2e7d5b, accent: 0xcfd8dc, scale: 1 },
+        role: { kind: 'guild' },
+        dialogue: ['The Guild pays double the cold, or it feels that way. What will it be?'],
       },
     ],
   },

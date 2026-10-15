@@ -9,6 +9,7 @@ import { makeMimic } from '../game/Chests';
 import { boosted } from '../game/cheats';
 import { makeElite } from '../game/Elites';
 import { featureOn } from '../game/Features';
+import { gatherHere, huntDef, huntGoal, rankId, recordHuntKill } from '../game/Guild';
 import { makeHeroic } from '../game/Heroic';
 import { SIGIL_NAMES, SIGIL_TIERS } from '../game/Items';
 import { LOOT_TIERS, pityBonus, tierOdds, type LootSource } from '../game/Loot';
@@ -143,6 +144,7 @@ export class BattleScene extends Phaser.Scene {
     const base = data.mimic ? makeMimic(this.zone) : isLucky(data.monsterId) ? makeImpling(this.zone) : db.monster(data.monsterId);
     this.monster = data.elite ? makeElite(base, data.elite) : data.heroic ? makeHeroic(base) : base;
     this.battle = new Battle(session.player, this.monster);
+    this.battle.zoneId = data.zoneId;
     if (this.monster.isHeroic) this.battle.rewardScale = BALANCE.heroic.rewards;
     else if (this.monster.boss && !questNeedsKill(session.player, this.monster.id)) this.battle.rewardScale = BALANCE.bossRepeatRewards;
     this.log = [];
@@ -414,6 +416,9 @@ export class BattleScene extends Phaser.Scene {
     const table = db.lootTable(tableId);
     const setChance = table.set && (source === 'elite' || source === 'boss') ? boosted(BALANCE.setDrop[source]) : 0;
     if (setChance) parts.push({ text: ` · Set ${pct(setChance)} `, color: SET_CSS });
+    // Guild gather hunts: this area's hunt item, on top of everything else.
+    const gather = gatherHere(this.battle.player, this.zone.id);
+    for (const g of gather) parts.push({ text: ` · ${db.item(g.hunt.itemId!).name} ${pct(g.chance)} `, color: COLORS.textGood });
     let cx = 0;
     for (const part of parts) {
       const t = addText(this, cx, 0, part.text, { size: 14, bold: true, color: part.color }).setOrigin(0, 0.5);
@@ -428,7 +433,8 @@ export class BattleScene extends Phaser.Scene {
         ? `Rolled rarest first. Luck: +${pct(luck)} Rare after ${misses} kills here without one.`
         : `Rolled rarest first. ${misses} kills here without a Rare; after ${BALANCE.loot.pityAfter}, the Rare chance rises.`;
     const setText = setChance ? [`Set ${pct(setChance)} (extra): ${db.set(table.set!).pieces.map((id) => db.item(id).name).join(', ')}`] : [];
-    const details = [...LOOT_TIERS.filter((t) => odds[t] > 0).map((t) => `${label[t]} ${pct(odds[t])}: ${names(t)}`), ...setText, pityText].join('\n');
+    const gatherText = gather.map((g) => `${db.item(g.hunt.itemId!).name} ${pct(g.chance)} (extra): your Guild hunt in ${this.zone.name}.`);
+    const details = [...LOOT_TIERS.filter((t) => odds[t] > 0).map((t) => `${label[t]} ${pct(odds[t])}: ${names(t)}`), ...setText, ...gatherText, pityText].join('\n');
     const hit = this.add.rectangle(-4, -12, cx + 8, 24, 0x000000, 0).setOrigin(0).setInteractive({ useHandCursor: true });
     row.addAt(hit, 0);
     // Smaller type so the item lists fit the log box.
@@ -1354,12 +1360,22 @@ export class BattleScene extends Phaser.Scene {
         const rewards = this.battle.rewards ?? { xp: 0, gold: 0, items: [] };
         const levelBefore = player.level;
         const { levels: levelsGained, lost } = player.grantRewards(rewards);
-        const quests = recordKill(player, this.monster).map((q) => ({
+        const quests: Extract<ResultSceneData, { outcome: 'victory' }>['quests'] = recordKill(player, this.monster).map((q) => ({
           name: q.quest.name,
           goal: q.quest.goal,
           count: q.count,
           target: q.target,
         }));
+        // Guild hunts: kills counted, and gather items picked up this fight.
+        const hunt = (rank: number) => `Hunt (${rankId(rank)})`;
+        for (const u of recordHuntKill(player, this.monster)) {
+          quests.push({ name: hunt(u.hunt.rank), goal: huntGoal(u.hunt), count: u.count, target: u.target, turnIn: 'a Guild Clerk' });
+        }
+        for (const s of player.data.guild.hunts) {
+          const h = huntDef(s.key);
+          if (h?.kind !== 'gather' || !rewards.items.some((i) => i.itemId === h.itemId)) continue;
+          quests.push({ name: hunt(h.rank), goal: huntGoal(h), count: Math.min(h.count, player.countItem(h.itemId!)), target: h.count, turnIn: 'a Guild Clerk' });
+        }
         if (BALANCE.restoreAfterBattle) player.restoreFull();
         SaveSystem.save(player);
         const newSkills = player.skillsLearnedSince(levelBefore).map((s) => s.name);

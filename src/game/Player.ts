@@ -23,6 +23,7 @@ import {
   type ItemGrant,
   type SigilTier,
 } from './Items';
+import type { GuildState } from './Guild';
 import { setBonusTotals, type SetBonusTotals } from './Sets';
 import type {
   ArmorDef,
@@ -110,6 +111,8 @@ export interface PlayerData {
   visited: string[];
   /** The last town you walked into: where a Recall Scroll takes you. Null before the first town. Added in save version 12. */
   lastTown: string | null;
+  /** Adventurers' Guild rank, rank points, board and taken hunts (src/game/Guild.ts). Added in save version 14. */
+  guild: GuildState;
 }
 
 export interface Rewards {
@@ -164,6 +167,7 @@ export class Player {
       loadout: [],
       visited: [],
       lastTown: null,
+      guild: { rank: 0, points: 0, board: [], hunts: [], done: 0 },
     });
     player.data.loadout = player.defaultLoadout();
     player.data.equipment.weapon = player.makeGear(cls.weapon);

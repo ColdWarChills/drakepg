@@ -1,10 +1,12 @@
+import type { RankId } from './data/types';
+
 export const GAME_WIDTH = 1280;
 export const GAME_HEIGHT = 720;
 
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -192,6 +194,39 @@ export const BALANCE = {
    * Plain drops just pop; better grades and Sigils build up first. Best items are revealed last.
    */
   dropReveal: { start: 900, gap: 160, plain: 0, fine: 0, superior: 200, masterwork: 450, dawn: 700, dusk: 1000, eclipse: 1500 },
+
+  /**
+   * Adventurers' Guild (src/game/Guild.ts): hunts pinned on the Guild Clerk's board in every town.
+   * A hunt's rank comes from its monster's level (the highest rank whose `minLevel` it reaches), one higher for a
+   * Tough monster or an Elite bounty. You may take hunts up to `reach` ranks above your own. Each hunt gives rank
+   * points: 1 at your rank, +1 per rank above, none below. `toNext` points promote you (left-over points carry).
+   * Kill hunts ask for `kills` (`toughKills` of a Tough monster); gather hunts for `gather` items, which any monster
+   * of that area drops with `gatherChance` while the hunt is on. Rewards are the XP and gold of the kills a hunt
+   * takes, times `xp`/`gold`; an Elite bounty pays like `eliteKills` kills. `eliteChance`: per board slot, once
+   * Elites are unlocked.
+   */
+  guild: {
+    ranks: [
+      { id: 'F', minLevel: 1, toNext: 3 },
+      { id: 'E', minLevel: 3, toNext: 4 },
+      { id: 'D', minLevel: 6, toNext: 5 },
+      { id: 'C', minLevel: 9, toNext: 6 },
+      { id: 'B', minLevel: 12, toNext: 8 },
+      { id: 'A', minLevel: 15, toNext: 10 },
+      { id: 'S', minLevel: 20, toNext: 0 },
+    ] as { id: RankId; minLevel: number; toNext: number }[],
+    reach: 2,
+    boardSize: 5,
+    maxActive: 3,
+    kills: 5,
+    toughKills: 3,
+    gather: 4,
+    gatherChance: 0.5,
+    eliteChance: 0.2,
+    eliteKills: 6,
+    xp: 1,
+    gold: 1.2,
+  },
 
   // Exploration
   /** A cleared room refills one monster per this many seconds you spend away from it. */

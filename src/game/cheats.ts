@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { ClassId, QuestDef, StatKey } from '../data/types';
+import { activeHunts, rankIndex } from './Guild';
 import { isGearDef, modSlots, rollGear, rollMods, type ItemGrant, type SigilTier } from './Items';
 import { xpToNext, type Player } from './Player';
 import { defaultRng, type Rng } from './rng';
@@ -67,16 +68,24 @@ export function cheatGrant(itemId: string, opts: CheatItemOptions, rng: Rng = de
   return grant;
 }
 
-/** Mark a quest done, along with every quest it requires. */
+/** Mark a quest done, along with every quest it requires, and give the Guild rank they asked for. */
 export function completeQuestChain(player: Player, quest: QuestDef): void {
+  const guild = player.data.guild;
   for (let q: QuestDef | undefined = quest; q; q = q.requires ? db.quest(q.requires) : undefined) {
     player.data.quests[q.id] = { status: 'done', count: q.objective.count };
+    if (q.requiresRank) guild.rank = Math.max(guild.rank, rankIndex(q.requiresRank));
   }
 }
 
-/** Fill the kill counts (or hand over the items) of every active quest, so it can be turned in. */
+/** Fill the kill counts (or hand over the items) of every active quest and Guild hunt, so it can be turned in. */
 export function finishActiveQuests(player: Player): number {
   let n = 0;
+  for (const { state, hunt, ready } of activeHunts(player)) {
+    if (ready) continue;
+    if (hunt.kind === 'gather') player.addItem(hunt.itemId!, hunt.count - player.countItem(hunt.itemId!));
+    else state.count = hunt.count;
+    n++;
+  }
   for (const q of db.quests()) {
     const state = player.data.quests[q.id];
     if (state?.status !== 'active') continue;

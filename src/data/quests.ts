@@ -1,56 +1,16 @@
 import type { QuestDef } from './types';
 
-/** Each quest unlocks the next. Chapter 1: The Restless Thornwood. Chapter 2: Rising Waters. */
+/**
+ * The story: each quest unlocks the next, and the boss quests also need an Adventurers' Guild rank (`requiresRank`).
+ * Errands between them are the Guild's hunts now (src/game/Guild.ts).
+ * Chapter 1: The Restless Thornwood. Chapter 2: Rising Waters. Chapter 3: The Frozen Roost.
+ */
 export const QUESTS: QuestDef[] = [
-  {
-    id: 'moss_problem',
-    name: 'Moss Problem',
-    giver: 'elder_maren',
-    objective: { kind: 'kill', monsterId: 'mossling', count: 4 },
-    goal: 'Mosslings defeated',
-    offer: [
-      'Before you go far: Mosslings have crept right up to our gate. Harmless alone, a nuisance in numbers.',
-      'Clear out four of them on the Thornwood Path, would you?',
-    ],
-    reminder: 'The Mosslings are just past the gate. Four should send the rest scurrying.',
-    complete: ['Well done! Garrick can finally stop poking at the moss with his spear.', 'Take these. You will need them deeper in.'],
-    rewards: { xp: 40, gold: 20, items: ['health_potion', 'health_potion'] },
-  },
-  {
-    id: 'bramble_bandits',
-    name: 'Bramble Bandits',
-    giver: 'gate_guard',
-    requires: 'moss_problem',
-    objective: { kind: 'kill', monsterId: 'bramble_bandit', count: 3 },
-    goal: 'Bramble Bandits defeated',
-    offer: [
-      "Bandits wearing brambles, of all things. They've been ambushing travelers in the Deep Thornwood.",
-      "Thin their numbers. Three of them, and I'll see you get proper armor for your trouble.",
-    ],
-    reminder: 'Three bandits, deep in the forest. Watch your back.',
-    complete: ['Ha! That will teach them. Here, this leather has saved my hide more than once.', 'Go tell the Elder. She has been asking for you.'],
-    rewards: { xp: 70, gold: 30, items: ['leather_armor'] },
-  },
-  {
-    id: 'ember_trouble',
-    name: 'Ember Trouble',
-    giver: 'elder_maren',
-    requires: 'bramble_bandits',
-    objective: { kind: 'kill', monsterId: 'ash_imp', count: 3 },
-    goal: 'Ash Imps defeated',
-    offer: [
-      'Ash Imps are setting the woods alight. They never leave the deep forest... unless something drives them out.',
-      'Put out three of them before the whole Thornwood burns. Fire only feeds them: ice or water will douse them.',
-    ],
-    reminder: 'Three Ash Imps. Ice and water, not fire. Mind the fire they spit.',
-    complete: ['The smoke is clearing. But something frightened them, and that worries me more.'],
-    rewards: { xp: 100, gold: 60, items: ['mana_potion', 'mana_potion'] },
-  },
   {
     id: 'heart_of_thorns',
     name: 'Heart of Thorns',
     giver: 'elder_maren',
-    requires: 'ember_trouble',
+    requiresRank: 'E',
     objective: { kind: 'kill', monsterId: 'thornheart', count: 1 },
     goal: 'Defeat the Thornheart',
     offer: [
@@ -71,7 +31,6 @@ export const QUESTS: QuestDef[] = [
     },
     endsChapter: 'Chapter 1: The Restless Thornwood',
   },
-
 
   // Chapter 2: Rising Waters
   {
@@ -94,42 +53,11 @@ export const QUESTS: QuestDef[] = [
     rewards: { xp: 150, gold: 80, items: ['greater_health_potion', 'greater_health_potion'] },
   },
   {
-    id: 'sparks_in_the_reeds',
-    name: 'Sparks in the Reeds',
-    giver: 'captain_hale',
-    requires: 'rising_waters',
-    objective: { kind: 'kill', monsterId: 'spark_wisp', count: 4 },
-    goal: 'Spark Wisps defeated',
-    offer: [
-      "Maren's champion? Good. I need someone who can hit things.",
-      'Spark Wisps. Balls of living lightning. They never strayed from the deep fen before, now they set the reeds alight every night.',
-      'Steel bites them just fine; spells barely sting. Put out four.',
-    ],
-    reminder: 'Four Spark Wisps. Water works on them, if you have it.',
-    complete: ['The reeds are quiet tonight. First time in a week.', 'My scouts found these on a wisp-burned body. Better in your hands.'],
-    rewards: { xp: 220, gold: 100, items: ['greater_mana_potion', 'greater_mana_potion'] },
-  },
-  {
-    id: 'a_worthy_foe',
-    name: 'A Worthy Foe',
-    giver: 'captain_hale',
-    requires: 'sparks_in_the_reeds',
-    objective: { kind: 'kill', elite: true, count: 1 },
-    goal: 'Elite defeated',
-    offer: [
-      'Something out there is feeding the beasts. Some of them come back bigger, meaner, glowing gold. Elites, my scouts call them.',
-      "Bring one down, any one, anywhere. Then I'll know you're ready for what's in the hollow.",
-      'Keep your eyes open: they show up more often while you hunt them.',
-    ],
-    reminder: 'Any Elite will do. Look for the gold glow.',
-    complete: ['Ha! I watched that from the tower. You are ready.', 'Take this armor from the stores. You will want it where you are going.'],
-    rewards: { xp: 300, gold: 150, classItems: { warrior: 'scale_mail', mage: 'reedweave_robe', rogue: 'scale_mail' } },
-  },
-  {
     id: 'mother_of_the_mire',
     name: 'Mother of the Mire',
     giver: 'captain_hale',
-    requires: 'a_worthy_foe',
+    requires: 'rising_waters',
+    requiresRank: 'D',
     objective: { kind: 'kill', monsterId: 'bogmother', count: 1 },
     goal: 'Defeat the Bogmother',
     offer: [
@@ -185,62 +113,11 @@ export const QUESTS: QuestDef[] = [
     rewards: { xp: 300, gold: 120, items: ['superior_health_potion', 'superior_health_potion'] },
   },
   {
-    id: 'hearthold_holds',
-    name: 'Hearthold Holds',
-    giver: 'ranger_sabine',
-    requires: 'cold_scale',
-    objective: { kind: 'kill', monsterId: 'crag_ram', count: 4 },
-    goal: 'Crag Rams defeated',
-    offer: [
-      'Maren sent you? Then you can make yourself useful. The rams have gone mad with the cold and butt anything that moves, carts included.',
-      'Four of them, on the pass. When one paws the snow, get your guard up.',
-    ],
-    reminder: 'Four Crag Rams on the Frostfang Pass. When one paws the snow, Defend.',
-    complete: ['The carts can move again. Good.', 'You want to know why winter never left? Ask Moll at the hearth. She has been saying it for weeks.'],
-    rewards: { xp: 350, gold: 140, items: ['superior_mana_potion', 'superior_mana_potion'] },
-  },
-  {
-    id: 'fire_for_the_hearth',
-    name: 'Fire for the Hearth',
-    giver: 'hearthkeeper_moll',
-    requires: 'hearthold_holds',
-    objective: { kind: 'collect', itemId: 'essence_fire', count: 5 },
-    goal: 'Fire Essence',
-    offer: [
-      'This cold is not weather, dear. It is a spell. My fire burns half as warm as it should.',
-      'There are hot springs in the caves behind Windscour Ridge, the Steamvent Caves. The salamanders there carry fire in their bellies.',
-      'Bring me five Fire Essence and I will keep this hearth burning. And buy a fire blade from Gunnar while you are at it: the things up here hate fire.',
-    ],
-    reminder: 'Five Fire Essence. The Steamvent Caves are through the cave mouth on Windscour Ridge.',
-    complete: [
-      'Ahh, feel that. Real heat.',
-      'Now, Sabine will tell you about the golems. Ice that walks. Bring fire, or lightning if you have any. Steel just bounces.',
-    ],
-    rewards: { xp: 400, gold: 160, items: ['superior_health_potion', 'superior_mana_potion'] },
-  },
-  {
-    id: 'thaw',
-    name: 'Thaw',
-    giver: 'ranger_sabine',
-    requires: 'fire_for_the_hearth',
-    objective: { kind: 'kill', monsterId: 'glacier_golem', count: 2 },
-    goal: 'Glacier Golems defeated',
-    offer: [
-      'Glacier Golems are blocking the high trail on Windscour Ridge. They were not there last winter. Somebody made them.',
-      'Break two of them. Fire melts them, lightning shatters them. Swords make them laugh, if ice could laugh.',
-    ],
-    reminder: 'Two Glacier Golems on Windscour Ridge. Fire or lightning, not steel.',
-    complete: [
-      'Two fewer. And look at this: a rune carved into the core of the ice. Someone is binding the cold here.',
-      'Wear this. It was my brother\'s, and he would want it used.',
-    ],
-    rewards: { xp: 500, gold: 200, classItems: { warrior: 'frostpelt_vest', mage: 'galeweave_robe', rogue: 'frostpelt_vest' } },
-  },
-  {
     id: 'the_old_one',
     name: 'The Old One in the Den',
     giver: 'ranger_sabine',
-    requires: 'thaw',
+    requires: 'cold_scale',
+    requiresRank: 'C',
     objective: { kind: 'kill', monsterId: 'old_snowmaw', count: 1 },
     goal: 'Defeat Old Snowmaw',
     offer: [

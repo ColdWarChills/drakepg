@@ -211,7 +211,7 @@ function legend(scene: Phaser.Scene, c: Phaser.GameObjects.Container): void {
   item((cx) => drawHouse(g, cx, y + 2, 0.75), 'Town');
   item((cx) => c.add(addText(scene, cx, y, '☠', { size: 20, color: COLORS.textBad }).setOrigin(0.5)), 'Boss');
   item((cx) => drawFlame(g, cx, y, 0.7), 'Campfire');
-  item((cx) => g.lineStyle(3, GOLD, 1).strokeCircle(cx, y, 9), 'Quest');
+  item((cx) => g.lineStyle(3, GOLD, 1).strokeCircle(cx, y, 9), 'Quest or hunt');
   item((cx) => c.add(addText(scene, cx, y, '!', { size: 20, bold: true, color: COLORS.textGold }).setOrigin(0.5)), 'New quest');
   item((cx) => dashed(g, cx - 12, y, cx + 12, y, 0x7a3b33), 'Blocked');
 }

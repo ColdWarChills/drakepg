@@ -7,9 +7,21 @@ import type { Blocker, InspectDef, MonsterDef, NpcDef, QuestDef, RoomDef, RoomEx
 import { cheats } from '../game/cheats';
 import { featureOn, markSeen, unseenNews } from '../game/Features';
 import { makeElite, rollElite } from '../game/Elites';
+import { activeHunts, anyHuntReady, huntGoal, huntWantsElite, rankId, type TurnInHunt } from '../game/Guild';
 import { isLucky, makeImpling, rollLucky } from '../game/Lucky';
 import { Player } from '../game/Player';
-import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStarted, questStatus, questWantsElite, turnInQuest } from '../game/Quests';
+import {
+  acceptQuest,
+  activeQuests,
+  questForNpc,
+  questNeedsKill,
+  questProgress,
+  questStarted,
+  questStatus,
+  questWaitingOnRank,
+  questWantsElite,
+  turnInQuest,
+} from '../game/Quests';
 import { saveSettings, settings } from '../game/settings';
 import { SaveSystem } from '../game/SaveSystem';
 import { RECALL_SCROLL, recallCheck, useRecall, visitRoom } from '../game/Travel';
@@ -25,6 +37,7 @@ import { Hud } from '../ui/Hud';
 import { Modal } from '../ui/Modal';
 import { openCheatMenu } from '../ui/cheatMenu';
 import { openForge } from '../ui/forge';
+import { openGuild } from '../ui/guild';
 import { openInventory, openShop } from '../ui/inventory';
 import { lootName } from '../ui/itemUi';
 import { openMap } from '../ui/mapPanel';
@@ -333,7 +346,7 @@ export class RoomScene extends Phaser.Scene {
     const monsterId = weightedPick(defaultRng, zone.encounters, (e) => e.weight).monsterId;
     const elites = taken.filter((m) => m.elite).length;
     const elitesOn = featureOn(session.player, 'elites') || cheats.elites;
-    const elite = elitesOn && (elites < BALANCE.elite.maxPerRoom || cheats.elites) ? rollElite(defaultRng, questWantsElite(session.player)) : undefined;
+    const elite = elitesOn && (elites < BALANCE.elite.maxPerRoom || cheats.elites) ? rollElite(defaultRng, questWantsElite(session.player) || huntWantsElite(session.player)) : undefined;
     return { uid: this.nextUid++, monsterId, elite, ...pos };
   }
 
@@ -1182,8 +1195,21 @@ export class RoomScene extends Phaser.Scene {
       return;
     }
     const q = questForNpc(session.player, near.def.id);
+    const kind = near.def.role.kind;
     const verb =
-      q?.status === 'ready' ? 'Turn in' : q?.status === 'available' ? 'Quest' : near.def.role.kind === 'shop' ? 'Shop' : near.def.role.kind === 'forge' ? 'Forge' : near.def.role.kind === 'inn' ? 'Rest' : 'Talk';
+      q?.status === 'ready' || (kind === 'guild' && anyHuntReady(session.player))
+        ? 'Turn in'
+        : q?.status === 'available'
+          ? 'Quest'
+          : kind === 'shop'
+            ? 'Shop'
+            : kind === 'forge'
+              ? 'Forge'
+              : kind === 'inn'
+                ? 'Rest'
+                : kind === 'guild'
+                  ? 'Hunts'
+                  : 'Talk';
     this.promptText.setText(`${this.keyHint}${verb}`);
     const marker = this.markers.get(near);
     const above = marker?.visible ? marker.y - 46 : near.label.y - near.label.height - 22;
@@ -1645,6 +1671,14 @@ export class RoomScene extends Phaser.Scene {
     const story = settings.storyText;
     let lines = story ? npc.def.dialogue : npc.def.dialogue.slice(0, 1);
 
+    if (role.kind === 'guild') {
+      this.moveTarget = null;
+      this.player.facing = npc.x < this.player.x ? -1 : 1;
+      this.tweens.add({ targets: npc.fig, y: npc.fig.y - 10, duration: 100, yoyo: true });
+      openGuild(this, player, npc.def, () => this.refresh(), (r) => this.huntTurnedIn(r, npc));
+      return;
+    }
+
     const q = questForNpc(player, npc.def.id);
     if (q?.status === 'ready') {
       const quest = q.quest;
@@ -1672,6 +1706,10 @@ export class RoomScene extends Phaser.Scene {
       });
     } else if (q?.status === 'active') {
       lines = [`${q.quest.reminder}  (${q.quest.goal}: ${questProgress(player, q.quest)}/${q.quest.objective.count})`];
+    } else if (q?.status === 'rank') {
+      lines = [
+        `I have work for you, but not for a Rank ${rankId(player.data.guild.rank)}. Come back once the Adventurers' Guild ranks you ${q.quest.requiresRank}: take their hunts (a Guild Clerk in any town).`,
+      ];
     }
     this.moveTarget = null;
     this.player.facing = npc.x < this.player.x ? -1 : 1;
@@ -1725,7 +1763,8 @@ export class RoomScene extends Phaser.Scene {
     const player = session.player;
     for (const npc of this.npcs) {
       const q = questForNpc(player, npc.def.id);
-      const symbol = q?.status === 'ready' ? '?' : q?.status === 'available' ? '!' : '';
+      const huntDone = npc.def.role.kind === 'guild' && anyHuntReady(player);
+      const symbol = q?.status === 'ready' || huntDone ? '?' : q?.status === 'available' ? '!' : '';
       let marker = this.markers.get(npc);
       if (!marker) {
         marker = addText(this, npc.x, 0, '', { size: 40, bold: true, color: COLORS.textGold, stroke: true }).setOrigin(0.5, 1);
@@ -1737,12 +1776,20 @@ export class RoomScene extends Phaser.Scene {
 
     this.tracker.removeAll(true);
     const quests = activeQuests(player);
-    if (quests.length > 0) {
-      const rows = quests.slice(0, 3).map((q) =>
-        q.status === 'ready'
-          ? `${q.quest.name}: done! Return to ${this.giverName(q.quest)}`
-          : `${q.quest.name}: ${q.quest.goal} ${q.count}/${q.quest.objective.count}`,
-      );
+    const hunts = activeHunts(player);
+    const waiting = quests.length === 0 ? questWaitingOnRank(player) : null;
+    if (quests.length > 0 || hunts.length > 0 || waiting) {
+      const rows = [
+        ...quests.map((q) =>
+          q.status === 'ready'
+            ? `${q.quest.name}: done! Return to ${this.giverName(q.quest)}`
+            : `${q.quest.name}: ${q.quest.goal} ${q.count}/${q.quest.objective.count}`,
+        ),
+        ...hunts.map((h) =>
+          h.ready ? `Hunt (${rankId(h.hunt.rank)}): done! Return to a Guild Clerk` : `Hunt (${rankId(h.hunt.rank)}): ${huntGoal(h.hunt)} ${h.count}/${h.hunt.count}`,
+        ),
+        ...(waiting ? [`Next: reach Guild Rank ${waiting.requiresRank} (you are ${rankId(player.data.guild.rank)})`] : []),
+      ].slice(0, 5);
       const text = addText(this, 12, 8, rows.join('\n'), { size: Math.round(16 * Math.min(this.ls, 1.25)), color: COLORS.text }).setLineSpacing(6);
       const bg = this.add
         .rectangle(0, 0, Math.max(340, text.width + 24), text.height + 16, COLORS.panel, 0.8)
@@ -1763,6 +1810,32 @@ export class RoomScene extends Phaser.Scene {
 
   private giverName(quest: QuestDef): string {
     return ROOMS.flatMap((r) => r.npcs).find((n) => n.id === quest.giver)?.name ?? 'the quest giver';
+  }
+
+  /** A hunt handed in at a clerk: coins, then level-ups and promotions over the board. */
+  private huntTurnedIn(result: TurnInHunt, npc: Npc): void {
+    const player = session.player;
+    const { rewards, levelsGained, promotions } = result;
+    const items = rewards.items.map((g) => lootName(db.item(g.itemId), g));
+    toast(this, [`+${rewards.xp} XP`, `+${rewards.gold} gold`, ...items].join('   '), COLORS.textGood);
+    void fx.coinShower(this, { x: npc.x, y: npc.y - 120 }, { x: 320, y: 40 }, Math.ceil(rewards.gold / 6), () => sfx.play(this, 'coin'));
+    for (const rank of promotions) {
+      this.time.delayedCall(300, () => {
+        fx.confetti(this);
+        sfx.play(this, 'levelup');
+        toast(this, `Guild promotion: Rank ${rank}!`, COLORS.textGold);
+      });
+    }
+    if (levelsGained > 0) {
+      const skills = player.skillsLearnedSince(player.level - levelsGained);
+      this.time.delayedCall(700, () => {
+        fx.levelUpBurst(this, this.player.x, this.player.y);
+        sfx.play(this, 'levelup');
+        toast(this, `Level up! Now level ${player.level}. +${levelsGained * BALANCE.statPointsPerLevel} stat points (C)`, COLORS.textGood);
+        skills.forEach((sk) => toast(this, `New skill: ${sk.name}`, COLORS.textMagic));
+      });
+    }
+    this.save(false);
   }
 
   private completeQuest(quest: QuestDef, npc: Npc): void {

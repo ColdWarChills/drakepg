@@ -73,7 +73,7 @@ export class ResultScene extends Phaser.Scene {
       this.dropReveal(cx, 360, data.rewards.items, data.lost);
       data.quests.forEach((q, i) => {
         const done = q.count >= q.target;
-        const line = addText(this, cx, 450 + i * 28, `${q.name}: ${q.goal} ${q.count}/${q.target}${done ? '  ✔ Return to the quest giver' : ''}`, {
+        const line = addText(this, cx, 450 + i * 28, `${q.name}: ${q.goal} ${q.count}/${q.target}${done ? `  ✔ Return to ${q.turnIn ?? 'the quest giver'}` : ''}`, {
           size: 19,
           bold: done,
           color: done ? COLORS.textGood : COLORS.textGold,

@@ -50,8 +50,8 @@ export type ResultSceneData =
       levelsGained: number;
       /** Names of skills unlocked by this level up. */
       newSkills: string[];
-      /** Quest counters this kill advanced. */
-      quests: { name: string; goal: string; count: number; target: number }[];
+      /** Quest and Guild hunt counters this kill advanced. `turnIn`: who to see when done (default the quest giver). */
+      quests: { name: string; goal: string; count: number; target: number; turnIn?: string }[];
       back: RoomSceneData;
     }
   | {

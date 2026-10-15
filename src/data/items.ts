@@ -1,5 +1,6 @@
 import { MATERIALS } from './crafting';
 import { EQUIPMENT } from './equipment';
+import { HUNT_ITEMS } from './guild';
 import type { ItemDef } from './types';
 
 export const ITEMS: ItemDef[] = [
@@ -900,4 +901,6 @@ export const ITEMS: ItemDef[] = [
   ...EQUIPMENT,
   // Materials (src/data/crafting.ts)
   ...MATERIALS,
+  // Guild gather hunt items (src/data/guild.ts)
+  ...HUNT_ITEMS,
 ];

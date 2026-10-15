@@ -2,6 +2,7 @@ import { db } from '../data/db';
 import { MAP_AREAS } from '../data/map';
 import type { MapAreaDef, RoomDef, RoomExit } from '../data/types';
 import { ROOMS } from '../data/world';
+import { anyHuntReady, huntTargets } from './Guild';
 import type { Player } from './Player';
 import { questStarted, questStatus } from './Quests';
 
@@ -12,7 +13,10 @@ import { questStarted, questStatus } from './Quests';
 
 export type MapIcon = 'town' | 'boss' | 'campfire';
 
-/** '!' a quest to pick up here, '?' a quest to turn in here, 'target' what an active quest asks you to fight is here. */
+/**
+ * '!' a quest to pick up here, '?' a quest (or a Guild hunt, at a clerk) to turn in here, 'target' what an active quest
+ * or hunt asks you to fight is here.
+ */
 export type MapQuestMark = '!' | '?' | 'target' | null;
 
 export interface MapNode {
@@ -75,6 +79,7 @@ function shownRooms(player: Player, here: string): Set<string> {
 
 function questMark(player: Player, room: RoomDef): MapQuestMark {
   const npcs = new Set(room.npcs.map((n) => n.id));
+  if (room.npcs.some((n) => n.role.kind === 'guild') && anyHuntReady(player)) return '?';
   let mark: MapQuestMark = null;
   for (const quest of db.quests()) {
     const status = questStatus(player, quest);
@@ -85,6 +90,11 @@ function questMark(player: Player, room: RoomDef): MapQuestMark {
     const here = room.boss?.monsterId === id || (!!room.monsterCount && !!room.zoneId && db.zone(room.zoneId).encounters.some((e) => e.monsterId === id));
     if (here) mark = 'target';
   }
+  if (mark || !room.monsterCount || !room.zoneId) return mark;
+  // Guild hunts: the monsters they want roam here, or it's a gather hunt's area.
+  const hunts = huntTargets(player);
+  const zone = db.zone(room.zoneId);
+  if (hunts.zones.has(zone.id) || zone.encounters.some((e) => hunts.monsters.has(e.monsterId))) return 'target';
   return mark;
 }
 

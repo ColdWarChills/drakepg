@@ -1,20 +1,38 @@
 /**
  * Headless pacing estimate: a bot plays the prologue road and each chapter's quest chain through the real rooms.
  * It walks the shortest way, fights everything roaming in each room it crosses (rooms refill like in the game,
- * one monster per `BALANCE.respawnSeconds`), farms until a quest is done and turns it in. It prints rooms, fights,
+ * one monster per `BALANCE.respawnSeconds`), farms until a quest is done and turns it in. When a story quest needs a
+ * Guild rank, it takes the board's hunts (most rank points, least work) until it has the rank. It prints rooms, fights,
  * level at each boss and rough minutes per chapter. The seconds in `TIME` are guesses: a timed run by hand is still
  * the real check. Run with `npm run pace` (optionally `npm run pace -- 30` for more runs per class).
  */
 import { BALANCE } from '../src/config';
 import { db, validateData } from '../src/data/db';
-import type { ClassId, MonsterDef, QuestDef, RoomDef, SkillDef, StatKey } from '../src/data/types';
+import type { ClassId, MonsterDef, QuestDef, RankId, RoomDef, SkillDef, StatKey } from '../src/data/types';
 import { ROOMS } from '../src/data/world';
 import { Battle } from '../src/game/Battle';
 import { makeElite, rollElite } from '../src/game/Elites';
 import { featureOn } from '../src/game/Features';
+import {
+  activeHunts,
+  canTakeHunt,
+  hasRank,
+  huntDef,
+  huntDrops,
+  huntPoints,
+  huntReady,
+  huntWantsElite,
+  rankId,
+  recordHuntKill,
+  refreshBoard,
+  takeHunt,
+  turnInHunt,
+  type Hunt,
+} from '../src/game/Guild';
 import { rollGear, type Gear, type GearDef } from '../src/game/Items';
 import { emptyEquipment, Player } from '../src/game/Player';
-import { acceptQuest, questStarted, questWantsElite, recordKill, turnInQuest } from '../src/game/Quests';
+import { acceptQuest, questStarted, questStatus, questWantsElite, recordKill, turnInQuest } from '../src/game/Quests';
+import { visitRoom } from '../src/game/Travel';
 import { chance, seeded, weightedPick, type Rng } from '../src/game/rng';
 
 const RUNS = Number(process.argv[2] ?? 10);
@@ -30,6 +48,8 @@ const TIME = {
   /** Read a quest offer / turn one in. */
   offer: 12,
   turnIn: 8,
+  /** Read the Guild board and take hunts. */
+  board: 15,
   /** A quiet room's first-visit scene, and reading one note. */
   scene: 12,
   inspect: 5,
@@ -174,6 +194,7 @@ class Run {
     if (farming && next) this.clock = Math.max(this.clock, next.leftAt + BALANCE.respawnSeconds - TIME.room);
     this.here = id;
     this.clock += TIME.room;
+    visitRoom(this.p, id);
     const room = db.room(id);
     if (!this.seen.has(id)) {
       this.seen.add(id);
@@ -196,7 +217,7 @@ class Run {
   spawn(room: RoomDef): Roamer {
     const zone = db.zone(room.zoneId!);
     const monsterId = weightedPick(this.rng, zone.encounters, (e) => e.weight).monsterId;
-    const elite = featureOn(this.p, 'elites') ? rollElite(this.rng, questWantsElite(this.p)) : undefined;
+    const elite = featureOn(this.p, 'elites') ? rollElite(this.rng, questWantsElite(this.p) || huntWantsElite(this.p)) : undefined;
     return { monsterId, elite };
   }
 
@@ -232,6 +253,8 @@ class Run {
     }
     this.gain(def.xp * (r.elite ? BALANCE.elite.rewards : 1));
     recordKill(this.p, def);
+    recordHuntKill(this.p, def);
+    for (const g of huntDrops(this.p, room.zoneId!, this.rng)) this.p.addItem(g.itemId);
     // Quest materials drop while a collect quest wants them.
     for (const q of db.quests()) {
       const o = q.objective;
@@ -283,8 +306,9 @@ class Run {
     this.weapons = [p.data.equipment.weapon!, ...(spare ? [p.makeGear(spare, { rolls: rollGear(db.item(spare) as GearDef, undefined, 0) })] : [])];
   }
 
-  /** Talk to the giver, do the job, come back. */
+  /** Talk to the giver, do the job, come back. A rank gate first sends it to the Guild. */
   quest(q: QuestDef): void {
+    if (questStatus(this.p, q) === 'rank') this.guild(q.requiresRank!);
     const giver = ROOMS.find((r) => r.npcs.some((n) => n.id === q.giver))!;
     this.walkTo(giver.id);
     acceptQuest(this.p, q);
@@ -309,14 +333,49 @@ class Run {
       return !o.monsterId || ids.includes(o.monsterId);
     };
     const done = () => (o.kind === 'collect' ? this.p.countItem(o.itemId) >= o.count : (this.p.data.quests[q.id]?.count ?? 0) >= o.count);
+    this.farmFor(q.id, wants, done);
+  }
+
+  /** Take hunts from the nearest Guild Clerk and do them until the Guild ranks you `rank`. */
+  guild(rank: RankId): void {
+    const clerks = ROOMS.filter((r) => r.npcs.some((n) => n.role.kind === 'guild'));
+    for (let round = 0; !hasRank(this.p, rank); round++) {
+      if (round > 40) throw new Error(`Stuck at Guild rank ${rankId(this.p.data.guild.rank)}, wanting ${rank}`);
+      const clerk = clerks.filter((r) => this.route(r.id)).sort((a, b) => this.path(a.id).length - this.path(b.id).length)[0];
+      this.walkTo(clerk.id);
+      this.clock += TIME.board;
+      for (const a of activeHunts(this.p)) {
+        if (!a.ready) continue;
+        turnInHunt(this.p, a.state.key, this.rng);
+        this.clock += TIME.turnIn;
+        this.levelUp();
+      }
+      if (hasRank(this.p, rank)) break;
+      refreshBoard(this.p, this.rng);
+      // Most rank points for the least fighting; Elite bounties only when nothing else is up.
+      const work = (h: Hunt) => (h.kind === 'gather' ? h.count / BALANCE.guild.gatherChance : h.kind === 'elite' ? 40 : h.count);
+      const board = this.p.data.guild.board.map((k) => huntDef(k)!).sort((a, b) => huntPoints(this.p, b) * 20 - work(b) - (huntPoints(this.p, a) * 20 - work(a)));
+      for (const h of board) if (canTakeHunt(this.p)) takeHunt(this.p, h.key);
+      for (const a of activeHunts(this.p)) {
+        const h = a.hunt;
+        const wants = (room: RoomDef) =>
+          !!room.zoneId && !!room.monsterCount && (h.kind === 'gather' ? room.zoneId === h.zoneId : db.zone(room.zoneId).encounters.some((e) => e.monsterId === h.monsterId));
+        this.farmFor(h.key, wants, () => huntReady(this.p, a.state));
+      }
+    }
+  }
+
+  /** Farm the nearest room `wants` (stepping out and back in) until `done`. */
+  farmFor(label: string, wants: (room: RoomDef) => boolean, done: () => boolean): void {
+    if (done()) return;
     const targets = ROOMS.filter((r) => wants(r) && this.route(r.id)).sort((a, b) => this.path(a.id).length - this.path(b.id).length);
-    if (!targets.length) throw new Error(`Nowhere to do ${q.id}`);
+    if (!targets.length) throw new Error(`Nowhere to do ${label}`);
     const spot = targets[0].id;
     this.walkTo(spot);
     // Step into the next room toward another target (or any neighbour) and back.
     const other = targets[1] && this.path(targets[1].id).length <= 2 ? this.path(targets[1].id)[0] : db.room(spot).exits.find((e) => !e.requiresQuest || questStarted(this.p, e.requiresQuest))!.to;
     for (let i = 0; !done(); i++) {
-      if (i > 400) throw new Error(`Stuck farming ${q.id} (${this.fights} fights, ${this.losses} lost)`);
+      if (i > 400) throw new Error(`Stuck farming ${label} (${this.fights} fights, ${this.losses} lost)`);
       this.enter(i % 2 ? spot : other, true);
     }
   }
@@ -396,7 +455,7 @@ validateData();
 for (const line of checkExits()) console.log(`WARNING: ${line}`);
 
 const classes: ClassId[] = ['warrior', 'mage', 'rogue'];
-type Totals = { minutes: number; fights: number; losses: number; levelIn: number; levelOut: number; bosses: string[][] };
+type Totals = { minutes: number; fights: number; losses: number; levelIn: number; levelOut: number; hunts: number; rank: number; bosses: string[][] };
 const totals = new Map<string, Totals[]>();
 const rng = seeded(1234);
 for (const classId of classes) {
@@ -405,7 +464,7 @@ for (const classId of classes) {
     p.data.inventory = [];
     const bot = new Run(p, rng, 'road_cart');
     for (const ch of CHAPTERS) {
-      const start = { clock: bot.clock, fights: bot.fights, losses: bot.losses, level: p.level };
+      const start = { clock: bot.clock, fights: bot.fights, losses: bot.losses, level: p.level, hunts: p.data.guild.done };
       bot.bossLevels = [];
       bot.outfit(ch.gear[classId], ch.spare?.[classId]);
       bot.potion = ch.potion;
@@ -418,6 +477,8 @@ for (const classId of classes) {
         losses: bot.losses - start.losses,
         levelIn: start.level,
         levelOut: p.level,
+        hunts: p.data.guild.done - start.hunts,
+        rank: p.data.guild.rank,
         bosses: [bot.bossLevels],
       };
       totals.set(`${ch.name}|${classId}`, [...(totals.get(`${ch.name}|${classId}`) ?? []), t]);
@@ -437,7 +498,8 @@ for (const ch of CHAPTERS) {
     });
     console.log(
       `  ${classId.padEnd(8)} ${avg(ts.map((t) => t.minutes)).toFixed(0).padStart(3)} min, ${avg(ts.map((t) => t.fights)).toFixed(0).padStart(3)} fights, ` +
-        `${avg(ts.map((t) => t.losses)).toFixed(1)} losses, level ${avg(ts.map((t) => t.levelIn)).toFixed(1)} -> ${avg(ts.map((t) => t.levelOut)).toFixed(1)}` +
+        `${avg(ts.map((t) => t.losses)).toFixed(1)} losses, level ${avg(ts.map((t) => t.levelIn)).toFixed(1)} -> ${avg(ts.map((t) => t.levelOut)).toFixed(1)}, ` +
+        `${avg(ts.map((t) => t.hunts)).toFixed(1)} hunts, Guild rank ${rankId(Math.min(...ts.map((t) => t.rank)))}-${rankId(Math.max(...ts.map((t) => t.rank)))}` +
         (bosses.length ? `; ${bosses.join(', ')}` : ''),
     );
   }

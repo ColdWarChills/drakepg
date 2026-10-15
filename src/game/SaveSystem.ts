@@ -2,6 +2,7 @@ import { BALANCE, SAVE_KEY, SAVE_VERSION } from '../config';
 import { db } from '../data/db';
 import { TOWN_START } from '../data/world';
 import type { EquipSlot } from '../data/types';
+import { sanitizeGuild } from './Guild';
 import { ALL_SLOTS, fitsSlot, isGearDef, sanitizeTraits, type Gear } from './Items';
 import { emptyEquipment, Player, STAT_KEYS, type PlayerData } from './Player';
 import { areaTown, RECALL_SCROLL } from './Travel';
@@ -75,6 +76,8 @@ export const SaveSystem = {
  * v11 -> v12: `visited` rooms (the map) and `lastTown` (Recall Scrolls). The room you stand in counts as visited, your
  *             area's town becomes the last town, and you get the starting Recall Scrolls a new hero has.
  * v12 -> v13: `equipment.spare` (a second weapon to swap to); sanitize() starts it empty.
+ * v13 -> v14: the Adventurers' Guild (`guild`). The errand quests between the story quests are gone (sanitize()
+ *             drops them); the rank they would have earned is given from how far the story got.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -128,6 +131,19 @@ function migrate(file: SaveFile): SaveFile | null {
     file.version = 12;
   }
   if (file.version < 13) file.version = 13;
+  if (file.version < 14) {
+    const p = file.player as Partial<PlayerData>;
+    const quests = (p.quests ?? {}) as Record<string, { status?: string } | undefined>;
+    const done = (id: string) => quests[id]?.status === 'done';
+    const started = (id: string) => quests[id] !== undefined;
+    // The old errand quests stood where the rank gates are now; anyone past one gets that rank.
+    let rank = 0;
+    if (done('bramble_bandits') || started('heart_of_thorns')) rank = 1;
+    if (done('a_worthy_foe') || started('mother_of_the_mire')) rank = 2;
+    if (done('thaw') || started('the_old_one')) rank = 3;
+    p.guild = { rank, points: 0, board: [], hunts: [], done: 0 };
+    file.version = 14;
+  }
   return file;
 }
 
@@ -233,6 +249,7 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     loadout: [],
     visited: Array.isArray(raw.visited) ? [...new Set(raw.visited.filter((id): id is string => typeof id === 'string' && db.hasRoom(id)))] : [],
     lastTown: typeof raw.lastTown === 'string' && db.hasRoom(raw.lastTown) && db.room(raw.lastTown).town ? raw.lastTown : null,
+    guild: sanitizeGuild(raw.guild),
   };
 
   const player = new Player(data);

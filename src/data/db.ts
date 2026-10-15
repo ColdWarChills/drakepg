@@ -2,6 +2,7 @@ import { CLASSES } from './classes';
 import { RECIPES } from './crafting';
 import { ELITE_AFFIXES } from './elites';
 import { FEATURES } from './features';
+import { PROMOTIONS } from './guild';
 import { ITEMS } from './items';
 import { LOOT_TABLES } from './loot';
 import { MAP_AREAS } from './map';
@@ -116,6 +117,14 @@ export function validateData(): void {
   for (const a of ELITE_AFFIXES) checkApplies(a.applies);
   for (const item of ITEMS) if (item.type === 'weapon') checkApplies(item.proc?.applies);
   for (const z of ZONES) for (const e of z.encounters) db.monster(e.monsterId);
+  const gatherItems = new Set<string>();
+  for (const z of ZONES) {
+    if (!z.gather) continue;
+    if (db.item(z.gather).type !== 'material') throw new Error(`Zone ${z.id}: gather item ${z.gather} must be a material`);
+    if (gatherItems.has(z.gather)) throw new Error(`Zone ${z.id}: gather item ${z.gather} is already another area's`);
+    gatherItems.add(z.gather);
+  }
+  for (const p of Object.values(PROMOTIONS)) [...(p?.items ?? []), ...Object.values(p?.classItems ?? {})].forEach((id) => db.item(id));
   for (const c of CLASSES) {
     db.item(c.weapon);
     const body = db.item(c.armor);

@@ -4,6 +4,7 @@ import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, St
 import { boosted, cheats } from './cheats';
 import { grantFor } from './Items';
 import { featureOn } from './Features';
+import { huntDrops } from './Guild';
 import { questWantsItem } from './Quests';
 import { rollLoot } from './Loot';
 import { luckySigil } from './Lucky';
@@ -98,6 +99,8 @@ export class Battle {
   rewards: Rewards | null = null;
   /** XP and gold multiplier (repeat boss fights give less). Set before the battle ends. */
   rewardScale = 1;
+  /** The area this fight is in: its Guild gather hunts may drop their item. Set before the battle ends. */
+  zoneId?: string;
   /** Telegraphed attack the enemy is winding up; it lands on its next turn. */
   charging: MonsterAttack | null = null;
   /** The move the enemy will make on its next turn, shown on the battle panel. */
@@ -680,6 +683,8 @@ export class Battle {
       .filter((d) => materials || db.item(d.itemId).type !== 'material' || questWantsItem(this.player, d.itemId))
       .filter((d) => chance(this.rng, boosted(d.chance)))
       .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source, extras)));
+    // Guild gather hunts: any monster of the hunt's area may carry its item.
+    if (this.zoneId) items.push(...huntDrops(this.player, this.zoneId, this.rng));
     // Gear: one cascading tier roll (Elites and bosses always drop something). Missing a Rare builds up luck.
     // Heroic bosses roll gear more than once.
     for (let i = 0; m.loot && i < (m.isHeroic ? BALANCE.heroic.lootRolls : 1); i++) {
