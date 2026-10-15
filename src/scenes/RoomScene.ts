@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BALANCE, COLORS } from '../config';
+import { BALANCE, COLORS, DESIGN } from '../config';
 import { db } from '../data/db';
 import { ELEMENT_LABELS } from '../data/elements';
 import { ROOMS, START } from '../data/world';
@@ -33,6 +33,7 @@ import { openMap } from '../ui/mapPanel';
 import { openCharacterPanel, openDialogue, openNarration, type DialogueAction } from '../ui/panels';
 import { drawCampfire, drawProp } from '../ui/props';
 import { addText, isTouchScreen, labelScale, toast } from '../ui/text';
+import { addOverlayCamera, shake, zoomTo } from '../ui/view';
 import { enterScene, goTo, SceneKeys, type BattleSceneData, type RoomSceneData } from './keys';
 
 /** Characters are drawn a bit smaller on maps than in battle. */
@@ -239,7 +240,7 @@ export class RoomScene extends Phaser.Scene {
   // --- Setup ---
 
   private spawnPlayer(data: RoomSceneData): void {
-    const { width } = this.scale;
+    const { width } = DESIGN;
     let x: number;
     let y: number;
     if (data.via === 'exit' && data.side === 'back') {
@@ -318,7 +319,7 @@ export class RoomScene extends Phaser.Scene {
       if (Math.abs(m.x - this.player.x) < 260) {
         const away = m.x < this.player.x ? -1 : 1;
         const x = this.player.x + away * 260;
-        m.x = x < 80 || x > this.scale.width - 80 ? this.player.x - away * 260 : x;
+        m.x = x < 80 || x > DESIGN.width - 80 ? this.player.x - away * 260 : x;
       }
     }
     for (const r of roaming) this.addMob(r);
@@ -472,7 +473,7 @@ export class RoomScene extends Phaser.Scene {
     this.prompt.setVisible(false);
     sfx.play(this, 'warning');
     toast(this, 'The chest has teeth!', COLORS.textBad);
-    this.cameras.main.shake(300, 0.012);
+    shake(this, 300, 0.012);
     this.tweens.add({ targets: fig, y: data.y - 30, duration: 160, yoyo: true, repeat: 1 });
     // Remember the room with the mimic still in it, in case you run away.
     session.saveRoom({
@@ -494,7 +495,7 @@ export class RoomScene extends Phaser.Scene {
     let best = { x: 640, y: (top + bottom) / 2 };
     let bestScore = -Infinity;
     for (let i = 0; i < 40; i++) {
-      const p = { x: Phaser.Math.Between(180, this.scale.width - 140), y: Phaser.Math.Between(top + 10, bottom - 10) };
+      const p = { x: Phaser.Math.Between(180, DESIGN.width - 140), y: Phaser.Math.Between(top + 10, bottom - 10) };
       const fromPlayer = Math.abs(p.x - this.player.x);
       const fromOthers = Math.min(Infinity, ...taken.map((m) => Math.abs(m.x - p.x)));
       if (fromPlayer > 320 && fromOthers > MOB_GAP.x) return p;
@@ -621,7 +622,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private drawExits(): void {
-    const { width } = this.scale;
+    const { width } = DESIGN;
     const [top, bottom] = this.room.walk;
     const y = (top + bottom) / 2 - 70;
     for (const exit of this.room.exits) {
@@ -759,7 +760,7 @@ export class RoomScene extends Phaser.Scene {
 
   /** Thorns, a barricade or flooded reeds across a locked exit. */
   private drawBlocker(side: 'left' | 'right', kind: Blocker): void {
-    const { width } = this.scale;
+    const { width } = DESIGN;
     const [top, bottom] = this.room.walk;
     const x0 = side === 'right' ? width - 90 : 0;
     const g = this.add.graphics().setDepth(bottom + 1);
@@ -849,7 +850,7 @@ export class RoomScene extends Phaser.Scene {
     if (this.time.now < this.wallBumpAt) return;
     this.wallBumpAt = this.time.now + 2000;
     sfx.play(this, 'denied');
-    this.cameras.main.shake(120, 0.004);
+    shake(this, 120, 0.004);
     const guard = exit.guarded && this.boss ? `The ${this.boss.def.name.replace(/^The /, '')} blocks the way. Beat it to get through.` : null;
     toast(this, guard ?? BLOCKER_BUMP[exit.blocker ?? (exit.side === 'back' ? 'barricade' : 'thorns')], COLORS.textDim);
   }
@@ -860,7 +861,7 @@ export class RoomScene extends Phaser.Scene {
     if (!b || !monsterId) return;
     const def = db.monster(monsterId);
     // Bosses face the middle of the room, where the player comes from.
-    const faceLeft = b.x > this.scale.width / 2;
+    const faceLeft = b.x > DESIGN.width / 2;
     const fig = drawFigure(this, b.x, b.y, def.look, faceLeft ? -1 : 1);
     const actor = this.makeActor(fig, b.x, b.y, def.look.scale);
     actor.facing = 1;
@@ -881,7 +882,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private buildUi(titleCard: boolean): void {
-    const { width, height } = this.scale;
+    const { width, height } = DESIGN;
     this.hud = new Hud(this, 16, 16);
     this.hud.refresh(session.player, false);
 
@@ -934,7 +935,7 @@ export class RoomScene extends Phaser.Scene {
 
   /** Big room name that fades in and out on arrival. */
   private titleCard(): void {
-    const card = addText(this, this.scale.width / 2, 250, this.room.name, { size: 64, bold: true, color: COLORS.textGold, stroke: true })
+    const card = addText(this, DESIGN.width / 2, 250, this.room.name, { size: 64, bold: true, color: COLORS.textGold, stroke: true })
       .setOrigin(0.5)
       .setDepth(UI_DEPTH)
       .setAlpha(0)
@@ -1014,7 +1015,7 @@ export class RoomScene extends Phaser.Scene {
     }
 
     // Exits.
-    const { width } = this.scale;
+    const { width } = DESIGN;
     const exitL = this.room.exits.find((e) => e.side === 'left' && this.exitOpen(e));
     const exitR = this.room.exits.find((e) => e.side === 'right' && this.exitOpen(e));
     if (exitR && p.x > width - EDGE / 2) return this.leave(exitR);
@@ -1109,7 +1110,7 @@ export class RoomScene extends Phaser.Scene {
             // Wander somewhere no other monster is standing.
             for (let i = 0; i < 6; i++) {
               m.target = {
-                x: Phaser.Math.Clamp(m.x + Phaser.Math.Between(-220, 220), 120, this.scale.width - 120),
+                x: Phaser.Math.Clamp(m.x + Phaser.Math.Between(-220, 220), 120, DESIGN.width - 120),
                 y: Phaser.Math.Between(top + 5, bottom - 5),
               };
               const t = m.target;
@@ -1144,7 +1145,7 @@ export class RoomScene extends Phaser.Scene {
         m.walkT += dt * (m.state === 'chase' || m.state === 'run' ? 14 : 8);
       }
     }
-    this.clampToWalk(m, 60, this.scale.width - 60);
+    this.clampToWalk(m, 60, DESIGN.width - 60);
     this.place(m, time);
     this.placeEliteMarks(m);
 
@@ -1159,9 +1160,9 @@ export class RoomScene extends Phaser.Scene {
     let x = m.x + away * 200;
     let y = m.y + (m.y - p.y >= 0 ? 60 : -60);
     const margin = 90;
-    if (x < margin || x > this.scale.width - margin) {
+    if (x < margin || x > DESIGN.width - margin) {
       // Cornered: dash past you on the roomier side.
-      x = Phaser.Math.Clamp(x, margin, this.scale.width - margin);
+      x = Phaser.Math.Clamp(x, margin, DESIGN.width - margin);
       y = m.y - top > bottom - m.y ? top : bottom;
       if (Math.abs(m.x - p.x) < 140) x = p.x - away * 220;
     }
@@ -1233,7 +1234,7 @@ export class RoomScene extends Phaser.Scene {
     a.label?.setPosition(a.x, a.y - a.height * s - 8).setDepth(a.y + 0.5);
   }
 
-  private clampToWalk(a: Actor, minX = EDGE, maxX = this.scale.width - EDGE): void {
+  private clampToWalk(a: Actor, minX = EDGE, maxX = DESIGN.width - EDGE): void {
     const [top, bottom] = this.room.walk;
     a.y = Phaser.Math.Clamp(a.y, top, bottom);
     a.x = Phaser.Math.Clamp(a.x, minX, maxX);
@@ -1342,10 +1343,10 @@ export class RoomScene extends Phaser.Scene {
     fx.whiteFlash(this, m.fig, 140);
     fx.hitSparks(this, (m.x + this.player.x) / 2, m.y - 80, false, true);
     const cam = this.cameras.main;
-    cam.shake(250, 0.012);
+    shake(this, 250, 0.012);
     cam.flash(180, 255, 255, 255);
     cam.pan((m.x + this.player.x) / 2, m.y - 120, 450, 'Cubic.easeIn');
-    cam.zoomTo(1.6, 450, 'Cubic.easeIn');
+    zoomTo(cam, 1.6, 450, 'Cubic.easeIn');
     cam.rotateTo(0.08, false, 450);
     const data: BattleSceneData = { zoneId, monsterId: m.def.id, elite: m.elite, roomId: this.room.id, x: this.player.x, y: this.player.y };
     this.time.delayedCall(380, () => goTo(this, SceneKeys.Battle, data, 200));
@@ -1583,7 +1584,7 @@ export class RoomScene extends Phaser.Scene {
   private playFirstVisit(): void {
     const fv = this.room.firstVisit;
     if (!fv || this.leaving || this.cutscene) return;
-    const { width, height } = this.scale;
+    const { width, height } = DESIGN;
     this.moveTarget = null;
     sfx.play(this, 'omen');
 
@@ -1596,7 +1597,7 @@ export class RoomScene extends Phaser.Scene {
       .setOrigin(1, 1)
       .setAlpha(0);
     layer.add([topBar, bottomBar, text, hint]);
-    const ui = this.cameras.add(0, 0, width, height);
+    const ui = addOverlayCamera(this);
     ui.ignore(this.children.list.filter((o) => o !== layer));
     const main = this.cameras.main;
     main.ignore(layer);
@@ -1610,7 +1611,7 @@ export class RoomScene extends Phaser.Scene {
     const half = width / (2 * zoom);
     const panX = Phaser.Math.Clamp(fv.panTo ?? width / 2, half, width - half);
     main.pan(panX, height / 2 + 20, 2400, 'Sine.easeInOut');
-    main.zoomTo(zoom, 2400, 'Sine.easeInOut');
+    zoomTo(main, zoom, 2400, 'Sine.easeInOut');
 
     const lines = fv.lines;
     const show = (i: number) => {
@@ -1620,8 +1621,9 @@ export class RoomScene extends Phaser.Scene {
     const finish = () => {
       if (!this.cutscene) return;
       this.cutscene = null;
-      main.pan(width / 2, height / 2, 600, 'Sine.easeInOut');
-      main.zoomTo(1, 600, 'Sine.easeInOut');
+      // Forced: skipping (Esc) during the slow drift in would otherwise leave the room zoomed.
+      main.pan(width / 2, height / 2, 600, 'Sine.easeInOut', true);
+      zoomTo(main, 1, 600, 'Sine.easeInOut', true);
       this.tweens.add({ targets: topBar, y: -70, duration: 400 });
       this.tweens.add({
         targets: [bottomBar, text, hint],
@@ -1853,7 +1855,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private chapterComplete(title: string): void {
-    const { width, height } = this.scale;
+    const { width, height } = DESIGN;
     const layer = this.add.container(0, 0).setDepth(6500);
     const shade = this.add.rectangle(0, 0, width, height, 0x000000, 0.7).setOrigin(0).setInteractive();
     const head = addText(this, width / 2, 220, 'Chapter Complete!', { size: 72, bold: true, color: COLORS.textGold, stroke: true }).setOrigin(0.5);
@@ -1918,9 +1920,9 @@ export class RoomScene extends Phaser.Scene {
     this.saveLocation();
     sfx.play(this, 'encounter');
     const cam = this.cameras.main;
-    cam.shake(500, 0.015);
+    shake(this, 500, 0.015);
     cam.flash(300, 255, 60, 60);
-    cam.zoomTo(1.4, 600, 'Cubic.easeIn');
+    zoomTo(cam, 1.4, 600, 'Cubic.easeIn');
     const data: BattleSceneData = { zoneId: this.room.zoneId!, monsterId: this.boss.def.id, roomId: this.room.id, x: this.player.x, y: this.player.y, heroic };
     this.time.delayedCall(600, () => goTo(this, SceneKeys.Battle, data, 300));
   }

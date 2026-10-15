@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { COLORS, FONT } from '../config';
+import { COLORS, DESIGN, FONT } from '../config';
+import { RES } from './view';
 
 export interface TextOptions {
   size?: number;
@@ -34,6 +35,8 @@ export function textStyle(opts: TextOptions = {}): Phaser.Types.GameObjects.Text
     stroke: opts.stroke ? '#000000' : undefined,
     strokeThickness: opts.stroke ? 4 : 0,
     wordWrap: opts.wrap ? { width: opts.wrap, useAdvancedWrap: true } : undefined,
+    // Drawn at the canvas's real pixel size (src/ui/view.ts), so it stays sharp when the camera zooms.
+    resolution: RES,
   };
 }
 
@@ -85,7 +88,7 @@ const activeToasts = new WeakMap<Phaser.Scene, number>();
 
 /** Several toasts at once stack downward instead of overlapping. */
 export function toast(scene: Phaser.Scene, text: string, color: string = COLORS.text): void {
-  const { width } = scene.scale;
+  const { width } = DESIGN;
   const slot = activeToasts.get(scene) ?? 0;
   activeToasts.set(scene, slot + 1);
   const y = 110 + slot * 38;

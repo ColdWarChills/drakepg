@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { DESIGN } from '../config';
 import type { ArtRef, Backdrop } from '../data/types';
 import { addBackground } from './art';
 import { addText } from './text';
@@ -18,13 +19,13 @@ export function drawScenery(scene: Phaser.Scene, art: ArtRef | undefined, backdr
     else drawForest(scene, groundY);
   }
   if (backdrop.shade) {
-    const { width, height } = scene.scale;
+    const { width, height } = DESIGN;
     scene.add.rectangle(0, 0, width, height, 0x050a12, backdrop.shade).setOrigin(0);
   }
 }
 
 function drawTown(scene: Phaser.Scene, groundY: number): void {
-  const { width, height } = scene.scale;
+  const { width, height } = DESIGN;
   scene.add.rectangle(0, 0, width, height, 0x87a9c9).setOrigin(0);
   scene.add.rectangle(0, 260, width, 200, 0xa9c4d9).setOrigin(0);
   scene.add.ellipse(250, groundY - 130, 700, 200, 0x6f8f6a);
@@ -63,7 +64,7 @@ function building(scene: Phaser.Scene, groundY: number, x: number, w: number, h:
 }
 
 function drawForest(scene: Phaser.Scene, groundY: number): void {
-  const { width, height } = scene.scale;
+  const { width, height } = DESIGN;
   scene.add.rectangle(0, 0, width, height, 0x2c3e2f).setOrigin(0);
   // Far trees.
   for (let i = 0; i < 18; i++) {
@@ -99,7 +100,7 @@ function drawForest(scene: Phaser.Scene, groundY: number): void {
 }
 
 function drawMarsh(scene: Phaser.Scene, groundY: number): void {
-  const { width, height } = scene.scale;
+  const { width, height } = DESIGN;
   // Overcast sky fading into mist.
   scene.add.rectangle(0, 0, width, height, 0x52666b).setOrigin(0);
   scene.add.rectangle(0, groundY - 260, width, 260, 0x6c8180).setOrigin(0);
@@ -146,7 +147,7 @@ function drawMarsh(scene: Phaser.Scene, groundY: number): void {
 function drawOutpost(scene: Phaser.Scene, groundY: number): void {
   drawMarsh(scene, groundY);
   // A boardwalk and huts on stilts.
-  scene.add.rectangle(0, groundY - 6, scene.scale.width, 14, 0x6d4c33).setOrigin(0);
+  scene.add.rectangle(0, groundY - 6, DESIGN.width, 14, 0x6d4c33).setOrigin(0);
   stiltHut(scene, groundY, 200, 230, 'Watch');
   stiltHut(scene, groundY, 560, 250, 'Supplies');
   stiltHut(scene, groundY, 900, 230, 'Healer');
@@ -174,7 +175,7 @@ function stiltHut(scene: Phaser.Scene, groundY: number, x: number, w: number, si
 }
 
 function drawSnow(scene: Phaser.Scene, groundY: number): void {
-  const { width, height } = scene.scale;
+  const { width, height } = DESIGN;
   // Cold sky, far peaks with snowcaps, then a near ridge.
   scene.add.rectangle(0, 0, width, height, 0x9db4cc).setOrigin(0);
   scene.add.rectangle(0, groundY - 300, width, 300, 0xb9cadb).setOrigin(0);
@@ -237,7 +238,7 @@ function cabin(scene: Phaser.Scene, groundY: number, x: number, sign: string): v
 }
 
 function drawCave(scene: Phaser.Scene, groundY: number): void {
-  const { width, height } = scene.scale;
+  const { width, height } = DESIGN;
   // Dark rock, warm glow from below.
   scene.add.rectangle(0, 0, width, height, 0x1e1a1c).setOrigin(0);
   scene.add.rectangle(0, groundY - 220, width, 220, 0x2c2224).setOrigin(0);

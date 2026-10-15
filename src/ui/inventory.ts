@@ -33,6 +33,7 @@ import {
 import { Modal } from './Modal';
 import { play } from './sfx';
 import { addText, toast } from './text';
+import { RES } from './view';
 
 /**
  * Grid inventory (I) and the shop. Both share the grid, the tabs and the item card:
@@ -133,7 +134,7 @@ class InventoryView {
     this.modal = new Modal(scene, W, H, title, () => {});
     // A small move turns a press into a drag; less than that is a click.
     this.oldDragThreshold = scene.input.dragDistanceThreshold;
-    scene.input.dragDistanceThreshold = 10;
+    scene.input.dragDistanceThreshold = 10 * RES;
     this.modal.once(Phaser.GameObjects.Events.DESTROY, () => {
       // Everything seen while open is no longer new.
       for (const g of player.data.gear) delete g.isNew;
@@ -419,25 +420,25 @@ class InventoryView {
     let ghost: Phaser.GameObjects.Container | null = null;
     bg.on('dragstart', (pointer: Phaser.Input.Pointer) => {
       this.dragging = true;
-      ghost = drawItemIcon(scene, entry.def, 70).setPosition(pointer.x, pointer.y).setDepth(5200).setAlpha(0.85);
+      ghost = drawItemIcon(scene, entry.def, 70).setPosition(pointer.worldX, pointer.worldY).setDepth(5200).setAlpha(0.85);
       bg.setAlpha(0.4);
       for (const t of this.equipSlots) if (!entry.slot && fitsSlot(entry.def, t.slot)) t.bg.setStrokeStyle(4, 0xffffff);
     });
-    bg.on('drag', (pointer: Phaser.Input.Pointer) => ghost?.setPosition(pointer.x, pointer.y));
+    bg.on('drag', (pointer: Phaser.Input.Pointer) => ghost?.setPosition(pointer.worldX, pointer.worldY));
     bg.on('dragend', (pointer: Phaser.Input.Pointer) => {
       this.dragging = false;
       this.lastDragEnd = scene.time.now;
       ghost?.destroy();
       ghost = null;
       bg.setAlpha(1);
-      const heroSide = pointer.x < this.modal.content.x + 300;
+      const heroSide = pointer.worldX < this.modal.content.x + 300;
       // Dropped on a slot it fits (a ring on the second ring slot, a weapon on the spare slot): there. Anywhere else on
       // the hero side: its usual slot. The weapon in hand dropped on the spare slot (or back) swaps the two.
-      const target = this.equipSlots.find((t) => t.bg.getBounds().contains(pointer.x, pointer.y))?.slot;
+      const target = this.equipSlots.find((t) => t.bg.getBounds().contains(pointer.worldX, pointer.worldY))?.slot;
       const swap = (entry.slot === 'weapon' && target === 'spare') || (entry.slot === 'spare' && target === 'weapon');
       if (!entry.slot && heroSide) this.equip(entry, target);
       else if (swap) this.swapWeapons();
-      else if (entry.slot && this.gridZone.getBounds().contains(pointer.x, pointer.y)) this.unequip(entry.slot);
+      else if (entry.slot && this.gridZone.getBounds().contains(pointer.worldX, pointer.worldY)) this.unequip(entry.slot);
       else this.render();
     });
   }

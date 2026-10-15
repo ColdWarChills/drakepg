@@ -30,6 +30,7 @@ import {
 import { STAT_KEYS, STAT_LABELS } from '../game/Player';
 import { activeSetBonuses, setCounts, setOfItem } from '../game/Sets';
 import { hasArt } from './art';
+import { RES } from './view';
 
 /** Border and text color per grade tier. */
 export const GRADE_COLORS: Record<GradeTier, { color: number; css: string }> = {
@@ -110,6 +111,7 @@ export function sigilLabel(tier: SigilTier): string {
 
 /**
  * Pulsing glow in the Sigil's color. Filters are WebGL only; without them nothing happens.
+ * For item icons (Containers) use `glowIcon`.
  */
 export function addSigilGlow(scene: Phaser.Scene, obj: Phaser.GameObjects.Image | Phaser.GameObjects.Container, tier: SigilTier, size = 1): void {
   obj.enableFilters();
@@ -123,11 +125,27 @@ export function addSigilGlow(scene: Phaser.Scene, obj: Phaser.GameObjects.Image 
 }
 
 /**
+ * The Sigil glow on an item icon (from `drawItemIcon`, `px` wide). Returns the layer that glows: add sparkles there.
+ *
+ * Phaser glows a Container (it has no size) through a buffer the size of the whole screen, redrawn every frame, so
+ * a bag of Sigil items cost a dozen full-screen glow passes per frame: the inventory's frame drops. Instead the icon's
+ * contents move into a layer just the icon's size, drawn at the canvas's real pixel density so it stays sharp.
+ */
+export function glowIcon(scene: Phaser.Scene, icon: Phaser.GameObjects.Container, tier: SigilTier, px: number, size = px / 72): Phaser.GameObjects.Container {
+  const content = scene.add.container(0, 0).setScale(RES);
+  content.add(icon.list.slice());
+  const layer = scene.add.container(0, 0, [content]).setScale(1 / RES).setSize(px * RES, px * RES);
+  icon.add(layer);
+  addSigilGlow(scene, layer, tier, size);
+  return content;
+}
+
+/**
  * A Sigil item's icon comes alive: the pulsing glow, stars twinkling on it and a slow swell.
  * `size` is the icon's size in px (the stars stay inside it).
  */
 export function animateSigilIcon(scene: Phaser.Scene, icon: Phaser.GameObjects.Container, tier: SigilTier, size: number): void {
-  addSigilGlow(scene, icon, tier, size / 72);
+  const glowing = glowIcon(scene, icon, tier, size);
   const fx = SIGIL_FX[tier];
   const half = size * 0.42;
   const stars = scene.add.particles(0, 0, 'fx_star', {
@@ -142,9 +160,9 @@ export function animateSigilIcon(scene: Phaser.Scene, icon: Phaser.GameObjects.C
     tint: [0xffffff, ...fx.tint],
     blendMode: 'ADD',
   });
-  icon.add(stars);
+  glowing.add(stars);
   if (tier !== 'dawn') {
-    icon.add(
+    glowing.add(
       scene.add.particles(0, half * 0.6, 'fx_soft', {
         x: { min: -half * 0.8, max: half * 0.8 },
         speedY: { min: -26, max: -12 },

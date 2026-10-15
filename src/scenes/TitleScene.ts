@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS } from '../config';
+import { COLORS, DESIGN } from '../config';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
 import { hasArt } from '../ui/art';
@@ -16,7 +16,7 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     enterScene(this);
-    const { width, height } = this.scale;
+    const { width, height } = DESIGN;
 
     // Menu column center. Moves left when portrait title art takes the right side.
     const cx = this.drawBackdrop();
@@ -66,7 +66,7 @@ export class TitleScene extends Phaser.Scene {
 
   /** Draws the background and returns the x to center the menu on. */
   private drawBackdrop(): number {
-    const { width, height } = this.scale;
+    const { width, height } = DESIGN;
     if (hasArt(this, 'bg_title')) {
       const img = this.add.image(0, 0, 'bg_title');
       if (img.width >= img.height) {

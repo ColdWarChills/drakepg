@@ -2,10 +2,16 @@
 """Turn raw generated images in art/raw/ into game-ready files in src/assets/art/.
 
 File names decide what happens (see art/PROMPTS.md for the list):
-  bg_*.png/jpg  -> background: center-cropped to 16:9, resized to 1280x720, saved as WebP.
-  wpn_*         -> weapon: like a sprite, but 320px tall. Draw weapons upright, handle at the bottom.
-  icon_*        -> inventory icon: like a sprite, but fit inside 256x256.
-  anything else -> sprite: flat background color removed, trimmed, resized to 480px tall, saved as WebP.
+  bg_*.png/jpg  -> background: center-cropped to 16:9, resized to 2560x1440, saved as WebP.
+  wpn_*         -> weapon: like a sprite, but 640px tall. Draw weapons upright, handle at the bottom.
+  icon_*        -> inventory icon: like a sprite, but fit inside 512x512.
+  anything else -> sprite: flat background color removed, trimmed, resized to 960px tall, saved as WebP.
+
+Art is saved at 2x (twice the 1x size the game lays out in: 1280x720 backgrounds, 480px sprites, 320px weapons,
+256px icons) as `<key>@2x.webp`, so it stays sharp on a 1440p screen; the game draws it at the 1x size, so old 1x
+files and new 2x files mix freely. A source too small for 2x (less than 3/4 of it) is saved at 1x as `<key>.webp`,
+and so is everything with `--1x`. Hand anchors (`look.bare.hands`) are always in 1x pixels: halve what you measure on a
+@2x file.
 
 Sprites that already have a transparent background (PNG with alpha, e.g. from Qwen-Image 2.1 via
 scripts/qwen_batch.py) skip the background removal: faint alpha noise is cleared, then they are trimmed the same way.
@@ -14,6 +20,7 @@ Usage:
   python3 scripts/prepare_art.py            # process everything in art/raw/
   python3 scripts/prepare_art.py mon_mossling bg_thornwood   # only these keys
   (keys in HAND_EDITED are skipped unless --force is given)
+  python3 scripts/prepare_art.py --1x mon_mossling          # the old 1x sizes
 
 Needs Pillow and numpy.
 """
@@ -27,10 +34,14 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "art" / "raw"
 OUT = ROOT / "src" / "assets" / "art"
 
+# 1x sizes; files are written at RES times these (see the docstring).
 BG_SIZE = (1280, 720)
 SPRITE_HEIGHT = 480
 WEAPON_HEIGHT = 320
 ICON_SIZE = 256
+RES = 2
+# A source smaller than this share of the 2x size is saved at 1x instead (a small upscale is fine, a big one isn't).
+MIN_2X_SHARE = 0.75
 
 # Where to crop backgrounds that aren't 16:9: 0 = keep the top/left, 1 = keep the bottom/right.
 BG_FOCUS: dict[str, float] = {"bg_brindlemoor": 0.75, "bg_windscour_ridge": 0.75}
@@ -61,11 +72,22 @@ ALPHA_FLOOR = 10
 EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
-def process_background(src: Path, key: str) -> Path:
+def art_file(key: str, res: int) -> Path:
+    """Where a processed key goes: `<key>.webp` at 1x, `<key>@2x.webp` at 2x (src/ui/art.ts reads the suffix)."""
+    return OUT / (f"{key}.webp" if res == 1 else f"{key}@{res}x.webp")
+
+
+def pick_res(size: int, size_1x: int, max_res: int) -> int:
+    """2x when the source has (nearly) enough pixels for it, else 1x."""
+    return RES if max_res >= RES and size >= size_1x * RES * MIN_2X_SHARE else 1
+
+
+def process_background(src: Path, key: str, max_res: int) -> Path:
     img = Image.open(src).convert("RGB")
     w, h = img.size
     if key in BG_KEEP_ASPECT:
-        img = img.resize((round(w * BG_SIZE[1] / h), BG_SIZE[1]), Image.LANCZOS)
+        res = pick_res(h, BG_SIZE[1], max_res)
+        img = img.resize((round(w * BG_SIZE[1] * res / h), BG_SIZE[1] * res), Image.LANCZOS)
     else:
         focus = BG_FOCUS.get(key, 0.5)
         target = BG_SIZE[0] / BG_SIZE[1]
@@ -77,8 +99,9 @@ def process_background(src: Path, key: str) -> Path:
             new_h = round(w / target)
             y0 = round((h - new_h) * focus)
             img = img.crop((0, y0, w, y0 + new_h))
-        img = img.resize(BG_SIZE, Image.LANCZOS)
-    out = OUT / f"{key}.webp"
+        res = pick_res(img.width, BG_SIZE[0], max_res)
+        img = img.resize((BG_SIZE[0] * res, BG_SIZE[1] * res), Image.LANCZOS)
+    out = art_file(key, res)
     img.save(out, quality=85, method=6)
     return out
 
@@ -158,7 +181,7 @@ def _outfit_base(key: str) -> Path | None:
     return next((p for p in RAW.glob(f"char_{parts[1]}_bare.*") if p.suffix.lower() in EXTS), None)
 
 
-def process_sprite(src: Path, key: str) -> Path:
+def process_sprite(src: Path, key: str, max_res: int) -> Path:
     source = Image.open(src)
     rgb = np.asarray(source.convert("RGB")).astype(np.float32)
     given_alpha = _real_alpha(source)
@@ -194,15 +217,19 @@ def process_sprite(src: Path, key: str) -> Path:
     if key in FLIP:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
     if key.startswith("icon_"):
-        scale = min(1.0, ICON_SIZE / max(img.width, img.height))
+        # Icons are fit into their box wherever they're drawn, so smaller ones stay small.
+        res = pick_res(max(img.width, img.height), ICON_SIZE, max_res)
+        scale = min(1.0, ICON_SIZE * res / max(img.width, img.height))
         if scale < 1:
             img = img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
     else:
+        # Exactly the standard height (hand anchors are pixels on it), scaled up a little if need be.
         max_h = WEAPON_HEIGHT if key.startswith("wpn_") else SPRITE_HEIGHT
-        if img.height > max_h:
-            img = img.resize((round(img.width * max_h / img.height), max_h), Image.LANCZOS)
+        res = pick_res(img.height, max_h, max_res)
+        if img.height != max_h * res:
+            img = img.resize((round(img.width * max_h * res / img.height), max_h * res), Image.LANCZOS)
 
-    out = OUT / f"{key}.webp"
+    out = art_file(key, res)
     img.save(out, quality=90, method=6)
     if key_color is None:
         print(f"  transparent source, alpha below {ALPHA_FLOOR} cleared ({bg.mean():.0%} of pixels empty)")
@@ -283,7 +310,8 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     args = sys.argv[1:]
     force = "--force" in args
-    wanted = {a for a in args if a != "--force"}
+    max_res = 1 if "--1x" in args else RES
+    wanted = {a for a in args if a not in ("--force", "--1x")}
     sources = sorted(p for p in RAW.iterdir() if p.suffix.lower() in EXTS)
     if wanted:
         sources = [p for p in sources if p.stem in wanted]
@@ -296,10 +324,11 @@ def main() -> None:
             print(f"{src.name}: skipped, its processed file was touched up by hand (--force redoes it)")
             continue
         print(f"{src.name}")
-        for old in OUT.glob(f"{key}.*"):
+        for old in [*OUT.glob(f"{key}.*"), *OUT.glob(f"{key}@*")]:
             old.unlink()
-        out = process_background(src, key) if key.startswith("bg_") else process_sprite(src, key)
-        print(f"  -> {out.relative_to(ROOT)} ({out.stat().st_size // 1024} KB)")
+        out = process_background(src, key, max_res) if key.startswith("bg_") else process_sprite(src, key, max_res)
+        with Image.open(out) as done:
+            print(f"  -> {out.relative_to(ROOT)} ({done.width}x{done.height}, {out.stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":
