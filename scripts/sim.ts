@@ -31,7 +31,8 @@ const STAT_PLAN: Record<ClassId, StatKey[]> = {
 interface Loadout {
   label: string;
   weapon: Record<ClassId, string>;
-  armor: Record<ClassId, string>;
+  /** Body armor; null = none (a new hero before the road drops one). */
+  armor: Record<ClassId, string | null>;
   /** Roll quality of every line, 0-100. Shop gear is 0. */
   quality?: number;
   /** Sigil on every piece (no mods: this measures the base boost). */
@@ -49,6 +50,8 @@ const STARTER: Loadout = {
   weapon: { warrior: 'training_sword', mage: 'worn_staff', rogue: 'rusty_dagger' },
   armor: { warrior: 'travel_garb', mage: 'novice_robe', rogue: 'travel_garb' },
 };
+/** A new hero on the road: the class weapon, no armor yet. */
+const BARE: Loadout = { label: 'bare', weapon: STARTER.weapon, armor: { warrior: null, mage: null, rogue: null } };
 const SHOP: Loadout = {
   label: 'shop',
   weapon: { warrior: 'iron_sword', mage: 'oak_staff', rogue: 'hunting_knife' },
@@ -129,7 +132,8 @@ function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: num
   const plan = STAT_PLAN[classId];
   for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
   p.data.inventory = [];
-  for (const id of [gear.weapon[classId], gear.armor[classId], ...(gear.kit?.[classId] ?? KITS[gear.armor[classId]] ?? [])]) {
+  const armor = gear.armor[classId];
+  for (const id of [gear.weapon[classId], ...(armor ? [armor, ...(gear.kit?.[classId] ?? KITS[armor] ?? [])] : [])]) {
     const piece = p.makeGear(id, { rolls: rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0, gear.sigil), sigil: gear.sigil });
     p.data.gear.push(piece);
     p.equip(piece.uid);
@@ -146,12 +150,13 @@ function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: num
   return p;
 }
 
-/** Rough value of a damage skill against this enemy right now. */
+/** Rough value of a damage skill against this enemy right now (a Blunt weak spot included). */
 function skillValue(b: Battle, s: SkillDef): number {
   const p = b.player;
   const element = !s.element || s.element === 'weapon' ? p.weaponElement : s.element;
   const mult = element ? 1 - b.resistOf('enemy', element) / 100 : 1;
-  return s.power * (s.hits ?? 1) * mult;
+  const crush = s.blunt ? 1 + (b.enemy.def.weakTo?.blunt ?? 0) / 100 : 1;
+  return s.power * (s.hits ?? 1) * mult * crush;
 }
 
 const BUFFS = new Set(['war_cry', 'iron_skin', 'stone_skin', 'smoke_bomb']);
@@ -199,7 +204,9 @@ function act(b: Battle): void {
     if (s.kind !== 'damage' || p.mp - s.mpCost < reserve) continue;
     let value = skillValue(b, s);
     const debuff = s.applies?.find((a) => !a.self);
-    if (debuff && !enemyHasStatus(debuff.status) && enemyHpPct > 0.4) value += 0.8;
+    // A damage-over-time debuff is worth more on a monster weak to it (Poison).
+    const weakDot = debuff?.status === 'poison' ? 1 + (b.enemy.def.weakTo?.poison ?? 0) / 100 : 1;
+    if (debuff && !enemyHasStatus(debuff.status) && enemyHpPct > 0.4) value += 0.8 * weakDot;
     if (value > bestValue) {
       best = s;
       bestValue = value;
@@ -335,6 +342,16 @@ table('Prologue road (should take about 2 turns and cost a few HP)', [
   { monster: 'burrow_rat', level: 1, gear: STARTER, potions: 0 },
   { monster: 'dew_slug', level: 1, gear: STARTER, potions: 0 },
   { monster: 'hedge_pixie', level: 1, gear: STARTER, potions: 0 },
+]);
+
+table('Prologue gate guards (2 potions): each is weak to one class\'s first skill; the other columns show a hero without that weak spot', [
+  { monster: 'millstone_crab', level: 1, gear: BARE, potions: 2 },
+  { monster: 'millstone_crab', level: 1, gear: STARTER, potions: 2 },
+  { monster: 'dusk_wraith', level: 1, gear: BARE, potions: 2 },
+  { monster: 'dusk_wraith', level: 1, gear: STARTER, potions: 2 },
+  { monster: 'hedge_troll', level: 1, gear: BARE, potions: 2 },
+  { monster: 'hedge_troll', level: 1, gear: STARTER, potions: 2 },
+  { monster: 'hedge_troll', level: 2, gear: BARE, potions: 2 },
 ]);
 
 table('Chapter 1 trash (full HP each fight, 1 potion)', [

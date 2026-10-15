@@ -1,6 +1,6 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
-import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, StatusDef, Stats } from '../data/types';
+import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, SkillDef, StatusDef, Stats } from '../data/types';
 import { boosted, cheats } from './cheats';
 import { grantFor } from './Items';
 import { featureOn } from './Features';
@@ -83,6 +83,8 @@ export interface ActiveStatus {
   /** Damage-over-time per tick, fixed when applied. */
   tick: number;
   element?: Element;
+  /** The owner is weak to it (Poison on a monster with `weakTo.poison`): ticks are already bigger and show WEAK!. */
+  weak?: boolean;
 }
 
 /** Share of damage removed by `armor`. 10 armor = 25%, 30 armor = 50%. */
@@ -208,7 +210,7 @@ export class Battle {
     } else {
       let dealt = 0;
       for (let i = 0; i < (skill.hits ?? 1) && this.enemy.hp > 0; i++) {
-        const e = this.strike('player', skill.name, skill.id, type, element, skill.power, skill.critBonus ?? 0);
+        const e = this.strike('player', skill.name, skill.id, type, element, skill.power, skill.critBonus ?? 0, skill.blunt);
         events.push(e);
         if (e.kind === 'hit') {
           landed = true;
@@ -272,6 +274,17 @@ export class Battle {
   /** How an element would land on the enemy right now ("Weak!", "Resisted"...). For the UI and the sim. */
   effectOn(element: Element | undefined): Effect | undefined {
     return this.elementMultiplier('enemy', element).effect;
+  }
+
+  /** How a damage skill would land on the enemy: its element, or a Blunt or Poison weak spot. For the skill buttons. */
+  skillEffect(skill: SkillDef): Effect | undefined {
+    if (skill.kind !== 'damage') return undefined;
+    const element = !skill.element || skill.element === 'weapon' ? this.player.weaponElement : skill.element;
+    const effect = this.effectOn(element);
+    if (effect === 'absorb' || effect === 'immune') return effect;
+    const weak = this.enemy.def.weakTo ?? {};
+    if ((skill.blunt && weak.blunt) || (weak.poison && skill.applies?.some((a) => a.status === 'poison' && !a.self))) return 'weak';
+    return effect;
   }
 
   get canFlee(): boolean {
@@ -427,7 +440,7 @@ export class Battle {
         } else {
           const damage = mult > 0 && !(cheats.god && side === 'player') ? Math.max(1, Math.round(s.tick * mult)) : 0;
           this.damage(side, damage);
-          events.push({ kind: 'tick', target: side, status: s.def.id, damage, heal: 0, element: s.element, effect });
+          events.push({ kind: 'tick', target: side, status: s.def.id, damage, heal: 0, element: s.element, effect: s.weak ? 'weak' : effect });
         }
       }
       if (s.def.regen) {
@@ -534,16 +547,20 @@ export class Battle {
       events.push({ kind: 'immune', target, status: def.id });
       return;
     }
-    const tick = def.dot ? Math.max(1, Math.round(this.baseHit(source, type) * def.dot.power)) : 0;
+    // Poison eats harder into a monster weak to it.
+    const weakPct = target === 'enemy' && def.id === 'poison' ? (this.enemy.def.weakTo?.poison ?? 0) : 0;
+    const tick = def.dot ? Math.max(1, Math.round(this.baseHit(source, type) * def.dot.power * (1 + weakPct / 100))) : 0;
     const dotElement = def.dot?.element === 'weapon' ? element : def.dot?.element;
     const fresh = target === source;
+    const weak = weakPct > 0 || undefined;
     const existing = this.effects[target].find((s) => s.def.id === def.id);
     if (existing) {
       existing.turns = Math.max(existing.turns, a.turns);
       existing.tick = Math.max(existing.tick, tick);
       existing.fresh = existing.fresh || fresh;
+      existing.weak = existing.weak || weak;
     } else {
-      this.effects[target].push({ def, turns: a.turns, fresh, tick, element: dotElement });
+      this.effects[target].push({ def, turns: a.turns, fresh, tick, element: dotElement, weak });
     }
     events.push({ kind: 'status', target, status: def.id, turns: a.turns });
   }
@@ -621,6 +638,7 @@ export class Battle {
     element: Element | undefined,
     power: number,
     critBonus = 0,
+    blunt = false,
   ): Extract<BattleEvent, { kind: 'hit' | 'miss' }> {
     const target = other(source);
     const atk = this.statsOf(source);
@@ -641,7 +659,11 @@ export class Battle {
     if (crit) damage *= BALANCE.critMultiplier;
 
     damage = mitigate(damage, this.defenseOf(target, damageType));
-    const { mult, effect } = this.elementMultiplier(target, element);
+    const affinity = this.elementMultiplier(target, element);
+    // Blunt skills crush monsters weak to Blunt, on top of the element.
+    const crush = blunt && target === 'enemy' && affinity.mult > 0 ? (this.enemy.def.weakTo?.blunt ?? 0) / 100 : 0;
+    const mult = affinity.mult * (1 + crush);
+    const effect: Effect | undefined = crush > 0 && mult > 1 ? 'weak' : affinity.effect;
     // Absorbed: the hit heals the target by the share over 100 instead.
     if (mult < 0) {
       const healed = this.healSide(target, Math.max(1, Math.round(this.scaleHit(source, target, damage, -mult))));

@@ -1,4 +1,4 @@
-# Art queue: 17 images left
+# Art queue: 20 images left
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
@@ -19,7 +19,7 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [x] `npc_gunnar` (Ch3, Hearthold trader (shop))
 - [x] `npc_hearthkeeper_moll` (Ch3, Hearthold innkeeper)
 
-**2. Monsters** (18)
+**2. Monsters** (21)
 - [x] `mon_barkshell_beetle` (Ch1, tough)
 - [x] `mon_mire_toad` (Ch2)
 - [x] `mon_spark_wisp` (Ch2)
@@ -39,6 +39,9 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [x] `mon_old_snowmaw` (Ch3 mini-boss)
 - [x] `mon_frostbinder` (Ch3 boss)
 - [x] `mon_lucky_impling` (rare spawn, any area)
+- [ ] `mon_millstone_crab` (Prologue gate guard, Warrior)
+- [ ] `mon_dusk_wraith` (Prologue gate guard, Mage)
+- [ ] `mon_hedge_troll` (Prologue gate guard, Rogue)
 
 **3. Backgrounds** (26)
 - [x] `bg_fen_road` (Ch2 monster area)
@@ -351,6 +354,21 @@ An elegant ice sorceress in flowing white and pale blue robes, long silver hair 
 ### `mon_lucky_impling` · 1:1 · rare spawn
 ```
 A tiny mischievous winged imp made of shiny gold, round and chubby like a coin purse, small emerald-green bat wings, a big toothy grin, sparkling green eyes, hugging a bulging sack of gold coins that spill out, a four-leaf clover tucked behind one pointed ear. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_millstone_crab` · 4:3 · Prologue gate guard (Warrior's, weak to Blunt)
+```
+A giant grey crab the size of a cart, wearing a round old millstone as its shell, the stone cracked and mossy with a square hole in the middle, thick stony claws, small beady black eyes on short stalks, short sturdy legs. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, menacing stance, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_dusk_wraith` · 3:4 · Prologue gate guard (Mage's, weak to Light)
+```
+A hovering shadow wraith made of dark purple smoke, a hooded shape with no face except two glowing pale yellow eyes, long ragged wisps trailing below instead of legs, thin clawed shadow hands reaching forward, a faint violet glow at its edges. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, floating idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
+```
+
+### `mon_hedge_troll` · 3:4 · Prologue gate guard (Rogue's, weak to Poison)
+```
+A big hunched troll with thick leathery olive-green hide, twigs and brambles growing out of its shoulders and back like an overgrown hedge, a small head with two stubby tusks and a dim grin, a round belly, holding a heavy wooden club. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, standing idle pose, three-quarter view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border. Match the art style of the reference image exactly. Only the style, not the character.
 ```
 
 ---

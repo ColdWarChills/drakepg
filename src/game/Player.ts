@@ -110,6 +110,8 @@ export interface PlayerData {
   visited: string[];
   /** The last town you walked into: where a Recall Scroll takes you. Null before the first town. Added in save version 12. */
   lastTown: string | null;
+  /** Rooms whose gate guard (a room boss without a quest) is beaten for good. Added in save version 14. */
+  guardsBeaten: string[];
 }
 
 export interface Rewards {
@@ -164,6 +166,7 @@ export class Player {
       loadout: [],
       visited: [],
       lastTown: null,
+      guardsBeaten: [],
     });
     player.data.loadout = player.defaultLoadout();
     player.data.equipment.weapon = player.makeGear(cls.weapon);

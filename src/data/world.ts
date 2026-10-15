@@ -196,17 +196,20 @@ export const ZONES: ZoneDef[] = [
 
 /** A loss on the prologue road (rare: everything there hits for 1) starts you back at the cart. */
 const ROAD_WAKE = { roomId: 'road_cart', x: 920, y: 640 };
+/** A loss to the gate guard: wake by Pell, at the far side of the gate room (HP is restored after a loss). */
+const GATE_WAKE = { roomId: 'road_gate', x: 1120, y: 640 };
 /** After a loss in the fen beyond Reedwatch you wake at its healer instead of walking back from Brindlemoor. */
 const REEDWATCH_WAKE = { roomId: 'reedwatch', x: 840, y: 650 };
 /** Chapter 3: wake at Hearthold's fire. */
 const HEARTHOLD_WAKE = { roomId: 'hearthold', x: 900, y: 650 };
 
 export const ROOMS: RoomDef[] = [
-  // Prologue: six rooms of road walked right to left, one way into Brindlemoor's east gate (the town has no exit back).
+  // Prologue: three rooms of road walked right to left, one way into Brindlemoor's east gate (the town has no exit back).
+  // One pest, then two, then a gate guard: a first boss per class, weak to that class's first skill.
   {
     id: 'road_cart',
     name: 'Overturned Cart',
-    map: { area: 'road', x: 5, y: 0 },
+    map: { area: 'road', x: 2, y: 0 },
     backdrop: { kind: 'forest' },
     walk: [540, 700],
     ambient: ['leaves'],
@@ -224,77 +227,29 @@ export const ROOMS: RoomDef[] = [
         role: { kind: 'talk' },
         dialogue: [
           'Brindlemoor is just up the road, west. The hedges are full of pests, but they barely bite. Pick up what they drop: you will want more than a weapon.',
-          'Since the old dragon went quiet, every hedge has something living in it. Small things, all bluster.',
+          'Something big came out of the hedges last night and tipped my cart. It went toward the town gate.',
           'Me? I will sit here with my broken wheel until someone from town comes by. Go on.',
         ],
       },
     ],
     zoneId: 'road',
-    monsterCount: 2,
+    monsterCount: 1,
     wakeAt: ROAD_WAKE,
   },
   {
     id: 'road_mill',
     name: 'Old Mill Road',
-    map: { area: 'road', x: 4, y: 0 },
+    map: { area: 'road', x: 1, y: 0 },
     backdrop: { kind: 'forest' },
     walk: [540, 700],
     ambient: ['dust'],
     exits: [
       { side: 'right', to: 'road_cart', label: 'Overturned Cart' },
-      { side: 'left', to: 'road_ford', label: 'Willow Ford' },
-    ],
-    npcs: [],
-    zoneId: 'road',
-    monsterCount: 3,
-    wakeAt: ROAD_WAKE,
-  },
-  {
-    id: 'road_ford',
-    name: 'Willow Ford',
-    map: { area: 'road', x: 3, y: 0 },
-    backdrop: { kind: 'forest' },
-    walk: [540, 700],
-    ambient: ['leaves', 'fireflies'],
-    exits: [
-      { side: 'right', to: 'road_mill', label: 'Old Mill Road' },
-      { side: 'left', to: 'road_fields', label: 'Fallow Fields' },
-    ],
-    npcs: [],
-    zoneId: 'road',
-    monsterCount: 3,
-    wakeAt: ROAD_WAKE,
-  },
-  {
-    id: 'road_fields',
-    name: 'Fallow Fields',
-    map: { area: 'road', x: 2, y: 0 },
-    backdrop: { kind: 'forest', shade: 0.1 },
-    walk: [540, 700],
-    ambient: ['dust', 'leaves'],
-    exits: [
-      { side: 'right', to: 'road_ford', label: 'Willow Ford' },
-      { side: 'left', to: 'road_hedges', label: 'Hedgerow Lane' },
-    ],
-    npcs: [],
-    zoneId: 'road',
-    monsterCount: 3,
-    wakeAt: ROAD_WAKE,
-  },
-  {
-    id: 'road_hedges',
-    name: 'Hedgerow Lane',
-    map: { area: 'road', x: 1, y: 0 },
-    backdrop: { kind: 'forest', shade: 0.2 },
-    walk: [540, 700],
-    ambient: ['leaves'],
-    exits: [
-      { side: 'right', to: 'road_fields', label: 'Fallow Fields' },
       { side: 'left', to: 'road_gate', label: 'Brindlemoor Gate' },
     ],
     npcs: [],
     zoneId: 'road',
-    monsterCount: 3,
+    monsterCount: 2,
     wakeAt: ROAD_WAKE,
   },
   {
@@ -305,27 +260,39 @@ export const ROOMS: RoomDef[] = [
     walk: [540, 700],
     ambient: ['dust'],
     exits: [
-      { side: 'right', to: 'road_hedges', label: 'Hedgerow Lane' },
-      { side: 'left', to: 'brindlemoor', label: 'Brindlemoor' },
+      { side: 'right', to: 'road_mill', label: 'Old Mill Road' },
+      { side: 'left', to: 'brindlemoor', label: 'Brindlemoor', guarded: true, blocker: 'barricade' },
     ],
     npcs: [
       {
         id: 'pell',
         name: 'Pell',
         title: 'Gatekeeper',
-        x: 280,
+        x: 1000,
         y: 610,
         look: { shape: 'humanoid', color: 0x34495e, accent: 0xbdc3c7, scale: 1.05 },
         role: { kind: 'talk' },
         dialogue: [
-          'Brindlemoor, just through here. Tobin sells gear, Ilsa has beds.',
-          'Elder Maren keeps to the far end of the square. She always has work for a new blade.',
+          'Brindlemoor is shut! That thing sat down right in front of the gate, and I climbed out over the wall.',
+          'Steel alone will take all day. Every beast has a weak spot: look at what it is weak to, and hit it there.',
+          'Once it is gone: Tobin sells gear, Ilsa has beds, and Elder Maren always has work for a new blade.',
         ],
       },
     ],
+    firstVisit: {
+      lines: ["Brindlemoor's gate, barred shut.", 'Something big squats in front of it, breathing slow and heavy.'],
+      panTo: 300,
+    },
+    boss: {
+      monsterId: 'millstone_crab',
+      byClass: { warrior: 'millstone_crab', mage: 'dusk_wraith', rogue: 'hedge_troll' },
+      x: 430,
+      y: 640,
+      intro: 'It squats in front of the gate and will not budge.',
+    },
+    // The road's scenery for the guard fight; no pests roam here.
     zoneId: 'road',
-    monsterCount: 2,
-    wakeAt: ROAD_WAKE,
+    wakeAt: GATE_WAKE,
   },
   {
     id: 'brindlemoor',

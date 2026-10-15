@@ -3,7 +3,8 @@ import { MAP_AREAS } from '../data/map';
 import type { MapAreaDef, RoomDef, RoomExit } from '../data/types';
 import { ROOMS } from '../data/world';
 import type { Player } from './Player';
-import { questStarted, questStatus } from './Quests';
+import { questStatus } from './Quests';
+import { exitOpen } from './Travel';
 
 /**
  * What the map shows, kept free of Phaser. Visited rooms show in full; rooms next to them show as "?";
@@ -56,10 +57,6 @@ export interface AreaMap {
 function exitVisible(player: Player, exit: RoomExit): boolean {
   if (exit.side !== 'back' && exit.side !== 'down') return true;
   return !exit.requiresQuest || questStatus(player, db.quest(exit.requiresQuest)) !== 'locked';
-}
-
-function exitOpen(player: Player, exit: RoomExit): boolean {
-  return !exit.requiresQuest || questStarted(player, exit.requiresQuest);
 }
 
 /** Rooms on the map: everywhere you've been, plus the rooms one step from there. */
@@ -125,7 +122,7 @@ export function areaMap(player: Player, areaId: string, here: string): AreaMap {
     if (!node.visited) continue;
     for (const exit of node.room.exits) {
       if (!exitVisible(player, exit)) continue;
-      const open = exitOpen(player, exit);
+      const open = exitOpen(player, node.room, exit);
       const target = db.room(exit.to);
       if (target.map.area !== areaId) {
         stubs.push({ from: node, side: exit.side, label: visited.has(target.id) ? target.name : '?', area: areaOf(target.id), open });

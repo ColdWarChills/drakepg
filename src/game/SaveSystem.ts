@@ -75,6 +75,9 @@ export const SaveSystem = {
  * v11 -> v12: `visited` rooms (the map) and `lastTown` (Recall Scrolls). The room you stand in counts as visited, your
  *             area's town becomes the last town, and you get the starting Recall Scrolls a new hero has.
  * v12 -> v13: `equipment.spare` (a second weapon to swap to); sanitize() starts it empty.
+ * v13 -> v14: `guardsBeaten` (gate guards on the prologue road); sanitize() starts it empty. The road is one way, so
+ *             heroes already past it never meet one. Class skill lists changed too (Light Bolt, Gas Shot at level 1):
+ *             sanitize() carries newly known skills that haven't been announced yet.
  */
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
@@ -128,6 +131,7 @@ function migrate(file: SaveFile): SaveFile | null {
     file.version = 12;
   }
   if (file.version < 13) file.version = 13;
+  if (file.version < 14) file.version = 14;
   return file;
 }
 
@@ -233,6 +237,7 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     loadout: [],
     visited: Array.isArray(raw.visited) ? [...new Set(raw.visited.filter((id): id is string => typeof id === 'string' && db.hasRoom(id)))] : [],
     lastTown: typeof raw.lastTown === 'string' && db.hasRoom(raw.lastTown) && db.room(raw.lastTown).town ? raw.lastTown : null,
+    guardsBeaten: Array.isArray(raw.guardsBeaten) ? [...new Set(raw.guardsBeaten.filter((id): id is string => typeof id === 'string' && db.hasRoom(id)))] : [],
   };
 
   const player = new Player(data);
@@ -240,6 +245,8 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
   data.loadout = Array.isArray(raw.loadout)
     ? [...new Set(raw.loadout.filter((s): s is string => typeof s === 'string' && known.has(s)))].slice(0, BALANCE.skillSlots)
     : player.defaultLoadout();
+  // Skills a class gained after this save was made (not announced yet) go into a free slot, like a fresh level-up.
+  for (const s of player.knownSkills) if (!data.seen.includes(`skill:${s.id}`)) player.carryNew(s.id);
   player.clampVitals();
   if (player.hp <= 0) player.restoreFull();
   return player.data;

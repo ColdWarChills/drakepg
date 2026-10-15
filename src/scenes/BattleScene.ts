@@ -14,6 +14,7 @@ import { SIGIL_NAMES, SIGIL_TIERS } from '../game/Items';
 import { LOOT_TIERS, pityBonus, tierOdds, type LootSource } from '../game/Loot';
 import { isLucky, makeImpling } from '../game/Lucky';
 import { questNeedsKill, recordKill } from '../game/Quests';
+import { isGuard, recordGuard } from '../game/Travel';
 import { SaveSystem } from '../game/SaveSystem';
 import { session } from '../game/session';
 import { drawScenery } from '../ui/backdrops';
@@ -74,6 +75,8 @@ const COMBO_SPOTS = [
   [-36, -44],
 ];
 
+/** Weak spots besides elements (`MonsterDef.weakTo`), as the "Weak:" line and skill buttons name them. */
+const WEAK_SPOTS = { blunt: { label: 'Blunt', color: '#d9c9a8' }, poison: { label: 'Poison', color: '#8fe36b' } } as const;
 const EFFECT_TAGS: Record<Effect, string> = { weak: 'WEAK!', resisted: 'Resisted', immune: 'Immune', absorb: 'Absorbed' };
 const ELITE_GLOW = 0xffc23d;
 /** Lucky Implings: mint tag and glow. */
@@ -144,7 +147,8 @@ export class BattleScene extends Phaser.Scene {
     this.monster = data.elite ? makeElite(base, data.elite) : data.heroic ? makeHeroic(base) : base;
     this.battle = new Battle(session.player, this.monster);
     if (this.monster.isHeroic) this.battle.rewardScale = BALANCE.heroic.rewards;
-    else if (this.monster.boss && !questNeedsKill(session.player, this.monster.id)) this.battle.rewardScale = BALANCE.bossRepeatRewards;
+    // A boss no quest wants is a rematch, except a gate guard: that's only ever fought until beaten.
+    else if (this.monster.boss && !questNeedsKill(session.player, this.monster.id) && !isGuard(db.room(data.roomId))) this.battle.rewardScale = BALANCE.bossRepeatRewards;
     this.log = [];
     this.busy = true;
     this.skillPage = 0;
@@ -437,7 +441,7 @@ export class BattleScene extends Phaser.Scene {
     hit.on('pointerover', show).on('pointerdown', show).on('pointerout', hide);
   }
 
-  /** "Earth · Weak: Fire Wind · Resists: Earth Water", each element in its color. */
+  /** "Earth · Weak: Fire Wind Blunt · Resists: Earth Water", each element in its color. */
   private drawAffinities(x: number, y: number): void {
     const m = this.monster;
     const resists = m.resists ?? {};
@@ -454,6 +458,12 @@ export class BattleScene extends Phaser.Scene {
       list.forEach((e) => parts.push({ text: ` ${ELEMENT_LABELS[e]}`, color: ELEMENT_TEXT[e] }));
     };
     group('Weak:', weak);
+    // Weak spots besides elements: Blunt skills and Poison.
+    const spots = Object.entries(m.weakTo ?? {}).filter(([, v]) => v && v > 0) as [keyof typeof WEAK_SPOTS, number][];
+    if (spots.length) {
+      if (!weak.length) parts.push({ text: `${parts.length ? '  ·  ' : ''}Weak:`, color: COLORS.textDim });
+      spots.forEach(([k]) => parts.push({ text: ` ${WEAK_SPOTS[k].label}`, color: WEAK_SPOTS[k].color }));
+    }
     group('Resists:', strong);
     group('Absorbs:', absorbs);
     if (all) parts.push({ text: `${parts.length ? '  ·  ' : ''}All ${all > 0 ? '+' : ''}${all}`, color: COLORS.textGold });
@@ -532,7 +542,11 @@ export class BattleScene extends Phaser.Scene {
     const cd = this.battle.cooldownLeft(skill.id);
     const element = skill.element && skill.element !== 'weapon' ? ELEMENT_LABELS[skill.element] : null;
     const fresh = this.battle.player.data.freshSkills.includes(skill.id) ? 'NEW · ' : '';
-    const sub = cd > 0 ? `Ready in ${cd}` : `${fresh}${skill.mpCost} MP${element ? ` · ${element}` : ''}`;
+    const poisons = skill.applies?.some((a) => a.status === 'poison' && !a.self);
+    const kind = element ?? (skill.blunt ? WEAK_SPOTS.blunt.label : poisons ? WEAK_SPOTS.poison.label : null);
+    // Teach weak spots: the button says when this skill lands on one.
+    const effect = this.battle.skillEffect(skill);
+    const sub = cd > 0 ? `Ready in ${cd}` : `${fresh}${skill.mpCost} MP${kind ? ` · ${kind}` : ''}${effect ? ` · ${EFFECT_LABELS[effect]}` : ''}`;
     const cdText = skill.cooldown > 0 ? ` Cooldown ${skill.cooldown}.` : '';
     return {
       label: skill.name,
@@ -870,7 +884,7 @@ export class BattleScene extends Phaser.Scene {
           sfx.play(this, 'hit');
           this.tweens.add({ targets: fig, angle: e.target === 'player' ? -4 : 4, duration: 60, yoyo: true, onComplete: () => fig.setAngle(0) });
           floatText(this, x, this.textY(e.target, GROUND_Y - 220), `${e.damage}`, color, 28, e.effect ? EFFECT_TAGS[e.effect] : def.name);
-          this.pushLog(`${def.name}: ${e.damage} damage to ${e.target === 'player' ? 'you' : enemyName}.`);
+          this.pushLog(`${def.name}: ${e.damage} damage to ${e.target === 'player' ? 'you' : enemyName}.${e.effect === 'weak' ? ' Weak spot!' : ''}`);
         } else {
           fx.healSparkles(this, x, GROUND_Y, 0x7dff9a);
           fx.healPluses(this, x, GROUND_Y, 0x7dff9a);
@@ -1354,6 +1368,7 @@ export class BattleScene extends Phaser.Scene {
         const rewards = this.battle.rewards ?? { xp: 0, gold: 0, items: [] };
         const levelBefore = player.level;
         const { levels: levelsGained, lost } = player.grantRewards(rewards);
+        recordGuard(player, this.back.roomId, this.monster.id);
         const quests = recordKill(player, this.monster).map((q) => ({
           name: q.quest.name,
           goal: q.quest.goal,

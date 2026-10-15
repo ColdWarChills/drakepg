@@ -18,7 +18,7 @@ Build order (all built, see "Done" at the bottom):
 - **Playtest by hand** (only the sim, the pace bot and screenshots have checked these so far):
   - New rooms: one timed run per chapter (the pace bot's minutes are guesses). Do the quiet rooms feel good or slow? Are campfires before every boss too generous?
   - Map, Recall Scroll: is the map readable now that pages have 7-9 rooms in a row?
-  - Prologue road: is 6 rooms the right length? Monster HP 20-24 (about 2 hits) and a 35% gear drop (`BALANCE.loot.tableMob.road`)?
+  - Prologue road (3 rooms since 2026-10-15: 1 pest, 2 pests, gate guard): short enough now? Does each class's guard teach "look at Weak:, use that"? Does the Skills button's "Weak!" tag read? Is a level-1 Rogue with only Gas Shot fun (Twin Cut comes at level 2, right after the guard)?
   - Does the "Next:" intent line read at a glance? Does enrage (turn 15, bosses 30) feel fair?
   - Is the drop reveal too slow when farming normal monsters?
   - Is the 5-slot skill swap in the Character panel clear?
@@ -58,10 +58,13 @@ Build order (all built, see "Done" at the bottom):
 
 ## Prologue road (built as a placeholder)
 
-- **Decided:** 6 rooms, start with the class weapon only, one-way into Brindlemoor (the shop is found on arrival). Claude drafted the story hook.
+- **Decided:** start with the class weapon only, one-way into Brindlemoor (the shop is found on arrival). Claude drafted the story hook.
+- **Built (2026-10-15, designer: "too long to get to the city, uneventful", then "first with 1 monster, second with 2, then the boss before the city"):** 3 rooms instead of 6: Overturned Cart (1 pest), Old Mill Road (2 pests), Brindlemoor Gate (Pell and a gate guard per class), each weak to that class's first skill so it teaches weak spots: Warrior Millstone Crab (Blunt: Heavy Strike), Mage Dusk Wraith (Light: Light Bolt), Rogue Hedge Troll (Poison: Gas Shot). See `docs/IMPROVEMENTS_2026-10.md`.
 - To do: real monsters (names, stats, art) for `burrow_rat`, `dew_slug` and `hedge_pixie`. They are shape stand-ins now.
-- To do: background art for the 6 `road_*` rooms (procedural forest now), and art for Odo and Pell. None of it is in `art/QUEUE.md` yet.
-- To do: final lines for Odo and Pell.
+- To do: background art for the 3 `road_*` rooms (procedural forest now), and art for Odo and Pell. Not in `art/QUEUE.md` yet. The 3 gate guards are queued (`mon_millstone_crab`, `mon_dusk_wraith`, `mon_hedge_troll`).
+- To do: final lines for Odo and Pell (redrafted for the gate guard, listed in `docs/ROOM_LINES.md`).
+- **Open:** the designer called the Rogue "ranger" when asking for Gas Shot. Rename the class, or keep Rogue?
+- **Proposed:** more Blunt and Poison weak spots later (skeletons, golems and shelled things weak to Blunt; big beasts weak to Poison; slimes could resist Blunt). Only the gate guards use them now.
 - **Open:** the hero looks armored with no armor on, because the base class art includes armor. Keep it, or get bare art?
 
 ## Story and theme
@@ -100,6 +103,7 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - **Open:** a "+element damage" gear line or element sets, so an element build is more than weapon + skills.
 - **Open:** weight weapon drops toward the player's class, so stat-locked drops don't pile up?
 - Dropped: replacing levels with gear-only power. Levels stay.
+- **Built (2026-10-15):** first skills per class: Warrior Heavy Strike is now Blunt (and Shield Bash), Mage starts with Light Bolt (Light; Staff Bolt moved to level 2), Rogue starts with Gas Shot (Poison; Twin Cut moved to level 2). Weak spots besides elements: `weakTo` Blunt and Poison, shown on the "Weak:" line; skill buttons say "Weak!" when a skill lands on one.
 
 ## Combat and balance
 
@@ -121,7 +125,7 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - **Set up (2026-10-15):** ComfyUI 0.40 portable + Qwen-Image 2.1 int8 on the designer's PC (`C:\Users\Epic\ComfyUI_windows_portable`, start with `run_nvidia_gpu.bat`, UI at http://127.0.0.1:8188). RTX 5070 Ti: ~20-50 s per image (Higgsfield ~8 min). It writes a real alpha channel (no magenta/green keying) and takes up to 10 reference images; with `mon_thornback_boar` + `mon_mossling` as style refs, a test Mire Toad matched the game's look. Generate with `scripts/qwen_batch.py` (in this repo).
 - **Built (2026-10-15):** `scripts/qwen_batch.py` runs `art/QUEUE.md` prompts on the local ComfyUI with the game's art as style references, and `prepare_art.py` takes transparent PNGs. See `docs/IMPROVEMENTS_2026-10.md`.
 - **Open:** what to redo with Qwen (the 13 paused outfits, the road art, anything that reads as AI), and whether new art should only come from it from now on.
-- **Open:** 17 images left in `art/QUEUE.md`: 13 armor outfits (paused, see below), 3 waiting for the dragon clean-up (Stormscale Drakeling, Vent Wyrmling, `bg_frozen_roost` with its sleeping dragon) and the dropped Volt Eel. Road art isn't queued yet (see Prologue road).
+- **Open:** 20 images left in `art/QUEUE.md`: the 3 gate guards (new), 13 armor outfits (paused, see below), 3 waiting for the dragon clean-up (Stormscale Drakeling, Vent Wyrmling, `bg_frozen_roost` with its sleeping dragon) and the dropped Volt Eel. Road art isn't queued yet (see Prologue road).
 - **Open:** armor outfits (paused 2026-10-15 at 17 of 30: Warrior 9, Mage 8, Rogue 0). Each is an edit of the class's bare art, so a new hero look means redoing all of them. Only body armor changes the picture, but each outfit paints its own gloves and boots (the Mage's Ridgeplate has steel gauntlets and boots), so the picture can disagree with the gloves/boots actually worn. Every new body armor costs 3 images. Options: torso-only outfits, layered pieces per slot, or keep the class look and show armor only in the UI.
 - **Open:** look-alike icons: Rimeglass Ring vs Frostward Ring, Tidepearl Ring vs Moonstone Ring. Regenerate one of each (~3 credits)?
 - Dropped: Volt Eel art (the eel was only a sample). Its prompt `mon_volt_eel` is still in the queue.
@@ -159,3 +163,4 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - 2026-10-15: spare weapon and mid-fight Swap (save v13), see `docs/IMPROVEMENTS_2026-10.md`.
 - 2026-10-15: testing Rates x1/x2/x5/x10 (XP, gold, drop chances) in the testing menu.
 - 2026-10-15: Higgsfield art run: 3 Hearthold NPCs, 16 monsters, 25 backgrounds, 24 item icons and 17 armor outfits, see `docs/IMPROVEMENTS_2026-10.md`.
+- 2026-10-15: shorter prologue road with a gate guard per class, Blunt/Poison weak spots, Light Bolt and Gas Shot (save v14), see `docs/IMPROVEMENTS_2026-10.md`.

@@ -10,11 +10,12 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'heavy_strike',
     name: 'Heavy Strike',
-    description: 'A leaping, crushing blow. 1.6x damage.',
+    description: 'A leaping, crushing blow. 1.6x Blunt damage.',
     mpCost: 5,
     cooldown: 1,
     kind: 'damage',
     power: 1.6,
+    blunt: true,
     fx: 'heavy',
   },
   {
@@ -49,11 +50,12 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'shield_bash',
     name: 'Shield Bash',
-    description: '1x damage with a 60% chance to stun for a turn.',
+    description: '1x Blunt damage with a 60% chance to stun for a turn.',
     mpCost: 8,
     cooldown: 4,
     kind: 'damage',
     power: 1,
+    blunt: true,
     applies: [{ status: 'stun', turns: 1, chance: 0.6 }],
     fx: 'heavy',
   },
@@ -131,6 +133,17 @@ export const SKILLS: SkillDef[] = [
   },
 
   // --- Mage (magic; Staff Bolt uses the staff's element, the other spells carry their own) ---
+  {
+    id: 'light_bolt',
+    name: 'Light Bolt',
+    description: 'A bolt of pure light. 1.5x Light damage.',
+    mpCost: 6,
+    cooldown: 0,
+    kind: 'damage',
+    damageType: 'magic',
+    element: 'light',
+    power: 1.5,
+  },
   {
     id: 'ember_bolt',
     name: 'Staff Bolt',
@@ -270,6 +283,16 @@ export const SKILLS: SkillDef[] = [
   },
 
   // --- Rogue (pierce) ---
+  {
+    id: 'gas_shot',
+    name: 'Gas Shot',
+    description: 'Throw a vial of choking gas: 0.6x damage and Poison for 3 turns.',
+    mpCost: 4,
+    cooldown: 2,
+    kind: 'damage',
+    power: 0.6,
+    applies: [{ status: 'poison', turns: 3 }],
+  },
   {
     id: 'twin_cut',
     name: 'Twin Cut',

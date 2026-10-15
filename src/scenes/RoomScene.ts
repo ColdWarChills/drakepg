@@ -9,10 +9,10 @@ import { featureOn, markSeen, unseenNews } from '../game/Features';
 import { makeElite, rollElite } from '../game/Elites';
 import { isLucky, makeImpling, rollLucky } from '../game/Lucky';
 import { Player } from '../game/Player';
-import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStarted, questStatus, questWantsElite, turnInQuest } from '../game/Quests';
+import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStatus, questWantsElite, turnInQuest } from '../game/Quests';
 import { saveSettings, settings } from '../game/settings';
 import { SaveSystem } from '../game/SaveSystem';
-import { RECALL_SCROLL, recallCheck, useRecall, visitRoom } from '../game/Travel';
+import { RECALL_SCROLL, exitOpen, isGuard, recallCheck, roomBoss, useRecall, visitRoom } from '../game/Travel';
 import { defaultRng, weightedPick } from '../game/rng';
 import { MIMIC_UID, rollChest, rollChestLoot } from '../game/Chests';
 import { session, type Chest, type RoamingMonster } from '../game/session';
@@ -752,7 +752,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private exitOpen(exit: RoomExit): boolean {
-    return !exit.requiresQuest || questStarted(session.player, exit.requiresQuest);
+    return exitOpen(session.player, this.room, exit);
   }
 
   /** Thorns, a barricade or flooded reeds across a locked exit. */
@@ -848,13 +848,15 @@ export class RoomScene extends Phaser.Scene {
     this.wallBumpAt = this.time.now + 2000;
     sfx.play(this, 'denied');
     this.cameras.main.shake(120, 0.004);
-    toast(this, BLOCKER_BUMP[exit.blocker ?? (exit.side === 'back' ? 'barricade' : 'thorns')], COLORS.textDim);
+    const guard = exit.guarded && this.boss ? `The ${this.boss.def.name.replace(/^The /, '')} blocks the way. Beat it to get through.` : null;
+    toast(this, guard ?? BLOCKER_BUMP[exit.blocker ?? (exit.side === 'back' ? 'barricade' : 'thorns')], COLORS.textDim);
   }
 
   private spawnBoss(): void {
     const b = this.room.boss;
-    if (!b || !questStarted(session.player, b.questId)) return;
-    const def = db.monster(b.monsterId);
+    const monsterId = roomBoss(session.player, this.room);
+    if (!b || !monsterId) return;
+    const def = db.monster(monsterId);
     // Bosses face the middle of the room, where the player comes from.
     const faceLeft = b.x > this.scale.width / 2;
     const fig = drawFigure(this, b.x, b.y, def.look, faceLeft ? -1 : 1);
@@ -1821,7 +1823,8 @@ export class RoomScene extends Phaser.Scene {
   private confirmBoss(): void {
     if (!this.boss || this.modalOpen()) return;
     const def = this.boss.def;
-    const rematch = !questNeedsKill(session.player, def.id);
+    // A gate guard is only ever fought until it's beaten, then it's gone.
+    const rematch = !isGuard(this.room) && !questNeedsKill(session.player, def.id);
     const heroic = rematch && def.heroic;
     const h = BALANCE.heroic;
     const modal = new Modal(this, 760, heroic ? 360 : 300, rematch ? `${def.name} (rematch)` : def.name);
