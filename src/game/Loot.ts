@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { LootTier } from '../data/types';
+import { boosted } from './cheats';
 import { grantFor, type DropSource, type ItemGrant } from './Items';
 import { chance, defaultRng, weightedPick, type Rng } from './rng';
 
@@ -20,7 +21,7 @@ function tiersFor(tableId: string, source: LootSource, misses: number): { tier: 
   const table = db.lootTable(tableId);
   const odds = (source === 'mob' && BALANCE.loot.tableMob[tableId]) || BALANCE.loot[source];
   return LOOT_TIERS.filter((t) => table.tiers[t].length > 0).map((tier) => {
-    const base = odds[tier];
+    const base = boosted(odds[tier]);
     return { tier, odds: tier === 'rare' ? Math.min(1, base + pityBonus(misses)) : base };
   });
 }

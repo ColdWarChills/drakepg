@@ -103,3 +103,11 @@ Every hit gets wind-up, contact and reaction, on both sides, with or without mon
 - **Calls made:** the swap costs the turn (the user's pick: a free swap would mean always hitting the weakness). It persists after the fight (no auto-swap back). Unlocks after Chapter 1 (an assumption, see PLANS.md "Open").
 - **Sim:** loadouts can carry a `spare`; the smart bot swaps when the spare's attack (damage x element) is 30%+ better, the random bot sometimes presses Swap. Stormcoil L10 with a Water weapon + Energy spare: smart 98-100% (Water only: 73-97%), Warrior and Rogue fights ~12-13 turns instead of ~19-23 (Mage spells have their own elements, so no change). Frostbinder L14 Fire + Earth spare: 98-100% (Fire only: 93-100%). The random bot does worse with a spare (27-45% vs Stormcoil): swapping at the wrong time wastes turns.
 - Checked in the browser: inventory with and without a spare (Warrior, Rogue), spare and bag weapon cards (3 buttons fit), Swap from the card, a v12 save loading with an empty spare slot, and the Stormcoil fight before and after a swap (tag, button, log, hero redrawn, turn passes). Typecheck, build, `npm run sim` and `npm run pace` pass.
+
+## Testing rates (2026-10-15)
+
+- **Why:** to see lots of drops (and the drop screen) and level fast while testing, the designer asked for a "10x run".
+- **What:** testing menu, Hero tab, next to Full heal: **Rates x1 / x2 / x5 / x10**. Until the page reloads, never saved, like the other toggles. Multiplies XP and gold from kills, chests and quests, and every drop chance: gear tiers, Sigil tiers, set pieces, monster potion/material drops, a chest's potion and the Lucky Impling's Sigil, each capped at 100%. Bad-luck protection is added on top unchanged. The battle panel's Gear/Set odds show the boosted numbers.
+- **Code:** `cheats.rates` and `boosted(p)` in `src/game/cheats.ts`, applied in `Loot.tiersFor`, `Items.rollSigil`, `Battle.rollRewards`, `Chests.rollChestLoot`, `Quests.turnInQuest`.
+- **Measured** (20k Thornwood kills): x1 gear 11.4% per kill, Rare 0.9%, Sigil share 2.4%; x10 gear 82.2%, Rare 10.3%, Sigil share 25.5%.
+- Checked in the browser: the menu row and toast, and a x10 Stormcoil win (3000 XP, 1155 gold, Rare 100%, level up on the result screen). Typecheck, build and the sim pass (rates default to x1).

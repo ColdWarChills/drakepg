@@ -6,6 +6,7 @@ import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, StatusDe
 import { INN_SPAWN } from '../data/world';
 import { Battle, type BattleEvent, type Effect, type Side } from '../game/Battle';
 import { makeMimic } from '../game/Chests';
+import { boosted } from '../game/cheats';
 import { makeElite } from '../game/Elites';
 import { featureOn } from '../game/Features';
 import { makeHeroic } from '../game/Heroic';
@@ -411,7 +412,7 @@ export class BattleScene extends Phaser.Scene {
     for (const t of LOOT_TIERS) if (odds[t] > 0) parts.push({ text: ` ${label[t]} ${pct(odds[t])}${t === 'rare' && luck > 0 ? ' (luck)' : ''} `, color: color[t] });
     // Elites and bosses: a chance at a piece of the area's set on top.
     const table = db.lootTable(tableId);
-    const setChance = table.set && (source === 'elite' || source === 'boss') ? BALANCE.setDrop[source] : 0;
+    const setChance = table.set && (source === 'elite' || source === 'boss') ? boosted(BALANCE.setDrop[source]) : 0;
     if (setChance) parts.push({ text: ` · Set ${pct(setChance)} `, color: SET_CSS });
     let cx = 0;
     for (const part of parts) {

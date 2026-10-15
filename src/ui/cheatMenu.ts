@@ -130,9 +130,15 @@ export function openCheatMenu(scene: Phaser.Scene, player: Player, hooks: CheatH
       player.data.gear = player.data.gear.filter((g) => g.locked);
       changed(`Removed ${before - player.data.gear.length} pieces`);
     }, 240);
+    // Testing rates: more XP, gold and drops to see the drop screen and level up fast. Until reload, like the toggles.
+    choices(700, 330, 'Rates', [1, 2, 5, 10].map((n) => ({ label: `x${n}`, value: n })), cheats.rates, (v) => {
+      cheats.rates = v;
+      toast(scene, `Rates x${v}: XP, gold and drop chances`, COLORS.textGood);
+    }, 80);
+    c.add(addText(scene, 700, 362, 'XP, gold and every drop chance (gear, Sigils, potions, chests; capped at 100%). Until reload.', { size: 14, color: COLORS.textDim, wrap: 440 }));
 
     label(40, 410, 'Toggles (until reload, not saved)');
-    const toggle = (i: number, name: string, key: keyof typeof cheats, note: string) => {
+    const toggle = (i: number, name: string, key: Exclude<keyof typeof cheats, 'rates'>, note: string) => {
       const x = 40 + i * 212;
       button(x, 460, `${name}: ${cheats[key] ? 'ON' : 'off'}`, () => ((cheats[key] = !cheats[key]), render()), 202, cheats[key] ? ON : undefined);
       c.add(addText(scene, x, 492, note, { size: 14, color: COLORS.textDim, wrap: 202 }));

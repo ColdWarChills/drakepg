@@ -20,7 +20,14 @@ export const cheats = {
   lucky: false,
   /** Every chapter unlock (forge, Sigils, chests...) is open. */
   allFeatures: false,
+  /** Testing rates: XP and gold earned are multiplied by this, and so is every drop chance (see `boosted`). */
+  rates: 1,
 };
+
+/** A drop chance under the testing rates (`cheats.rates`), capped at 100%. */
+export function boosted(p: number): number {
+  return Math.min(1, p * cheats.rates);
+}
 
 /** Testing: a new character meets a Lucky Impling in the first monster room it enters. Remove when done testing. */
 export const LUCKY_ON_NEW_GAME = false;

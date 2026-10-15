@@ -2,6 +2,7 @@ import { BALANCE } from '../config';
 import { db } from '../data/db';
 import { ELEMENTS } from '../data/elements';
 import type { AccessoryDef, ArmorDef, ArmorSlot, Element, EquipSlot, ItemDef, StatKey, WeaponDef } from '../data/types';
+import { boosted } from './cheats';
 import { defaultRng, type Rng } from './rng';
 
 /**
@@ -181,7 +182,7 @@ export function rollSigil(rng: Rng, source: Exclude<DropSource, 'quest'>): Sigil
   const r = rng.next();
   let edge = 0;
   for (const tier of [...SIGIL_TIERS].reverse()) {
-    edge += table[tier];
+    edge += boosted(table[tier]);
     if (r < edge) return tier;
   }
   return undefined;

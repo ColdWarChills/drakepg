@@ -1,5 +1,6 @@
 import { db } from '../data/db';
 import type { MonsterDef, QuestDef, SkillDef } from '../data/types';
+import { cheats } from './cheats';
 import { grantFor } from './Items';
 import type { Player, Rewards } from './Player';
 
@@ -113,8 +114,9 @@ export function turnInQuest(player: Player, quest: QuestDef): TurnInResult | nul
   player.data.quests[quest.id] = { status: 'done', count: o.count };
   const classItem = quest.rewards.classItems?.[player.data.classId];
   const rewards: Rewards = {
-    xp: quest.rewards.xp,
-    gold: quest.rewards.gold,
+    // Testing rates (`cheats.rates`) multiply XP and gold.
+    xp: quest.rewards.xp * cheats.rates,
+    gold: quest.rewards.gold * cheats.rates,
     items: [...(quest.rewards.items ?? []), ...(classItem ? [classItem] : [])].map((id) => grantFor(id)),
   };
   const levelBefore = player.level;

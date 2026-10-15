@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { MonsterDef, ZoneDef } from '../data/types';
+import { boosted, cheats } from './cheats';
 import type { ItemGrant } from './Items';
 import { rollLoot } from './Loot';
 import type { Rewards } from './Player';
@@ -45,11 +46,11 @@ export function rollChestLoot(zone: ZoneDef, rng: Rng = defaultRng, extras = tru
     const m = materials[randInt(rng, 0, materials.length - 1)];
     for (let n = randInt(rng, 1, 2); n > 0; n--) items.push({ itemId: m.itemId });
   }
-  if (potions.length && chance(rng, 0.35)) items.push({ itemId: potions[randInt(rng, 0, potions.length - 1)].itemId });
+  if (potions.length && chance(rng, boosted(0.35))) items.push({ itemId: potions[randInt(rng, 0, potions.length - 1)].itemId });
   const table = zoneLootTable(zone);
   const gear = table ? rollLoot(table, 'chest', rng, 0, extras) : null;
   if (gear) items.push(gear.grant);
-  return { xp: 0, gold: randInt(rng, 8, 14) * level, items };
+  return { xp: 0, gold: randInt(rng, 8, 14) * level * cheats.rates, items };
 }
 
 /** The mimic, sized to the area: a Tough fight that pays out like a chest. */

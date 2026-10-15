@@ -1,7 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, StatusDef, Stats } from '../data/types';
-import { cheats } from './cheats';
+import { boosted, cheats } from './cheats';
 import { grantFor } from './Items';
 import { featureOn } from './Features';
 import { questWantsItem } from './Quests';
@@ -671,13 +671,14 @@ export class Battle {
     // Materials, Sigils and mods only drop once their chapter has unlocked them.
     const materials = featureOn(this.player, 'materials');
     const extras = featureOn(this.player, 'sigils');
-    const xp = Math.round(m.xp * this.rewardScale);
-    const gold = () => Math.round(randInt(this.rng, m.gold[0], m.gold[1]) * this.rewardScale);
+    // Testing rates (`cheats.rates`) multiply XP, gold and every drop chance.
+    const xp = Math.round(m.xp * this.rewardScale * cheats.rates);
+    const gold = () => Math.round(randInt(this.rng, m.gold[0], m.gold[1]) * this.rewardScale * cheats.rates);
     // A Lucky Impling has no normal drops: gold, and a shot at a Sigil (even before Sigils unlock).
-    if (m.lucky) return { xp, gold: gold(), items: m.loot && chance(this.rng, BALANCE.lucky.sigilChance) ? [luckySigil(m.loot, this.rng)] : [] };
+    if (m.lucky) return { xp, gold: gold(), items: m.loot && chance(this.rng, boosted(BALANCE.lucky.sigilChance)) ? [luckySigil(m.loot, this.rng)] : [] };
     const items = m.drops
       .filter((d) => materials || db.item(d.itemId).type !== 'material' || questWantsItem(this.player, d.itemId))
-      .filter((d) => chance(this.rng, d.chance))
+      .filter((d) => chance(this.rng, boosted(d.chance)))
       .flatMap((d) => Array.from({ length: d.qty ?? 1 }, () => grantFor(d.itemId, this.rng, source, extras)));
     // Gear: one cascading tier roll (Elites and bosses always drop something). Missing a Rare builds up luck.
     // Heroic bosses roll gear more than once.
@@ -689,7 +690,7 @@ export class Battle {
       if (gear) items.push(gear.grant);
       // Elites and bosses may also drop a piece of the area's set.
       const set = db.lootTable(m.loot).set;
-      if (set && (source === 'elite' || source === 'boss') && chance(this.rng, BALANCE.setDrop[source])) {
+      if (set && (source === 'elite' || source === 'boss') && chance(this.rng, boosted(BALANCE.setDrop[source]))) {
         const pieces = db.set(set).pieces;
         items.push(grantFor(pieces[randInt(this.rng, 0, pieces.length - 1)], this.rng, source, extras));
       }

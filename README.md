@@ -79,7 +79,7 @@ npm run preview  # serve the dist/ build locally
 - **Character panel** (button or **C**): stats, stat points, skills, what you have equipped. **M** opens the map (sound is in the Menu). **Esc** closes windows.
 - **Gear you can see**: the weapon is drawn in the hero's hands, and body armor changes the hero's outfit once its art exists (`char_<class>_<armor id>`; see the Art section).
 - **Cheats** (for testing; hidden): in any room press **`** (backtick), or tap the room name 5 times on a touch screen.
-  - **Hero**: levels (+1, +5, to 5/10/15/20), gold, full heal, refund stat points, clear the bag, and toggles for god mode, one-hit kills, Elites everywhere and a Lucky Impling in every monster room (toggles last until the page reloads).
+  - **Hero**: levels (+1, +5, to 5/10/15/20), gold, full heal, refund stat points, clear the bag, toggles for god mode, one-hit kills, Elites everywhere and a Lucky Impling in every monster room, and **Rates x1 / x2 / x5 / x10**: XP and gold earned (kills, chests, quests) and every drop chance (gear tiers, Sigils, set pieces, potions, chests), each chance capped at 100%. At x10 a normal monster drops gear about 4 kills in 5 and a Rare 1 in 10; the battle panel's odds show the boosted numbers. Toggles and rates last until the page reloads.
   - **Give item**: any item with a chosen quality, Sigil and number of mods (potions in fives).
   - **Wardrobe**: try on every weapon and armor and see it on the hero right away (faded = no art yet).
   - **World**: teleport to any room, respawn monsters, mark quests done (with everything before them), finish active quests, reset quests, and reset the character.
