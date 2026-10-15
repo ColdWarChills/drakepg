@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Art Direction Tests</title>
+<style>
+:root { --bg:#f4f1ea; --panel:#fffdf8; --ink:#2a2622; --muted:#7a7268; --line:#e2dccf; --check:#e9e4d8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#16181c; --panel:#1f2227; --ink:#ece8e1; --muted:#9a948a; --line:#30343b; --check:#2a2e35; } }
+:root[data-theme="dark"] { --bg:#16181c; --panel:#1f2227; --ink:#ece8e1; --muted:#9a948a; --line:#30343b; --check:#2a2e35; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui, sans-serif; }
+header { padding:20px 16px 8px; max-width:1800px; margin:auto; }
+h1 { font-size:22px; margin:0 0 4px; }
+header p { margin:0; color:var(--muted); }
+.wrap { overflow-x:auto; padding:8px 16px 32px; }
+table { border-collapse:separate; border-spacing:8px; margin:auto; min-width:1100px; }
+thead th { position:sticky; top:0; background:var(--bg); font-size:17px; padding:8px; z-index:1; }
+th.row { text-align:right; color:var(--muted); font-weight:600; width:120px; vertical-align:middle; }
+td { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px; text-align:center; vertical-align:middle; width:25%; }
+td img.art { max-width:100%; max-height:360px; image-rendering:auto; }
+td img.wide { max-height:none; width:100%; border-radius:6px; }
+.icons { display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; }
+.icons img { width:100%; aspect-ratio:1; object-fit:contain; }
+td:has(img:not(.wide)) { background-image:conic-gradient(var(--check) 25%, transparent 0 50%, var(--check) 0 75%, transparent 0); background-size:24px 24px; }
+.missing { color:var(--muted); font-style:italic; }
+</style></head><body>
+<header><h1>Art direction tests</h1>
+<p>Same subjects, four styles, generated on the local Qwen-Image 2.1 with a style LoRA each (2x size). Click an image for the larger copy.</p></header>
+<div class="wrap"><table><thead><tr><th></th><th>Flash cartoon</th><th>Painterly</th><th>HD pixel art</th><th>Storybook ink</th></tr></thead><tbody>
+<tr><th class="row">Battle screen</th><td><span class=missing>not yet</span></td><td><span class=missing>not yet</span></td><td><a href="pixel_battle_mock.webp" target="_blank"><img class="art wide" src="pixel_battle_mock.webp" alt="battle_mock"></a></td><td><span class=missing>not yet</span></td></tr>
+<tr><th class="row">Warrior</th><td><a href="flash_hero_warrior.webp" target="_blank"><img class="art" src="flash_hero_warrior.webp" alt="hero_warrior"></a></td><td><a href="painterly_hero_warrior.webp" target="_blank"><img class="art" src="painterly_hero_warrior.webp" alt="hero_warrior"></a></td><td><a href="pixel_hero_warrior.webp" target="_blank"><img class="art" src="pixel_hero_warrior.webp" alt="hero_warrior"></a></td><td><a href="ink_hero_warrior.webp" target="_blank"><img class="art" src="ink_hero_warrior.webp" alt="hero_warrior"></a></td></tr>
+<tr><th class="row">Mage</th><td><a href="flash_hero_mage.webp" target="_blank"><img class="art" src="flash_hero_mage.webp" alt="hero_mage"></a></td><td><span class=missing>not yet</span></td><td><a href="pixel_hero_mage.webp" target="_blank"><img class="art" src="pixel_hero_mage.webp" alt="hero_mage"></a></td><td><span class=missing>not yet</span></td></tr>
+<tr><th class="row">Rogue</th><td><a href="flash_hero_rogue.webp" target="_blank"><img class="art" src="flash_hero_rogue.webp" alt="hero_rogue"></a></td><td><span class=missing>not yet</span></td><td><a href="pixel_hero_rogue.webp" target="_blank"><img class="art" src="pixel_hero_rogue.webp" alt="hero_rogue"></a></td><td><span class=missing>not yet</span></td></tr>
+<tr><th class="row">Cute trash: Mossling</th><td><a href="flash_mon_mossling.webp" target="_blank"><img class="art" src="flash_mon_mossling.webp" alt="mon_mossling"></a></td><td><span class=missing>not yet</span></td><td><a href="pixel_mon_mossling.webp" target="_blank"><img class="art" src="pixel_mon_mossling.webp" alt="mon_mossling"></a></td><td><span class=missing>not yet</span></td></tr>
+<tr><th class="row">Tough: Thornback Boar</th><td><a href="flash_mon_boar.webp" target="_blank"><img class="art" src="flash_mon_boar.webp" alt="mon_boar"></a></td><td><a href="painterly_mon_boar.webp" target="_blank"><img class="art" src="painterly_mon_boar.webp" alt="mon_boar"></a></td><td><a href="pixel_mon_boar.webp" target="_blank"><img class="art" src="pixel_mon_boar.webp" alt="mon_boar"></a></td><td><a href="ink_mon_boar.webp" target="_blank"><img class="art" src="ink_mon_boar.webp" alt="mon_boar"></a></td></tr>
+<tr><th class="row">Boss: Thornheart</th><td><a href="flash_mon_thornheart.webp" target="_blank"><img class="art" src="flash_mon_thornheart.webp" alt="mon_thornheart"></a></td><td><span class=missing>not yet</span></td><td><a href="pixel_mon_thornheart.webp" target="_blank"><img class="art" src="pixel_mon_thornheart.webp" alt="mon_thornheart"></a></td><td><span class=missing>not yet</span></td></tr>
+<tr><th class="row">Exploration room</th><td><a href="flash_bg_room.webp" target="_blank"><img class="art wide" src="flash_bg_room.webp" alt="bg_room"></a></td><td><span class=missing>not yet</span></td><td><a href="pixel_bg_room.webp" target="_blank"><img class="art wide" src="pixel_bg_room.webp" alt="bg_room"></a></td><td><span class=missing>not yet</span></td></tr>
+<tr><th class="row">Item icons</th><td><div class="icons"><img class="icon" src="flash_icon_sword.webp" alt="icon_sword"><img class="icon" src="flash_icon_potion.webp" alt="icon_potion"></div></td><td><span class=missing>not yet</span></td><td><div class="icons"><img class="icon" src="pixel_icon_sword.webp" alt="icon_sword"><img class="icon" src="pixel_icon_potion.webp" alt="icon_potion"><img class="icon" src="pixel_icon_ring.webp" alt="icon_ring"><img class="icon" src="pixel_icon_cap.webp" alt="icon_cap"></div></td><td><span class=missing>not yet</span></td></tr>
+<tr><th class="row">Cut-out rig (idle + attack)</th><td><span class=missing>not yet</span></td><td><span class=missing>not yet</span></td><td><a href="pixel_rig.gif" target="_blank"><img class="art" src="pixel_rig.gif" alt="rig"></a></td><td><span class=missing>not yet</span></td></tr>
+</tbody></table></div></body></html>

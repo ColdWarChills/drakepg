@@ -6,3 +6,7 @@ dist/
 .sim/
 art/review/
 __pycache__/
+# Art direction tests: full-size images stay local; only the comparison page and the HUD capture are kept
+art/tests/*
+!art/tests/compare/
+!art/tests/hud_2x.png

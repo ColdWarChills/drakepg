@@ -165,15 +165,20 @@ class Comfy:
         req = urllib.request.Request(f"{self.host}/upload/image", body, {"Content-Type": f"multipart/form-data; boundary={boundary}"})
         return json.load(urllib.request.urlopen(req))["name"]
 
-    def generate(self, prompt: str, refs: list[str], size: tuple[int, int] | None, seed: int, steps: int) -> bytes:
-        """One image. size=None: an edit at image_1's own size (outfits)."""
+    def generate(self, prompt: str, refs: list[str], size: tuple[int, int] | None, seed: int, steps: int,
+                 loras: list[tuple[str, float]] = (), cfg: float = 1.0, negative: str = "") -> bytes:
+        """One image. size=None: an edit at image_1's own size (outfits). loras: (file in models/loras, strength)."""
         g: dict = {
             "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": UNET, "weight_dtype": "default"}},
-            "cache": {"class_type": "QwenImage21Cache", "inputs": {"model": ["unet", 0], "device": "auto", "dtype": "default"}},
             "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": CLIP, "type": "qwen_image", "device": "default"}},
             "vae": {"class_type": "VAELoader", "inputs": {"vae_name": VAE}},
         }
-        enc = {"clip": ["clip", 0], "vae": ["vae", 0], "prompt": prompt, "negative_prompt": "", "resolution": 0 if size is None else 1024}
+        model = ["unet", 0]
+        for i, (name, strength) in enumerate(loras):
+            g[f"lora{i}"] = {"class_type": "LoraLoaderModelOnly", "inputs": {"model": model, "lora_name": name, "strength_model": strength}}
+            model = [f"lora{i}", 0]
+        g["cache"] = {"class_type": "QwenImage21Cache", "inputs": {"model": model, "device": "auto", "dtype": "default"}}
+        enc = {"clip": ["clip", 0], "vae": ["vae", 0], "prompt": prompt, "negative_prompt": negative, "resolution": 0 if size is None else 1024}
         for i, name in enumerate(refs, 1):
             g[f"ref{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
             enc[f"images.image_{i}"] = [f"ref{i}", 0]
@@ -185,7 +190,7 @@ class Comfy:
             latent = ["latent", 0]
         g["sampler"] = {"class_type": "KSampler", "inputs": {
             "model": ["cache", 0], "positive": ["enc", 0], "negative": ["enc", 1], "latent_image": latent,
-            "seed": seed, "steps": steps, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}}
+            "seed": seed, "steps": steps, "cfg": cfg, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}}
         g["decode"] = {"class_type": "VAEDecode", "inputs": {"samples": ["sampler", 0], "vae": ["vae", 0]}}
         g["save"] = {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": "drakepg"}}
 
