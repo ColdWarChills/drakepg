@@ -83,6 +83,24 @@ Build order (all built, see "Done" at the bottom):
 - **Open:** remove or replace the common dragons: Stormscale Drakeling (Ch2), Vent Wyrmling (Ch3), the dragon story thread, the dragon on the title art. Waiting for go.
 - **Open:** `docs/CHAPTER3_SPEC.md` still asks for the dragon's name ("wakes in Chapter 4?"); revisit with the story spec.
 
+## Skills, weapons and builds (discussed 2026-10-15)
+
+Facts from the code at the time: Warrior and Rogue skills take the equipped weapon's element and damage type (daggers are pierce, so Rogue skills scale on DEX); only 11 skills, mostly the Mage's, have a fixed element. Stormcoil (Energy -> Water) and the Frostbinder (-> Wind) change element mid-fight. Gear has no "+element damage" line, only a resist per element. Stat points can't be refunded (only the cheat menu can). Monster weaknesses are -50 to -75, resists up to +75.
+
+- **Decided:** mid-fight weapon swap: carry two weapons and switch in battle. Players won't own the best weapon of every element, so it keeps pushing upgrades. A weaker backup in the right element still beats a strong weapon in the wrong one, so the backup doesn't have to be top tier.
+- **Proposed:** the swap costs the turn (like a potion). A free swap would mean swapping to the weakness every turn.
+- **Proposed:** skills come from drops and town vendors, not only from levels, even some early ones. Not all of them strong. The strongest ones come from known sources (a boss's first kill, Heroic rematches, a Lucky Impling, a side room's sure chest), not random trash drops (bad-luck protection rarely kicks in).
+- **Proposed:** element skill families: the same skill in different elements (beam of fire, of water, of light...), so a player can build e.g. a fire Rogue. The shape is per class (e.g. Warrior strike, Rogue knives, Mage beam), the elements are shared. Damage type follows the class's weapon, so a Rogue's element skills scale on DEX, a Mage's on INT.
+- **Proposed:** a spellbook that shows every skill: unknown ones as dark pages with a hint where to find them, tabs per element (HoMM3-like).
+- **Proposed:** weapons require a minimum of their class's main stat to equip. Investing in another stat opens another class's weapons (hybrids, used through the swap).
+- **Open:** which skills move to drops/vendors, and do the level unlocks stay for the rest? Books for your own class only, or cross-class?
+- **Open:** a hybrid needs a payoff: a sword for a Rogue is weak unless STR is invested. Weapons that scale on two stats? (Not strictly better than a pure build.)
+- **Open:** a paid respec at a trainer, so a failed hybrid isn't permanent?
+- **Open:** a "+element damage" gear line or element sets, so an element build is more than weapon + skills.
+- **Open:** weight weapon drops toward the player's class, so stat-locked drops don't pile up?
+- To do when built: a second weapon slot changes `PlayerData` (save bump + migrate); the battle HUD shows both weapons with a Weak/Resisted preview; the sim's bot has to swap.
+- Dropped: replacing levels with gear-only power. Levels stay.
+
 ## Combat and balance
 
 - **Decided:** monster rebalances are fine and expected often. Keep numbers small (no thousands early), especially weapons.
