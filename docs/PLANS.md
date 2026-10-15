@@ -118,7 +118,9 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 ## Art
 
 - **Decided:** keep generating with Higgsfield for now; redo the art later with Qwen at home if the polished look reads as AI. Files swap by key, so nothing in code changes.
-- **Open:** about 100 images left in `art/QUEUE.md` (NPCs, monsters, 26 backgrounds incl. the 15 new rooms, potions, materials, armor outfits). Road art isn't queued yet (see Prologue road).
+- **Proposed (designer, 2026-10-15):** start setting up ComfyUI with a Qwen image model at home now ("maybe"), instead of waiting.
+- **Open:** 17 images left in `art/QUEUE.md`: 13 armor outfits (paused, see below), 3 waiting for the dragon clean-up (Stormscale Drakeling, Vent Wyrmling, `bg_frozen_roost` with its sleeping dragon) and the dropped Volt Eel. Road art isn't queued yet (see Prologue road).
+- **Open:** armor outfits (paused 2026-10-15 at 17 of 30: Warrior 9, Mage 8, Rogue 0). Each is an edit of the class's bare art, so a new hero look means redoing all of them. Only body armor changes the picture, but each outfit paints its own gloves and boots (the Mage's Ridgeplate has steel gauntlets and boots), so the picture can disagree with the gloves/boots actually worn. Every new body armor costs 3 images. Options: torso-only outfits, layered pieces per slot, or keep the class look and show armor only in the UI.
 - **Open:** look-alike icons: Rimeglass Ring vs Frostward Ring, Tidepearl Ring vs Moonstone Ring. Regenerate one of each (~3 credits)?
 - Dropped: Volt Eel art (the eel was only a sample). Its prompt `mon_volt_eel` is still in the queue.
 
@@ -154,3 +156,4 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - 2026-10-14: build steps 4-5: Chapter 1-3 room layouts (8/9/10 rooms), drafted lines (`docs/ROOM_LINES.md`), sure chests in side rooms, `npm run pace`, 15 background prompts in `art/QUEUE.md`.
 - 2026-10-15: spare weapon and mid-fight Swap (save v13), see `docs/IMPROVEMENTS_2026-10.md`.
 - 2026-10-15: testing Rates x1/x2/x5/x10 (XP, gold, drop chances) in the testing menu.
+- 2026-10-15: Higgsfield art run: 3 Hearthold NPCs, 16 monsters, 25 backgrounds, 24 item icons and 17 armor outfits, see `docs/IMPROVEMENTS_2026-10.md`.

@@ -1,4 +1,4 @@
-# Art queue: 103 images left
+# Art queue: 17 images left
 
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
@@ -12,59 +12,59 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [x] `npc_hulda` (the smith, Brindlemoor)
 - [x] `npc_captain_hale` (Reedwatch captain, quest giver)
 - [x] `npc_wren` (Reedwatch quartermaster (shop))
-- [ ] `npc_ottilie` (Reedwatch healer (inn))
-- [ ] `npc_ranger_sabine` (Ch3, Hearthold quest giver)
-- [ ] `npc_gunnar` (Ch3, Hearthold trader (shop))
-- [ ] `npc_hearthkeeper_moll` (Ch3, Hearthold innkeeper)
+- [x] `npc_ottilie` (Reedwatch healer (inn))
+- [x] `npc_ranger_sabine` (Ch3, Hearthold quest giver)
+- [x] `npc_gunnar` (Ch3, Hearthold trader (shop))
+- [x] `npc_hearthkeeper_moll` (Ch3, Hearthold innkeeper)
 
 **2. Monsters** (18)
-- [ ] `mon_barkshell_beetle` (Ch1, tough)
-- [ ] `mon_mire_toad` (Ch2)
-- [ ] `mon_spark_wisp` (Ch2)
-- [ ] `mon_bog_lurker` (Ch2)
-- [ ] `mon_sunken_revenant` (Ch2)
+- [x] `mon_barkshell_beetle` (Ch1, tough)
+- [x] `mon_mire_toad` (Ch2)
+- [x] `mon_spark_wisp` (Ch2)
+- [x] `mon_bog_lurker` (Ch2)
+- [x] `mon_sunken_revenant` (Ch2)
 - [ ] `mon_stormscale_drakeling` (Ch2, tough)
 - [ ] `mon_volt_eel` (Ch2, tough)
-- [ ] `mon_bogmother` (Ch2 mini-boss)
-- [ ] `mon_stormcoil` (Ch2 boss)
-- [ ] `mon_drift_wolf` (Ch3)
-- [ ] `mon_crag_ram` (Ch3)
-- [ ] `mon_gust_sprite` (Ch3)
-- [ ] `mon_rime_acolyte` (Ch3)
-- [ ] `mon_glacier_golem` (Ch3, tough)
-- [ ] `mon_ember_salamander` (Ch3)
+- [x] `mon_bogmother` (Ch2 mini-boss)
+- [x] `mon_stormcoil` (Ch2 boss)
+- [x] `mon_drift_wolf` (Ch3)
+- [x] `mon_crag_ram` (Ch3)
+- [x] `mon_gust_sprite` (Ch3)
+- [x] `mon_rime_acolyte` (Ch3)
+- [x] `mon_glacier_golem` (Ch3, tough)
+- [x] `mon_ember_salamander` (Ch3)
 - [ ] `mon_vent_wyrmling` (Ch3, tough)
-- [ ] `mon_old_snowmaw` (Ch3 mini-boss)
-- [ ] `mon_frostbinder` (Ch3 boss)
-- [ ] `mon_lucky_impling` (rare spawn, any area)
+- [x] `mon_old_snowmaw` (Ch3 mini-boss)
+- [x] `mon_frostbinder` (Ch3 boss)
+- [x] `mon_lucky_impling` (rare spawn, any area)
 
 **3. Backgrounds** (26)
-- [ ] `bg_fen_road` (Ch2 monster area)
-- [ ] `bg_reedwatch` (Ch2 outpost town)
-- [ ] `bg_sunken_causeway` (Ch2 monster area)
-- [ ] `bg_bog_hollow` (mini-boss arena)
-- [ ] `bg_drowned_shrine` (final boss arena)
-- [ ] `bg_frostfang_pass` (Ch3 monster area)
-- [ ] `bg_hearthold` (Ch3 village)
-- [ ] `bg_windscour_ridge` (Ch3 monster area; keep the cave mouth in the middle)
-- [ ] `bg_steamvent_caves` (Ch3 side cave)
-- [ ] `bg_snowmaw_den` (Ch3 mini-boss arena)
+- [x] `bg_fen_road` (Ch2 monster area)
+- [x] `bg_reedwatch` (Ch2 outpost town)
+- [x] `bg_sunken_causeway` (Ch2 monster area)
+- [x] `bg_bog_hollow` (mini-boss arena)
+- [x] `bg_drowned_shrine` (final boss arena)
+- [x] `bg_frostfang_pass` (Ch3 monster area)
+- [x] `bg_hearthold` (Ch3 village)
+- [x] `bg_windscour_ridge` (Ch3 monster area; keep the cave mouth in the middle)
+- [x] `bg_steamvent_caves` (Ch3 side cave)
+- [x] `bg_snowmaw_den` (Ch3 mini-boss arena)
 - [ ] `bg_frozen_roost` (Ch3 boss arena)
-- [ ] `bg_hunters_camp` (Ch1 side room (quiet, campfire))
-- [ ] `bg_fallen_oak` (Ch1 monster area)
-- [ ] `bg_woodcutters_clearing` (Ch1 quiet room)
-- [ ] `bg_bramble_hideout` (Ch1 side room (bandit den))
-- [ ] `bg_briar_wall` (Ch1 quiet room before the boss)
-- [ ] `bg_whispering_reeds` (Ch2 monster area)
-- [ ] `bg_eel_pools` (Ch2 side room)
-- [ ] `bg_stilt_village` (Ch2 quiet room before the mini-boss)
-- [ ] `bg_stormlit_flats` (Ch2 monster area)
-- [ ] `bg_shrine_steps` (Ch2 quiet room before the final boss)
-- [ ] `bg_hot_springs` (Ch3 side room (quiet, campfire))
-- [ ] `bg_high_trail` (Ch3 monster area)
-- [ ] `bg_rangers_lookout` (Ch3 quiet room before the mini-boss)
-- [ ] `bg_whiteout_ledge` (Ch3 monster area)
-- [ ] `bg_roost_stair` (Ch3 quiet room before the final boss)
+- [x] `bg_hunters_camp` (Ch1 side room (quiet, campfire))
+- [x] `bg_fallen_oak` (Ch1 monster area)
+- [x] `bg_woodcutters_clearing` (Ch1 quiet room)
+- [x] `bg_bramble_hideout` (Ch1 side room (bandit den))
+- [x] `bg_briar_wall` (Ch1 quiet room before the boss)
+- [x] `bg_whispering_reeds` (Ch2 monster area)
+- [x] `bg_eel_pools` (Ch2 side room)
+- [x] `bg_stilt_village` (Ch2 quiet room before the mini-boss)
+- [x] `bg_stormlit_flats` (Ch2 monster area)
+- [x] `bg_shrine_steps` (Ch2 quiet room before the final boss)
+- [x] `bg_hot_springs` (Ch3 side room (quiet, campfire))
+- [x] `bg_high_trail` (Ch3 monster area)
+- [x] `bg_rangers_lookout` (Ch3 quiet room before the mini-boss)
+- [x] `bg_whiteout_ledge` (Ch3 monster area)
+- [x] `bg_roost_stair` (Ch3 quiet room before the final boss)
 
 **4. Weapons** (29)
 - [x] `wpn_heartwood_staff` (Thornheart drop)
@@ -106,34 +106,34 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [x] `icon_reedweave_robe`
 - [x] `icon_marshhide_vest`
 - [x] `icon_stormweave_robe`
-- [ ] `icon_health_potion`
-- [ ] `icon_mana_potion`
-- [ ] `icon_greater_health_potion`
-- [ ] `icon_greater_mana_potion`
-- [ ] `icon_scrap`
-- [ ] `icon_dust`
-- [ ] `icon_moss_clump`
-- [ ] `icon_boar_tusk`
-- [ ] `icon_fen_hide`
-- [ ] `icon_storm_scale`
-- [ ] `icon_superior_health_potion`
-- [ ] `icon_superior_mana_potion`
+- [x] `icon_health_potion`
+- [x] `icon_mana_potion`
+- [x] `icon_greater_health_potion`
+- [x] `icon_greater_mana_potion`
+- [x] `icon_scrap`
+- [x] `icon_dust`
+- [x] `icon_moss_clump`
+- [x] `icon_boar_tusk`
+- [x] `icon_fen_hide`
+- [x] `icon_storm_scale`
+- [x] `icon_superior_health_potion`
+- [x] `icon_superior_mana_potion`
 - [x] `icon_ridgeplate`
 - [x] `icon_fleecewool_robe`
 - [x] `icon_frostpelt_vest`
 - [x] `icon_galeweave_robe`
-- [ ] `icon_frost_pelt`
-- [ ] `icon_ram_horn`
-- [ ] `icon_rime_shard`
-- [ ] `icon_salamander_scale`
-- [ ] `icon_essence_fire`
-- [ ] `icon_essence_water`
-- [ ] `icon_essence_ice`
-- [ ] `icon_essence_wind`
-- [ ] `icon_essence_earth`
-- [ ] `icon_essence_energy`
-- [ ] `icon_essence_light`
-- [ ] `icon_essence_dark`
+- [x] `icon_frost_pelt`
+- [x] `icon_ram_horn`
+- [x] `icon_rime_shard`
+- [x] `icon_salamander_scale`
+- [x] `icon_essence_fire`
+- [x] `icon_essence_water`
+- [x] `icon_essence_ice`
+- [x] `icon_essence_wind`
+- [x] `icon_essence_earth`
+- [x] `icon_essence_energy`
+- [x] `icon_essence_light`
+- [x] `icon_essence_dark`
 - [x] `icon_leather_cap`
 - [x] `icon_leather_gloves`
 - [x] `icon_leather_boots`
@@ -178,24 +178,24 @@ Missing art never breaks anything: the game draws stand-in shapes until a file e
 - [x] `icon_frostward_ring`
 
 **6. Armor outfits (lowest priority)** (30)
-- [ ] `char_warrior_leather_armor`
-- [ ] `char_warrior_apprentice_robe`
-- [ ] `char_warrior_scale_mail`
-- [ ] `char_warrior_reedweave_robe`
-- [ ] `char_warrior_marshhide_vest`
-- [ ] `char_warrior_stormweave_robe`
-- [ ] `char_warrior_ridgeplate`
-- [ ] `char_warrior_fleecewool_robe`
-- [ ] `char_warrior_frostpelt_vest`
+- [x] `char_warrior_leather_armor`
+- [x] `char_warrior_apprentice_robe`
+- [x] `char_warrior_scale_mail`
+- [x] `char_warrior_reedweave_robe`
+- [x] `char_warrior_marshhide_vest`
+- [x] `char_warrior_stormweave_robe`
+- [x] `char_warrior_ridgeplate`
+- [x] `char_warrior_fleecewool_robe`
+- [x] `char_warrior_frostpelt_vest`
 - [ ] `char_warrior_galeweave_robe`
-- [ ] `char_mage_leather_armor`
-- [ ] `char_mage_apprentice_robe`
-- [ ] `char_mage_scale_mail`
-- [ ] `char_mage_reedweave_robe`
-- [ ] `char_mage_marshhide_vest`
-- [ ] `char_mage_stormweave_robe`
-- [ ] `char_mage_ridgeplate`
-- [ ] `char_mage_fleecewool_robe`
+- [x] `char_mage_leather_armor`
+- [x] `char_mage_apprentice_robe`
+- [x] `char_mage_scale_mail`
+- [x] `char_mage_reedweave_robe`
+- [x] `char_mage_marshhide_vest`
+- [x] `char_mage_stormweave_robe`
+- [x] `char_mage_ridgeplate`
+- [x] `char_mage_fleecewool_robe`
 - [ ] `char_mage_frostpelt_vest`
 - [ ] `char_mage_galeweave_robe`
 - [ ] `char_rogue_leather_armor`
@@ -258,7 +258,7 @@ Aspect as listed. Style reference: any finished monster (e.g. `mon_thornback_boa
 
 ### `mon_barkshell_beetle` · 4:3 · Ch1, tough
 ```
-A big armored forest beetle, its domed shell made of thick cracked dark bark with moss in the cracks, dry and brittle-looking, strong curved mandibles, six stubby legs, small glowing amber eyes, sturdy low stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid bright green (#00FF00) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
+A big armored forest beetle, its domed shell made of thick cracked dark bark with moss in the cracks, dry and brittle-looking, strong curved mandibles, six stubby legs, small glowing amber eyes, sturdy low stance. 2D fantasy RPG character art in a hand-painted cartoon style like early-2000s Flash adventure games: bold dark outlines, cel shading with soft painted highlights, warm saturated colors, slightly chunky stylized proportions. Full body, side view facing right, whole figure visible with empty margin around it. Plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no floor, no shadow, no text, no border.
 ```
 
 ### `mon_mire_toad` · 1:1 · Ch2
@@ -1038,7 +1038,7 @@ A single white gold ring set with a sliver of glacier ice, shown alone as a game
 
 ## 6. Armor outfits (lowest priority)
 
-Aspect **3:4**. **Reference: that class's empty-handed art** `src/assets/art/char_<class>_bare.webp` (an edit of it, not a new character). After processing, the fist positions must be re-measured into the armor's `hands[class]` in `src/data/items.ts`, so tell the coding session which outfits landed.
+Aspect **3:4**. **Reference: that class's empty-handed art** `src/assets/art/char_<class>_bare.webp` (an edit of it, not a new character). `prepare_art.py` cuts and crops each outfit exactly like its bare art, so the fists stay on the class's hand anchors and nothing needs re-measuring (it warns if part of the outfit falls outside the bare art's frame). **Paused 2026-10-15**, see `docs/PLANS.md` (Art). Galeweave: ask for a robe that hangs straight; the breeze version billowed out of the frame.
 
 ### `char_warrior_leather_armor` · 3:4 · reference: `char_warrior_bare`
 ```

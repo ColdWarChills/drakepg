@@ -29,7 +29,7 @@ WEAPON_HEIGHT = 320
 ICON_SIZE = 256
 
 # Where to crop backgrounds that aren't 16:9: 0 = keep the top/left, 1 = keep the bottom/right.
-BG_FOCUS: dict[str, float] = {"bg_brindlemoor": 0.75}
+BG_FOCUS: dict[str, float] = {"bg_brindlemoor": 0.75, "bg_windscour_ridge": 0.75}
 # Backgrounds kept at their own aspect (scaled to 720 tall). The scene lays them out itself.
 BG_KEEP_ASPECT = {"bg_title"}
 
@@ -44,7 +44,7 @@ SPILL_RIM = 28  # green-keyed art: px from the edge where green spill is removed
 SPILL_FADE = 2.5  # ...and how fast green-dominated pixels there fade out
 # Magenta-keyed art that needs the same spill pass (glows over magenta leave pink specks). Opt-in, so the
 # subject's own pinks and purples near the edge stay untouched everywhere else.
-MAGENTA_SPILL = {"icon_stormwatch_amulet"}
+MAGENTA_SPILL = {"icon_stormwatch_amulet", "mon_stormcoil", "mon_rime_acolyte", "mon_frostbinder"}
 EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
 
@@ -128,8 +128,71 @@ def _drop_specks(alpha: np.ndarray, min_share: float = 0.002) -> None:
                     alpha[y * f : (y + 1) * f, x * f : (x + 1) * f] = 0
 
 
+def _trim_box(alpha: np.ndarray, pad: int = 6) -> tuple[int, int, int, int]:
+    h, w = alpha.shape
+    ys, xs = np.nonzero(alpha > 0.05)
+    if len(xs) == 0:
+        raise ValueError("everything was removed; is the background too close to the character's colors?")
+    return max(0, xs.min() - pad), max(0, ys.min() - pad), min(w, xs.max() + pad + 1), min(h, ys.max() + pad + 1)
+
+
+def _outfit_base(key: str) -> Path | None:
+    """Armor outfits (`char_<class>_<armor>`) are edits of the class's bare art in the same framing. Cropping them
+    with the bare art's box keeps the fists at the same pixels, so the class's hand anchors stay valid."""
+    parts = key.split("_", 2)
+    if len(parts) < 3 or parts[0] != "char" or parts[2] == "bare":
+        return None
+    return next((p for p in RAW.glob(f"char_{parts[1]}_bare.*") if p.suffix.lower() in EXTS), None)
+
+
 def process_sprite(src: Path, key: str) -> Path:
     rgb = np.asarray(Image.open(src).convert("RGB")).astype(np.float32)
+
+    # Outfits (see _outfit_base) are cut out and cropped like their bare art, with the same trim box.
+    base_alpha = base_bg = None
+    base = _outfit_base(key)
+    if base is not None:
+        base_rgb = np.asarray(Image.open(base).convert("RGB")).astype(np.float32)
+        if base_rgb.shape == rgb.shape:
+            _, base_alpha, _, base_bg = _cutout(base_rgb, base.stem)
+        else:
+            print(f"  WARNING: {base.stem} is a different size, trimmed on its own (re-measure the hand anchors)")
+    clean, alpha, key_color, bg = _cutout(rgb, key, base_bg)
+    rgba = np.dstack([clean, alpha * 255]).astype(np.uint8)
+    img = Image.fromarray(rgba, "RGBA")
+
+    box = _trim_box(alpha)
+    if base_alpha is not None:
+        box = _trim_box(base_alpha)
+        x0, y0, x1, y1 = box
+        outside = alpha.copy()
+        outside[y0:y1, x0:x1] = 0
+        clipped = int((outside > 0.5).sum())
+        print(f"  cropped like {base.stem}" + (f"; {clipped} px fell outside and were cut" if clipped else ""))
+    img = img.crop(box)
+
+    if key in FLIP:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    if key.startswith("icon_"):
+        scale = min(1.0, ICON_SIZE / max(img.width, img.height))
+        if scale < 1:
+            img = img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
+    else:
+        max_h = WEAPON_HEIGHT if key.startswith("wpn_") else SPRITE_HEIGHT
+        if img.height > max_h:
+            img = img.resize((round(img.width * max_h / img.height), max_h), Image.LANCZOS)
+
+    out = OUT / f"{key}.webp"
+    img.save(out, quality=90, method=6)
+    print(f"  background color {key_color.round().astype(int).tolist()}, removed {bg.mean():.0%} of pixels")
+    return out
+
+
+def _cutout(rgb: np.ndarray, key: str, base_bg: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Remove the flat background: returns (color, alpha 0-1, background color, removed-background mask).
+    `base_bg` is the removed background of the art this one was edited from (outfits): inside that art's body only
+    near-exact key colors go, and pockets only where it had pockets. Muted keys sit close to skin and parchment
+    shading, so one soft outline would otherwise let the background flood into a hand."""
     h, w, _ = rgb.shape
 
     # Background color = median of a thin border ring.
@@ -141,7 +204,12 @@ def process_sprite(src: Path, key: str) -> Path:
     # very close to the key color. Merely similar colors inside the character (eyes, gems) survive.
     border = np.zeros((h, w), bool)
     border[0, :] = border[-1, :] = border[:, 0] = border[:, -1] = True
-    bg = _grow(border | (dist < KEY_HOLE), dist < KEY_HARD)
+    pockets = dist < KEY_HOLE
+    allowed = dist < KEY_HARD
+    if base_bg is not None:
+        pockets &= _dilate(base_bg, 2)
+        allowed &= ~(~_dilate(base_bg, 4) & (dist >= KEY_HOLE))
+    bg = _grow(border | pockets, allowed)
 
     # Soft alpha on a thin band around the removed area for anti-aliased edges.
     alpha = np.ones((h, w), np.float32)
@@ -172,31 +240,7 @@ def process_sprite(src: Path, key: str) -> Path:
             fix = rim & (weakest == c)
             clean[..., c] = np.where(fix, np.minimum(clean[..., c], other), clean[..., c])
 
-    rgba = np.dstack([clean, alpha * 255]).astype(np.uint8)
-    img = Image.fromarray(rgba, "RGBA")
-
-    # Trim to content.
-    ys, xs = np.nonzero(alpha > 0.05)
-    if len(xs) == 0:
-        raise ValueError(f"{src.name}: everything was removed; is the background too close to the character's colors?")
-    pad = 6
-    img = img.crop((max(0, xs.min() - pad), max(0, ys.min() - pad), min(w, xs.max() + pad + 1), min(h, ys.max() + pad + 1)))
-
-    if key in FLIP:
-        img = img.transpose(Image.FLIP_LEFT_RIGHT)
-    if key.startswith("icon_"):
-        scale = min(1.0, ICON_SIZE / max(img.width, img.height))
-        if scale < 1:
-            img = img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
-    else:
-        max_h = WEAPON_HEIGHT if key.startswith("wpn_") else SPRITE_HEIGHT
-        if img.height > max_h:
-            img = img.resize((round(img.width * max_h / img.height), max_h), Image.LANCZOS)
-
-    out = OUT / f"{key}.webp"
-    img.save(out, quality=90, method=6)
-    print(f"  background color {key_color.round().astype(int).tolist()}, removed {bg.mean():.0%} of pixels")
-    return out
+    return clean, alpha, key_color, bg
 
 
 def main() -> None:
