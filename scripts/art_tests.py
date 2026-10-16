@@ -12,7 +12,8 @@ Usage:
 Options:
   --seed N     seed (default: fixed per subject, the same in every direction, so the rows compare)
   --variants N extra seeds into _raw/ (the result is the first)    --force   regenerate an existing result
-  --pick N     rebuild the result from _raw/<subject>_sN.png (a variant you liked), no generating
+  --pick N     rebuild the result from _raw/<subject>_sN.png (a variant you liked), no generating; --flip turns it
+               upside down (a sword drawn point-down)
   --nolora     the style line only, no LoRA (results go to art/tests/_nolora/<direction>/)
   --steps N    sampler steps (default 30)   --dry   print the prompts   --host URL   ComfyUI address
 Needs Pillow and numpy, plus ComfyUI running with the Qwen-Image 2.1 files (scripts/qwen_batch.py).
@@ -33,7 +34,7 @@ TESTS = ROOT / "art" / "tests"
 
 LORAS = "art_tests\\"  # subfolder of ComfyUI/models/loras with the Civitai downloads (licenses: docs/PLANS.md, Art)
 NEGATIVE = ("photo, photorealistic, 3d render, blurry, noisy, jpeg artifacts, extra fingers, malformed hands, extra limbs, "
-            "melted shapes, text, letters, watermark, signature, frame, border")
+            "melted shapes, cast shadow on the ground, floor, text, letters, watermark, signature, frame, border")
 
 # prefix: how the LoRA wants the prompt to start (trigger word or medium). style: added after the subject.
 # post: 'pixel' snaps the result to a real pixel grid (native size x4) with a small palette.
@@ -182,6 +183,17 @@ def default_seed(subject_key: str) -> int:
     return zlib.crc32(subject_key.encode()) & 0x7FFFFFFF
 
 
+def write_notes(path: Path, graph: dict) -> None:
+    """A readable .txt next to an image: what was sent to ComfyUI (the PNG also carries the graph: drag it into the
+    ComfyUI window to see the nodes)."""
+    lines = []
+    for nid, node in graph.items():
+        values = {k: v for k, v in node["inputs"].items() if not (isinstance(v, list) and len(v) == 2)}
+        lines.append(f"[{nid}] {node['_meta']['title']}  ({node['class_type']})")
+        lines += [f"    {k}: {v}" for k, v in values.items()]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def cut_out(img: Image.Image) -> Image.Image:
     """Clear Qwen's near-zero alpha noise and trim to the figure."""
     a = np.asarray(img.convert("RGBA")).copy()
@@ -269,7 +281,8 @@ def main() -> None:
             result = out_dir / f"{skey}.png"
             if pick:
                 raw_path = out_dir / "_raw" / f"{skey}_s{pick}.png"
-                finish(Image.open(raw_path), s, d.get("post")).save(result)
+                img = finish(Image.open(raw_path), s, d.get("post"))
+                (img.transpose(Image.FLIP_TOP_BOTTOM) if "--flip" in flags else img).save(result)
                 print(f"{dkey}/{skey}: {result.relative_to(ROOT)} from seed {pick}")
                 continue
             if result.exists() and "--force" not in flags:
@@ -286,6 +299,7 @@ def main() -> None:
                 raw_path = out_dir / "_raw" / f"{skey}_s{seed + i}.png"
                 raw_path.parent.mkdir(parents=True, exist_ok=True)
                 raw_path.write_bytes(data)
+                write_notes(raw_path.with_suffix(".txt"), comfy.last_graph)
                 if i == 0:
                     finish(Image.open(raw_path), s, d.get("post")).save(result)
                 print(f"{dkey}/{skey}: {raw_path.relative_to(ROOT)} ({time.time() - t0:.0f}s)", flush=True)

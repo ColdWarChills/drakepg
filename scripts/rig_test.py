@@ -22,7 +22,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from art_tests import DIRECTIONS, NEGATIVE, TESTS, cut_out, pixel_snap  # noqa: E402
+from art_tests import DIRECTIONS, NEGATIVE, TESTS, cut_out, pixel_snap, write_notes  # noqa: E402
 from qwen_batch import RGBA_CLOSE, RGBA_OPEN, Comfy  # noqa: E402
 
 HEIGHT = 960  # final figure height (2x game size)
@@ -47,7 +47,8 @@ DEFAULT_PARAMS = {
     "sword_size": 0.62,  # sword length / figure height
     "sword_angle": 50,   # degrees the blade leans forward from straight up while the arm hangs
     "fist": 0.90,       # fist centre along the arm, fraction from the shoulder
-    "swap_arms": False,  # front arm is the one on the right of the image unless this is set
+    "swap_arms": False,  # the near (sword) arm is the one on the left of the image: facing right in three-quarter
+                         # view the far arm tucks behind the chest. Set this if a generation has it the other way.
 }
 
 
@@ -70,12 +71,14 @@ def base(dkey: str, seed: int, force: bool) -> None:
     if force or not base_path.exists():
         prompt = f"{RGBA_OPEN} {d['prefix']}{BASE_WHAT} {d['style']} {RGBA_CLOSE}"
         base_path.write_bytes(comfy.generate(prompt, [], (1024, 1536), seed, 30, loras=d["loras"], cfg=d["cfg"], negative=neg))
+        write_notes(base_path.with_suffix(".txt"), comfy.last_graph)
         print(f"{dkey}: {base_path.name} (seed {seed})")
     noarms_path = rig / "noarms_raw.png"
     if force or not noarms_path.exists():
         ref = comfy.upload(f"drakepg_rig_{dkey}.png", white(Image.open(base_path)))
         prompt = f"{RGBA_OPEN} {NOARMS} {d['style']} {RGBA_CLOSE}"
         noarms_path.write_bytes(comfy.generate(prompt, [ref], None, seed, 30, loras=d["loras"], cfg=d["cfg"], negative=neg))
+        write_notes(noarms_path.with_suffix(".txt"), comfy.last_graph)
         print(f"{dkey}: {noarms_path.name}")
 
 
@@ -129,7 +132,7 @@ def cut_parts(dkey: str, params: dict) -> dict:
     arms_img = Image.fromarray((arms * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(5)).filter(ImageFilter.MaxFilter(7))
     regions = components(np.asarray(arms_img) > 127)[:2]
     regions.sort(key=lambda r: np.nonzero(r)[1].mean())  # left to right
-    back_m, front_m = (regions[1], regions[0]) if params["swap_arms"] else (regions[0], regions[1])
+    front_m, back_m = (regions[1], regions[0]) if params["swap_arms"] else (regions[0], regions[1])
 
     src_b = np.asarray(b).copy()
     src_b[..., 3] = (ab * 255).astype(np.uint8)

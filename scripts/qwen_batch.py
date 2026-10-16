@@ -145,9 +145,30 @@ def ref_png(key: str) -> bytes:
     return buf.getvalue()
 
 
+# Node titles shown in the ComfyUI window (the graph loads there from the queue/history, or by dragging an output PNG in).
+TITLES = {
+    "unet": "Model: Qwen-Image 2.1", "clip": "Text encoder: Qwen3-VL", "vae": "VAE (latents <-> pixels)",
+    "cache": "Prompt cache", "enc": "Prompt + negative prompt", "latent": "Empty canvas (size)",
+    "sampler": "Sampler (seed, steps, CFG)", "decode": "Decode to pixels", "save": "Save image",
+}
+
+
+def numbered(g: dict) -> dict:
+    """The graph with ComfyUI's usual numeric node ids (its window can only show those) and readable titles."""
+    ids = {name: str(i) for i, name in enumerate(g, 1)}
+    out = {}
+    for name, node in g.items():
+        inputs = {k: [ids[v[0]], v[1]] if isinstance(v, list) and len(v) == 2 and v[0] in ids else v
+                  for k, v in node["inputs"].items()}
+        title = TITLES.get(name) or (f"Style LoRA {int(name[4:]) + 1}" if name.startswith("lora") else f"Reference image {name[3:]}")
+        out[ids[name]] = {**node, "inputs": inputs, "_meta": {"title": title}}
+    return out
+
+
 class Comfy:
     def __init__(self, host: str):
         self.host = host.rstrip("/")
+        self.last_graph: dict = {}
 
     def check(self) -> None:
         try:
@@ -193,6 +214,8 @@ class Comfy:
             "seed": seed, "steps": steps, "cfg": cfg, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}}
         g["decode"] = {"class_type": "VAEDecode", "inputs": {"samples": ["sampler", 0], "vae": ["vae", 0]}}
         g["save"] = {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": "drakepg"}}
+        g = numbered(g)
+        self.last_graph = g
 
         req = urllib.request.Request(f"{self.host}/prompt", json.dumps({"prompt": g}).encode(), {"Content-Type": "application/json"})
         try:

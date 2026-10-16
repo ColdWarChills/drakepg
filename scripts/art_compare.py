@@ -35,8 +35,25 @@ ROWS = [
     ("bg_room", "Exploration room"),
     ("icons", "Item icons"),
     ("rig", "Cut-out rig (idle + attack)"),
+    ("notes", "Notes"),
 ]
 ICONS = ["icon_sword", "icon_potion", "icon_ring", "icon_cap"]
+# Under each column: where the style comes from, and a one-line opinion (the designer picks).
+NOTES = {
+    "flash": ("LoRA: Soyuzmultfilm (Civitai, selling images OK)",
+              "Looks the most hand-made and the least AI; flat colours and clean outlines are the easiest to cut into "
+              "rig parts and keep matching. Risk: simple, a bit retro. Rig fit: best."),
+    "painterly": ("LoRA: Disco Elysium (Civitai, selling images OK)",
+                  "Richest mood, but this LoRA paints ground shadows and broke the boss's anatomy most often (needed "
+                  "the most re-rolls); swords come point-down (flipped here). Soft edges hide rig seams; its no-arms "
+                  "edit kept the sleeves, so only the forearms swing. Rig fit: good."),
+    "pixel": ("No LoRA: plain Qwen + a snap to a real pixel grid (4x, 64 colours)",
+              "Crisp and consistent with no LoRA at all; but rotating parts breaks the pixel grid (jaggy arm in the "
+              "rig), so it suits frame-by-frame animation more than cut-out. Rig fit: weakest."),
+    "ink": ("LoRA: Sidney Sime (Civitai, selling images OK)",
+            "Most storybook charm, steady linework across the set; the room is busy and it draws swords point-down "
+            "(flipped here). Ink lines hide rig seams. Rig fit: good."),
+}
 
 
 def place(canvas: Image.Image, sprite: Image.Image, x: int, scale: float, flip: bool, pixel: bool) -> None:
@@ -97,6 +114,10 @@ def page() -> None:
     for dkey in COLUMNS:
         d = TESTS / dkey
         for row, _ in ROWS:
+            if row == "notes":
+                src_line, opinion = NOTES.get(dkey, ("", ""))
+                cells[(dkey, row)] = f'<p class="note"><b>{html.escape(src_line)}</b><br>{html.escape(opinion)}</p>'
+                continue
             if row == "icons":
                 found = [i for i in ICONS if (d / f"{i}.png").exists()]
                 tags = []
@@ -118,41 +139,58 @@ def page() -> None:
     head = "".join(f"<th>{html.escape(DIRECTIONS[k]['name'])}</th>" for k in COLUMNS)
     body = []
     for row, label in ROWS:
-        tds = "".join(f'<td>{cells.get((k, row)) or "<span class=missing>not yet</span>"}</td>' for k in COLUMNS)
+        cls = ' class="sprite"' if row.startswith(("hero_", "mon_")) or row == "icons" else ""
+        tds = "".join(f'<td{cls}>{cells.get((k, row)) or "<span class=missing>not yet</span>"}</td>' for k in COLUMNS)
         body.append(f'<tr><th class="row">{html.escape(label)}</th>{tds}</tr>')
     (COMPARE / "index.html").write_text(PAGE.format(head=head, body="\n".join(body)), encoding="utf-8")
     print(f"page: {(COMPARE / 'index.html').relative_to(TESTS.parent.parent)}")
 
 
-PAGE = """<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Art Direction Tests</title>
+PAGE = """<title>Art Direction Tests</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@500;700&family=Alegreya+Sans:wght@400;500&display=swap">
 <style>
-:root {{ --bg:#f4f1ea; --panel:#fffdf8; --ink:#2a2622; --muted:#7a7268; --line:#e2dccf; --check:#e9e4d8; }}
-@media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ --bg:#16181c; --panel:#1f2227; --ink:#ece8e1; --muted:#9a948a; --line:#30343b; --check:#2a2e35; }} }}
-:root[data-theme="dark"] {{ --bg:#16181c; --panel:#1f2227; --ink:#ece8e1; --muted:#9a948a; --line:#30343b; --check:#2a2e35; }}
+/* Layout: a gallery table, one column per art direction, the same subject across each row; art sits on a neutral
+   ground (a cool grey, so the styles' own colours read true), with the game's HUD gold for the column names. */
+:root {{
+  --bg:#e8eaed; --panel:#f7f8fa; --ink:#1e2027; --muted:#5d6370; --line:#d2d6dd; --gold:#856526; --check:#dfe2e7;
+  --display:"Alegreya", Georgia, "Times New Roman", serif; --body:"Alegreya Sans", system-ui, sans-serif;
+}}
+@media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{
+  --bg:#14161b; --panel:#1d2027; --ink:#e8e6e1; --muted:#9aa0ab; --line:#2e333c; --gold:#d4af64; --check:#262a32; color-scheme:dark; }} }}
+:root[data-theme="dark"] {{ --bg:#14161b; --panel:#1d2027; --ink:#e8e6e1; --muted:#9aa0ab; --line:#2e333c; --gold:#d4af64; --check:#262a32; color-scheme:dark; }}
 * {{ box-sizing:border-box; }}
-body {{ margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui, sans-serif; }}
-header {{ padding:20px 16px 8px; max-width:1800px; margin:auto; }}
-h1 {{ font-size:22px; margin:0 0 4px; }}
-header p {{ margin:0; color:var(--muted); }}
-.wrap {{ overflow-x:auto; padding:8px 16px 32px; }}
-table {{ border-collapse:separate; border-spacing:8px; margin:auto; min-width:1100px; }}
-thead th {{ position:sticky; top:0; background:var(--bg); font-size:17px; padding:8px; z-index:1; }}
-th.row {{ text-align:right; color:var(--muted); font-weight:600; width:120px; vertical-align:middle; }}
-td {{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px; text-align:center; vertical-align:middle; width:25%; }}
-td img.art {{ max-width:100%; max-height:360px; image-rendering:auto; }}
-td img.wide {{ max-height:none; width:100%; border-radius:6px; }}
+body {{ background:var(--bg); color:var(--ink); font:16px/1.5 var(--body);
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:20px 40px; }}
+header {{ max-width:1800px; margin:0 auto 12px; display:grid; gap:6px; }}
+h1 {{ font:700 30px/1.15 var(--display); margin:0; text-wrap:balance; }}
+header p {{ margin:0; color:var(--muted); max-width:75ch; }}
+.spec {{ font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:var(--gold); }}
+.wrap {{ overflow-x:auto; max-width:1800px; margin:0 auto; }}
+table {{ border-collapse:separate; border-spacing:8px; min-width:1100px; width:100%; }}
+thead th {{ font:700 19px var(--display); color:var(--gold); padding:4px 8px; text-align:center; }}
+th.row {{ text-align:right; color:var(--muted); font:500 15px var(--body); width:130px; vertical-align:middle; }}
+td {{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px; text-align:center; vertical-align:middle; width:25%; }}
+td a:focus-visible {{ outline:2px solid var(--gold); outline-offset:2px; }}
+td img.art {{ max-width:100%; max-height:360px; }}
+td img.wide {{ max-height:none; width:100%; border-radius:4px; }}
+td.sprite {{ background-image:conic-gradient(var(--check) 25%, transparent 0 50%, var(--check) 0 75%, transparent 0); background-size:24px 24px; }}
 .icons {{ display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; }}
-.icons img {{ width:100%; aspect-ratio:1; object-fit:contain; }}
-td:has(img:not(.wide)) {{ background-image:conic-gradient(var(--check) 25%, transparent 0 50%, var(--check) 0 75%, transparent 0); background-size:24px 24px; }}
+.icons img {{ width:100%; aspect-ratio:1; object-fit:contain; max-width:100%; }}
 .missing {{ color:var(--muted); font-style:italic; }}
-</style></head><body>
-<header><h1>Art direction tests</h1>
-<p>Same subjects, four styles, generated on the local Qwen-Image 2.1 with a style LoRA each (2x size). Click an image for the larger copy.</p></header>
+.note {{ text-align:left; margin:0; font-size:15px; }}
+.note b {{ font-weight:500; color:var(--gold); display:block; margin-bottom:4px; }}
+</style>
+<header>
+<span class="spec">2x masters · rooms 2560×1440 · sprites 960 px tall · Qwen-Image 2.1 int8 · 30 steps</span>
+<h1>Art direction tests</h1>
+<p>The same subjects in four styles, each generated on the local Qwen with its own style LoRA. Click an image for a larger copy.
+The rig GIFs are a quick cut-out test: the hero plus a no-arms edit, with parts rotated in code. The gap at the shoulder is what a real part sheet would cover with a drawn shoulder cap.</p>
+</header>
 <div class="wrap"><table><thead><tr><th></th>{head}</tr></thead><tbody>
 {body}
-</tbody></table></div></body></html>
+</tbody></table></div>
 """
 
 if __name__ == "__main__":
