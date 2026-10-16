@@ -163,6 +163,31 @@ DIRECTIONS.update({
         "blue-purple shadows, a faint glowing blue rim light, sleek tall proportions, a calm intense expression, "
         "minimal detail.")},
 })
+# Round 5: the designer liked both; three variations of each.
+DIRECTIONS.update({
+    "manga_ink": {**_LOOK, "name": "Manga: heavy ink", "style": (
+        "Classic action manga ink style: thick brush-ink lines, heavy solid black shadows, hatching and halftone dot "
+        "screentone inside the shadows, sharp angular faces, muscular stylized anatomy, a striking dramatic stance, "
+        "strong flat colors with a few odd accents, high contrast.")},
+    "manga_cel": {**_LOOK, "name": "Manga: retro anime cel", "style": (
+        "1990s TV anime cel style: clean ink lines, flat cel colors with one hard shadow and soft airbrushed highlights, "
+        "a slightly muted retro palette, sharp eyes, a confident dramatic stance, few details.")},
+    "manga_pop": {**_LOOK, "name": "Manga: pop colors", "style": (
+        "Pop-art manga style: bold black outlines, flat surreal colors like purple, lime, coral and turquoise instead of "
+        "natural colors, hard graphic shadows, striking angular faces, a theatrical dramatic stance, no small details.")},
+    "webtoon_warm": {**_LOOK, "name": "Webtoon: warm", "style": (
+        "Modern Korean action webtoon style: sharp clean digital lineart, warm cinematic cel shading with amber light and "
+        "deep teal shadows, sleek tall proportions, a calm intense expression, minimal detail.")},
+    "webtoon_shadow": {**_LOOK, "name": "Webtoon: shadow", "style": (
+        "Modern Korean action webtoon style: sharp clean lineart, a dark desaturated palette of greys and black with a "
+        "single glowing electric-blue accent and a blue rim light, sleek tall proportions, a cool menacing aura, minimal "
+        "detail.")},
+    "webtoon_flat": {**_LOOK, "name": "Webtoon: flat", "style": (
+        "Korean webtoon style with flat colors: crisp thick lineart, flat colors with one hard cel shadow and no glossy "
+        "highlights, sleek tall proportions, a calm intense expression, minimal detail.")},
+})
+VARIATIONS = {"manga": ["manga", "manga_ink", "manga_cel", "manga_pop"],
+              "webtoon": ["webtoon", "webtoon_warm", "webtoon_shadow", "webtoon_flat"]}
 
 HERO_FRAME = ("Full body, standing idle pose, three-quarter view facing right, the whole figure visible from head to "
               "boots with empty margin around it. No shadow on the ground.")

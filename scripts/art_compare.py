@@ -235,8 +235,41 @@ def grid(looks: list[str], bg: str = "ink") -> None:
     print("art/tests/shortlist.png, art/tests/shortlist_mocks.png")
 
 
+def variations(groups: dict[str, list[str]]) -> None:
+    """One block per style family: a column per variation, the Warrior above the Boar. Writes art/tests/variations.png."""
+    font = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 26)
+    head = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 36)
+    cw, wh, bh, gap = 470, 600, 340, 10
+    cols = max(len(v) for v in groups.values())
+    block_h = 60 + 44 + wh + bh + gap
+    sheet = Image.new("RGB", (gap + cols * (cw + gap), len(groups) * block_h + gap), (210, 214, 221))
+    draw = ImageDraw.Draw(sheet)
+    for g, (family, looks) in enumerate(groups.items()):
+        y0 = gap + g * block_h
+        draw.text((gap + 6, y0 + 8), family.title(), font=head, fill=(30, 32, 39))
+        for c, look in enumerate(looks):
+            x = gap + c * (cw + gap)
+            tile = Image.new("RGBA", (cw, 44 + wh + bh), (232, 234, 237, 255))
+            ImageDraw.Draw(tile).text((12, 8), DIRECTIONS[look]["name"], font=font, fill=(30, 32, 39))
+            for subj, top, h in (("hero_warrior", 44, wh), ("mon_boar", 44 + wh, bh)):
+                src = TESTS / look / f"{subj}.png"
+                if not src.exists():
+                    continue
+                im = Image.open(src).convert("RGBA")
+                s = min((cw - 30) / im.width, (h - 20) / im.height)
+                im = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
+                tile.alpha_composite(im, ((cw - im.width) // 2, top + (h - im.height) // 2))
+            sheet.paste(tile.convert("RGB"), (x, y0 + 60))
+    sheet.save(TESTS / "variations.png")
+    print("art/tests/variations.png")
+
+
 if __name__ == "__main__":
     what = sys.argv[1:] or ["mock", "page"]
+    if what[0] == "variations":
+        from art_tests import VARIATIONS
+        variations(VARIATIONS)
+        sys.exit()
     if what[0] == "grid":
         grid(what[1:] or ["mobile2d", "softstory", "mix"])
         sys.exit()
