@@ -105,26 +105,15 @@ def strict_red(a: np.ndarray) -> np.ndarray:
     return (a[..., 0] > 120) & (a[..., 1] < 90) & (a[..., 2] < 90) & (a[..., 0] - a[..., 1] > 70) & (a[..., 3] > 128)
 
 
-def combo_layer(stem: str, base: np.ndarray, bottom: int, accessory: Image.Image,
-                plain: Image.Image | None = None) -> Image.Image:
-    """The hair of an edit that already wears the accessory, minus the accessory and its outline (the accessory's own
-    sprite goes on top and covers that spot)."""
+def combo_layer(stem: str, bottom: int) -> Image.Image:
+    """The whole head of an edit that already wears the accessory, fading out across the shoulders. Cutting only the
+    hair left notches and outline stubs where hair met the band; the edit's own head is clean, and as an edit of the
+    same base its face and neck match the base. The accessory's sprite still goes on top (the edit drew it in nearly
+    the same place)."""
     src = load(stem)
-    covered = np.asarray(accessory.split()[3].point(lambda v: 255 if v > 200 else 0).filter(ImageFilter.MinFilter(3))) > 0
-    m = differs(src, base) & ~strict_red(src) & ~covered
-    m[bottom:] = False
-    out = layer(src, clean(m, 2500))
-    if plain is None:
-        return out
-    # Where the edit drew the accessory a little off from its sprite, a thin gap of bare scalp would show between the
-    # two: fill small gaps next to the accessory with the plain hairstyle.
-    hair_a = np.asarray(out.split()[3]) > 128
-    acc_a = np.asarray(accessory.split()[3]) > 128
-    both = Image.fromarray(((hair_a | acc_a) * 255).astype(np.uint8))
-    closed = np.asarray(both.filter(ImageFilter.MaxFilter(17)).filter(ImageFilter.MinFilter(17))) > 127
-    gaps = closed & ~hair_a & ~acc_a & (np.asarray(plain.split()[3]) > 128)
-    fill = Image.fromarray((gaps * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1))
-    return Image.composite(plain, out, fill)
+    fade = 48
+    rows = np.clip((bottom - np.arange(src.shape[0])) / fade, 0, 1)[:, None]
+    return layer(src, np.broadcast_to(rows, src.shape[:2]).astype(np.float32))
 
 
 def band_layer(bottom: int) -> Image.Image:
@@ -152,8 +141,7 @@ def main() -> None:
         im.save(OUT / f"hair_{label.split(',')[0].lower().replace(' ', '_')}.png")
     band = band_layer(bottom)
     band.save(OUT / "headband.png")
-    accessories = {"headband": band}
-    combos = {key: combo_layer(stem, base_arr, bottom, accessories[key[1]], hairs[key[0]]) for key, stem in COMBOS.items()}
+    combos = {key: combo_layer(stem, bottom) for key, stem in COMBOS.items()}
     for (hair_label, acc), im in combos.items():
         im.save(OUT / f"hair_{hair_label.lower()}__{acc}.png")
 
@@ -222,7 +210,7 @@ def main() -> None:
         rows.append([tile(compose(hairs[hair_label], False), f"{hair_label}"),
                      tile(plain, "Plain layers"),
                      tile(swapped, "Combo sprite"),
-                     tile(combo, "Combo hair alone", checker=True)])
+                     tile(combo, "Combo head alone", checker=True)])
         titles.append(f"Easter egg: {hair_label} + {acc} swaps in a squeezed-hair sprite")
     sheet(rows, titles, TESTS / "layers_easter_egg.png")
     print("art/tests/layers/, art/tests/layers.png, art/tests/layers_combos.png, art/tests/layers_easter_egg.png")
