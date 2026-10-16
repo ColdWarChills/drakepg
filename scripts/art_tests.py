@@ -188,6 +188,19 @@ DIRECTIONS.update({
 })
 VARIATIONS = {"manga": ["manga", "manga_ink", "manga_cel", "manga_pop"],
               "webtoon": ["webtoon", "webtoon_warm", "webtoon_shadow", "webtoon_flat"]}
+# Round 6: the designer's mixes, the dark and the warm webtoon palettes with the flat (no gloss) painting.
+DIRECTIONS.update({
+    "webtoon_darkflat": {**_LOOK, "name": "Webtoon: dark flat", "style": (
+        "Korean action webtoon style with flat colors: crisp thick lineart, a cool palette of deep blues and purples, "
+        "flat color areas with one hard blue-purple cel shadow, no glossy highlights, a thin blue rim light, sleek tall "
+        "proportions, a calm intense expression, minimal detail.")},
+    "webtoon_warmflat": {**_LOOK, "name": "Webtoon: warm flat", "style": (
+        "Korean action webtoon style with flat colors: crisp thick lineart, warm amber light and deep teal shadows as "
+        "flat color areas with one hard cel shadow, no glossy highlights, sleek tall proportions, a calm intense "
+        "expression, minimal detail.")},
+})
+FLAT_MIXES = {"flat mixes": ["webtoon_flat", "webtoon_darkflat", "webtoon_warmflat"],
+              "glossy, for comparison": ["webtoon", "webtoon_warm"]}
 
 HERO_FRAME = ("Full body, standing idle pose, three-quarter view facing right, the whole figure visible from head to "
               "boots with empty margin around it. No shadow on the ground.")

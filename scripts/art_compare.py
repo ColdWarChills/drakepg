@@ -235,8 +235,8 @@ def grid(looks: list[str], bg: str = "ink") -> None:
     print("art/tests/shortlist.png, art/tests/shortlist_mocks.png")
 
 
-def variations(groups: dict[str, list[str]]) -> None:
-    """One block per style family: a column per variation, the Warrior above the Boar. Writes art/tests/variations.png."""
+def variations(groups: dict[str, list[str]], out: str = "variations.png") -> None:
+    """One block per style family: a column per variation, the Warrior above the Boar. Writes art/tests/<out>."""
     font = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 26)
     head = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 36)
     cw, wh, bh, gap = 470, 600, 340, 10
@@ -260,8 +260,8 @@ def variations(groups: dict[str, list[str]]) -> None:
                 im = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
                 tile.alpha_composite(im, ((cw - im.width) // 2, top + (h - im.height) // 2))
             sheet.paste(tile.convert("RGB"), (x, y0 + 60))
-    sheet.save(TESTS / "variations.png")
-    print("art/tests/variations.png")
+    sheet.save(TESTS / out)
+    print(f"art/tests/{out}")
 
 
 if __name__ == "__main__":
@@ -269,6 +269,10 @@ if __name__ == "__main__":
     if what[0] == "variations":
         from art_tests import VARIATIONS
         variations(VARIATIONS)
+        sys.exit()
+    if what[0] == "flatmix":
+        from art_tests import FLAT_MIXES
+        variations(FLAT_MIXES, "flat_mixes.png")
         sys.exit()
     if what[0] == "grid":
         grid(what[1:] or ["mobile2d", "softstory", "mix"])
