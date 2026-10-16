@@ -144,6 +144,12 @@ DIRECTIONS.update({
         "soft flat watercolor fills with gentle shading, warm friendly colors, very few details.")},
 })
 LOOKS3 = ["mobile3d", "mobile2d", "clay", "toy", "plush", "softstory"]
+# The designer's mix of the two 2D looks left after round 3: Mobile cartoon 2D shapes, Soft storybook colour and line.
+DIRECTIONS["mix"] = {**_LOOK, "name": "Mobile shapes + storybook", "style": (
+    "Soft storybook cartoon with chunky mobile-game proportions: only about three and a half heads tall, a big head, "
+    "huge hands and short stubby legs, a thin warm-brown ink outline, soft flat watercolor fills with gentle shading, "
+    "warm friendly colors, very few details.")}
+FINALISTS = ["mobile2d", "softstory", "mix"]
 
 HERO_FRAME = ("Full body, standing idle pose, three-quarter view facing right, the whole figure visible from head to "
               "boots with empty margin around it. No shadow on the ground.")
@@ -226,7 +232,10 @@ SUBJECTS = {
 
 
 def prompt_for(direction: dict, subject: dict) -> str:
-    text = f"{direction['prefix']}{subject['what']} {direction['style']}"
+    style = direction["style"]
+    if "monster" in subject["what"]:  # body words meant for people put boots and hands on the boar
+        style = style.replace("huge hands", "big chunky feet").replace("big hands", "big feet")
+    text = f"{direction['prefix']}{subject['what']} {style}"
     if subject["kind"] == "bg":
         return text
     return f"{RGBA_OPEN} {text} {RGBA_CLOSE}"

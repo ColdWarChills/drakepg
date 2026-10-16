@@ -4,6 +4,7 @@
   python scripts/art_compare.py mock        # art/tests/<direction>/battle_mock.png for every direction with the parts
   python scripts/art_compare.py page        # art/tests/compare/index.html + small webp copies of every image
   python scripts/art_compare.py             # both
+  python scripts/art_compare.py grid mobile2d softstory mix   # shortlist sheet + mocks for character rounds
 
 The mock uses the game's battle layout at 2x: hero at x 660, enemy at x 1900, feet on y 1000, sizes by the game's rule
 (480px tall box, 600px max width, times the monster's look scale), and the real battle HUD captured from the game
@@ -13,7 +14,7 @@ import html
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from art_tests import DIRECTIONS, TESTS  # noqa: E402
@@ -193,8 +194,52 @@ The rig GIFs are a quick cut-out test: the hero plus a no-arms edit, with parts 
 </tbody></table></div>
 """
 
+def grid(looks: list[str], bg: str = "ink") -> None:
+    """Shortlist sheet for the character rounds: one row per look (Warrior, Mage, Rogue, Boar), then each look's
+    battle mock on one shared room (default the Ink room), so only the characters differ. Writes
+    art/tests/shortlist.png and art/tests/shortlist_mocks.png."""
+    font = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 30)
+    subjects = ["hero_warrior", "hero_mage", "hero_rogue", "mon_boar"]
+    cell, label_w, gap = 560, 300, 10
+    sheet = Image.new("RGB", (label_w + len(subjects) * (cell + gap) + gap, len(looks) * (cell + gap) + gap), (210, 214, 221))
+    draw = ImageDraw.Draw(sheet)
+    for r, look in enumerate(looks):
+        y = gap + r * (cell + gap)
+        draw.multiline_text((16, y + cell // 2 - 40), DIRECTIONS[look]["name"].replace(" + ", "\n+ "), font=font,
+                            fill=(30, 32, 39), spacing=8)
+        for c, subj in enumerate(subjects):
+            tile = Image.new("RGBA", (cell, cell), (232, 234, 237, 255))
+            src = TESTS / look / f"{subj}.png"
+            if src.exists():
+                im = Image.open(src).convert("RGBA")
+                s = min((cell - 30) / im.width, (cell - 30) / im.height)
+                im = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
+                tile.alpha_composite(im, ((cell - im.width) // 2, (cell - im.height) // 2))
+            sheet.paste(tile.convert("RGB"), (label_w + gap + c * (cell + gap), y))
+    sheet.save(TESTS / "shortlist.png")
+    room = Image.open(TESTS / bg / "bg_room.png").convert("RGBA").resize((2560, 1440))
+    hud = Image.open(TESTS / "hud_2x.png").convert("RGBA")
+    mocks = []
+    for look in looks:
+        canvas = room.copy()
+        place(canvas, Image.open(TESTS / look / "hero_warrior.png").convert("RGBA"), HERO_X, 1.0, False, False)
+        place(canvas, Image.open(TESTS / look / "mon_boar.png").convert("RGBA"), ENEMY_X, ENEMY[1], True, False)
+        canvas.alpha_composite(hud)
+        small = canvas.convert("RGB").resize((1280, 720), Image.LANCZOS)
+        ImageDraw.Draw(small).text((24, 650), DIRECTIONS[look]["name"], font=font, fill=(255, 255, 255))
+        mocks.append(small)
+    out = Image.new("RGB", (1280, len(mocks) * 730 - 10), (210, 214, 221))
+    for i, m in enumerate(mocks):
+        out.paste(m, (0, i * 730))
+    out.save(TESTS / "shortlist_mocks.png")
+    print("art/tests/shortlist.png, art/tests/shortlist_mocks.png")
+
+
 if __name__ == "__main__":
     what = sys.argv[1:] or ["mock", "page"]
+    if what[0] == "grid":
+        grid(what[1:] or ["mobile2d", "softstory", "mix"])
+        sys.exit()
     if "mock" in what:
         for k in COLUMNS:
             mock(k)
