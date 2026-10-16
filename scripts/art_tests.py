@@ -202,6 +202,28 @@ DIRECTIONS.update({
 FLAT_MIXES = {"flat mixes": ["webtoon_flat", "webtoon_darkflat", "webtoon_warmflat"],
               "glossy, for comparison": ["webtoon", "webtoon_warm"]}
 
+# Round 7: the designer shared a flat graphic poster (art/tests/refs/poster_ref.png, source unknown: tests only).
+# Once from a description of its look, once with the picture itself as a style reference.
+_POSTER = ("Flat graphic poster illustration: a limited warm palette of burnt orange, amber, cream and deep maroon, flat "
+           "shapes with hard-edged shadows and no outlines, bold readable silhouettes, a strong warm backlight with a "
+           "bright rim along the edges, minimal interior detail, a faint grain.")
+DIRECTIONS.update({
+    "poster": {**_LOOK, "name": "Graphic poster", "style": _POSTER},
+    "poster_ref": {**_LOOK, "name": "Graphic poster (your image as ref)", "style": _POSTER,
+                   "refs": ["art/tests/refs/poster_ref.png"]},
+})
+
+
+def style_ref_png(path: str) -> bytes:
+    """A style reference as PNG bytes, at most 1024 px on its long side."""
+    import io
+    img = Image.open(ROOT / path).convert("RGB")
+    s = min(1.0, 1024 / max(img.size))
+    img = img.resize((round(img.width * s), round(img.height * s)), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
+
 HERO_FRAME = ("Full body, standing idle pose, three-quarter view facing right, the whole figure visible from head to "
               "boots with empty margin around it. No shadow on the ground.")
 MONSTER_FRAME = ("Full body, standing idle pose, side view facing right, the whole figure visible with empty margin around it. "
@@ -287,6 +309,10 @@ def prompt_for(direction: dict, subject: dict) -> str:
     if "monster" in subject["what"]:  # body words meant for people put boots and hands on the boar
         style = style.replace("huge hands", "big chunky feet").replace("big hands", "big feet")
     text = f"{direction['prefix']}{subject['what']} {style}"
+    if direction.get("refs"):
+        names = " and ".join(f"<image{i}>" for i in range(1, len(direction["refs"]) + 1))
+        text += (f" Draw it in exactly the same art style, palette and lighting as {names}, as if by the same artist. Use "
+                 f"{names} only as an example of the style: none of its figures, weapons, mountains or layout appear here.")
     if subject["kind"] == "bg":
         return text
     return f"{RGBA_OPEN} {text} {RGBA_CLOSE}"
@@ -404,7 +430,8 @@ def main() -> None:
             for i in range(variants):
                 t0 = time.time()
                 try:
-                    data = comfy.generate(prompt, [], s["gen"], seed + i, steps, loras=loras, cfg=d["cfg"],
+                    refs = [comfy.upload(f"drakepg_style_{Path(r).name}", style_ref_png(r)) for r in d.get("refs", [])]
+                    data = comfy.generate(prompt, refs, s["gen"], seed + i, steps, loras=loras, cfg=d["cfg"],
                                           negative=NEGATIVE if d["cfg"] > 1 else "")
                 except RuntimeError as e:
                     print(f"{dkey}/{skey}: ComfyUI error: {e}")
