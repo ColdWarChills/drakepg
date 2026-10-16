@@ -117,6 +117,34 @@ DIRECTIONS.update({
 })
 LOOKS = ["cartoon", "cel", "gouache", "chunky", "storylight", "papercut"]
 
+# Round 3 (2026-10-16): Chunky read as too edgy. Rounder and friendlier: two takes on the chunky mobile-strategy look
+# (traits only, no studio or game named) and four new mixes.
+DIRECTIONS.update({
+    "mobile3d": {**_LOOK, "name": "Mobile cartoon 3D", "style": (
+        "Mobile strategy game cartoon character: chunky rounded proportions, only about three and a half heads tall, "
+        "with a big head, huge hands and short stubby legs, "
+        "a soft 3D-rendered look with smooth shading and glossy highlights, bright saturated colors, a friendly "
+        "expression, simple shapes, very little detail.")},
+    "mobile2d": {**_LOOK, "name": "Mobile cartoon 2D", "style": (
+        "Flat 2D mobile game cartoon character: chunky rounded proportions, only about three and a half heads tall, "
+        "with a big head, huge hands and short stubby legs, a "
+        "thick dark-brown outline, flat bright colors with one soft shadow and a small glossy highlight, a friendly "
+        "expression, very little detail.")},
+    "clay": {**_LOOK, "name": "Clay figure", "style": (
+        "Handmade modelling-clay figure: soft rounded sculpted shapes, a matte clay surface with faint tool marks, soft "
+        "studio light, bright cheerful colors, a big head and stubby limbs, simple shapes, no fine detail.")},
+    "toy": {**_LOOK, "name": "Vinyl toy", "style": (
+        "Collectible vinyl toy figure: smooth rounded shapes, satin plastic with soft highlights, a big head and small "
+        "body, simple molded details, bright colors, soft studio light.")},
+    "plush": {**_LOOK, "name": "Felt plush", "style": (
+        "Handmade felt plush toy: soft stuffed rounded shapes, fuzzy felt fabric texture, visible stitched seams, "
+        "button-like details, a big head and stubby limbs, warm cozy colors.")},
+    "softstory": {**_LOOK, "name": "Soft storybook", "style": (
+        "Soft storybook cartoon: chunky rounded proportions with a big head and hands, a thin warm-brown ink outline, "
+        "soft flat watercolor fills with gentle shading, warm friendly colors, very few details.")},
+})
+LOOKS3 = ["mobile3d", "mobile2d", "clay", "toy", "plush", "softstory"]
+
 HERO_FRAME = ("Full body, standing idle pose, three-quarter view facing right, the whole figure visible from head to "
               "boots with empty margin around it. No shadow on the ground.")
 MONSTER_FRAME = ("Full body, standing idle pose, side view facing right, the whole figure visible with empty margin around it. "
