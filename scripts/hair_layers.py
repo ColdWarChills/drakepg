@@ -198,7 +198,17 @@ def main() -> None:
         return c
 
     no_band = [tile(compose(None, False), "Shaved")] + [tile(compose(h, False), label) for label, h in hairs.items()]
-    with_band = [tile(compose(None, True), "Shaved")] + [tile(compose(h, True), label) for label, h in hairs.items()]
+    def with_headband(label: str, h: Image.Image) -> Image.Image:
+        """As the game would draw it: a combo sprite replaces the hair and the headband when there is one."""
+        if (label, "headband") not in COMBOS:
+            return compose(h, True)
+        c = base.copy()
+        c.alpha_composite(combo_layer(COMBOS[(label, "headband")], bottom))
+        return c
+
+    with_band = [tile(compose(None, True), "Shaved")] + [
+        tile(with_headband(label, h), label + (" (combo)" if (label, "headband") in COMBOS else ""))
+        for label, h in hairs.items()]
     sheet([no_band, with_band], ["Composed from layers: no headband", "Same hair + the headband layer"],
           TESTS / "layers_combos.png")
 
