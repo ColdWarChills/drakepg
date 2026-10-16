@@ -372,6 +372,29 @@ ROGUE_CONCEPTS = {
                       "rings on every finger, a coin necklace and a feather earring, a sly smile: an asymmetric "
                       "silhouette. "),
 }
+# Round 10: one base hero for every class (class shows through clothing). Same plain base clothes on each, so only the
+# person differs; arms a little away from the body so armour can be layered on and parts rigged later.
+_BASE_CLOTHES = ("Wearing simple close-fitting base clothes: a cream linen shirt with rolled-up sleeves, a brown leather "
+                 "belt, plain dark teal trousers and simple brown leather boots. Standing in a relaxed neutral pose, arms "
+                 "hanging a little away from the body, both hands empty fists. No armor, no cape, no weapon. ")
+BASE_HEROES = {
+    "base_messy": ("Messy hair, headband", "a young adventurer with messy dark brown hair held back by a red cloth "
+                   "headband, a small scar on the chin and a confident half smile. "),
+    "base_braid": ("Short braid", "a young woman adventurer with copper-red hair in a short thick braid over one "
+                   "shoulder, freckles and a determined look. "),
+    "base_crop": ("Cropped hair", "a young adventurer with short cropped black hair, warm brown skin, bright eyes "
+                  "and an easygoing grin. "),
+    "base_wild": ("Wild white hair", "a young adventurer with wild, spiky white hair, a bandage across the nose and "
+                  "sharp amber eyes. "),
+}
+for _key, (_name, _what) in BASE_HEROES.items():
+    SUBJECTS[_key] = {"kind": "sprite", "height": 960, "gen": (1024, 1536), "name": _name,
+                      "what": _what + _BASE_CLOTHES + HERO_FRAME}
+DIRECTIONS["poster_color"] = {**_LOOK, "name": "Graphic poster, full colour", "style": (
+    "Flat graphic poster illustration in full color: flat shapes with hard-edged shadows and no outlines, bold readable "
+    "silhouettes, a warm golden backlight with a bright rim along the edges, rich but limited natural colors, minimal "
+    "interior detail, a faint grain.")}
+
 for _key, (_name, _what) in {**WARRIOR_CONCEPTS, **MAGE_CONCEPTS, **ROGUE_CONCEPTS}.items():
     SUBJECTS[_key] = {"kind": "sprite", "height": 960, "gen": (1024, 1536), "what": _what + _FISTS, "name": _name}
 
