@@ -106,8 +106,8 @@ DIRECTIONS.update({
         "Flat gouache illustration: matte opaque paint shapes with a visible dry-brush texture, a limited palette of six "
         "colors, no outlines, no glossy highlights, no fine detail.")},
     "chunky": {**_LOOK, "name": "Chunky indie", "style": (
-        "Chunky stylized indie-game character: bold angular shapes, oversized hands and boots, thick dark outlines, flat "
-        "colors with hard-edged dark shadows, a strong silhouette, minimal detail.")},
+        "Chunky stylized indie-game character: bold angular shapes, chunky exaggerated proportions with big hands and "
+        "feet, thick dark outlines, flat colors with hard-edged dark shadows, a strong silhouette, minimal detail.")},
     "storylight": {**_LOOK, "name": "Light storybook", "style": (
         "Light storybook illustration: a thin loose ink outline with very few lines, flat pale watercolor fills, no "
         "hatching, simple shapes, lots of empty space.")},
