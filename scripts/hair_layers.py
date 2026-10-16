@@ -29,6 +29,9 @@ HAIRS = {  # label: raw stem (the picked seed of each hair edit)
     "Top knot": "edit_hair_bun_s1831856038",
     "Bob": "edit_hair_bob_s1831856039",
 }
+# Combo sprites: a hairstyle redrawn for one accessory (the easter egg: curly hair squeezed under the headband). The
+# game swaps it in when both are worn; the accessory sprite still goes on top, so the swap is seamless.
+COMBOS = {("Curly", "headband"): "edit_curly_banded_s1831856038"}
 # The headband drawn onto the base itself (no hair over it), so it comes out whole.
 BAND_WITH, BAND_WITHOUT = "edit_band_on_shaved_s1831856038", BASE
 
@@ -97,6 +100,21 @@ def hair_layer(stem: str, base: np.ndarray, bottom: int) -> Image.Image:
     return layer(src, clean(m, 2500))
 
 
+def strict_red(a: np.ndarray) -> np.ndarray:
+    """The headband's red only (skin passes a looser red test)."""
+    return (a[..., 0] > 120) & (a[..., 1] < 90) & (a[..., 2] < 90) & (a[..., 0] - a[..., 1] > 70) & (a[..., 3] > 128)
+
+
+def combo_layer(stem: str, base: np.ndarray, bottom: int, accessory: Image.Image) -> Image.Image:
+    """The hair of an edit that already wears the accessory, minus the accessory and its outline (the accessory's own
+    sprite goes on top and covers that spot)."""
+    src = load(stem)
+    covered = np.asarray(accessory.split()[3].point(lambda v: 255 if v > 200 else 0).filter(ImageFilter.MinFilter(3))) > 0
+    m = differs(src, base) & ~strict_red(src) & ~covered
+    m[bottom:] = False
+    return layer(src, clean(m, 2500))
+
+
 def band_layer(bottom: int) -> Image.Image:
     a, b = load(BAND_WITH), load(BAND_WITHOUT)
     m = differs(a, b)
@@ -122,6 +140,10 @@ def main() -> None:
         im.save(OUT / f"hair_{label.split(',')[0].lower().replace(' ', '_')}.png")
     band = band_layer(bottom)
     band.save(OUT / "headband.png")
+    accessories = {"headband": band}
+    combos = {key: combo_layer(stem, base_arr, bottom, accessories[key[1]]) for key, stem in COMBOS.items()}
+    for (hair_label, acc), im in combos.items():
+        im.save(OUT / f"hair_{hair_label.lower()}__{acc}.png")
 
     font = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 24)
     head_box = trim_box([base.crop((0, 0, base.width, bottom))] + [h.crop((0, 0, base.width, bottom)) for h in hairs.values()]
@@ -177,7 +199,21 @@ def main() -> None:
     with_band = [tile(compose(None, True), "Shaved")] + [tile(compose(h, True), label) for label, h in hairs.items()]
     sheet([no_band, with_band], ["Composed from layers: no headband", "Same hair + the headband layer"],
           TESTS / "layers_combos.png")
-    print("art/tests/layers/, art/tests/layers.png, art/tests/layers_combos.png")
+
+    # The combo swap: plain layers vs the combo hair sprite, with the same headband sprite on top.
+    rows, titles = [], []
+    for (hair_label, acc), combo in combos.items():
+        plain = compose(hairs[hair_label], True)
+        swapped = base.copy()
+        swapped.alpha_composite(combo)
+        swapped.alpha_composite(band)
+        rows.append([tile(compose(hairs[hair_label], False), f"{hair_label}"),
+                     tile(plain, "Plain layers"),
+                     tile(swapped, "Combo sprite"),
+                     tile(combo, "Combo hair alone", checker=True)])
+        titles.append(f"Easter egg: {hair_label} + {acc} swaps in a squeezed-hair sprite")
+    sheet(rows, titles, TESTS / "layers_easter_egg.png")
+    print("art/tests/layers/, art/tests/layers.png, art/tests/layers_combos.png, art/tests/layers_easter_egg.png")
 
 
 if __name__ == "__main__":

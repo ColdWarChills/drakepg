@@ -26,6 +26,7 @@ ANCHORS = {
     "messy": ("base_messy_s1831856038", 1831856038),  # young man, messy hair, red headband
     "braid": ("edit_braid_s1831856039", 1831856039),  # young woman, copper braid (an edit of messy)
     "shaved": ("edit_hair_shaved_s1831856038", 1831856038),  # the base body for hair/headband layers (an edit of messy)
+    "curlyband": ("compose_curly_band_s1831856038", 1831856038),  # base + curly + headband layers (scripts/hair_layers.py)
 }
 KEEP = ("Keep everything else exactly the same: the same pose, the same cream shirt, brown belt, dark teal trousers and "
         "brown boots, the same colors, the same warm rim light and the same flat graphic poster art style, the same size "
@@ -74,6 +75,10 @@ EDITS = {
                f"was. Keep the same face, hair style and body. {KEEP}"),
     "band_on_shaved": ("Headband on the base", "shaved", "add a red cloth headband around the forehead, tied at the "
                        "back of the head with two short loose tails. Keep the same shaved head, face and body. " + KEEP),
+    "curly_banded": ("Curly under the headband", "curlyband", "the red headband is tied tightly around the curly hair: "
+                     "the curls are pressed flat under the band and puff out in round bunches above and below it, the "
+                     "curls bulging over the top edge of the band. Keep the headband exactly the same color, shape, size "
+                     "and position, with its knot and tails. Keep the same face and body. " + KEEP),
     "face_round": ("Round, friendly", "messy", face("a round, friendly face with soft features and a warm smile")),
     "face_sharp": ("Sharp, serious", "messy", face("a lean, sharp face with high cheekbones, narrow eyes and a serious "
                                                    "look")),
