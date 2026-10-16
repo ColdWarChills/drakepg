@@ -10,3 +10,4 @@ __pycache__/
 art/tests/*
 !art/tests/compare/
 !art/tests/hud_2x.png
+!art/tests/sheets/

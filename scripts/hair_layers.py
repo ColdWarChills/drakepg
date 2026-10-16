@@ -162,7 +162,7 @@ def main() -> None:
         c.save(RAW / f"compose_band_{slug(label)}_s1831856038.png")
     combos = {key: combo_layer(stem, bottom) for key, stem in COMBOS.items()}
     for (hair_label, acc), im in combos.items():
-        im.save(OUT / f"hair_{hair_label.lower()}__{acc}.png")
+        im.save(OUT / f"hair_{slug(hair_label)}__{acc}.png")
 
     font = ImageFont.truetype("C:/Windows/Fonts/georgiab.ttf", 24)
     head_box = trim_box([base.crop((0, 0, base.width, bottom))] + [h.crop((0, 0, base.width, bottom)) for h in hairs.values()]
