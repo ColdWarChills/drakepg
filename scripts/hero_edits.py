@@ -28,6 +28,8 @@ ANCHORS = {
     "shaved": ("edit_hair_shaved_s1831856038", 1831856038),  # the base body for hair/headband layers (an edit of messy)
     "curlyband": ("compose_curly_band_s1831856038", 1831856038),  # base + curly + headband layers (scripts/hair_layers.py)
     "squeezed": ("edit_curly_banded_s1831856048", 1831856048),  # the picked combo: curls squeezed under the headband
+    "long_banded": ("edit_banded_long2_s1831856040", 1831856040),  # picked Long tied combo
+    "knot_banded": ("edit_banded_knot2_s1831856040", 1831856040),  # picked Top knot combo
 }
 # Base + hair layer + headband composites written by scripts/hair_layers.py, one per hairstyle.
 HAIR_LOOKS = {"messy": "messy dark brown hair", "long": "long dark brown hair tied back in a low ponytail", "undercut": "dark brown undercut hair",
@@ -100,6 +102,28 @@ EDITS = {
         "the same hairstyle as in <image1> (the same length, shape, color, golden highlights and pointed tips) apart "
         "from where the band presses it. Keep the headband exactly the same color, shape, size and position, with its "
         "knot and tails. Keep the same face and body. " + KEEP)) for _slug, _look in HAIR_LOOKS.items()},
+    # Reworks for the tied-back styles (the first edits barely changed and the band's knot sat on the tie / bun).
+    "banded_long2": ("Long tied under the headband", "band_long", (
+        "the hair is pulled back smoothly and tightly under the red headband into the low ponytail, with no loose spikes "
+        "on top: the band sits snugly on the smooth hair, and only two or three short loose strands fall over its front "
+        "edge. The band's knot sits on the back of the head above the ponytail's tie, and its two tails hang over the "
+        "hair without covering the ponytail, which stays clearly visible below. Keep the same ponytail, hair color and "
+        "golden highlights. Keep the same face and body. " + KEEP)),
+    "banded_knot2": ("Top knot under the headband", "band_top_knot", (
+        "the hair is pulled up smoothly and tightly from all sides into the top knot bun on top of the head, with no "
+        "loose spikes: the red headband sits snugly around the head below the bun on the smooth hair, and only two or "
+        "three short loose strands fall over its front edge. The bun stays fully visible above the band, the band's knot "
+        "and tails are at the back of the head below the bun and do not cover it. Keep the same bun, hair color and "
+        "golden highlights. Keep the same face and body. " + KEEP)),
+    # Plain styles worked back from the picked combos (the band removed), as with Puffy: both versions then match.
+    "long_plain": ("Long tied (from the combo)", "long_banded", "remove the red headband completely, with its knot and "
+                   "tails. Draw the same smooth pulled-back dark brown hair where the band was, with the same low "
+                   "ponytail, hair color and golden highlights, and the same few short loose strands at the front. Keep "
+                   "the same face and body. " + KEEP),
+    "knot_plain": ("Top knot (from the combo)", "knot_banded", "remove the red headband completely, with its knot and "
+                   "tails. Draw the same smooth pulled-up dark brown hair where the band was, with the same top knot bun, "
+                   "hair color and golden highlights, and the same few short loose strands at the front. Keep the same "
+                   "face and body. " + KEEP),
     "face_round": ("Round, friendly", "messy", face("a round, friendly face with soft features and a warm smile")),
     "face_sharp": ("Sharp, serious", "messy", face("a lean, sharp face with high cheekbones, narrow eyes and a serious "
                                                    "look")),
