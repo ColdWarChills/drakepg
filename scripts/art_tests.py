@@ -341,7 +341,38 @@ WARRIOR_CONCEPTS = {
                       "mouth, a wide straw-colored traveler's hat, a single light shoulder plate, wrapped legs and "
                       "sandal-like boots: a sharp, elongated silhouette. "),
 }
-for _key, (_name, _what) in WARRIOR_CONCEPTS.items():
+# Round 9: Mage and Rogue concepts to go with the Wandering blade Warrior (tall narrow coat and wide hat), so each
+# keeps a silhouette of its own: the Mage round or tall-pointed, the Rogue small and lopsided.
+MAGE_CONCEPTS = {
+    "mage_lantern": ("Lantern scholar", "a young scholar mage, slightly hunched under a huge stack of old books strapped "
+                     "to his back with a glowing lantern hanging from the pack, round spectacles, a hooded scholar's robe "
+                     "with very wide sleeves: a round, bottom-heavy silhouette. "),
+    "mage_starcloak": ("Star cloak", "a slender mage in a very long sweeping cloak with a tall pointed hood, the cloak's "
+                       "lining deep night blue dotted with tiny stars, the face in shadow except two softly glowing eyes: "
+                       "a tall, pointed triangle silhouette. "),
+    "mage_hermit": ("Rune hermit", "a calm barefoot young hermit with a clearly drawn face (eyes, brows, nose and "
+                    "mouth), a shaved head, glowing rune tattoos running down "
+                    "both arms, a simple wrapped robe tied with a thick rope, a long string of prayer beads: a simple, "
+                    "upright silhouette. "),
+    "mage_hedgewitch": ("Hedge witch", "a young hedge witch with wild curly hair full of twigs and small flowers, a cape "
+                        "made of layered big leaves, many little pouches and dried herbs on her belt, a crow perched on "
+                        "her shoulder: a wild, leafy silhouette. "),
+}
+ROGUE_CONCEPTS = {
+    "rogue_fox": ("Fox thief", "a small nimble young thief with a hood shaped like a fox's head with pointed ears, a "
+                  "long striped scarf, a crooked grin, a big stuffed loot sack slung over one shoulder: a small, "
+                  "lopsided silhouette. "),
+    "rogue_trickster": ("Masked trickster", "a lanky young trickster in a smiling white half-mask, a long two-tone "
+                        "scarf, a short cape flipped over one shoulder, striped leggings, standing in a mischievous "
+                        "slouch: a thin, playful silhouette. "),
+    "rogue_scout": ("Shadow scout", "a crouched young scout in a hood with a face wrap that leaves only the eyes, a "
+                    "short tattered dark cloak, crossed belts full of small pouches, light wrapped boots, ready to "
+                    "spring: a low, compact silhouette. "),
+    "rogue_gambler": ("Gambler", "a dapper young rogue with a long braid, an eye patch, an open vest over a loose shirt, "
+                      "rings on every finger, a coin necklace and a feather earring, a sly smile: an asymmetric "
+                      "silhouette. "),
+}
+for _key, (_name, _what) in {**WARRIOR_CONCEPTS, **MAGE_CONCEPTS, **ROGUE_CONCEPTS}.items():
     SUBJECTS[_key] = {"kind": "sprite", "height": 960, "gen": (1024, 1536), "what": _what + _FISTS, "name": _name}
 
 
