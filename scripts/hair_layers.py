@@ -34,9 +34,20 @@ HAIRS = {  # label: raw stem (the picked seed of each hair edit)
 # Combo sprites: a hairstyle redrawn with one accessory (the easter egg: curly hair squeezed under the headband). When
 # both are worn the game draws the combo sprite instead of the hair and the accessory sprites (the accessory is drawn
 # in it), so the edit may move the band a little and let curls overlap it.
-COMBOS = {("Curly", "headband"): "edit_curly_banded_s1831856048"}
+COMBOS = {
+    ("Curly", "headband"): "edit_curly_banded_s1831856048",
+    ("Messy", "headband"): "edit_banded_messy_s1831856039",  # not the anchor: its band differs from the shared sprite
+    ("Long, tied", "headband"): "edit_banded_long_s1831856039",
+    ("Undercut", "headband"): "edit_banded_undercut_s1831856039",
+    ("Top knot", "headband"): "edit_banded_top_knot_s1831856039",
+    ("Bob", "headband"): "edit_banded_bob_s1831856039",
+}
 # The headband drawn onto the base itself (no hair over it), so it comes out whole.
 BAND_WITH, BAND_WITHOUT = "edit_band_on_shaved_s1831856038", BASE
+
+
+def slug(label: str) -> str:
+    return label.split(",")[0].lower().replace(" ", "_")
 
 
 def load(stem: str) -> np.ndarray:
@@ -140,9 +151,15 @@ def main() -> None:
     base.save(OUT / "base_body.png")
     hairs = {label: hair_layer(stem, base_arr, bottom) for label, stem in HAIRS.items()}
     for label, im in hairs.items():
-        im.save(OUT / f"hair_{label.split(',')[0].lower().replace(' ', '_')}.png")
+        im.save(OUT / f"hair_{slug(label)}.png")
     band = band_layer(bottom)
     band.save(OUT / "headband.png")
+    # Base + hair + headband, the starting images for the combo edits (scripts/hero_edits.py, banded_<hair>).
+    for label, im in hairs.items():
+        c = base.copy()
+        c.alpha_composite(im)
+        c.alpha_composite(band)
+        c.save(RAW / f"compose_band_{slug(label)}_s1831856038.png")
     combos = {key: combo_layer(stem, bottom) for key, stem in COMBOS.items()}
     for (hair_label, acc), im in combos.items():
         im.save(OUT / f"hair_{hair_label.lower()}__{acc}.png")
@@ -214,7 +231,7 @@ def main() -> None:
 
     # The combo swap: the plain hair, the plain layers with the headband, and the combo sprite (which replaces both).
     rows, titles = [], []
-    for (hair_label, acc), stem in COMBOS.items():
+    for (hair_label, acc), stem in [(k, v) for k, v in COMBOS.items() if k[0] == "Curly"]:
         swapped = base.copy()
         swapped.alpha_composite(combo_layer(stem, bottom))
         rows.append([tile(compose(hairs[hair_label], False), hair_label), tile(compose(hairs[hair_label], True),

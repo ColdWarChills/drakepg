@@ -29,6 +29,12 @@ ANCHORS = {
     "curlyband": ("compose_curly_band_s1831856038", 1831856038),  # base + curly + headband layers (scripts/hair_layers.py)
     "squeezed": ("edit_curly_banded_s1831856048", 1831856048),  # the picked combo: curls squeezed under the headband
 }
+# Base + hair layer + headband composites written by scripts/hair_layers.py, one per hairstyle.
+HAIR_LOOKS = {"messy": "messy dark brown hair", "long": "long dark brown hair tied back in a low ponytail", "undercut": "dark brown undercut hair",
+              "top_knot": "dark brown hair pulled up into a top knot bun", "bob": "straight chin-length dark brown bob "
+              "with a straight fringe"}
+for _slug in HAIR_LOOKS:
+    ANCHORS[f"band_{_slug}"] = (f"compose_band_{_slug}_s1831856038", 1831856038)
 KEEP = ("Keep everything else exactly the same: the same pose, the same cream shirt, brown belt, dark teal trousers and "
         "brown boots, the same colors, the same warm rim light and the same flat graphic poster art style, the same size "
         "and position.")
@@ -88,6 +94,12 @@ EDITS = {
               "top and sides. Keep exactly the same curl style: the same tight dark brown curls, the same golden "
               "highlights and the same small sharp pointed curl tips all along the outline. Keep the same face and body. "
               + KEEP),
+    **{f"banded_{_slug}": (f"{_slug} under the headband", f"band_{_slug}", (
+        f"the red headband is tied around the forehead over the {_look}: the hair is pressed flat under the band and "
+        "fluffs out naturally just above and below it, with a few strands falling over the band's edges. Keep exactly "
+        "the same hairstyle as in <image1> (the same length, shape, color, golden highlights and pointed tips) apart "
+        "from where the band presses it. Keep the headband exactly the same color, shape, size and position, with its "
+        "knot and tails. Keep the same face and body. " + KEEP)) for _slug, _look in HAIR_LOOKS.items()},
     "face_round": ("Round, friendly", "messy", face("a round, friendly face with soft features and a warm smile")),
     "face_sharp": ("Sharp, serious", "messy", face("a lean, sharp face with high cheekbones, narrow eyes and a serious "
                                                    "look")),
