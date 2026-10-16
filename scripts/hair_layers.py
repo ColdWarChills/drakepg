@@ -105,14 +105,26 @@ def strict_red(a: np.ndarray) -> np.ndarray:
     return (a[..., 0] > 120) & (a[..., 1] < 90) & (a[..., 2] < 90) & (a[..., 0] - a[..., 1] > 70) & (a[..., 3] > 128)
 
 
-def combo_layer(stem: str, base: np.ndarray, bottom: int, accessory: Image.Image) -> Image.Image:
+def combo_layer(stem: str, base: np.ndarray, bottom: int, accessory: Image.Image,
+                plain: Image.Image | None = None) -> Image.Image:
     """The hair of an edit that already wears the accessory, minus the accessory and its outline (the accessory's own
     sprite goes on top and covers that spot)."""
     src = load(stem)
     covered = np.asarray(accessory.split()[3].point(lambda v: 255 if v > 200 else 0).filter(ImageFilter.MinFilter(3))) > 0
     m = differs(src, base) & ~strict_red(src) & ~covered
     m[bottom:] = False
-    return layer(src, clean(m, 2500))
+    out = layer(src, clean(m, 2500))
+    if plain is None:
+        return out
+    # Where the edit drew the accessory a little off from its sprite, a thin gap of bare scalp would show between the
+    # two: fill small gaps next to the accessory with the plain hairstyle.
+    hair_a = np.asarray(out.split()[3]) > 128
+    acc_a = np.asarray(accessory.split()[3]) > 128
+    both = Image.fromarray(((hair_a | acc_a) * 255).astype(np.uint8))
+    closed = np.asarray(both.filter(ImageFilter.MaxFilter(17)).filter(ImageFilter.MinFilter(17))) > 127
+    gaps = closed & ~hair_a & ~acc_a & (np.asarray(plain.split()[3]) > 128)
+    fill = Image.fromarray((gaps * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1))
+    return Image.composite(plain, out, fill)
 
 
 def band_layer(bottom: int) -> Image.Image:
@@ -141,7 +153,7 @@ def main() -> None:
     band = band_layer(bottom)
     band.save(OUT / "headband.png")
     accessories = {"headband": band}
-    combos = {key: combo_layer(stem, base_arr, bottom, accessories[key[1]]) for key, stem in COMBOS.items()}
+    combos = {key: combo_layer(stem, base_arr, bottom, accessories[key[1]], hairs[key[0]]) for key, stem in COMBOS.items()}
     for (hair_label, acc), im in combos.items():
         im.save(OUT / f"hair_{hair_label.lower()}__{acc}.png")
 
