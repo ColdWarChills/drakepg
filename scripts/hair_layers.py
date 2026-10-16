@@ -32,8 +32,8 @@ HAIRS = {  # label: raw stem (the picked seed of each hair edit)
 # Combo sprites: a hairstyle redrawn with one accessory (the easter egg: curly hair squeezed under the headband). When
 # both are worn the game draws the combo sprite instead of the hair and the accessory sprites (the accessory is drawn
 # in it), so the edit may move the band a little and let curls overlap it.
-COMBOS = {("Curly", "headband"): "edit_curly_banded_s1831856043"}
-COMBO_CANDIDATES = ["edit_curly_banded_s1831856042", "edit_curly_banded_s1831856043", "edit_curly_banded_s1831856044"]
+COMBOS = {("Curly", "headband"): "edit_curly_banded_s1831856048"}
+COMBO_CANDIDATES = ["edit_curly_banded_s1831856046", "edit_curly_banded_s1831856047", "edit_curly_banded_s1831856048"]
 # The headband drawn onto the base itself (no hair over it), so it comes out whole.
 BAND_WITH, BAND_WITHOUT = "edit_band_on_shaved_s1831856038", BASE
 

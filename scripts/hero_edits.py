@@ -76,11 +76,12 @@ EDITS = {
     "band_on_shaved": ("Headband on the base", "shaved", "add a red cloth headband around the forehead, tied at the "
                        "back of the head with two short loose tails. Keep the same shaved head, face and body. " + KEEP),
     "curly_banded": ("Curly under the headband", "curlyband", "the red headband is tied tightly around the big curly "
-                     "hair, squeezing it into an hourglass shape: a big soft round puff of curls above the band, and "
-                     "full round curls bulging out naturally below it on both sides of the face. The hair keeps the same "
-                     "overall volume. Soft, rounded, bouncy curl outline everywhere, no straight or flat edges, the curls "
-                     "overlapping the band's edges a little. Keep the headband exactly the same color, shape, size and "
-                     "position, with its knot and tails. Keep the same face and body. " + KEEP),
+                     "hair, squeezing it into an hourglass shape: a big puff of curls above the band, and full curls "
+                     "bulging out below it on both sides of the face. The hair keeps the same overall volume. Keep exactly "
+                     "the same curl style as in <image1>: the same tight dark brown curls with the same golden highlights "
+                     "and the same small sharp pointed curl tips sticking out all along the outline; only the overall "
+                     "shape of the hair changes. A few curls overlap the band's edges. Keep the headband exactly the same "
+                     "color, shape, size and position, with its knot and tails. Keep the same face and body. " + KEEP),
     "face_round": ("Round, friendly", "messy", face("a round, friendly face with soft features and a warm smile")),
     "face_sharp": ("Sharp, serious", "messy", face("a lean, sharp face with high cheekbones, narrow eyes and a serious "
                                                    "look")),
