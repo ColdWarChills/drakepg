@@ -92,6 +92,31 @@ DIRECTIONS = {
     },
 }
 
+# Round 2 (2026-10-16): the designer turned down all four characters (PLANS.md, Art). Six low-detail looks from plain
+# Qwen, no LoRA and no reference, tried on the Warrior alone before anything else.
+_LOOK = {"loras": [], "cfg": 1.0, "prefix": "Game character art of "}
+DIRECTIONS.update({
+    "cartoon": {**_LOOK, "name": "Modern cartoon", "style": (
+        "Modern 2D TV-cartoon style: thick even black outlines, flat bright colors with at most one soft shadow, simple "
+        "geometric shapes, slightly big head and hands, very few details.")},
+    "cel": {**_LOOK, "name": "Clean cel shading", "style": (
+        "Clean cel-shaded JRPG character art: crisp thin lineart, flat colors with one hard shadow tone and a small "
+        "highlight, slightly stylized proportions, few details.")},
+    "gouache": {**_LOOK, "name": "Flat gouache", "style": (
+        "Flat gouache illustration: matte opaque paint shapes with a visible dry-brush texture, a limited palette of six "
+        "colors, no outlines, no glossy highlights, no fine detail.")},
+    "chunky": {**_LOOK, "name": "Chunky indie", "style": (
+        "Chunky stylized indie-game character: bold angular shapes, oversized hands and boots, thick dark outlines, flat "
+        "colors with hard-edged dark shadows, a strong silhouette, minimal detail.")},
+    "storylight": {**_LOOK, "name": "Light storybook", "style": (
+        "Light storybook illustration: a thin loose ink outline with very few lines, flat pale watercolor fills, no "
+        "hatching, simple shapes, lots of empty space.")},
+    "papercut": {**_LOOK, "name": "Paper cut-out", "style": (
+        "Paper cut-out style: flat colored paper shapes layered on each other, no outlines, a subtle paper texture, each "
+        "body part one simple separate shape, minimal detail.")},
+})
+LOOKS = ["cartoon", "cel", "gouache", "chunky", "storylight", "papercut"]
+
 HERO_FRAME = ("Full body, standing idle pose, three-quarter view facing right, the whole figure visible from head to "
               "boots with empty margin around it. No shadow on the ground.")
 MONSTER_FRAME = ("Full body, standing idle pose, side view facing right, the whole figure visible with empty margin around it. "
