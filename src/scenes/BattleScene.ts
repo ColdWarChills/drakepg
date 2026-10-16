@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BALANCE, COLORS } from '../config';
+import { BALANCE, COLORS, DESIGN } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENTS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, NEUTRAL_COLORS } from '../data/elements';
 import type { ConsumableDef, DamageType, Element, MonsterDef, SkillDef, StatusDef, ZoneDef } from '../data/types';
@@ -26,6 +26,7 @@ import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { restoreText } from '../ui/itemUi';
 import { addText, floatText } from '../ui/text';
+import { shake, zoomTo } from '../ui/view';
 import { enterScene, goTo, SceneKeys, type BattleSceneData, type ResultSceneData, type RoomSceneData } from './keys';
 
 const GROUND_Y = 500;
@@ -173,7 +174,7 @@ export class BattleScene extends Phaser.Scene {
       this.tweens.add({ targets: glow, alpha: 0.4, duration: 600, delay: 400 });
       this.tweens.add({ targets: glow, scale: 8, duration: 1100, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     }
-    this.enemyFig = drawFigure(this, this.scale.width + 200, GROUND_Y, this.monster.look, -1);
+    this.enemyFig = drawFigure(this, DESIGN.width + 200, GROUND_Y, this.monster.look, -1);
 
     const hudFrom = this.children.list.length;
     this.drawStatus();
@@ -212,7 +213,7 @@ export class BattleScene extends Phaser.Scene {
     fx.dust(this, ENEMY_X, GROUND_Y, 6);
     if (this.monster.boss) {
       sfx.play(this, 'warning');
-      this.cameras.main.shake(400, 0.012);
+      shake(this, 400, 0.012);
       this.cameras.main.flash(250, 120, 0, 0);
       fx.shockwave(this, ENEMY_X, GROUND_Y, 0xff4d4d, 4, 0.3);
       await this.wait(500);
@@ -238,7 +239,7 @@ export class BattleScene extends Phaser.Scene {
     this.playerHp = new Bar(this, 32, 74, 388, 26, COLORS.hp, 'HP ');
     this.playerMp = new Bar(this, 32, 108, 388, 22, COLORS.mp, 'MP ');
 
-    const ex = this.scale.width - 436;
+    const ex = DESIGN.width - 436;
     // Elites get an extra line explaining their affix, shelled bosses one for the shell, monsters with a
     // signature move one for that; every monster has the "Next:" line.
     const affix = m.elite ? db.affix(m.elite.affix) : null;
@@ -517,7 +518,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private drawBottomPanel(): void {
-    const { width, height } = this.scale;
+    const { width, height } = DESIGN;
     const top = 540;
     this.add
       .rectangle(8, top, width - 16, height - top - 8, COLORS.panel, 0.95)
@@ -965,7 +966,7 @@ export class BattleScene extends Phaser.Scene {
       case 'windup': {
         sfx.play(this, 'warning');
         this.pushLog(e.text);
-        this.cameras.main.shake(350, 0.006);
+        shake(this, 350, 0.006);
         floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 260), `${e.move}!`, COLORS.textBad, 34);
         this.chargeAura = this.add.image(ENEMY_X, GROUND_Y - 120, 'fx_soft').setTint(0xff3b3b).setBlendMode('ADD').setScale(8).setAlpha(0.5);
         this.chargeAura.setDepth(-0.5);
@@ -994,14 +995,14 @@ export class BattleScene extends Phaser.Scene {
         const colors = ELEMENT_COLORS[e.element];
         sfx.play(this, 'warning');
         this.cameras.main.flash(350, (colors[1] >> 16) & 0xff, (colors[1] >> 8) & 0xff, colors[1] & 0xff);
-        this.cameras.main.shake(450, 0.012);
+        shake(this, 450, 0.012);
         fx.shockwave(this, ENEMY_X, GROUND_Y, colors[1], 4, 0.4);
         fx.explosion(this, ENEMY_X, GROUND_Y - CHEST, colors);
         fx.elementBurst(this, ENEMY_X, GROUND_Y - CHEST, e.element, 1);
         for (const part of this.enemyFig.list) if (part instanceof Phaser.GameObjects.Image) part.setTint(colors[1]);
         floatText(this, ENEMY_X, this.textY('enemy', GROUND_Y - 290), `${ELEMENT_LABELS[e.element]} form!`, ELEMENT_TEXT[e.element], 40);
         this.pushLog(e.text);
-        this.drawAffinities(this.scale.width - 420, 108);
+        this.drawAffinities(DESIGN.width - 420, 108);
         this.refreshIntent();
         this.refreshWeaponTag();
         await this.wait(1100);
@@ -1045,7 +1046,7 @@ export class BattleScene extends Phaser.Scene {
         fx.healSparkles(this, fig.x, GROUND_Y, 0xffe066);
         await this.tween({ targets: fig, y: GROUND_Y - 60, duration: 160, yoyo: true, ease: 'Quad.easeOut' });
         for (let i = 0; i < 4; i++) this.time.delayedCall(i * 80, () => fx.dust(this, fig.x, GROUND_Y, 3));
-        await this.tween({ targets: fig, x: this.scale.width + 220, duration: 480, ease: 'Cubic.easeIn' });
+        await this.tween({ targets: fig, x: DESIGN.width + 220, duration: 480, ease: 'Cubic.easeIn' });
         break;
       }
       case 'defeated': {
@@ -1069,7 +1070,7 @@ export class BattleScene extends Phaser.Scene {
               fx.explosion(this, bx, by, colors);
               fx.whiteFlash(this, fig, 90);
               sfx.play(this, 'explode');
-              this.cameras.main.shake(160, 0.01);
+              shake(this, 160, 0.01);
               await this.wait(200);
             }
             this.cameras.main.flash(260, 255, 255, 255);
@@ -1078,7 +1079,7 @@ export class BattleScene extends Phaser.Scene {
           fx.deathPoof(this, fig.x, GROUND_Y - 60, m.look.color);
           fx.dissolve(this, fig.x, GROUND_Y, body.width * 0.8, GROUND_Y - body.top, colors);
           sfx.play(this, 'explode');
-          this.cameras.main.shake(200, 0.008);
+          shake(this, 200, 0.008);
           const gold = this.battle.rewards?.gold ?? 0;
           void fx.coinShower(this, { x: fig.x, y: GROUND_Y - 100 }, { x: 60, y: 40 }, Math.ceil(gold / 2), () => sfx.play(this, 'coin'));
           await this.tween({ targets: fig, alpha: 0, scaleY: fig.scaleY * 0.2, duration: 380, ease: 'Cubic.easeIn' });
@@ -1086,7 +1087,7 @@ export class BattleScene extends Phaser.Scene {
           this.pushLog('You collapse...');
           sfx.play(this, 'defeat');
           this.cameras.main.flash(300, 160, 0, 0);
-          this.cameras.main.shake(300, 0.01);
+          shake(this, 300, 0.01);
           await this.tween({ targets: fig, angle: -80, alpha: 0.5, duration: 600, ease: 'Bounce.easeOut' });
         }
         break;
@@ -1196,7 +1197,7 @@ export class BattleScene extends Phaser.Scene {
         this.swing(fig, true);
         onContact();
         fx.dust(this, fig.x, GROUND_Y, 10);
-        this.cameras.main.shake(180, 0.01);
+        shake(this, 180, 0.01);
         if (chain.last) await this.tween({ targets: fig, x: home, angle: 0, duration: 300, ease: 'Quad.easeOut' });
         break;
       }
@@ -1221,7 +1222,7 @@ export class BattleScene extends Phaser.Scene {
         sfx.play(this, 'explode');
         if (style.big) {
           fx.explosion(this, target.x, target.y, style.colors);
-          this.cameras.main.shake(260, 0.012);
+          shake(this, 260, 0.012);
         }
         onContact();
         if (chain.last) await this.tween({ targets: fig, x: home, duration: 200 });
@@ -1282,8 +1283,8 @@ export class BattleScene extends Phaser.Scene {
     if (e.crit) {
       fx.critFlare(this, x, y, palette ? palette[1] : 0xffe08a);
       const cam = this.cameras.main;
-      cam.zoomTo(1.03, 60, 'Quad.easeOut', true, (_c: Phaser.Cameras.Scene2D.Camera, progress: number) => {
-        if (progress === 1) cam.zoomTo(1, 180, 'Quad.easeOut', true);
+      zoomTo(cam, 1.03, 60, 'Quad.easeOut', true, (_c: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+        if (progress === 1) zoomTo(cam, 1, 180, 'Quad.easeOut', true);
       });
     }
     if (guarded && this.shield) {
@@ -1299,7 +1300,7 @@ export class BattleScene extends Phaser.Scene {
     if (e.element && !dull) sfx.play(this, sfx.ELEMENT_SFX[e.element]);
     fx.whiteFlash(this, fig, big ? 140 : 100, 0xffffff, palette && !dull ? palette[1] : undefined);
     fx.hitStop(this, quick ? 35 : e.crit ? 130 : big ? 110 : 60);
-    this.cameras.main.shake(e.crit ? 220 : 140, (guarded || dull ? 0.002 : 0.004) + weight * (quick ? 0.012 : 0.03));
+    shake(this, e.crit ? 220 : 140, (guarded || dull ? 0.002 : 0.004) + weight * (quick ? 0.012 : 0.03));
 
     // Knockback and a recoil tilt, bigger for heavier blows. A new blow cuts the last one's short.
     this.recoil?.stop();

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS, FONT } from '../config';
+import { COLORS, DESIGN, FONT } from '../config';
 import { CLASSES } from '../data/classes';
 import { db } from '../data/db';
 import type { ClassDef, ClassId, WeaponDef } from '../data/types';
@@ -48,7 +48,7 @@ export class CreateScene extends Phaser.Scene {
     this.starting = false;
     // Room scenes capture WASD for movement; let them be typed into the name box here.
     this.input.keyboard?.disableGlobalCapture();
-    const { width, height } = this.scale;
+    const { width, height } = DESIGN;
 
     const sky = this.add.graphics();
     sky.fillGradientStyle(0x2a2856, 0x2a2856, 0x0a0e23, 0x0a0e23, 1);
@@ -80,6 +80,8 @@ export class CreateScene extends Phaser.Scene {
   }
 
   private buildNameInput(x: number, y: number): void {
+    const w = 340;
+    const h = 46;
     const el = document.createElement('input');
     el.type = 'text';
     el.maxLength = MAX_NAME;
@@ -87,8 +89,8 @@ export class CreateScene extends Phaser.Scene {
     el.autocomplete = 'off';
     el.spellcheck = false;
     el.style.cssText = [
-      'width: 340px',
-      'height: 46px',
+      `width: ${w}px`,
+      `height: ${h}px`,
       'box-sizing: border-box',
       `font: 24px ${FONT}`,
       'text-align: center',
@@ -106,7 +108,9 @@ export class CreateScene extends Phaser.Scene {
       if (e.key === 'Enter') this.begin();
     });
     this.nameInput = el;
-    this.add.dom(x, y, el);
+    // Placed by its top-left corner: Phaser scales a DOM element around its CSS origin, so a centered one drifts when
+    // the camera is zoomed (always, on big screens: src/ui/view.ts).
+    this.add.dom(x - w / 2, y - h / 2, el).setOrigin(0);
   }
 
   private randomName(): void {

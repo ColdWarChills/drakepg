@@ -148,7 +148,9 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 ## Art
 
 - **Decided (2026-10-15, art Q&A): run art direction tests before redoing the graphics.**
-  - Why it looks "480p": the game draws at 1280x720 and the canvas is stretched to the screen; backgrounds are stored at 1280x720 and sprites at 480px tall. Target is the designer's **1440p monitor**: render at the screen's real size and keep art at **2x** (2560x1440 backgrounds, ~960px sprites). Frame drops also need finding. Runs in parallel with the art tests.
+  - Why it looked "480p": the game drew at 1280x720 and the canvas was stretched to the screen. **Built 2026-10-15** (`docs/IMPROVEMENTS_2026-10.md`): the canvas is now the screen's real size (2560x1440 on the designer's monitor), and `prepare_art.py` writes **2x** art (`<key>@2x.webp`: 2560x1440 backgrounds, 960px sprites, 640px weapons, 512px icons) that mixes with old 1x files. Frame drops: Sigil item glows (fixed) and ComfyUI sharing the GPU (stop it while playtesting).
+  - Still soft: backgrounds. Their raw images are only 1344x768, so the redo needs backgrounds generated at 1920+ wide (2560x1440 ideal); `qwen_batch.py` makes them 2048 wide, which `prepare_art.py` saves as 2x.
+  - **Open:** re-run `prepare_art.py` on the current raws now? Sprites, weapons, icons and the title art have enough pixels for 2x (backgrounds don't). A bit sharper today, ~2-3x bigger download; the redo replaces them anyway.
   - **4 directions to test:** Flash cartoon, Painterly, HD pixel art, Storybook ink.
   - **Same test set per direction:** battle screen mock (hero vs monster on a room background, HUD on top), the 3 class heroes (bare), a monster trio (cute trash, tough, boss), one exploration room and 4 item icons, plus a cut-out rig test (one hero split into parts, short idle + attack).
   - **Judge by what reads as AI to the designer:** too much detail, inconsistent style between images, nonsense details (melted straps, broken hands, armor that doesn't connect). Glossy is fine.

@@ -57,9 +57,10 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
     // The art shows its own weapon: a Sigil sparkles around the weapon hand (the bare art's first fist).
     const hand = bare?.hands[0];
     if (sigil && bare && hand) {
-      const src = scene.textures.get(bare.art).getSourceImage();
-      const s = Math.min(ART_HEIGHT / src.height, ART_MAX_WIDTH / src.width);
-      c.add(handSparkle(scene, (hand.x - src.width / 2) * s * facing, (hand.y - src.height) * s, sigil));
+      // The bare art's size as drawn (a 2x file reports its 1x size, like the hand anchors).
+      const src = scene.textures.getFrame(bare.art);
+      const s = Math.min(ART_HEIGHT / src.realHeight, ART_MAX_WIDTH / src.realWidth);
+      c.add(handSparkle(scene, (hand.x - src.realWidth / 2) * s * facing, (hand.y - src.realHeight) * s, sigil));
     }
     c.setScale(look.scale);
     return c;

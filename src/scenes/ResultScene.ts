@@ -1,14 +1,15 @@
 import Phaser from 'phaser';
-import { BALANCE, COLORS } from '../config';
+import { BALANCE, COLORS, DESIGN } from '../config';
 import { db } from '../data/db';
 import { isGearDef, SIGIL_NAMES, SIGIL_TIERS, type ItemGrant, type SigilTier } from '../game/Items';
 import { session } from '../game/session';
 import { Button } from '../ui/Button';
 import { drawFigure } from '../ui/figures';
-import { addSigilGlow, drawItemIcon, GRADE_COLORS, gradeInfo, gradeLabel, itemName, SIGIL_COLORS } from '../ui/itemUi';
+import { drawItemIcon, glowIcon, GRADE_COLORS, gradeInfo, gradeLabel, itemName, SIGIL_COLORS } from '../ui/itemUi';
 import * as fx from '../ui/fx';
 import * as sfx from '../ui/sfx';
 import { addText } from '../ui/text';
+import { shake } from '../ui/view';
 import { enterScene, goTo, SceneKeys, type ResultSceneData, type RoomSceneData } from './keys';
 
 /** "Mossling" -> "the Mossling", "The Thornheart" -> "the Thornheart" (for use mid-sentence; capitalize() at the start). */
@@ -31,7 +32,7 @@ export class ResultScene extends Phaser.Scene {
 
   create(data: ResultSceneData): void {
     enterScene(this);
-    const { width, height } = this.scale;
+    const { width, height } = DESIGN;
     const cx = width / 2;
     const player = session.player;
     const won = data.outcome === 'victory';
@@ -92,7 +93,7 @@ export class ResultScene extends Phaser.Scene {
         this.time.delayedCall(1200, () => {
           fx.levelUpBurst(this, hero.x, hero.y);
           sfx.play(this, 'levelup');
-          this.cameras.main.shake(200, 0.006);
+          shake(this, 200, 0.006);
           const extras = [`+${data.levelsGained * BALANCE.statPointsPerLevel} stat points (press C)`, ...data.newSkills.map((n) => `New skill: ${n}`)];
           addText(this, cx + 40, 507 + shift, extras.join('   ·   '), { size: 18, color: COLORS.textMagic, bold: true }).setOrigin(0.5);
           const banner = addText(this, cx + 40, 474 + shift, `LEVEL UP!  Now level ${player.level}`, {
@@ -118,7 +119,7 @@ export class ResultScene extends Phaser.Scene {
 
       this.continueButton('Continue', data.back, 568 + Math.min(shift, 20));
     } else {
-      this.cameras.main.shake(300, 0.006);
+      shake(this, 300, 0.006);
       const lines = [`${capitalize(the(data.monsterName))} got the better of you.`, '', `You wake up in ${db.room(data.wake.roomId).name}, fully rested.`];
       if (data.grit) {
         const max = data.grit >= BALANCE.grit.max ? ' (max)' : '';
@@ -181,7 +182,7 @@ export class ResultScene extends Phaser.Scene {
         card.add(addText(this, 0, 36 + label.height, sub, { size: 13, color: COLORS.textDim }).setOrigin(0.5, 0));
       }
       if (c.isLost) card.add(addText(this, 0, -10, 'Bag full', { size: 13, bold: true, color: COLORS.textBad }).setOrigin(0.5));
-      if (c.info.sigil && !c.isLost) addSigilGlow(this, icon, c.info.sigil, 0.6);
+      if (c.info.sigil && !c.isLost) glowIcon(this, icon, c.info.sigil, 52, 0.6);
       row.add(card);
 
       const windup = r[c.tier];
@@ -201,7 +202,7 @@ export class ResultScene extends Phaser.Scene {
     void fx.chargeUp(this, p.x, p.y, color, ms);
     if (sigil) {
       // Heavier tiers rumble harder as they charge.
-      this.cameras.main.shake(ms, tier === 'eclipse' ? 0.006 : tier === 'dusk' ? 0.004 : 0.002);
+      shake(this, ms, tier === 'eclipse' ? 0.006 : tier === 'dusk' ? 0.004 : 0.002);
       if (ms > 700) this.time.delayedCall(ms / 2, () => sfx.play(this, 'charge'));
     }
   }
@@ -257,8 +258,8 @@ export class ResultScene extends Phaser.Scene {
     }
     const c = Phaser.Display.Color.IntegerToColor(SIGIL_COLORS[best].color);
     this.cameras.main.flash(eclipse ? 600 : 300, c.red, c.green, c.blue);
-    if (eclipse) this.cameras.main.shake(400, 0.008);
-    const banner = addText(this, this.scale.width / 2, 62, `${SIGIL_NAMES[best].toUpperCase()}!`, {
+    if (eclipse) shake(this, 400, 0.008);
+    const banner = addText(this, DESIGN.width / 2, 62, `${SIGIL_NAMES[best].toUpperCase()}!`, {
       size: eclipse ? 46 : 36,
       bold: true,
       color: SIGIL_COLORS[best].css,
@@ -300,7 +301,7 @@ export class ResultScene extends Phaser.Scene {
       gone = true;
       goTo(this, SceneKeys.Room, back);
     };
-    const btn = new Button(this, this.scale.width / 2, y, label, go, { width: 280, height: 64 });
+    const btn = new Button(this, DESIGN.width / 2, y, label, go, { width: 280, height: 64 });
     btn.setAlpha(0);
     this.tweens.add({ targets: btn, alpha: 1, delay: 700, duration: 300 });
     const kb = this.input.keyboard!;

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { COLORS } from '../config';
+import { COLORS, DESIGN } from '../config';
 import { Button } from './Button';
 import { play } from './sfx';
 import { addText } from './text';
@@ -14,7 +14,7 @@ export class Modal extends Phaser.GameObjects.Container {
   readonly panelHeight: number;
 
   constructor(scene: Phaser.Scene, width: number, height: number, title: string, onClose?: () => void) {
-    const { width: sw, height: sh } = scene.scale;
+    const { width: sw, height: sh } = DESIGN;
     super(scene, 0, 0);
     this.panelWidth = width;
     this.panelHeight = height;

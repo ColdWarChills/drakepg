@@ -1,4 +1,5 @@
 import type Phaser from 'phaser';
+import { fitCamera } from '../ui/view';
 import type { ItemGrant } from '../game/Items';
 import type { Rewards } from '../game/Player';
 
@@ -76,6 +77,6 @@ export function enterScene(scene: Phaser.Scene, duration = 250): void {
   scene.tweens.timeScale = 1;
   scene.time.timeScale = 1;
   scene.cameras.main.resetFX();
-  scene.cameras.main.setZoom(1).setRotation(0).setScroll(0, 0);
+  fitCamera(scene.cameras.main);
   scene.cameras.main.fadeIn(duration, 0, 0, 0);
 }

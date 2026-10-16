@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
+import { DESIGN } from '../config';
 import { ELEMENT_COLORS } from '../data/elements';
 import type { Ambient, Element } from '../data/types';
+import { RES, setTextureRes } from './view';
 
 /**
  * Juice: particles, slashes, projectiles, flashes, hit-stop. Textures are drawn in code at boot
@@ -42,22 +44,27 @@ function randomRect(x: number, y: number, w: number, h: number): Phaser.Types.Ga
 
 export function createFxTextures(scene: Phaser.Scene): void {
   if (scene.textures.exists(TEX.soft)) return;
-  const g = scene.add.graphics();
+  // Drawn at the canvas's pixel density (sizes below are design px), so sparks and rings stay crisp when zoomed.
+  const res = Math.ceil(RES);
+  const g = scene.add.graphics().setScale(res);
+  const make = (key: string, w: number, h: number) => {
+    g.generateTexture(key, w * res, h * res);
+    setTextureRes(scene.textures.get(key), res);
+    g.clear();
+  };
 
   // Soft glowing dot.
   for (let r = 16; r > 0; r--) {
     g.fillStyle(0xffffff, 0.12 + (1 - r / 16) * 0.25);
     g.fillCircle(16, 16, r);
   }
-  g.generateTexture(TEX.soft, 32, 32);
-  g.clear();
+  make(TEX.soft, 32, 32);
 
   // Spark: thin diamond.
   g.fillStyle(0xffffff, 1);
   g.fillTriangle(4, 0, 8, 12, 0, 12);
   g.fillTriangle(0, 12, 8, 12, 4, 24);
-  g.generateTexture(TEX.spark, 8, 24);
-  g.clear();
+  make(TEX.spark, 8, 24);
 
   // Four-point star.
   g.fillStyle(0xffffff, 1);
@@ -66,14 +73,12 @@ export function createFxTextures(scene: Phaser.Scene): void {
   g.fillTriangle(0, 12, 12, 9, 12, 15);
   g.fillTriangle(24, 12, 12, 9, 12, 15);
   g.fillCircle(12, 12, 3);
-  g.generateTexture(TEX.star, 24, 24);
-  g.clear();
+  make(TEX.star, 24, 24);
 
   // Leaf.
   g.fillStyle(0xffffff, 1);
   g.fillEllipse(9, 6, 18, 9);
-  g.generateTexture(TEX.leaf, 18, 12);
-  g.clear();
+  make(TEX.leaf, 18, 12);
 
   // Coin.
   g.fillStyle(0x9a6b00, 1);
@@ -82,42 +87,37 @@ export function createFxTextures(scene: Phaser.Scene): void {
   g.fillCircle(10, 10, 8);
   g.fillStyle(0xfff3a0, 1);
   g.fillCircle(7, 7, 3);
-  g.generateTexture(TEX.coin, 20, 20);
-  g.clear();
+  make(TEX.coin, 20, 20);
 
   // Ring for shockwaves.
   g.lineStyle(6, 0xffffff, 1);
   g.strokeCircle(32, 32, 28);
-  g.generateTexture(TEX.ring, 64, 64);
-  g.clear();
+  make(TEX.ring, 64, 64);
 
   // Rock chunk (earth hits), lit from the top left.
   g.fillStyle(0xbbbbbb, 1);
   g.fillPoints([new Phaser.Math.Vector2(3, 6), new Phaser.Math.Vector2(9, 1), new Phaser.Math.Vector2(16, 3), new Phaser.Math.Vector2(19, 11), new Phaser.Math.Vector2(13, 18), new Phaser.Math.Vector2(4, 16)], true);
   g.fillStyle(0xffffff, 1);
   g.fillPoints([new Phaser.Math.Vector2(4, 7), new Phaser.Math.Vector2(9, 3), new Phaser.Math.Vector2(14, 5), new Phaser.Math.Vector2(9, 10)], true);
-  g.generateTexture(TEX.rock, 20, 20);
-  g.clear();
+  make(TEX.rock, 20, 20);
 
   // Plus sign (healing).
   g.fillStyle(0xffffff, 1);
   g.fillRoundedRect(7, 0, 8, 22, 3);
   g.fillRoundedRect(0, 7, 22, 8, 3);
-  g.generateTexture(TEX.plus, 22, 22);
-  g.clear();
+  make(TEX.plus, 22, 22);
 
   // Chevron pointing up (buffs rise, debuffs sink flipped).
   g.fillStyle(0xffffff, 1);
   g.fillPoints([new Phaser.Math.Vector2(0, 14), new Phaser.Math.Vector2(14, 0), new Phaser.Math.Vector2(28, 14), new Phaser.Math.Vector2(28, 22), new Phaser.Math.Vector2(14, 8), new Phaser.Math.Vector2(0, 22)], true);
-  g.generateTexture(TEX.chevron, 28, 22);
-  g.clear();
+  make(TEX.chevron, 28, 22);
 
   // Long thin streak (speed lines, crit rays).
   for (let i = 0; i < 4; i++) {
     g.fillStyle(0xffffff, 0.25 + i * 0.25);
     g.fillEllipse(48, 3, 96 - i * 20, 6 - i);
   }
-  g.generateTexture(TEX.streak, 96, 6);
+  make(TEX.streak, 96, 6);
   g.destroy();
 }
 
@@ -447,7 +447,7 @@ export function levelUpBurst(scene: Phaser.Scene, x: number, y: number): void {
 
 /** Confetti rain over the whole screen. */
 export function confetti(scene: Phaser.Scene): void {
-  const { width } = scene.scale;
+  const { width } = DESIGN;
   burst(scene, width / 2, -20, TEX.leaf, 60, {
     emitZone: randomRect(-width / 2, 0, width, 10),
     speedY: { min: 120, max: 320 },
@@ -978,7 +978,7 @@ export function dissolve(scene: Phaser.Scene, x: number, feetY: number, w: numbe
 
 /** Looping background particles for a room or screen. Returns the emitters. */
 export function ambient(scene: Phaser.Scene, kinds: Ambient[], depth = 50): Emitter[] {
-  const { width, height } = scene.scale;
+  const { width, height } = DESIGN;
   const emitters: Emitter[] = [];
   for (const kind of kinds) {
     let e: Emitter;
@@ -1088,7 +1088,7 @@ export function ambient(scene: Phaser.Scene, kinds: Ambient[], depth = 50): Emit
 
 /** Twinkling star field (title screen). */
 export function starField(scene: Phaser.Scene, count: number, maxY: number): void {
-  const { width } = scene.scale;
+  const { width } = DESIGN;
   for (let i = 0; i < count; i++) {
     const star = scene.add
       .image(Phaser.Math.Between(0, width), Phaser.Math.Between(0, maxY), i % 6 === 0 ? TEX.star : TEX.soft)

@@ -2,6 +2,8 @@ import type { RankId } from './data/types';
 
 export const GAME_WIDTH = 1280;
 export const GAME_HEIGHT = 720;
+/** The design space every scene lays out in (the canvas itself is bigger on big screens, see src/ui/view.ts). */
+export const DESIGN = { width: GAME_WIDTH, height: GAME_HEIGHT } as const;
 
 export const FONT = 'Georgia, "Times New Roman", serif';
 

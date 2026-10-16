@@ -74,12 +74,17 @@ def parse_queue() -> tuple[dict[str, tuple[str, str]], list[str]]:
     return items, pending
 
 
+def art_file(key: str) -> Path:
+    """A key's processed file: `<key>@2x.webp` once it's redone at 2x (scripts/prepare_art.py), else `<key>.webp`."""
+    return next(iter(sorted(ART.glob(f"{key}@*x.webp"), reverse=True)), ART / f"{key}.webp")
+
+
 def bg_refs(key: str) -> list[str]:
     """A room's own fallback backgrounds (src/data/world.ts) that have art: the area it belongs to."""
     for m in re.finditer(r"background:\s*\[([^\]]*)\]", WORLD.read_text(encoding="utf-8")):
         keys = re.findall(r"'([a-z0-9_]+)'", m.group(1))
         if keys and keys[0] == key:
-            found = [k for k in keys[1:] if (ART / f"{k}.webp").exists()]
+            found = [k for k in keys[1:] if art_file(k).exists()]
             if found:
                 return found[:2]
     return DEFAULT_BG_REFS
@@ -133,7 +138,7 @@ def ref_png(key: str) -> bytes:
         white = clean * alpha[..., None] + 255 * (1 - alpha[..., None])
         img = Image.fromarray(white.clip(0, 255).astype(np.uint8), "RGB")
     else:
-        art = Image.open(ART / f"{key}.webp").convert("RGBA")
+        art = Image.open(art_file(key)).convert("RGBA")
         if not key.startswith("bg_"):
             bg = Image.new("RGBA", art.size, (255, 255, 255, 255))
             bg.alpha_composite(art)
@@ -272,7 +277,7 @@ def main() -> None:
     for key in keys:
         aspect, queue_prompt = items[key]
         refs = refs_for(key) if refs_opt is None else [r for r in refs_opt.split(",") if r and r != "none"]
-        missing = [r for r in refs if not (ART / f"{r}.webp").exists()]
+        missing = [r for r in refs if not art_file(r).exists()]
         if missing:
             print(f"{key}: skipped, style reference art missing: {', '.join(missing)}")
             continue

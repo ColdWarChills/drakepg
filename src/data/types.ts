@@ -77,7 +77,7 @@ export interface BareLook {
 
 /** A fist on the bare art that holds the weapon. Weapons are drawn behind the body, so the fist covers the grip. */
 export interface Hand {
-  /** Fist center in the bare art's own pixels (as written by prepare_art.py). */
+  /** Fist center in the bare art's 1x pixels (480px tall as written by prepare_art.py; halve what you measure on a `@2x` file). */
   x: number;
   y: number;
   /** Weapon angle in degrees: 0 = pointing up, 90 = pointing forward. */

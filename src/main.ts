@@ -7,6 +7,7 @@ import { CreateScene } from './scenes/CreateScene';
 import { ResultScene } from './scenes/ResultScene';
 import { TitleScene } from './scenes/TitleScene';
 import { RoomScene } from './scenes/RoomScene';
+import { RES } from './ui/view';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -15,8 +16,9 @@ const game = new Phaser.Game({
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
+    // The real pixel size on this screen; scenes still lay out in GAME_WIDTH x GAME_HEIGHT (src/ui/view.ts).
+    width: Math.round(GAME_WIDTH * RES),
+    height: Math.round(GAME_HEIGHT * RES),
   },
   // Needed for the name box in character creation.
   dom: { createContainer: true },
@@ -24,4 +26,4 @@ const game = new Phaser.Game({
 });
 
 // Handy for poking at state from the browser console during development.
-if (import.meta.env.DEV) Object.assign(window, { game, session });
+if (import.meta.env.DEV) Object.assign(window, { game, session, RES });
