@@ -151,6 +151,19 @@ DIRECTIONS["mix"] = {**_LOOK, "name": "Mobile shapes + storybook", "style": (
     "warm friendly colors, very few details.")}
 FINALISTS = ["mobile2d", "softstory", "mix"]
 
+# Round 4 (2026-10-16): the designer asked about looks inspired by a classic dramatic action manga and a modern dark
+# action webtoon. Traits only: no series, studio or artist is named.
+DIRECTIONS.update({
+    "manga": {**_LOOK, "name": "Dramatic manga", "style": (
+        "Bold 1990s Japanese action manga style: confident thick black ink lines, heavy black shadows with hatching only "
+        "inside the shadows, angular sculpted forms and sharp facial features, a confident dramatic stance with a twist "
+        "of the torso, bold unusual flat colors like teal, magenta and mustard, high contrast, no small details.")},
+    "webtoon": {**_LOOK, "name": "Dark webtoon", "style": (
+        "Modern Korean action webtoon style: sharp clean digital lineart, cool cinematic cel shading with deep "
+        "blue-purple shadows, a faint glowing blue rim light, sleek tall proportions, a calm intense expression, "
+        "minimal detail.")},
+})
+
 HERO_FRAME = ("Full body, standing idle pose, three-quarter view facing right, the whole figure visible from head to "
               "boots with empty margin around it. No shadow on the ground.")
 MONSTER_FRAME = ("Full body, standing idle pose, side view facing right, the whole figure visible with empty margin around it. "
