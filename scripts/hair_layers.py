@@ -26,14 +26,15 @@ HAIRS = {  # label: raw stem (the picked seed of each hair edit)
     "Long, tied": "edit_hair_long_s1831856038",
     "Undercut": "edit_hair_undercut_s1831856038",
     "Curly": "edit_hair_curly_s1831856040",
+    "Puffy": "edit_puffy_s1831856049",  # worked back from the combo (its headband removed), so the two share one curl style
+    "Puffy 2": "edit_puffy_s1831856051",
     "Top knot": "edit_hair_bun_s1831856038",
     "Bob": "edit_hair_bob_s1831856039",
 }
 # Combo sprites: a hairstyle redrawn with one accessory (the easter egg: curly hair squeezed under the headband). When
 # both are worn the game draws the combo sprite instead of the hair and the accessory sprites (the accessory is drawn
 # in it), so the edit may move the band a little and let curls overlap it.
-COMBOS = {("Curly", "headband"): "edit_curly_banded_s1831856048"}
-COMBO_CANDIDATES = ["edit_curly_banded_s1831856046", "edit_curly_banded_s1831856047", "edit_curly_banded_s1831856048"]
+COMBOS = {("Puffy", "headband"): "edit_curly_banded_s1831856048", ("Puffy 2", "headband"): "edit_curly_banded_s1831856048"}
 # The headband drawn onto the base itself (no hair over it), so it comes out whole.
 BAND_WITH, BAND_WITHOUT = "edit_band_on_shaved_s1831856038", BASE
 
@@ -201,16 +202,15 @@ def main() -> None:
     sheet([no_band, with_band], ["Composed from layers: no headband", "Same hair + the headband layer"],
           TESTS / "layers_combos.png")
 
-    # The combo swap: plain layers vs the combo sprite (which replaces the hair and the headband), one per candidate.
+    # The combo swap: the plain hair, the plain layers with the headband, and the combo sprite (which replaces both).
     rows, titles = [], []
-    for (hair_label, acc), _ in COMBOS.items():
-        row = [tile(compose(hairs[hair_label], False), hair_label), tile(compose(hairs[hair_label], True), "Plain layers")]
-        for stem in COMBO_CANDIDATES:
-            swapped = base.copy()
-            swapped.alpha_composite(combo_layer(stem, bottom))
-            row.append(tile(swapped, f"Combo, seed ...{stem[-3:]}"))
-        rows.append(row)
-        titles.append(f"Easter egg: {hair_label} + {acc} swaps in one squeezed-hair sprite (candidates)")
+    for (hair_label, acc), stem in COMBOS.items():
+        swapped = base.copy()
+        swapped.alpha_composite(combo_layer(stem, bottom))
+        rows.append([tile(compose(hairs[hair_label], False), hair_label), tile(compose(hairs[hair_label], True),
+                     "Plain layers"), tile(swapped, "Combo sprite"), tile(hairs[hair_label], f"{hair_label} layer alone",
+                     checker=True)])
+        titles.append(f"Easter egg: {hair_label} + {acc} swaps in the squeezed-hair sprite")
     sheet(rows, titles, TESTS / "layers_easter_egg.png")
     print("art/tests/layers/, art/tests/layers.png, art/tests/layers_combos.png, art/tests/layers_easter_egg.png")
 
