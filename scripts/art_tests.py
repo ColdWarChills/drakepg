@@ -318,6 +318,33 @@ def prompt_for(direction: dict, subject: dict) -> str:
     return f"{RGBA_OPEN} {text} {RGBA_CLOSE}"
 
 
+# Round 8 (2026-10-16): the designer called the hero design itself bad. New Warrior concepts, each built on one clear
+# silhouette and one striking trait; empty fists so the game can still draw the weapon in hand.
+_FISTS = "Both hands are empty fists. No weapon, no shield. " + HERO_FRAME
+WARRIOR_CONCEPTS = {
+    "warrior_bulwark": ("Bulwark", "a broad, top-heavy young warrior with one huge rounded steel pauldron on his left "
+                        "shoulder and a bare right arm with leather wraps, a long red scarf trailing behind him, a small "
+                        "head with cropped hair, a thick belt and heavy boots: a big triangle silhouette. "),
+    "warrior_handmedown": ("Hand-me-down squire", "a scrappy teenage squire in armor that is too big for him: an "
+                           "oversized dented breastplate, one huge mismatched gauntlet, a patched short cape, a bandage "
+                           "on his nose, messy hair and a determined grin. "),
+    "warrior_mercenary": ("Northern sellsword", "a tall rugged young warrior with shaved sides and a long braided "
+                          "topknot, a heavy fur mantle over one shoulder, a sleeveless leather jerkin, wrapped forearms, "
+                          "a scar across one eyebrow and a calm, confident look. "),
+    "warrior_helm": ("Iron helm", "a young warrior whose face is hidden by a tall iron great-helm with a narrow eye slit "
+                     "and a long tattered red plume, a short dark tabard over chain mail, a wide belt and wrapped "
+                     "boots: a tall, narrow silhouette with a mysterious presence. "),
+    "warrior_shieldmaiden": ("Shieldmaiden", "a sturdy young woman warrior with a long thick braid, a short fur-trimmed "
+                             "cape, a riveted leather cuirass, bare strong arms with bronze arm rings and tall boots, a "
+                             "fierce smile. "),
+    "warrior_ronin": ("Wandering blade", "a lean young warrior in a long layered coat with a high collar that hides his "
+                      "mouth, a wide straw-colored traveler's hat, a single light shoulder plate, wrapped legs and "
+                      "sandal-like boots: a sharp, elongated silhouette. "),
+}
+for _key, (_name, _what) in WARRIOR_CONCEPTS.items():
+    SUBJECTS[_key] = {"kind": "sprite", "height": 960, "gen": (1024, 1536), "what": _what + _FISTS, "name": _name}
+
+
 def default_seed(subject_key: str) -> int:
     return zlib.crc32(subject_key.encode()) & 0x7FFFFFFF
 
