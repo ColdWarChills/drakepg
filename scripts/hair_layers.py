@@ -25,16 +25,16 @@ HAIRS = {  # label: raw stem (the picked seed of each hair edit)
     "Messy": "edit_noband_s1831856038",
     "Long, tied": "edit_hair_long_s1831856038",
     "Undercut": "edit_hair_undercut_s1831856038",
-    "Curly": "edit_hair_curly_s1831856040",
-    "Puffy": "edit_puffy_s1831856049",  # worked back from the combo (its headband removed), so the two share one curl style
-    "Puffy 2": "edit_puffy_s1831856051",
+    # Worked back from the combo (its headband removed), so plain and squeezed share one curl style (replaced the first
+    # curly edit, edit_hair_curly_s1831856040).
+    "Curly": "edit_puffy_s1831856049",
     "Top knot": "edit_hair_bun_s1831856038",
     "Bob": "edit_hair_bob_s1831856039",
 }
 # Combo sprites: a hairstyle redrawn with one accessory (the easter egg: curly hair squeezed under the headband). When
 # both are worn the game draws the combo sprite instead of the hair and the accessory sprites (the accessory is drawn
 # in it), so the edit may move the band a little and let curls overlap it.
-COMBOS = {("Puffy", "headband"): "edit_curly_banded_s1831856048", ("Puffy 2", "headband"): "edit_curly_banded_s1831856048"}
+COMBOS = {("Curly", "headband"): "edit_curly_banded_s1831856048"}
 # The headband drawn onto the base itself (no hair over it), so it comes out whole.
 BAND_WITH, BAND_WITHOUT = "edit_band_on_shaved_s1831856038", BASE
 
