@@ -1,6 +1,8 @@
 # Unity port: handoff plan
 
-Started 2026-10-17 (designer: "start making a plan to hand off to Unity: what libraries, assets etc. we need"). Builds on the proposal in `docs/PLANS.md` ("Decisions to keep", Engine). Nothing is built yet.
+Started 2026-10-17 (designer: "start making a plan to hand off to Unity: what libraries, assets etc. we need"). Builds on the proposal in `docs/PLANS.md` ("Decisions to keep", Engine).
+
+**Status:** step 1 done (2026-10-17): the project is in `unity/` (how to open, test and build: `unity/README.md`). Next: step 2, data export.
 
 **Goal:** the same game in Unity 6, built for the browser (WebGL, itch.io) and Windows. Content is written once and shared. Unity becomes the main game once it plays start to finish; until then the Phaser version stays live on GitHub Pages.
 
@@ -23,7 +25,7 @@ The rules already use a seeded random generator (Mulberry32 in `src/game/rng.ts`
 
 | What | Notes |
 |---|---|
-| **Unity 6 LTS** (newest 6000.x LTS in Unity Hub) | This PC has 6000.0.57f1 (no WebGL module), 6000.2.2f1 (has WebGL), 6000.3.0b10 (a beta). Install the newest LTS with the modules below; 6000.2.2f1 works as a fallback today. |
+| **Unity 6000.2.2f1** (used since step 1) | Installed with the Web module. This PC also has 6000.0.57f1 (no Web module) and 6000.3.0b10 (a beta). Move to the newest Unity 6 LTS later, once it's installed with the Web module. |
 | Modules: **Web Build Support**, Windows Build Support | Android later, if ever. |
 | Template: **Universal 2D** (URP with the 2D Renderer) | |
 | IDE: Rider or Visual Studio | Both IDE packages are already in the other Unity projects on this PC. |
@@ -39,7 +41,7 @@ From Unity (free, in the Package Manager):
 | Input System | Keyboard, mouse and touch from one setup; rebindable keys. |
 | UI Toolkit (built in) | Menus and HUD. Its USS styling is close to CSS, so the hand-made UI mocks (`art/ui/*.html`) carry over nearly as written. |
 | TextMeshPro (in uGUI 2.0) | Floating text in the scene: damage numbers, names over NPCs, "Weak!" pops. |
-| 2D Sprite, 2D Animation | Sprites now; cut-out rigs (bones on part sheets, decided in PLANS Art) later. |
+| 2D Sprite, 2D Animation (later) | Sprite Editor and cut-out rigs (bones on part sheets, decided in PLANS Art). Left out for now: Unity couldn't unpack them on this PC (see `unity/README.md`); sprites draw fine without them. |
 | Newtonsoft Json (`com.unity.nuget.newtonsoft-json`) | Reads the exported data (optional fields, dictionaries, unions), which `JsonUtility` can't. Also saves. |
 | Test Framework | EditMode tests: the C# rules against the TypeScript results. |
 | Addressables (later) | Load each chapter's backgrounds when it starts; the art is 23 MB now. Not needed for the first builds. |
@@ -48,7 +50,7 @@ Free third-party, one package:
 
 | Package | Why |
 |---|---|
-| **PrimeTween** (MIT, Asset Store / OpenUPM) | The game uses ~90 tweens (moves, fades, shakes, hit-stops). Fast, no garbage, awaitable. DOTween's free version is the fallback. |
+| **PrimeTween** (1.4.11 from npm) | The game uses ~90 tweens (moves, fades, shakes, hit-stops). Fast, no garbage, awaitable. Its license is free for games, but its source may only be shared as the npm package: never copy it into the repo. DOTween's free version is the fallback. |
 
 Not needed: Cinemachine (fixed single-screen rooms; shakes and zooms are code), VFX Graph (doesn't run in WebGL builds; use the Particle System), UniTask (Unity 6's built-in `Awaitable` covers the async scene code).
 
@@ -104,7 +106,13 @@ While both versions exist, a rule changed in TypeScript has to be changed twice.
 - The browser build needs WebGL 2 (all current browsers). No VFX Graph, no threads.
 - The PNG masters in `art/raw/` stay the source; Unity gets trimmed copies (the masters are 342 MB).
 
-## Open (designer)
+## Decided
 
-- **Build the UI redo in Unity, not Phaser** (Claude's recommendation): the UI is the next big job and would otherwise be built twice. Then the port starts before the UI, and the UI kit is made straight in UI Toolkit.
-- Same repo (`unity/` folder) or its own repo? Default: same repo.
+- **The UI redo is built in Unity, not Phaser** (designer, 2026-10-17). The port goes first; the UI kit is made straight in UI Toolkit.
+- Same repo, `unity/` folder (default, not objected to).
+
+## Step 1 notes (2026-10-17)
+
+- Built from Unity's Universal 2D template, trimmed to the packages above (2D Sprite and 2D Animation left out for now, see `unity/README.md`).
+- Checks passed: batch setup, EditMode tests (the C# Mulberry32 matches `src/game/rng.ts`), an empty WebGL build (15.9 MB, mostly the engine) showing `bg_title` full screen in a browser, and the Unity MCP running the tests from a chat.
+- The Unity MCP only answers once the editor has finished its licence check after opening (a minute or two); until then calls time out.

@@ -1,0 +1,14 @@
+{
+  "name": "Drakepg.Game",
+  "rootNamespace": "Drakepg",
+  "references": ["Drakepg.Rules", "PrimeTween.Runtime", "Unity.InputSystem"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
