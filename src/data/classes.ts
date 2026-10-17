@@ -36,7 +36,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x5b3a1e,
       scale: 1,
       art: HERO_ART,
-      bare: { art: HERO_ART, hands: [{ x: 233, y: 135, angle: 40 }] },
+      bare: { art: HERO_ART, hands: [{ x: 233, y: 134, angle: 10 }] },
     },
   },
   {
@@ -68,7 +68,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x2c1a3a,
       scale: 1,
       art: HERO_ART,
-      bare: { art: HERO_ART, hands: [{ x: 226, y: 136, angle: 6 }] },
+      bare: { art: HERO_ART, hands: [{ x: 231, y: 135, angle: 4 }] },
     },
   },
   {
@@ -103,8 +103,9 @@ export const CLASSES: ClassDef[] = [
       bare: {
         art: HERO_ART,
         hands: [
-          { x: 233, y: 135, angle: 75 },
-          { x: 49, y: 268, angle: -140 },
+          { x: 233, y: 134, angle: 10 },
+          // Reverse grip: blade down and out from the lowered fist.
+          { x: 50, y: 268, angle: -160 },
         ],
       },
     },
