@@ -1,8 +1,10 @@
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Drakepg.EditorTools
 {
@@ -15,6 +17,9 @@ namespace Drakepg.EditorTools
     public static class ProjectSetup
     {
         public const string BootScene = "Assets/Scenes/Boot.unity";
+        /// <summary>Loaded by GameRoot from Resources: the UI panel (1 UI px = 1 screen px; GameRoot scales the 1280x720 design root itself).</summary>
+        public const string PanelSettingsPath = "Assets/Resources/UI/PanelSettings.asset";
+        const string ThemePath = "Assets/Resources/UI/Theme.tss";
         public const float CameraSize = 3.6f;      // half of 720 px at 100 px per unit
         public const float PixelsPerUnit2x = 200f; // @2x art: 2560x1440 backgrounds fill the camera exactly
         static readonly Color Night = new Color32(0x0d, 0x0b, 0x12, 0xff);
@@ -34,7 +39,7 @@ namespace Drakepg.EditorTools
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;
 
-            ImportSprite("Assets/Art/Backgrounds/bg_title.png");
+            CreatePanelSettings();
             CreateBootScene();
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(BootScene, true) };
             AssetDatabase.SaveAssets();
@@ -60,6 +65,29 @@ namespace Drakepg.EditorTools
             importer.SaveAndReimport();
         }
 
+        /// <summary>The UI Toolkit panel and its theme (the default runtime theme: built-in controls and font).</summary>
+        public static void CreatePanelSettings()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(PanelSettingsPath));
+            if (!File.Exists(ThemePath))
+            {
+                File.WriteAllText(ThemePath, "@import url(\"unity-theme://default\");
+");
+                AssetDatabase.ImportAsset(ThemePath);
+            }
+            var theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);
+            var settings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);
+            var create = settings == null;
+            if (create) settings = ScriptableObject.CreateInstance<PanelSettings>();
+            settings.themeStyleSheet = theme;
+            settings.scaleMode = PanelScaleMode.ConstantPixelSize;
+            settings.scale = 1;
+            settings.clearColor = false;
+            settings.sortingOrder = 0;
+            if (create) AssetDatabase.CreateAsset(settings, PanelSettingsPath);
+            else EditorUtility.SetDirty(settings);
+        }
+
         static void CreateBootScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -72,15 +100,8 @@ namespace Drakepg.EditorTools
             camera.backgroundColor = Night;
             cam.transform.position = new Vector3(0, 0, -10);
 
-            var title = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Backgrounds/bg_title.png");
-            if (title != null)
-            {
-                var bg = new GameObject("Background", typeof(SpriteRenderer));
-                bg.GetComponent<SpriteRenderer>().sprite = title;
-                bg.GetComponent<SpriteRenderer>().sortingOrder = -100;
-            }
-
-            new GameObject("Boot", typeof(Boot));
+            // Everything else (data, UI, screens) is made in code by GameRoot.
+            new GameObject("GameRoot", typeof(Boot), typeof(GameRoot));
             EditorSceneManager.SaveScene(scene, BootScene);
         }
 
