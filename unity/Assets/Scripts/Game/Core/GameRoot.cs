@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.IO;
 using System.Threading.Tasks;
 using Drakepg.Rules;
 using UnityEngine;
@@ -41,6 +43,7 @@ namespace Drakepg
         Vector3 cameraHome;
         float shakeTime, shakeAmount;
         bool switching;
+        bool warming = true;
 
         /// <summary>Called by the Boot scene's GameRoot object, or made on the fly.</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -60,6 +63,7 @@ namespace Drakepg
             Application.targetFrameRate = 60;
             if (!Db.Loaded) Db.Load(Resources.Load<TextAsset>("Data/game").text);
             Saves.Init();
+            Fx.CreateTextures();
             SetupCamera();
             SetupUi();
         }
@@ -110,7 +114,12 @@ namespace Drakepg
         /// <summary>Fade out, swap screens, fade in.</summary>
         public async void Go(GameScreen next, float duration = 0.25f)
         {
-            if (switching) return;
+            // Mid-switch (a fade still running): go there right after, so a request is never lost.
+            if (switching)
+            {
+                queued = (next, duration);
+                return;
+            }
             switching = true;
             try
             {
@@ -146,7 +155,15 @@ namespace Drakepg
             {
                 switching = false;
             }
+            if (queued.next != null)
+            {
+                var (n, d) = queued;
+                queued = default;
+                Go(n, d);
+            }
         }
+
+        (GameScreen next, float duration) queued;
 
         Task FadeTo(float to, float duration)
         {
@@ -224,6 +241,10 @@ namespace Drakepg
         void Update()
         {
             var dt = Time.deltaTime;
+            if (warming) warming = Sfx.WarmUpStep();
+#if !UNITY_WEBGL || UNITY_EDITOR
+            if (Keyboard.current != null && Keyboard.current.f12Key.wasPressedThisFrame) Snapshot();
+#endif
             Anim.Tick(dt);
             Layout();
             if (shakeTime > 0)
@@ -259,6 +280,77 @@ namespace Drakepg
             DesignRoot.style.top = (panel.height - Design.Height) / 2;
             DesignRoot.style.scale = new Scale(new Vector3(scale, scale, 1));
             DesignRoot.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+        }
+
+        /// <summary>
+        /// Save the next finished frame (world and UI) as a PNG. F12 saves one to the persistent data folder; tests and
+        /// chats pass a path.
+        /// </summary>
+        public void Snapshot(string path = null)
+        {
+            path ??= Path.Combine(Application.persistentDataPath, $"drakepg-{DateTime.Now:yyyyMMdd-HHmmss}.png");
+            StartCoroutine(TakeSnapshot(path));
+        }
+
+        /// <summary>
+        /// Renders the world and the UI into textures at 1280x720 and lays one over the other (the editor's screen grab
+        /// leaves out UI Toolkit).
+        /// </summary>
+        IEnumerator TakeSnapshot(string path)
+        {
+            const int w = 1280, h = 720;
+            var rtWorld = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            var rtUi = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            var ps = document.panelSettings;
+            var oldClear = ps.clearColor;
+            var oldClearValue = ps.colorClearValue;
+            ps.targetTexture = rtUi;
+            ps.clearColor = true;
+            ps.colorClearValue = Color.clear;
+            Camera.targetTexture = rtWorld;
+            yield return null;
+            yield return new WaitForEndOfFrame();
+            Camera.Render();
+            var world = Read(rtWorld);
+            var ui = Read(rtUi);
+            ps.targetTexture = null;
+            ps.clearColor = oldClear;
+            ps.colorClearValue = oldClearValue;
+            Camera.targetTexture = null;
+            var a = world.GetPixels32();
+            var b = ui.GetPixels32();
+            for (int i = 0; i < a.Length; i++)
+            {
+                // The UI texture holds premultiplied color.
+                var k = 255 - b[i].a;
+                a[i] = new Color32((byte)Mathf.Min(255, b[i].r + a[i].r * k / 255), (byte)Mathf.Min(255, b[i].g + a[i].g * k / 255),
+                    (byte)Mathf.Min(255, b[i].b + a[i].b * k / 255), 255);
+            }
+            world.SetPixels32(a);
+            try
+            {
+                File.WriteAllBytes(path, world.EncodeToPNG());
+                Debug.Log("drakepg: snapshot " + path);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Snapshot failed: " + e.Message);
+            }
+            Destroy(world);
+            Destroy(ui);
+            rtWorld.Release();
+            rtUi.Release();
+        }
+
+        static Texture2D Read(RenderTexture rt)
+        {
+            var prev = RenderTexture.active;
+            RenderTexture.active = rt;
+            var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+            tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            return tex;
         }
 
         /// <summary>The pointer in design pixels (null outside the window).</summary>

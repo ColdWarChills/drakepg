@@ -241,6 +241,7 @@ namespace Drakepg
                 y = data.Y;
             }
             var fig = Figure.Create(World, x, y, P.Look, 1, P.Weapon, P.WeaponSigil);
+            if (P.WeaponSigil != null) Fx.SigilGlow(fig, P.WeaponSigil);
             player = MakeActor<Actor>(fig, x, y, (float)P.Look.Scale);
             playerGear = GearKey();
             if (data.Via == "exit") player.Facing = data.Side == "right" ? -1 : 1;
@@ -601,6 +602,7 @@ namespace Drakepg
             playerGear = key;
             var old = player.Fig;
             player.Fig = Figure.Create(World, player.X, player.Y, P.Look, 1, P.Weapon, P.WeaponSigil);
+            if (P.WeaponSigil != null) Fx.SigilGlow(player.Fig, P.WeaponSigil);
             player.Height = player.Fig.DrawnHeight;
             player.Scale = (float)P.Look.Scale * MapScale;
             UnityEngine.Object.Destroy(old.gameObject);

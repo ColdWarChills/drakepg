@@ -155,6 +155,7 @@ namespace Drakepg
             Backdrop.Draw(World, zone.Background, zone.Backdrop, BgRaise);
             hero = new Fighter { Fig = Figure.Create(World, -200, GroundY, PlayerLook, 1, Session.Player.Weapon, Session.Player.WeaponSigil), X = -200, Base = (float)PlayerLook.Scale };
             hero.ReadWeapons();
+            if (Session.Player.WeaponSigil != null) Fx.SigilGlow(hero.Fig, Session.Player.WeaponSigil);
             if (monster.Elite != null || monster.Lucky)
             {
                 var color = monster.Lucky ? LuckyGlow : EliteGlow;
@@ -194,8 +195,8 @@ namespace Drakepg
             await Task.WhenAll(
                 hero.Track(Anim.Float(-200, PlayerX, 0.52f, v => hero.X = v, Ease.BackOut)).Task,
                 foe.Track(Anim.Float(Design.Width + 200, EnemyX, 0.52f, v => foe.X = v, Ease.BackOut)).Task);
-            Fx.Dust(World, PlayerX, GroundY, 6);
-            Fx.Dust(World, EnemyX, GroundY, 6);
+            Fx.Dust(World, PlayerX, GroundY, 6, Design.Depth(GroundY) + 1);
+            Fx.Dust(World, EnemyX, GroundY, 6, Design.Depth(GroundY) + 1);
             if (monster.Boss)
             {
                 Sfx.Play("warning");
@@ -1058,6 +1059,7 @@ namespace Drakepg
                     hero.Fig = Figure.Create(World, PlayerX, GroundY, PlayerLook, 1, p.Weapon, p.WeaponSigil);
                     hero.Base = (float)PlayerLook.Scale;
                     hero.ReadWeapons();
+                    if (p.WeaponSigil != null) Fx.SigilGlow(hero.Fig, p.WeaponSigil);
                     hero.Sx = 0;
                     hero.Apply();
                     await hero.Track(Anim.Float(0, 1, 0.14f, v => hero.Sx = v, Ease.BackOut)).Task;
@@ -1157,7 +1159,7 @@ namespace Drakepg
                         Sfx.Play("miss");
                         f.Kill();
                         f.Facing = -1;
-                        for (int i = 0; i < 4; i++) Anim.After(i * 0.09f, () => Fx.Dust(World, f.X, GroundY, 3));
+                        for (int i = 0; i < 4; i++) Anim.After(i * 0.09f, () => Fx.Dust(World, f.X, GroundY, 3, Design.Depth(GroundY) + 1));
                         await f.Track(Anim.Float(f.X, -200, 0.52f, v => f.X = v, Ease.CubicIn)).Task;
                     }
                     else
@@ -1166,7 +1168,7 @@ namespace Drakepg
                         f.Facing = -1;
                         await f.Track(Anim.Float(PlayerX, PlayerX - 60, 0.18f, v => f.X = v, Ease.QuadOut)).Task;
                         f.Facing = 1;
-                        Fx.Dust(World, f.X, GroundY, 5);
+                        Fx.Dust(World, f.X, GroundY, 5, Design.Depth(GroundY) + 1);
                         await f.Track(Anim.Float(PlayerX - 60, PlayerX, 0.22f, v => f.X = v, Ease.BackOut)).Task;
                     }
                     break;
@@ -1181,7 +1183,7 @@ namespace Drakepg
                     Fx.HealSparkles(World, f.X, GroundY, 0xffe066);
                     await f.Track(Anim.Float(GroundY, GroundY - 60, 0.16f, v => f.Y = v, Ease.QuadOut, yoyo: true)).Task;
                     f.Y = GroundY;
-                    for (int i = 0; i < 4; i++) Anim.After(i * 0.08f, () => Fx.Dust(World, f.X, GroundY, 3));
+                    for (int i = 0; i < 4; i++) Anim.After(i * 0.08f, () => Fx.Dust(World, f.X, GroundY, 3, Design.Depth(GroundY) + 1));
                     await f.Track(Anim.Float(f.X, Design.Width + 220, 0.48f, v => f.X = v, Ease.CubicIn)).Task;
                     break;
                 }
@@ -1364,7 +1366,7 @@ namespace Drakepg
                     Afterimages(source, 150, trail);
                     Fx.SpeedLines(World, f.X, GroundY, dir, trail);
                     await MoveX(f, reach, 0.15f, Ease.QuadIn, 4 * dir);
-                    Fx.Dust(World, reach, GroundY, 3);
+                    Fx.Dust(World, reach, GroundY, 3, Design.Depth(GroundY) + 1);
                     Sfx.Play("slash");
                     Swing(f);
                     onContact();
@@ -1375,7 +1377,7 @@ namespace Drakepg
                 {
                     // Crouch, leap, crash down.
                     await WindUp(f, dir, 0.13f, true);
-                    Fx.Dust(World, f.X, GroundY, 5);
+                    Fx.Dust(World, f.X, GroundY, 5, Design.Depth(GroundY) + 1);
                     Sfx.Play("whoosh");
                     Afterimages(source, 300, trail);
                     var startX = f.X;
@@ -1390,7 +1392,7 @@ namespace Drakepg
                     Sfx.Play("slash");
                     Swing(f, true);
                     onContact();
-                    Fx.Dust(World, f.X, GroundY, 10);
+                    Fx.Dust(World, f.X, GroundY, 10, Design.Depth(GroundY) + 1);
                     GameRoot.I.Shake(0.18f, 13);
                     if (chain.Last) await MoveX(f, home, 0.3f, Ease.QuadOut, 0);
                     break;
@@ -1530,7 +1532,7 @@ namespace Drakepg
             // An afterimage stays where it stood as it sidesteps.
             Ghost(side, 0x9fd3ff, 0.45f, 300);
             Fx.Slash(World, HomeX(side) - 60 * away, GroundY - Chest, -away, 0xffffff, 0);
-            Fx.Dust(World, HomeX(side), GroundY, 4);
+            Fx.Dust(World, HomeX(side), GroundY, 4, Design.Depth(GroundY) + 1);
             var home = HomeX(side);
             f.Track(Anim.Float(0, 1, 0.12f, t => f.X = home + 60 * away * t, Ease.QuadOut))
                 .OnComplete(() => f.Track(Anim.Float(1, 0, 0.12f, t => f.X = home + 60 * away * t, Ease.QuadOut, 0.12f)));

@@ -35,6 +35,8 @@ namespace Drakepg.EditorTools
             PlayerSettings.defaultWebScreenWidth = 1280;
             PlayerSettings.defaultWebScreenHeight = 720;
             PlayerSettings.runInBackground = true;
+            // Blend like the browser canvas did (and drawn shapes keep their vertex colors as written).
+            PlayerSettings.colorSpace = ColorSpace.Gamma;
             // Gzip with a fallback plays from any static host (itch.io, GitHub Pages, a local server).
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;
@@ -71,8 +73,7 @@ namespace Drakepg.EditorTools
             Directory.CreateDirectory(Path.GetDirectoryName(PanelSettingsPath));
             if (!File.Exists(ThemePath))
             {
-                File.WriteAllText(ThemePath, "@import url(\"unity-theme://default\");
-");
+                File.WriteAllText(ThemePath, "@import url(\"unity-theme://default\");\n");
                 AssetDatabase.ImportAsset(ThemePath);
             }
             var theme = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);

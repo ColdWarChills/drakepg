@@ -257,7 +257,7 @@ namespace Drakepg
             {
                 Sfx.Play(tier == "fine" ? "coin" : "rare");
                 var master = tier == "masterwork";
-                Fx.Burst(World, x, y, "fx_star", master ? 36 : tier == "superior" ? 20 : 10, 60, master ? 320 : 200, master ? 1 : 0.7f, master ? 1000 : 700, ToHex(color), true);
+                Fx.Burst(World, x, y, "fx_star", master ? 36 : tier == "superior" ? 20 : 10, 60, master ? 320 : 200, master ? 1 : 0.7f, master ? 1 : 0.7f, color, true);
                 if (master) GameRoot.I.Flash(0.25f, new Color(1, 230 / 255f, 140 / 255f));
                 return;
             }
@@ -273,7 +273,7 @@ namespace Drakepg
             var color = ToHex(colors.Color);
             var big = tier != "dawn";
             Fx.Shockwave(World, x, y, color, big ? 2.4f : 1.6f, 0.35f);
-            Fx.Burst(World, x, y, "fx_star", eclipse ? 60 : big ? 36 : 24, 80, eclipse ? 420 : 280, big ? 1.1f : 0.8f, eclipse ? 1400 : 1000, color, true);
+            Fx.Burst(World, x, y, "fx_star", eclipse ? 60 : big ? 36 : 24, 80, eclipse ? 420 : 280, big ? 1.1f : 0.8f, eclipse ? 1.4f : 1, colors.Color, true);
             Anim.Float(1, 0.35f, 0.14f, a => text.style.opacity = a, Ease.Linear, repeat: 3, yoyo: true);
             GameRoot.I.Flash(eclipse ? 0.6f : 0.3f, colors.Color);
             if (eclipse) GameRoot.I.Shake(0.4f, 10);

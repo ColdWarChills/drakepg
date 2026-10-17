@@ -220,7 +220,7 @@ namespace Drakepg
 
         void Paint() => style.backgroundColor = !enabled ? Palette.ButtonDisabled : hover ? Palette.ButtonHover : baseColor;
 
-        public UiButton SetEnabled(bool on)
+        public new UiButton SetEnabled(bool on)
         {
             enabled = on;
             label.style.color = on ? Palette.Text : Palette.TextDim;

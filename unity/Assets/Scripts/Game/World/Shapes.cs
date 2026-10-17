@@ -21,15 +21,16 @@ namespace Drakepg
 
         static Material material;
 
-        /// <summary>The pipeline's default sprite material (vertex colored), shared by every shape.</summary>
+        /// <summary>
+        /// Vertex colors, unlit (Resources/Fx/Shape.shader), shared by every shape. Sprite shaders don't work on plain
+        /// meshes: they read the sprite renderer's color, which a mesh renderer leaves at zero.
+        /// </summary>
         public static Material Material
         {
             get
             {
                 if (material != null) return material;
-                var probe = new GameObject("probe").AddComponent<SpriteRenderer>();
-                material = probe.sharedMaterial;
-                Destroy(probe.gameObject);
+                material = new Material(Resources.Load<Shader>("Fx/Shape")) { name = "Shapes" };
                 return material;
             }
         }
