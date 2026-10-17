@@ -32,7 +32,10 @@ PARTS = ROOT / "art" / "tests" / "themes" / "parts"
 # Round-15 pictures that define the look (art/tests is git-ignored, so the picks are copied into art/redo/_style).
 STYLE = REDO / "_style"
 STYLE_SRC = {"hero.png": PARTS / "pick_hero.png", "boar.png": PARTS / "pick_boar.png", "bg.png": PARTS / "pick_bg.png",
-             "hero_full.png": PARTS / "_raw" / "hero_s4243.png"}
+             "hero_full.png": PARTS / "_raw" / "hero_s4243.png",
+             # A redone monster in the look: monsters get two creatures as references (with the hero as one, humanoid
+             # monsters came back with his head).
+             "wolf.png": REDO / "mon_drift_wolf" / "mon_drift_wolf_s4243.png"}
 # The picked base hero: armor outfits are edits of it at its exact canvas size, so prepare_art.py crops them with the
 # same box and the fists stay where `look.bare.hands` says (the picture itself: art/raw/char_hero_bare.png).
 HERO_BASE = RAW / "char_hero_bare.png"
@@ -51,9 +54,22 @@ BG_REF = ("Use <image1> only as an example of the paper-cut style, the palette a
 SPRITE_STYLE = (
     "Drawn in exactly the same art style as <image1> and <image2>: clean thin dark outlines, flat colours with "
     "hard-edged cel shadows, a warm golden rim light, simple readable shapes and minimal interior detail, the same "
-    "line weight, colouring and proportions, as if by the same artist for the same game. Use <image1> and <image2> "
+    "line weight and colouring, as if by the same artist for the same game. Use <image1> and <image2> "
     "only as examples of the art style: draw none of the characters or creatures shown in them."
 )
+# Monsters: one style reference, a sheet of four finished monsters (art/redo/_style/monsters.png). With two single
+# characters as references, monsters came back with the hero's head or a wolf's body.
+MONSTER_STYLE = (
+    "Drawn in exactly the same art style as the creatures in <image1>: clean thin dark outlines, flat colours with "
+    "hard-edged cel shadows, a warm golden rim light, simple readable shapes and minimal interior detail, the same line "
+    "weight and colouring, as if by the same artist for the same game. Use <image1> only as an example of the art "
+    "style: draw none of the creatures shown in it, only the subject described here."
+)
+PLAIN_STYLE = (
+    "Drawn in a clean 2D cartoon style: clean thin dark outlines, flat colours with hard-edged cel shadows, a warm "
+    "golden rim light, simple readable shapes and minimal interior detail."
+)
+MONSTER_REFS = "sheet"  # or "none" (--monster-refs)
 ITEM_STYLE = (
     "Drawn in exactly the same art style as <image1> and <image2>: clean thin dark outlines, flat colours with "
     "hard-edged cel shadows, matte surfaces with no glossy shine, a warm golden rim light, simple readable shapes and "
@@ -66,6 +82,11 @@ ICON_FRAME = ("Centered, seen from the front, the whole item visible and filling
 # Art with no old prompt (designs from docs/ART_PLAN.md and the game data). key: (aspect, subject, pose)
 ROAD_FLOOR = "The bottom 30% of the image is a flat, open dirt road running across the full width."
 NEW = {
+    # Title screen: no dragon (docs/ART_PLAN.md); the upper middle stays calm for the logo.
+    "bg_title": ("16:9", "Title screen scene at dusk: an old road winding through layered green hills toward a small "
+                 "walled market town with glowing windows and red roofs in the valley, misty mountains behind, the first "
+                 "stars and a big pale moon in a warm violet and amber sky, a lone signpost by the road. Keep the "
+                 "upper-middle area calm and uncluttered for a game logo. No characters, no creatures."),
     "bg_old_road": ("16:9", "A quiet old country road between tall green hedgerows and a few crooked trees in the "
                     "morning, wildflowers along the verge, gentle meadows and rolling hills far behind. " + ROAD_FLOOR),
     "bg_road_cart": ("16:9", "A country road between hedgerows in the morning: on the right side of the road a "
@@ -183,6 +204,24 @@ OUTFITS = {
 
 # Old prompts whose subject changes in the redo. key: subject (aspect and pose stay).
 FIXES = {
+    # Monsters whose first tries drifted toward the boar reference, or stood on a patch of ground.
+    "mon_bog_lurker": ("A hulking swamp beast on four legs, part crocodile and part bear: a long flat crocodile snout "
+                       "lined with jagged teeth, bumpy scaled back, a bear's heavy shoulders and broad clawed paws, matted "
+                       "hide dripping dark green moss and mud, glowing teal eyes, reeds stuck to it. Not a pig or a boar: "
+                       "no tusks, no pig nose."),
+    "mon_bogmother": ("A huge, grotesque swamp matriarch boss monster: a massive bloated toad-like body of mud and moss, "
+                      "many small glowing yellow eyes, a wide drooping mouth with hanging roots, tiny frogs and leeches "
+                      "clinging to her sides, a crown of reeds and lily pads, menacing pose. She stands alone: no puddle, "
+                      "no grass, no ground under her."),
+    # Rooms whose first tries put water or lava where the hero walks (the bottom 30%).
+    "bg_shrine_steps": ("Ancient worn stone steps at the left leading down into dark floodwater in the background, broken "
+                        "statues with a coiled serpent carved on them, small offerings of coins on the top step, "
+                        "sideways rain, lightning striking a stone far off. In the foreground the bottom 30% of the image "
+                        "is a flat, dry paved stone terrace running across the full width, no water on it."),
+    "bg_steamvent_caves": ("Inside a warm volcanic cave: dark rock walls and stalactites framing the scene, glowing orange "
+                           "hot pools and steam vents set back in the middle distance, a few red crystals. In the "
+                           "foreground the bottom 30% of the image is a flat floor of solid dark rock running across the "
+                           "full width, no lava or water on it."),
     "icon_storm_scale": ("A single long slate-blue heron crest feather with small yellow lightning sparks crackling along "
                          "it, shown alone as a game inventory icon."),
     # The one old dragon stays in the story (docs/ART_PLAN.md, dragon clean-up): only a dim shape deep in the ice.
@@ -259,10 +298,13 @@ def build(key: str, prompts: dict) -> tuple[str, tuple[int, int], list[str]]:
     w, h = (long_side, long_side * b / a) if a >= b else (long_side * a / b, long_side)
     size = (round(w / 32) * 32, round(h / 32) * 32)
     pose = re.sub(r"\s*facing (right|left)", "", pose or "standing idle pose, three-quarter view")
-    text = (f"{RGBA_OPEN} {subject} {SPRITE_STYLE} Full body, {pose}, facing right, the whole figure visible with "
+    style, refs = SPRITE_STYLE, ["hero.png", "boar.png"]
+    if key.startswith("mon_"):
+        style, refs = (MONSTER_STYLE, ["monsters.png"]) if MONSTER_REFS == "sheet" else (PLAIN_STYLE, [])
+    text = (f"{RGBA_OPEN} {subject} {style} Full body, {pose}, facing right, the whole figure visible with "
             f"empty margin around it. Nothing else in the picture: no ground, no shadow, no background, no text. "
             f"{RGBA_CLOSE}")
-    return text, size, ["hero.png", "boar.png"]
+    return text, size, refs
 
 
 def keys_of(prefix: str, prompts: dict) -> list[str]:
@@ -292,6 +334,8 @@ def generate(keys: list[str], seeds: int, dry: bool) -> None:
     comfy = Comfy("http://127.0.0.1:8188")
     comfy.check()
     uploaded = {name: comfy.upload(f"drakepg_redo_{name}", on_white(STYLE / name)) for name in STYLE_SRC}
+    if (STYLE / "monsters.png").exists():
+        uploaded["monsters.png"] = comfy.upload("drakepg_redo_monsters.png", on_white(STYLE / "monsters.png"))
     if HERO_BASE.exists():
         uploaded["hero_base.png"] = comfy.upload("drakepg_redo_hero_base.png", on_white(HERO_BASE))
     for key in keys:
@@ -390,6 +434,15 @@ def main() -> None:
     if args and args[0] == "pick":
         pick(args[1:])
         return
+    global FIRST_SEED, MONSTER_REFS
+    for flag in ("--first-seed", "--monster-refs"):
+        if flag in args:
+            i = args.index(flag)
+            if flag == "--first-seed":
+                FIRST_SEED = int(args[i + 1])
+            else:
+                MONSTER_REFS = args[i + 1]
+            del args[i:i + 2]
     seeds = 2
     if "--seeds" in args:
         i = args.index("--seeds")
