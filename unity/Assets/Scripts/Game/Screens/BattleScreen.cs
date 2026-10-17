@@ -66,8 +66,14 @@ namespace Drakepg
             public string Label, Sub, Hover;
             public bool Enabled = true;
             public Action Run;
-            /// <summary>Skills and items: a color of their own (stripe, border, tint) so they read apart at a glance.</summary>
+            /// <summary>Skills and items: a color of their own (the paper's tint) so they read apart at a glance.</summary>
             public Color? Accent;
+            /// <summary>An ink icon (Resources/UiIcons), or an item's own art.</summary>
+            public string Icon, ArtIcon;
+            /// <summary>The red button (Attack).</summary>
+            public bool Main;
+            /// <summary>A paper color of its own (Flee's darker card).</summary>
+            public Color? Paper;
         }
 
         /// <summary>A fighter on screen: position, tilt and squash applied to its figure every frame.</summary>
@@ -113,7 +119,7 @@ namespace Drakepg
         ZoneDef zone;
         MonsterDef monster;
         Fighter hero, foe;
-        UiBar playerHp, playerMp, enemyHp;
+        PaperBar playerHp, playerMp, enemyHp;
         Label logText;
         readonly List<string> log = new List<string>();
         VisualElement menu;
@@ -131,7 +137,6 @@ namespace Drakepg
         Anim.Handle recoil;
         int comboHits;
         float enemyTextShift;
-        float enemyX;
         /// <summary>Statuses as shown so far during playback (status id -> turns). The battle itself is already a turn ahead.</summary>
         readonly Dictionary<string, List<KeyValuePair<string, int>>> shown = new Dictionary<string, List<KeyValuePair<string, int>>>
         {
@@ -229,11 +234,13 @@ namespace Drakepg
             }
         }
 
-        // --- Layout ---
+        // --- Layout (the cut-paper kit, Ui/Paper.cs) ---
 
-        static Label RichLine(VisualElement parent, float x, float y, string rich, float size, float ax = 0, float ay = 0.5f, float maxWidth = 388)
+        /// <summary>A line of text on paper: Kalam bold, ink, shrunk to fit `maxWidth`.</summary>
+        static Label PaperLine(VisualElement parent, float x, float y, string rich, float size, Color? color = null, float ax = 0, float ay = 0.5f, float maxWidth = 360)
         {
-            var l = Ui.Text(parent, x, y, rich, size, Palette.Text, true, ax, ay);
+            var l = Ui.Text(parent, x, y, rich, size, color ?? Paper.Ink, false, ax, ay);
+            Fonts.Bold(l);
             FitWidth(l, maxWidth, ax);
             return l;
         }
@@ -250,76 +257,110 @@ namespace Drakepg
             });
         }
 
+        /// <summary>"Wanderer  Lv 3": the name in Almendra with the level in small Kalam after it.</summary>
+        VisualElement NameRow(float x, float y, string name, string level, Color color, float maxWidth)
+        {
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(row, x, y, 0, 0.5f);
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.FlexEnd;
+            var n = new Label(name) { pickingMode = PickingMode.Ignore };
+            n.style.fontSize = 27;
+            n.style.color = color;
+            Fonts.Title(n);
+            NoBox(n);
+            var lv = new Label(level) { pickingMode = PickingMode.Ignore };
+            lv.style.fontSize = 18;
+            lv.style.color = Paper.InkDim;
+            Fonts.Bold(lv);
+            NoBox(lv);
+            lv.style.marginLeft = 10;
+            lv.style.marginBottom = 2;
+            row.Add(n);
+            row.Add(lv);
+            Root.Add(row);
+            FitWidth(row, maxWidth);
+            return row;
+        }
+
+        static void NoBox(Label l)
+        {
+            l.style.marginTop = l.style.marginBottom = l.style.marginLeft = l.style.marginRight = 0;
+            l.style.paddingLeft = l.style.paddingRight = l.style.paddingTop = l.style.paddingBottom = 0;
+        }
+
+        const float EnemyPanelX = 1280 - 14 - 430, LineX = EnemyPanelX + 48, LineStep = 30;
+
+        /// <summary>An info line under the enemy's HP bar: an ink icon, then the text.</summary>
+        Label EnemyLine(ref float y, string icon, string rich, float size = 17, Color? color = null)
+        {
+            if (icon != null) Paper.Icon(Root, EnemyPanelX + 20, y - 12, 24, icon);
+            var l = PaperLine(Root, LineX, y, rich, size, color, maxWidth: 358);
+            y += LineStep;
+            return l;
+        }
+
         void DrawStatus()
         {
             var p = battle.Player;
             var m = monster;
-            StatusPanel(16, 16, 420, 120);
-            Ui.Text(Root, 32, 26, $"{p.Name}  ·  Lv {p.Level}", 22, bold: true);
-            RefreshWeaponTag();
-            playerHp = new UiBar(Root, 32, 74, 388, 26, Palette.Hp, "HP ");
-            playerMp = new UiBar(Root, 32, 108, 388, 22, Palette.Mp, "MP ");
 
-            enemyX = Design.Width - 436;
-            var ex = enemyX;
-            // Elites get an extra line explaining their affix, shelled bosses one for the shell, monsters with a
-            // signature move one for that; every monster has the "Next:" line.
+            // The hero's sheet.
+            Paper.MakeSheet(Root, 14, 16, 420, 122, Paper.Cream, Paper.Kraft, 11, blocksClicks: false);
+            NameRow(36, 44, p.Name, $"Lv {p.Level}", Paper.Ink, 280);
+            RefreshWeaponTag();
+            playerHp = new PaperBar(Root, 36, 84, 376, 26, Paper.Red, "HP ", 21);
+            playerMp = new PaperBar(Root, 36, 114, 376, 20, Paper.Blue, "MP ", 22, 14);
+
+            // The enemy's sheet. Elites get a line for their affix, shelled bosses one for the shell, monsters with a
+            // signature move one for that; every monster has the "Next:" line, and most a loot line.
             var affix = m.Elite != null ? Db.Affix(m.Elite.Affix) : null;
             var heroic = m.IsHeroic && m.Heroic != null ? $"Heroic: {m.Heroic.Text}" : "";
-            var infoLines = (affix != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (heroic != "" ? 1 : 0) + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + 1;
-            var lootY = 136 + infoLines * 28;
-            var panelH = 120 + infoLines * 28 + (m.Loot != null ? 26 : 0);
-            StatusPanel(ex, 16, 420, panelH);
+            var affinities = AffinityText();
+            var lines = (affinities != "" ? 1 : 0) + (affix != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (heroic != "" ? 1 : 0)
+                        + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + 1 + (m.Loot != null ? 1 : 0);
+            var panelH = 100 + lines * LineStep;
+            Paper.MakeSheet(Root, EnemyPanelX, 16, 430, panelH, Paper.Cream, Paper.Kraft, 12, blocksClicks: false);
             // Status names (the highest text, at GroundY - 280) start under the panel and its status chips.
             enemyTextShift = Mathf.Clamp(16 + panelH + 50 - (GroundY - 280), 0, 90);
             // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
-            var tag = m.IsHeroic ? "HEROIC" : m.Boss ? "BOSS" : affix != null ? "ELITE" : m.Lucky ? "LUCKY" : m.Tough ? "TOUGH" : "";
-            var headColor = m.Boss ? Palette.TextBad : affix != null ? Palette.TextGold : m.Lucky ? LuckyText : m.Tough ? ToughText : Palette.Text;
-            var head = Ui.Text(Root, ex + 16, 26, string.Join("  ·  ", new[] { m.Name, $"Lv {m.Level}", tag }.Where(s => s != "")), 22, headColor, true);
-            FitWidth(head, 388);
-            enemyHp = new UiBar(Root, ex + 16, 68, 388, 26, Palette.Hp, "HP ");
-            DrawAffinities(ex + 16, 108);
-            if (affix != null) RichLine(Root, ex + 16, 136, Ui.Colored($"{affix.Name}: {affix.Description}", Palette.TextGold), 15);
-            float lineY = 136 + (affix != null ? 28 : 0);
+            var tag = m.IsHeroic ? "Heroic" : m.Boss ? "Boss" : affix != null ? "Elite" : m.Lucky ? "Lucky" : m.Tough ? "Tough" : "";
+            var headColor = m.Boss ? Paper.InkBad : affix != null ? Paper.InkGold : m.Lucky ? Paper.OnPaper(LuckyText) : m.Tough ? Paper.OnPaper(ToughText) : Paper.Ink;
+            NameRow(EnemyPanelX + 22, 44, m.Name, string.Join("  ·  ", new[] { $"Lv {m.Level}", tag }.Where(s => s != "")), headColor, 386);
+            enemyHp = new PaperBar(Root, EnemyPanelX + 22, 84, 386, 26, Paper.Red, "HP ", 23);
+
+            var y = 124f;
+            if (affinities != "") affinityRow = EnemyLine(ref y, "flame", affinities);
+            if (affix != null) EnemyLine(ref y, "star", $"{affix.Name}: {affix.Description}", 15, Paper.InkGold);
             if (m.Shell != null)
             {
-                shellLine = RichLine(Root, ex + 16, lineY, "", 15);
-                shellLine.style.color = Design.Css("#bfe9ff");
+                shellLine = EnemyLine(ref y, "shield", "", 15, Paper.OnPaper(Design.Css("#bfe9ff")));
                 RefreshShell();
-                lineY += 28;
             }
-            if (m.Trait != null)
-            {
-                RichLine(Root, ex + 16, lineY, m.Trait, 15).style.color = Design.Css("#e8c8ff");
-                lineY += 28;
-            }
-            if (heroic != "")
-            {
-                RichLine(Root, ex + 16, lineY, heroic, 15).style.color = Palette.TextGold;
-                lineY += 28;
-            }
+            if (m.Trait != null) EnemyLine(ref y, "star", m.Trait, 15, Paper.OnPaper(Design.Css("#e8c8ff")));
+            if (heroic != "") EnemyLine(ref y, "star", heroic, 15, Paper.InkGold);
             if (m.EscapeAfter.HasValue && m.EscapeAfter > 0)
             {
-                escapeLine = RichLine(Root, ex + 16, lineY, "", 15);
+                escapeLine = EnemyLine(ref y, "boot", "", 15);
                 RefreshEscape();
-                lineY += 28;
             }
-            intentLine = Ui.Text(Root, ex + 16, lineY, "", 16, bold: true, ay: 0.5f);
+            Paper.Icon(Root, EnemyPanelX + 20, y - 12, 24, "claw");
+            intentLine = PaperLine(Root, LineX, y, "", 17, maxWidth: 358);
             intentLine.style.transformOrigin = new TransformOrigin(0, Length.Percent(50));
-            enrageText = Ui.Text(Root, ex + 404, lineY, "", 15, Palette.TextBad, true, 1, 0.5f);
+            enrageText = PaperLine(Root, EnemyPanelX + 410, y, "", 15, Paper.InkBad, 1, maxWidth: 160);
             RefreshIntent();
+            y += LineStep;
+            if (m.Lucky && m.Loot != null) DrawLuckyLine(LineX, y);
+            else if (m.Loot != null) DrawLootLine(LineX, y, m.Loot);
 
-            if (m.Lucky && m.Loot != null) DrawLuckyLine(ex + 16, lootY);
-            else if (m.Loot != null) DrawLootLine(ex + 16, lootY, m.Loot);
-
-            playerStatusRow = StatusRow(16, 152);
-            enemyStatusRow = StatusRow(ex, 152 + infoLines * 28 + (m.Loot != null ? 26 : 0));
+            playerStatusRow = StatusRow(18, 16 + 122 + 12);
+            enemyStatusRow = StatusRow(EnemyPanelX + 4, 16 + panelH + 12);
         }
 
         VisualElement StatusRow(float x, float y)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(row, x, y - 12);
+            Ui.Place(row, x, y);
             row.style.flexDirection = FlexDirection.Row;
             Root.Add(row);
             return row;
@@ -340,22 +381,22 @@ namespace Drakepg
             var dmg = b.IntentDamage();
             var statuses = (a.Applies ?? new List<Apply>()).Select(x => $"{Db.Status(x.Status).Name}{(x.Chance.HasValue && x.Chance < 1 ? $" {Math.Round(x.Chance.Value * 100)}%" : "")}").ToList();
             string detail;
-            var color = Palette.Text;
+            var color = Paper.Ink;
             if (a.Windup != null && !charging)
             {
                 detail = "winds up a big attack";
-                color = ToughText;
+                color = Paper.OnPaper(ToughText);
             }
             else if (a.Heal.HasValue && a.Heal > 0)
             {
                 detail = $"heals {Math.Round(a.Heal.Value * 100)}% HP";
-                color = Palette.TextMagic;
+                color = Paper.InkMagic;
             }
             else if (dmg == null)
             {
                 var self = (a.Applies ?? new List<Apply>()).All(x => x.Self);
                 detail = statuses.Count > 0 ? $"{(self ? "buffs itself: " : "")}{string.Join(", ", statuses)}" : "prepares";
-                color = Palette.TextMagic;
+                color = Paper.InkMagic;
             }
             else
             {
@@ -363,17 +404,17 @@ namespace Drakepg
                 if (charging)
                 {
                     detail += " · Defend or heal!";
-                    color = Palette.TextBad;
+                    color = Paper.InkBad;
                 }
-                else if (a.Power >= 1.5) color = ToughText;
+                else if (a.Power >= 1.5) color = Paper.OnPaper(ToughText);
             }
-            intentLine.text = $"Next: {a.Name}  {detail}";
+            // The move in ink (or its warning color), the detail a little lighter, like the mock's "Next: Gore ~6 dmg".
+            intentLine.text = $"Next: {a.Name}  {Ui.Colored(detail, color == Paper.Ink ? Paper.InkDim : color)}";
             intentLine.style.color = color;
             var left = b.TurnsToEnrage;
             var warn = Db.B.Enrage.Warn;
             enrageText.text = b.Enrage > 0 ? $"Enraged +{Math.Round(b.Enrage * 100)}%" : left <= warn ? $"Enrages in {left}" : "";
-            var room = 388 - (enrageText.text != "" ? enrageText.text.Length * 8.5f + 10 : 0);
-            intentLine.style.maxWidth = StyleKeyword.None;
+            var room = 358 - (enrageText.text != "" ? enrageText.text.Length * 8.5f + 10 : 0);
             FitOnce(intentLine, room);
         }
 
@@ -400,10 +441,10 @@ namespace Drakepg
             var effect = battle.EffectOn(element);
             var text = "";
             var grit = battle.Grit;
-            if (grit > 0) text += Ui.Colored($"Grit +{Math.Round(grit * 100)}%    ", Palette.TextGold);
-            text += Ui.Colored(element != null ? Db.Data.ElementLabels[element] : "Neutral", element != null ? Palette.ElementText(element) : Palette.TextDim);
-            if (effect != null) text += Ui.Colored($" · {EffectLabels[effect]}", EffectColor(effect));
-            weaponTag = Ui.Text(Root, 420, 30, text, 16, bold: true, ax: 1, ay: 0);
+            if (grit > 0) text += Ui.Colored($"Grit +{Math.Round(grit * 100)}%    ", Paper.InkGold);
+            text += Ui.Colored(element != null ? Db.Data.ElementLabels[element] : "Neutral", element != null ? Paper.OnPaper(Palette.ElementText(element)) : Paper.InkDim);
+            if (effect != null) text += Ui.Colored($" · {EffectLabels[effect]}", effect == "weak" ? Paper.InkGood : Paper.InkBad);
+            weaponTag = PaperLine(Root, 412, 46, text, 15, ax: 1, maxWidth: 200);
         }
 
         /// <summary>"Frost Shell ◆◆◇: 80% less damage. Fire hits crack it."</summary>
@@ -425,15 +466,16 @@ namespace Drakepg
             var left = battle.EscapeIn;
             if (!left.HasValue || escapeLine == null) return;
             escapeLine.text = left <= 1 ? "Runs away on its next turn! A stun holds it." : $"Runs away in {left} turns. A stun holds it.";
-            escapeLine.style.color = left <= 1 ? Palette.TextBad : LuckyText;
+            escapeLine.style.color = left <= 1 ? Paper.InkBad : Paper.OnPaper(LuckyText);
         }
 
         static string Pct1(double v) => $"{Math.Round(v * 1000) / 10}%";
 
-        /// <summary>A hover-able info line: shows `details` in the log box while hovered or pressed.</summary>
+        /// <summary>A hover-able info line (bag icon): shows `details` in the log note while hovered or pressed.</summary>
         void InfoLine(float x, float y, string rich, string details)
         {
-            var line = RichLine(Root, x, y, rich, 14);
+            Paper.Icon(Root, EnemyPanelX + 20, y - 12, 24, "bag");
+            var line = PaperLine(Root, x, y, rich, 15, maxWidth: 358);
             line.pickingMode = PickingMode.Position;
             void Show()
             {
@@ -455,7 +497,7 @@ namespace Drakepg
         void DrawLuckyLine(float x, float y)
         {
             var l = Db.B.Lucky;
-            var rich = Ui.Colored("Loot ", Palette.TextDim) + Ui.Colored($" ✦ Sigil {Pct1(l.SigilChance)} ", Design.Css("#ff9550")) + Ui.Colored($" ·  Gold x{l.Gold} ", Palette.TextGold);
+            var rich = Ui.Colored("Loot ", Paper.InkDim) + Ui.Colored($" ✦ Sigil {Pct1(l.SigilChance)} ", Paper.OnPaper(Design.Css("#ff9550"))) + Ui.Colored($" ·  Gold x{l.Gold} ", Paper.InkGold);
             var tiers = string.Join(", ", Items.SigilTiers.Select(t => $"{Items.SigilNames[t]} {Pct1(l.SigilTiers[t])}"));
             var details = string.Join("\n", $"{Pct1(l.SigilChance)}: a Sigil piece of this area's gear (no normal gear drops).", $"Which Sigil: {tiers}.",
                 $"Always: about {l.Gold}x the gold of the monsters here.");
@@ -472,17 +514,17 @@ namespace Drakepg
             var luck = Loot.PityBonus(misses);
             string Pct(double v) => v >= 0.1 ? $"{Math.Round(v * 100)}%" : $"{(v * 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)}%";
             var label = new Dictionary<string, string> { ["rare"] = "Rare", ["uncommon"] = "Uncommon", ["common"] = "Common" };
-            var color = new Dictionary<string, Color> { ["rare"] = Design.Css("#ffd34d"), ["uncommon"] = Design.Css("#7ddc7d"), ["common"] = Palette.Text };
-            var rich = Ui.Colored("Gear ", Palette.TextDim);
+            var color = new Dictionary<string, Color> { ["rare"] = Paper.InkGold, ["uncommon"] = Paper.InkGood, ["common"] = Paper.Ink };
+            var rich = Ui.Colored("Gear ", Paper.InkDim);
             foreach (var t in Loot.Tiers)
                 if (odds[t] > 0) rich += Ui.Colored($" {label[t]} {Pct(odds[t])}{(t == "rare" && luck > 0 ? " (luck)" : "")} ", color[t]);
             // Elites and bosses: a chance at a piece of the area's set on top.
             var table = Db.LootTable(tableId);
             var setChance = table.Set != null && (source == "elite" || source == "boss") ? Cheats.Boosted(Db.B.SetDrop[source]) : 0;
-            if (setChance > 0) rich += Ui.Colored($" · Set {Pct(setChance)} ", SetText);
+            if (setChance > 0) rich += Ui.Colored($" · Set {Pct(setChance)} ", Paper.OnPaper(SetText));
             // Guild gather hunts: this area's hunt item, on top of everything else.
             var gather = Guild.GatherHere(battle.Player, zone.Id);
-            foreach (var g in gather) rich += Ui.Colored($" · {Db.Item(g.hunt.ItemId).Name} {Pct(g.chance)} ", Palette.TextGood);
+            foreach (var g in gather) rich += Ui.Colored($" · {Db.Item(g.hunt.ItemId).Name} {Pct(g.chance)} ", Paper.InkGood);
 
             string Names(string t) => string.Join(", ", table.Tiers[t].Select(e => Db.Item(e.ItemId).Name));
             var pityText = luck > 0
@@ -495,8 +537,8 @@ namespace Drakepg
             InfoLine(x, y, rich, string.Join("\n", lines));
         }
 
-        /// <summary>"Earth · Weak: Fire Wind Blunt · Resists: Earth Water", each element in its color.</summary>
-        void DrawAffinities(float x, float y)
+        /// <summary>"Earth · Weak: Fire Wind Blunt · Resists: Earth Water", each element in its color ("" if none).</summary>
+        string AffinityText()
         {
             var m = monster;
             var resists = m.Resists ?? new Dictionary<string, double>();
@@ -508,32 +550,35 @@ namespace Drakepg
             var strong = elements.Where(e => R(e) + all >= 25 && R(e) > 0 && R(e) + all <= 100).ToList();
             var absorbs = elements.Where(e => R(e) + all > 100).ToList();
             var parts = new List<string>();
-            if (m.Element != null) parts.Add(Ui.Colored(Db.Data.ElementLabels[m.Element], Palette.ElementText(m.Element)));
+            Color El(string e) => Paper.OnPaper(Palette.ElementText(e));
+            if (m.Element != null) parts.Add(Ui.Colored(Db.Data.ElementLabels[m.Element], El(m.Element)));
             void Group(string label, List<string> list)
             {
                 if (list.Count == 0) return;
-                parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}{label}", Palette.TextDim));
-                foreach (var e in list) parts.Add(Ui.Colored($" {Db.Data.ElementLabels[e]}", Palette.ElementText(e)));
+                parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}{label}", Paper.InkDim));
+                foreach (var e in list) parts.Add(Ui.Colored($" {Db.Data.ElementLabels[e]}", El(e)));
             }
             Group("Weak:", weak);
             // Weak spots besides elements: Blunt skills and Poison.
             var spots = new List<(string label, Color color)>();
-            if (m.WeakTo?.Blunt > 0) spots.Add(("Blunt", Design.Css("#d9c9a8")));
-            if (m.WeakTo?.Poison > 0) spots.Add(("Poison", Design.Css("#8fe36b")));
+            if (m.WeakTo?.Blunt > 0) spots.Add(("Blunt", Paper.Kraft2));
+            if (m.WeakTo?.Poison > 0) spots.Add(("Poison", Paper.OnPaper(Design.Css("#8fe36b"))));
             if (spots.Count > 0)
             {
-                if (weak.Count == 0) parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}Weak:", Palette.TextDim));
+                if (weak.Count == 0) parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}Weak:", Paper.InkDim));
                 foreach (var s in spots) parts.Add(Ui.Colored($" {s.label}", s.color));
             }
             Group("Resists:", strong);
             Group("Absorbs:", absorbs);
-            if (all != 0) parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}All {(all > 0 ? "+" : "")}{JsMath.Str(all)}", Palette.TextGold));
-            affinityRow?.RemoveFromHierarchy();
-            affinityRow = RichLine(Root, x, y, string.Join("", parts), 15);
+            if (all != 0) parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}All {(all > 0 ? "+" : "")}{JsMath.Str(all)}", Paper.InkGold));
+            return string.Join("", parts);
         }
 
-        void StatusPanel(float x, float y, float w, float h) =>
-            Ui.Rect(Root, x, y, w, h, new Color(Palette.Panel.r, Palette.Panel.g, Palette.Panel.b, 0.9f), 10, 2, Palette.PanelBorder);
+        /// <summary>The affinity line after a boss changes form.</summary>
+        void DrawAffinities()
+        {
+            if (affinityRow != null) affinityRow.text = AffinityText();
+        }
 
         /// <summary>Catch the chips up with the battle (after a turn has finished playing).</summary>
         void SyncStatuses()
@@ -551,7 +596,7 @@ namespace Drakepg
             else list.Add(new KeyValuePair<string, int>(id, turns));
         }
 
-        /// <summary>Chips under each status panel: "Burn 2", "War Cry 3".</summary>
+        /// <summary>Chips under each sheet: "Burn 2", "War Cry 3", on rose (harmful) or sage (helpful) paper.</summary>
         void RefreshStatuses()
         {
             foreach (var side in new[] { "player", "enemy" })
@@ -564,27 +609,30 @@ namespace Drakepg
                     var def = Db.Status(kv.Key);
                     var chip = new Label($"{def.Name} {kv.Value}") { pickingMode = PickingMode.Ignore };
                     chip.style.fontSize = 14;
-                    chip.style.unityFontStyleAndWeight = FontStyle.Bold;
-                    chip.style.color = Design.Css(def.Harmful ? "#ffd0cc" : "#d4ffd8");
-                    chip.style.backgroundColor = def.Harmful ? Design.Hex(0x6e1f1f, 0.9f) : Design.Hex(0x1f5a2c, 0.9f);
+                    Fonts.Bold(chip);
+                    chip.style.color = def.Harmful ? Paper.InkBad : Paper.InkGood;
+                    chip.style.backgroundColor = def.Harmful ? Design.Hex(0xf0cdbf) : Design.Hex(0xd6e6c0);
                     chip.style.height = 24;
-                    chip.style.paddingLeft = chip.style.paddingRight = 8;
+                    chip.style.paddingLeft = chip.style.paddingRight = 9;
                     chip.style.paddingTop = chip.style.paddingBottom = 0;
                     chip.style.marginLeft = chip.style.marginTop = chip.style.marginBottom = 0;
                     chip.style.marginRight = 6;
                     chip.style.unityTextAlign = TextAnchor.MiddleCenter;
-                    Ui.Round(chip, 8);
+                    Ui.Round(chip, 6);
+                    Ui.Border(chip, 2, Paper.Ink);
                     row.Add(chip);
                 }
             }
         }
 
+        /// <summary>The bottom: a strip of kraft card with a torn top edge, the log pinned on it as a note.</summary>
         void DrawBottomPanel()
         {
-            const float top = 540;
-            Ui.Rect(Root, 8, top, Design.Width - 16, Design.Height - top - 8, new Color(Palette.Panel.r, Palette.Panel.g, Palette.Panel.b, 0.95f), 12, 3, Palette.PanelBorder);
-            logText = Ui.Text(Root, 30, top + 18, "", 19, wrap: 590);
-            logText.style.unityParagraphSpacing = 6;
+            Paper.MakeSheet(Root, -10, 540, Design.Width + 20, 200, Paper.Kraft, Paper.KraftDark, 13, torn: true);
+            var note = Paper.MakeSheet(Root, 22, 562, 590, 140, Paper.Cream, Paper.Kraft2, 14, rotate: -0.6f, blocksClicks: false);
+            logText = Ui.Text(note.Content, 26, 16, "", 19, Paper.Ink, wrap: 540);
+            Fonts.Body(logText);
+            logText.style.unityParagraphSpacing = 2;
             menu = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(menu, 0, 0);
             Root.Add(menu);
@@ -619,10 +667,11 @@ namespace Drakepg
             var effect = battle.SkillEffect(skill);
             var sub = cd > 0 ? $"Ready in {cd}" : $"{fresh}{JsMath.Str(skill.MpCost)} MP{(kind != null ? $" · {kind}" : "")}{(effect != null ? $" · {EffectLabels[effect]}" : "")}";
             var cdText = skill.Cooldown > 0 ? $" Cooldown {skill.Cooldown}." : "";
+            var icon = skill.Kind == "heal" ? "cross" : skill.Kind == "buff" ? "rise" : skill.DamageType == "magic" ? "spark" : skill.DamageType == "pierce" ? "arrow" : "sword";
             return new MenuButton
             {
                 Label = skill.Name, Sub = sub, Enabled = battle.CanUseSkill(skill.Id), Hover = $"{skill.Name}: {skill.Description}{cdText}",
-                Run = () => Act(() => battle.UseSkill(skill.Id)), Accent = SkillColor(skill),
+                Run = () => Act(() => battle.UseSkill(skill.Id)), Accent = SkillColor(skill), Icon = icon,
             };
         }
 
@@ -647,7 +696,11 @@ namespace Drakepg
             var spare = p.SpareWeapon;
             var range = p.SpareAttackRange;
             if (p.Data.Equipment["spare"] == null || range == null)
-                return new MenuButton { Label = "Swap", Sub = "No spare", Enabled = false, Hover = "Swap: put a second weapon in the Spare slot (Inventory) to switch to it mid-fight.", Run = () => { } };
+                return new MenuButton
+                {
+                    Label = "Swap", Sub = "No spare", Enabled = false, Icon = "swap",
+                    Hover = "Swap: put a second weapon in the Spare slot (Inventory) to switch to it mid-fight.", Run = () => { },
+                };
             var element = spare?.Element;
             var effect = battle.EffectOn(element);
             var elName = element != null ? Db.Data.ElementLabels[element] : "Neutral";
@@ -655,7 +708,7 @@ namespace Drakepg
             var type = Db.Data.DamageTypeLabels[spare?.DamageType ?? "melee"];
             return new MenuButton
             {
-                Label = "Swap", Sub = $"{elName}{(effect != null ? $" · {EffectLabels[effect]}" : "")}", Enabled = battle.CanSwapWeapon,
+                Label = "Swap", Sub = $"{elName}{(effect != null ? $" · {EffectLabels[effect]}" : "")}", Enabled = battle.CanSwapWeapon, Icon = "swap",
                 Hover = $"Swap to your {name} ({JsMath.Str(range[0])}-{JsMath.Str(range[1])} {type}, {elName}{(effect != null ? $", {EffectLabels[effect]}" : "")}). Costs your turn.",
                 Run = () => Act(() => battle.SwapWeapon()),
             };
@@ -670,14 +723,14 @@ namespace Drakepg
             if (which == "main")
             {
                 var fresh = p.CarriedSkills.Count(sk => p.Data.FreshSkills.Contains(sk.Id));
-                buttons.Add(new MenuButton { Label = "Attack", Run = () => Act(() => battle.Attack()) });
-                buttons.Add(new MenuButton { Label = "Skills", Sub = fresh > 0 ? $"{fresh} NEW" : null, Run = () => ShowMenu("skills") });
-                buttons.Add(new MenuButton { Label = "Items", Run = () => ShowMenu("items") });
-                buttons.Add(new MenuButton { Label = "Defend", Sub = "-60% dmg, +MP", Run = () => Act(() => battle.Defend()) });
+                buttons.Add(new MenuButton { Label = "Attack", Icon = "sword", Main = true, Run = () => Act(() => battle.Attack()) });
+                buttons.Add(new MenuButton { Label = "Skills", Icon = "book", Sub = fresh > 0 ? $"{fresh} NEW" : null, Run = () => ShowMenu("skills") });
+                buttons.Add(new MenuButton { Label = "Items", Icon = "bag", Run = () => ShowMenu("items") });
+                buttons.Add(new MenuButton { Label = "Defend", Icon = "shield", Sub = "-60% dmg, +MP", Run = () => Act(() => battle.Defend()) });
                 buttons.Add(new MenuButton
                 {
-                    Label = "Flee", Sub = battle.CanFlee ? $"{Math.Round(battle.FleeChance * 100)}%" : "Boss", Enabled = battle.CanFlee,
-                    Run = () => Act(() => battle.Flee()),
+                    Label = "Flee", Icon = "boot", Sub = battle.CanFlee ? $"{Math.Round(battle.FleeChance * 100)}%" : "Boss", Enabled = battle.CanFlee,
+                    Paper = Paper.Cream2, Run = () => Act(() => battle.Flee()),
                 });
                 if (Features.On(p, "weapon_swap") || p.Data.Equipment["spare"] != null) buttons.Add(SwapButton());
             }
@@ -692,7 +745,7 @@ namespace Drakepg
                     buttons.AddRange(skills.Skip(skillPage * SkillsPerPage).Take(SkillsPerPage).Select(SkillButton));
                     buttons.Add(new MenuButton
                     {
-                        Label = "More", Sub = $"{skillPage + 1} / {pages}",
+                        Label = "More", Icon = "more", Sub = $"{skillPage + 1} / {pages}",
                         Run = () =>
                         {
                             skillPage += 1;
@@ -700,7 +753,7 @@ namespace Drakepg
                         },
                     });
                 }
-                buttons.Add(new MenuButton { Label = "Back", Run = () => ShowMenu("main") });
+                buttons.Add(new MenuButton { Label = "Back", Icon = "back", Run = () => ShowMenu("main") });
             }
             else
             {
@@ -710,7 +763,7 @@ namespace Drakepg
                     var item = Db.Item(entry.ItemId);
                     buttons.Add(new MenuButton
                     {
-                        Label = item.Name, Sub = $"x{entry.Qty}", Hover = $"{item.Name}: {item.Description}",
+                        Label = item.Name, Sub = $"x{entry.Qty}", Hover = $"{item.Name}: {item.Description}", Icon = "potion", ArtIcon = "icon_" + item.Id,
                         Accent = item.IconColor.HasValue ? Design.Hex(item.IconColor.Value) : (Color?)null,
                         Run = () =>
                         {
@@ -720,31 +773,32 @@ namespace Drakepg
                     });
                 }
                 if (usable.Count == 0) PushLog("You have no usable items.");
-                buttons.Add(new MenuButton { Label = "Back", Run = () => ShowMenu("main") });
+                buttons.Add(new MenuButton { Label = "Back", Icon = "back", Run = () => ShowMenu("main") });
             }
 
-            // 3 x 2 grid on the right side of the bottom panel. Number keys 1-6 work too.
+            // 3 x 2 paper buttons on the kraft board, each tilted a little. Number keys 1-6 work too.
             menuButtons = buttons;
             const int cols = 3;
-            const float bw = 196, bh = 66;
+            const float bw = 196, bh = 64;
+            float[] tilt = { -1f, 0.7f, -0.4f, 0.5f, -0.8f, 0.3f };
             for (int i = 0; i < buttons.Count; i++)
             {
                 var b = buttons[i];
-                var x = 650 + i % cols * (bw + 10) + bw / 2;
-                var y = 590 + i / cols * (bh + 10);
-                var tint = b.Accent.HasValue ? Color.Lerp(Palette.Button, b.Accent.Value, 0.22f) : Palette.Button;
-                var btn = new UiButton(menu, x, y, b.Label, () => b.Run(), bw, bh, b.Label.Length > 13 ? 17 : 20, b.Sub, tint);
-                if (b.Accent is Color accent)
+                var x = 640 + i % cols * 210 + bw / 2;
+                var y = 566 + i / cols * 74 + bh / 2;
+                var face = b.Main ? Paper.Red : b.Paper ?? (b.Accent is Color accent ? Color.Lerp(Paper.Cream, accent, 0.32f) : Paper.Cream);
+                var size = b.Label.Length > 12 ? 19 : 23;
+                var btn = new PaperButton(menu, x, y, b.Label, () => b.Run(), bw, bh, b.Sub, b.Icon, face, 31 + i, tilt[i % tilt.Length], $"{i + 1}", size);
+                if (b.ArtIcon != null && Art.Has(b.ArtIcon))
                 {
-                    Ui.Border(btn, 2, Color.Lerp(Palette.PanelBorder, accent, 0.7f));
-                    // A colored bar down the left edge, like a tab.
-                    var bar = Ui.Rect(btn, 8, 10, 6, bh - 24, accent, 3);
-                    bar.style.position = Position.Absolute;
-                    if (!b.Enabled) bar.style.opacity = 0.4f;
-                    // Center the texts in the room right of the bar; long lines ("10 MP · Energy · Weak!") get smaller.
-                    btn.style.paddingLeft = 14;
+                    // An item's own picture instead of the generic potion.
+                    var ic = btn.Q("icon " + b.Icon);
+                    if (ic != null) ic.style.backgroundImage = new StyleBackground(Art.Get(b.ArtIcon));
+                }
+                if ((b.Sub?.Length ?? 0) > 20)
+                {
                     var texts = btn.Query<Label>().ToList();
-                    if (texts.Count > 1 && (b.Sub?.Length ?? 0) > 17) texts[1].style.fontSize = 13;
+                    if (texts.Count > 1) texts[1].style.fontSize = 12;
                 }
                 if (!b.Enabled) btn.SetEnabled(false);
                 if (b.Hover != null)
@@ -752,13 +806,13 @@ namespace Drakepg
                     btn.RegisterCallback<PointerEnterEvent>(_ => logText.text = b.Hover);
                     btn.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
                 }
-                Ui.Text(btn, b.Accent.HasValue ? 20 : 10, 6, $"{i + 1}", 13, Palette.TextDim).style.position = Position.Absolute;
+                var enabled = b.Enabled;
                 btn.style.opacity = 0;
-                btn.style.scale = new Scale(Vector3.one * 0.8f);
-                Anim.Float(0.8f, 1, 0.18f, s =>
+                Anim.Float(0, 1, 0.18f, t =>
                 {
+                    var s = Mathf.LerpUnclamped(0.85f, 1, t);
                     btn.style.scale = new Scale(new Vector3(s, s, 1));
-                    btn.style.opacity = Mathf.InverseLerp(0.8f, 1, Mathf.Min(1, s));
+                    btn.style.opacity = Mathf.Clamp01(t) * (enabled ? 1 : 0.55f);
                 }, Ease.BackOut, i * 0.03f);
             }
         }
@@ -1163,7 +1217,7 @@ namespace Drakepg
                     foe.Fig.SetTint(Design.Hex(colors[1]));
                     Float(EnemyX, TextY("enemy", GroundY - 290), $"{Db.Data.ElementLabels[e.Element]} form!", Palette.ElementText(e.Element), 40);
                     PushLog(e.Text);
-                    DrawAffinities(Design.Width - 420, 108);
+                    DrawAffinities();
                     RefreshIntent();
                     RefreshWeaponTag();
                     await Anim.Wait(1.1f);
