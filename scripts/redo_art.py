@@ -228,6 +228,9 @@ OUTFITS = {
 
 # Old prompts whose subject changes in the redo. key: subject (aspect and pose stay).
 FIXES = {
+    "wpn_snowmaw_cleaver": ("A single huge, heavy two-handed cleaver: a very wide, broad curved blade of white ice-hard "
+                            "tusk, as wide as a shovel, bound to a thick wooden handle with fur and rope, shown alone as "
+                            "a game item."),
     "wpn_sparkfang": "A single curved dagger made from a crackling yellow spur on a copper hilt, tiny sparks at the tip, "
                      "shown alone as a game item.",
     # Monsters whose first tries drifted toward the boar reference, or stood on a patch of ground.
