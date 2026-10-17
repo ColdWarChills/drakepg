@@ -23,7 +23,7 @@ export const MATERIALS: MaterialDef[] = [
   { id: 'moss_clump', type: 'material', name: 'Moss Clump', description: 'Springy, damp and oddly tough.', price: 3, iconColor: 0x5e9c4a },
   { id: 'boar_tusk', type: 'material', name: 'Boar Tusk', description: 'Hard as bone and twice as sharp.', price: 6, iconColor: 0xe8dcc0 },
   { id: 'fen_hide', type: 'material', name: 'Fen Hide', description: 'Slick, waterproof hide from the Mirewater Fen.', price: 10, iconColor: 0x4a6b4a },
-  { id: 'storm_scale', type: 'material', name: 'Storm Scale', description: 'A drakeling scale that still crackles.', price: 14, iconColor: 0x7ab8ff },
+  { id: 'storm_scale', type: 'material', name: 'Storm Feather', description: 'A heron crest feather that still crackles.', price: 14, iconColor: 0x7ab8ff },
   { id: 'frost_pelt', type: 'material', name: 'Frost Pelt', description: 'Thick white wolf fur, stiff with ice.', price: 16, iconColor: 0xeceff1 },
   { id: 'ram_horn', type: 'material', name: 'Ram Horn', description: 'A curled horn, scarred from a hundred head-butts.', price: 16, iconColor: 0xbcaaa4 },
   { id: 'rime_shard', type: 'material', name: 'Rime Shard', description: 'A splinter of glacier ice that never melts.', price: 20, iconColor: 0xb3e5fc },

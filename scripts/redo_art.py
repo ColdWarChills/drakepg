@@ -1,0 +1,411 @@
+#!/usr/bin/env python3
+"""Redo the game's art in the round-15 look (docs/ART_PLAN.md): layered paper-cut backgrounds and clean cartoon
+characters (thin dark outlines, hard cel shadows, warm rim light), with the round-15 pictures as style references.
+
+The subject of each image comes from its old prompt (art/QUEUE.md, art/PROMPTS.md) with the old style text cut off,
+or from NEW below for art that never had a prompt. Tries go to art/redo/<key>/<key>_s<seed>.png (+ .txt with the
+settings); a pick is copied to art/raw/<key>.png and run through prepare_art.py.
+
+  python scripts/redo_art.py bg_thornwood mon_mossling --seeds 2   # tries
+  python scripts/redo_art.py --all-bg / --all-mon / --all-npc      # every key of a kind
+  python scripts/redo_art.py sheet mon_mossling mon_ash_imp        # review sheet of the tries -> art/redo/_sheet.png
+  python scripts/redo_art.py pick mon_mossling:4242 bg_thornwood   # copy picks to art/raw and prepare them
+  python scripts/redo_art.py --dry bg_thornwood                    # print the prompt only
+"""
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from art_tests import write_notes  # noqa: E402
+from hero_edits import on_white  # noqa: E402
+from qwen_batch import RGBA_CLOSE, RGBA_OPEN, Comfy  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+REDO = ROOT / "art" / "redo"
+RAW = ROOT / "art" / "raw"
+PARTS = ROOT / "art" / "tests" / "themes" / "parts"
+# Round-15 pictures that define the look (art/tests is git-ignored, so the picks are copied into art/redo/_style).
+STYLE = REDO / "_style"
+STYLE_SRC = {"hero.png": PARTS / "pick_hero.png", "boar.png": PARTS / "pick_boar.png", "bg.png": PARTS / "pick_bg.png",
+             "hero_full.png": PARTS / "_raw" / "hero_s4243.png"}
+# The picked base hero: armor outfits are edits of it at its exact canvas size, so prepare_art.py crops them with the
+# same box and the fists stay where `look.bare.hands` says (the picture itself: art/raw/char_hero_bare.png).
+HERO_BASE = RAW / "char_hero_bare.png"
+FIRST_SEED = 4242
+
+BG_STYLE = (
+    "Made as a layered paper-cut diorama: every hill, tree, rock, building and cloud is cut from matte coloured card "
+    "paper and stacked in flat layers, with soft shadows between the layers for gentle depth. Flat colours with a fine "
+    "paper grain, clean cut edges, no outlines, big simple shapes with few small details. A soft, muted palette "
+    "and gentle light, no vignette. The scene fills the whole picture edge to edge: a softly "
+    "coloured sky with paper clouds across the top, the ground reaching the bottom edge, no white or blank paper, no "
+    "border. Flat side-on view, no perspective tilt. No characters, no people, no animals, no text, no letters, no UI."
+)
+BG_REF = ("Use <image1> only as an example of the paper-cut style, the palette and the light: none of its trees, "
+          "hills or layout appear in this scene.")
+SPRITE_STYLE = (
+    "Drawn in exactly the same art style as <image1> and <image2>: clean thin dark outlines, flat colours with "
+    "hard-edged cel shadows, a warm golden rim light, simple readable shapes and minimal interior detail, the same "
+    "line weight, colouring and proportions, as if by the same artist for the same game. Use <image1> and <image2> "
+    "only as examples of the art style: draw none of the characters or creatures shown in them."
+)
+ITEM_STYLE = (
+    "Drawn in exactly the same art style as <image1> and <image2>: clean thin dark outlines, flat colours with "
+    "hard-edged cel shadows, matte surfaces with no glossy shine, a warm golden rim light, simple readable shapes and "
+    "minimal detail, as if by the same artist for the same game. Use <image1> and <image2> only as examples of the art "
+    "style: draw none of the characters or creatures shown in them, only this one item."
+)
+ICON_FRAME = ("Centered, seen from the front, the whole item visible and filling most of the square with a small empty "
+              "margin. No hands, no character, no stand, no text.")
+
+# Art with no old prompt (designs from docs/ART_PLAN.md and the game data). key: (aspect, subject, pose)
+ROAD_FLOOR = "The bottom 30% of the image is a flat, open dirt road running across the full width."
+NEW = {
+    "bg_old_road": ("16:9", "A quiet old country road between tall green hedgerows and a few crooked trees in the "
+                    "morning, wildflowers along the verge, gentle meadows and rolling hills far behind. " + ROAD_FLOOR),
+    "bg_road_cart": ("16:9", "A country road between hedgerows in the morning: on the right side of the road a "
+                     "wooden farm cart lies tipped over on its side with one broken wheel, spilled sacks and a crate, "
+                     "deep scratch marks in the hedge behind it; meadows and hills far behind. " + ROAD_FLOOR),
+    "bg_road_mill": ("16:9", "An old country road past a disused stone watermill set back on the left, its big "
+                     "wooden wheel still, a narrow stream under a little stone bridge, hedgerows and a low dry-stone "
+                     "wall, tall grass and wildflowers. " + ROAD_FLOOR),
+    "bg_road_gate": ("16:9", "The east gate of a small walled market town on the left side: a stout stone gatehouse "
+                     "with a closed heavy wooden gate, a few faded banners, red tiled rooftops and a chimney peeking "
+                     "over the town wall; on the right the country road arrives between hedges and a lone tree. "
+                     + ROAD_FLOOR),
+
+    "npc_odo": ("3:4", "A weathered middle-aged carter, stocky, sun-browned face with a grey stubble beard and a "
+                "patient tired smile, a floppy brown felt hat, a faded tan shirt with rolled sleeves under a brown "
+                "leather vest, patched trousers, a coil of rope over one shoulder, holding a wooden wagon spoke."),
+    "npc_pell": ("3:4", "A young, nervous town gate watchman, lanky, freckles, short sandy hair under a dented "
+                 "round steel cap, a dark blue tabard with a small yellow tower badge over a padded jacket, holding "
+                 "a long spear a little too tightly, a horn on his belt."),
+    "npc_guild_tamsin": ("3:4", "A brisk young Adventurers' Guild clerk woman, neat dark hair in a short bob, round "
+                         "glasses, a dark green waistcoat with brass buttons over a cream blouse, ink-stained "
+                         "fingers, a quill tucked behind her ear, holding a clipboard of notices."),
+    "npc_guild_ivo": ("3:4", "A calm, lanky Adventurers' Guild clerk man from a marsh outpost, thin face, long "
+                      "black hair tied back, a dark green waistcoat with brass buttons over a grey shirt, tall "
+                      "waders, holding a rolled-up notice and a pencil."),
+    "npc_guild_edda": ("3:4", "A sturdy older Adventurers' Guild clerk woman from a mountain village, silver hair in "
+                       "two thick braids, red cheeks, a dark green waistcoat with brass buttons over a thick cream "
+                       "wool sweater, fur-lined boots, holding a heavy ledger."),
+    "icon_recall_scroll": ("1:1", "A single rolled parchment scroll tied with a red ribbon and a small wax seal shaped like a "
+                           "little house, a faint golden glow around it, shown alone as a game inventory icon."),
+    "icon_stone_of_might": ("1:1", "A single smooth river stone with a glowing red-orange rune of a sword carved into it, "
+                            "shown alone as a game inventory icon."),
+    "icon_stone_of_precision": ("1:1", "A single smooth river stone with a glowing yellow rune of a target eye carved into "
+                                "it, shown alone as a game inventory icon."),
+    "icon_stone_of_warding": ("1:1", "A single smooth river stone with a glowing blue rune of a shield carved into it, "
+                              "shown alone as a game inventory icon."),
+    "icon_stone_of_vigor": ("1:1", "A single smooth river stone with a glowing green rune of a heart carved into it, "
+                            "shown alone as a game inventory icon."),
+    "icon_briarberry": ("1:1", "A small cluster of dark purple-red berries on a thorny bramble twig with two leaves, shown "
+                        "alone as a game inventory icon."),
+    "icon_scorched_twig": ("1:1", "A single charred black twig with glowing orange embers at its broken end and a wisp of "
+                           "smoke, shown alone as a game inventory icon."),
+    "icon_stolen_trinket": ("1:1", "A single small gold locket on a broken chain, its lid open a crack, shown alone as a "
+                            "game inventory icon."),
+    "icon_bog_lily": ("1:1", "A single pale white-green lily flower with a long dripping stem and a lily pad leaf, shown "
+                      "alone as a game inventory icon."),
+    "icon_drowned_coin": ("1:1", "A single old round coin crusted green with age, a worn face stamped on it, a few "
+                          "water drops, shown alone as a game inventory icon."),
+    "icon_storm_glass_shard": ("1:1", "A single jagged shard of pale blue glass with a frozen lightning streak inside it, "
+                               "shown alone as a game inventory icon."),
+    "icon_lichen_tuft": ("1:1", "A single tuft of frosty grey-green lichen torn from a rock, tiny ice crystals on it, "
+                         "shown alone as a game inventory icon."),
+    "icon_binding_rune": ("1:1", "A single chip of clear blue ice carved with one glowing pale blue rune, shown alone as "
+                          "a game inventory icon."),
+    "icon_cinder_cap": ("1:1", "A single small mushroom with a glowing orange-red cap speckled like embers on a dark "
+                        "stem, shown alone as a game inventory icon."),
+    "icon_frost_seal": ("1:1", "A single round white wax seal stamped with a snowflake sigil, a torn scrap of ribbon on "
+                        "it, shown alone as a game inventory icon."),
+    "mon_mimic": ("1:1", "A treasure chest monster: a sturdy wooden chest with iron bands that has sprung open into a "
+                  "wide mouth of sharp teeth, a long purple tongue lolling out, two small glinting eyes under the "
+                  "lid, a few gold coins spilling out, standing on stubby little wooden legs.", "menacing stance"),
+    "mon_burrow_rat": ("4:3", "A small, plump field rat monster with grubby brown fur, oversized front teeth, big "
+                       "digging claws caked in dirt, a bald pink tail and a twitchy nose, a clump of soil on its back.",
+                       "side view"),
+    "mon_dew_slug": ("4:3", "A small, soft garden slug monster, glossy pale green body with darker green spots, "
+                     "two long eye stalks with sleepy eyes, a few dew drops beaded on its back and a shiny slime "
+                     "trail at its tail.", "side view"),
+    "mon_hedge_pixie": ("1:1", "A tiny mischievous hedge pixie, a thumb-sized sprite with a leafy green tunic, "
+                        "pointed ears, a spiky hairdo of twigs and leaves, dragonfly wings, a cheeky grin, holding a "
+                        "thorn like a little spear.", "hovering in the air"),
+    "mon_stormcrest_heron": ("3:4", "A big marsh heron monster, long legs and a long sharp beak, slate-blue and "
+                             "white feathers, a tall crest of feathers crackling with small bright blue lightning "
+                             "sparks, wings half open, glaring yellow eyes.", "menacing stance, side view"),
+    "mon_vent_tortoise": ("4:3", "A big tortoise monster from volcanic caves: a heavy domed shell of cracked black "
+                          "lava rock with glowing orange seams and small puffs of steam from its vents, thick grey "
+                          "scaly legs, a blunt beaked head with ember-orange eyes.", "menacing stance, side view"),
+}
+
+
+# The base hero (one for every class, docs/PLANS.md) redrawn from the round-15 hero with empty fists, so the game
+# draws the weapon in his hands (`look.bare.hands`). key: pose
+HERO_KEEP = ("exactly the same young hero as in <image1>: the same face, messy dark brown hair, red headband with "
+             "tails, cream shirt with rolled sleeves, brown belt, dark teal trousers and brown boots, the same colours "
+             "and art style (flat shapes with hard-edged shadows, thin dark lines, a warm golden rim light)")
+HERO = {
+    "hero_fists": ("standing in a relaxed ready stance, three-quarter view facing right, feet apart, both arms "
+                   "hanging a little away from his body, both hands closed into empty fists at hip height with clear "
+                   "space between each fist and the body, nothing in his hands"),
+    "hero_raised": ("standing in a ready stance, three-quarter view facing right, feet apart; the arm on the right "
+                    "side of the picture bent with its hand raised to chest height in front of him, closed into an "
+                    "empty upright fist as if gripping a tall staff; the other arm hanging at his side with an empty "
+                    "fist; nothing in his hands"),
+}
+
+# Body armor outfits on the base hero, `char_hero_<armor id>` (Traveler's Garb is the base clothes: no outfit).
+OUTFITS = {
+    "novice_robe": "a plain dusty-purple cloth robe down to the shins with a few pale protective stitches along the "
+                   "hem, tied with a rope belt",
+    "leather_armor": "a brown leather cuirass with stitched panels, leather shoulder guards and brass buckles over his "
+                     "shirt, with leather bracers",
+    "apprentice_robe": "a deep red apprentice robe with orange warding runes along the sleeves and hem, tied with a "
+                       "cloth sash",
+    "scale_mail": "a shirt of overlapping polished steel scales over a padded tunic, with steel shoulder guards and a "
+                  "wide leather belt",
+    "reedweave_robe": "a robe woven from dried green-gold marsh reeds in a basket-weave pattern with faint blue runes",
+    "marshhide_vest": "a dark green oiled hide vest with bone toggles over a grey shirt, with hide bracers",
+    "stormweave_robe": "a pale silver-blue silk robe with small yellow lightning zigzags stitched along the seams",
+    "ridgeplate": "thick steel plate armor on his chest and shoulders with a white fur lining showing at the collar "
+                  "and edges",
+    "fleecewool_robe": "a thick cream wool robe with blue stitched warding runes and a fur collar",
+    "frostpelt_vest": "a vest of white wolf pelt over boiled leather, with leather bracers",
+    "galeweave_robe": "a light pale green robe with long flowing sleeves and a sash, its hem rippling as if in a breeze",
+}
+
+
+# Old prompts whose subject changes in the redo. key: subject (aspect and pose stay).
+FIXES = {
+    "icon_storm_scale": ("A single long slate-blue heron crest feather with small yellow lightning sparks crackling along "
+                         "it, shown alone as a game inventory icon."),
+    # The one old dragon stays in the story (docs/ART_PLAN.md, dragon clean-up): only a dim shape deep in the ice.
+    "mon_mossling": ("A small, cute but mischievous moss creature monster: a round blob of green moss and lichen with "
+                     "two big round yellow eyes with small dark pupils, tiny mushrooms and leaves growing on top, stubby "
+                     "root-like feet."),
+    "bg_frozen_roost": ("A mountaintop roost: a vast frozen plateau under a blizzard sky, tall ice pillars carved with "
+                        "faintly glowing blue runes, and behind them a towering wall of thick blue ice with a huge dark "
+                        "shape sleeping deep inside it, only a curled horn and a closed eye faintly visible through the "
+                        "ice. Only snow, ice and bare grey rock up here: no green trees, no plants. The bottom 30% of the image is "
+                        "flat, open, snowy ground running across the full width."),
+}
+
+
+def old_prompts() -> dict[str, tuple[str, str]]:
+    """{key: (aspect, full old prompt)} from art/QUEUE.md and art/PROMPTS.md (QUEUE wins)."""
+    found: dict[str, tuple[str, str]] = {}
+    for name in ("PROMPTS.md", "QUEUE.md"):
+        text = (ROOT / "art" / name).read_text(encoding="utf-8")
+        for m in re.finditer(r"^### (?:[\w.]+\. )?`([a-z0-9_]+)` · (\d+:\d+)[^\n]*\n(?:(?!###)[^\n]*\n)*?```\n(.*?)\n```",
+                             text, re.S | re.M):
+            found[m.group(1)] = (m.group(2), m.group(3).strip())
+    return found
+
+
+def subject_of(key: str, old: str) -> tuple[str, str]:
+    """The subject sentences of an old prompt, and its pose words for sprites."""
+    cut = ("2D side-scrolling game background" if key.startswith("bg_") else
+           "2D fantasy RPG item art" if key.startswith(("icon_", "wpn_")) else "2D fantasy RPG character art")
+    subject = old.split(cut)[0].strip()
+    pose = ""
+    m = re.search(r"Full body, ([^.]*?), whole figure", old)
+    if m:
+        pose = m.group(1)
+    return subject, pose
+
+
+def build(key: str, prompts: dict) -> tuple[str, tuple[int, int], list[str]]:
+    """(prompt, size, style refs) for a key."""
+    if key.startswith("outfit_"):
+        text = (f"{RGBA_OPEN} Edit <image1>. Change only the clothing: the hero now wears {OUTFITS[key[7:]]}. Keep "
+                "everything else exactly the same: the same young hero with messy dark brown hair and the red headband, "
+                "the same face, body, pose and proportions, both empty fists in exactly the same place, the same flat "
+                "art style with hard-edged shadows, thin dark lines and a warm golden rim light. No weapon anywhere. "
+                f"No ground, no shadow, no text. {RGBA_CLOSE}")
+        return text, None, ["hero_base.png"]
+    if key in HERO:
+        text = (f"{RGBA_OPEN} Full body, {HERO_KEEP}, {HERO[key]}. The whole figure visible with empty margin around "
+                f"it. No sword, no weapon, no ground, no shadow, no background. {RGBA_CLOSE}")
+        return text, (1024, 1536), ["hero_full.png"]
+    if key in NEW:
+        aspect, subject, *rest = NEW[key]
+        pose = rest[0] if rest else "standing idle pose, three-quarter view"
+    elif key in FIXES:
+        aspect, subject = prompts[key][0], FIXES[key]
+        pose = subject_of(key, prompts[key][1])[1]
+    else:
+        aspect, old = prompts[key]
+        subject, pose = subject_of(key, old)
+    a, b = (int(x) for x in aspect.split(":"))
+    if key.startswith("icon_"):
+        return f"{RGBA_OPEN} {subject} {ITEM_STYLE} {ICON_FRAME} {RGBA_CLOSE}", (1024, 1024), ["hero.png", "boar.png"]
+    if key.startswith("bg_"):
+        size = (2048, 1152)
+        return f"A wide 16:9 background for a 2D side-view fantasy RPG. {subject} {BG_STYLE} {BG_REF}", size, ["bg.png"]
+    if key == "mon_thornback_boar":
+        # The round-15 boar is the accepted design: redraw it at full size, facing right.
+        text = (f"{RGBA_OPEN} The big angry wild boar from <image2> alone: exactly the same creature, colours and art "
+                "style (dark brown body, mossy green back, curved ivory tusks, flat shapes with hard-edged shadows, a "
+                "warm golden rim light). Full body, standing on all four legs, side view facing right, the whole figure "
+                f"visible with empty margin around it. No ground, no shadow, no background. {RGBA_CLOSE}")
+        return text, (1536, 1024), ["hero.png", "boar.png"]
+    long_side = 1536
+    w, h = (long_side, long_side * b / a) if a >= b else (long_side * a / b, long_side)
+    size = (round(w / 32) * 32, round(h / 32) * 32)
+    pose = re.sub(r"\s*facing (right|left)", "", pose or "standing idle pose, three-quarter view")
+    text = (f"{RGBA_OPEN} {subject} {SPRITE_STYLE} Full body, {pose}, facing right, the whole figure visible with "
+            f"empty margin around it. Nothing else in the picture: no ground, no shadow, no background, no text. "
+            f"{RGBA_CLOSE}")
+    return text, size, ["hero.png", "boar.png"]
+
+
+def keys_of(prefix: str, prompts: dict) -> list[str]:
+    art = {re.sub(r"(@\d+x)?\.webp$", "", p.name) for p in (ROOT / "src" / "assets" / "art").glob("*.webp")}
+    data = "".join(f.read_text(encoding="utf-8") for f in (ROOT / "src" / "data").glob("*.ts"))
+    used = art | set(re.findall(r"'((?:bg|mon|npc)_[a-z0-9_]+)'", data))
+    used |= {f"icon_{i}" for i in re.findall(r"id: '([a-z0-9_]+)'", data)}
+    keys = sorted(k for k in set(prompts) | set(NEW) if k.startswith(prefix) and (k in used or k in NEW))
+    drop = {"mon_volt_eel", "mon_stormscale_drakeling", "mon_vent_wyrmling", "bg_title"}
+    return [k for k in keys if k not in drop]
+
+
+def generate(keys: list[str], seeds: int, dry: bool) -> None:
+    prompts = old_prompts()
+    missing = [k for k in keys if k not in prompts and k not in NEW and k not in HERO and not k.startswith("outfit_")]
+    if missing:
+        sys.exit(f"No subject for: {', '.join(missing)}")
+    if dry:
+        for k in keys:
+            text, size, refs = build(k, prompts)
+            print(f"\n{k} {size} {refs}\n{text}")
+        return
+    STYLE.mkdir(parents=True, exist_ok=True)
+    for name, src in STYLE_SRC.items():
+        if not (STYLE / name).exists():
+            shutil.copy(src, STYLE / name)
+    comfy = Comfy("http://127.0.0.1:8188")
+    comfy.check()
+    uploaded = {name: comfy.upload(f"drakepg_redo_{name}", on_white(STYLE / name)) for name in STYLE_SRC}
+    if HERO_BASE.exists():
+        uploaded["hero_base.png"] = comfy.upload("drakepg_redo_hero_base.png", on_white(HERO_BASE))
+    for key in keys:
+        text, size, refs = build(key, prompts)
+        for i in range(seeds):
+            seed = FIRST_SEED + i
+            out = REDO / key / f"{key}_s{seed}.png"
+            if out.exists():
+                continue
+            out.parent.mkdir(parents=True, exist_ok=True)
+            print(out.relative_to(ROOT), flush=True)
+            try:
+                out.write_bytes(comfy.generate(text, [uploaded[r] for r in refs], size, seed, 30))
+            except RuntimeError as e:
+                print(f"  ComfyUI error: {e}", flush=True)
+                continue
+            write_notes(out.with_suffix(".txt"), comfy.last_graph)
+
+
+def trimmed(path: Path) -> Image.Image:
+    img = Image.open(path).convert("RGBA")
+    a = img.getchannel("A").point(lambda v: 0 if v < 10 else v)
+    img.putalpha(a)
+    box = a.getbbox()
+    return img.crop(box) if box else img
+
+
+def sheet(keys: list[str], out: Path) -> None:
+    """Every try of each key in a row: sprites on a light and a dark tile, backgrounds as they are."""
+    rows = []
+    for key in keys:
+        tries = sorted((REDO / key).glob(f"{key}_s*.png"))
+        if tries:
+            rows.append((key, tries))
+    cell, pad, label = 360, 10, 26
+    width = pad + max(len(t) for _, t in rows) * (cell * (16 / 9 if True else 1) + pad)
+    width = int(width)
+    img = Image.new("RGB", (width, len(rows) * (cell + label + pad) + pad), (30, 28, 34))
+    draw = ImageDraw.Draw(img)
+    try:
+        font = ImageFont.truetype("arialbd.ttf", 18)
+    except OSError:
+        font = ImageFont.load_default()
+    y = pad
+    for key, tries in rows:
+        x = pad
+        for path in tries:
+            draw.text((x, y + 2), f"{key} s{path.stem.rsplit('_s', 1)[1]}", fill=(235, 228, 210), font=font)
+            tw = round(cell * 16 / 9)
+            if key.startswith("bg_"):
+                im = Image.open(path).convert("RGB").resize((tw, cell), Image.LANCZOS)
+                img.paste(im, (x, y + label))
+            else:
+                tile = Image.new("RGB", (tw, cell), (214, 205, 182))
+                ImageDraw.Draw(tile).rectangle((tw // 2, 0, tw, cell), fill=(58, 70, 52))
+                fig = trimmed(path)
+                s = min((tw // 2 - 12) / fig.width, (cell - 12) / fig.height)
+                fig = fig.resize((max(1, round(fig.width * s)), max(1, round(fig.height * s))), Image.LANCZOS)
+                for ox in (0, tw // 2):
+                    tile.paste(fig, (ox + (tw // 2 - fig.width) // 2, cell - 6 - fig.height), fig)
+                img.paste(tile, (x, y + label))
+            x += tw + pad
+        y += cell + label + pad
+    img.save(out)
+    print(out)
+
+
+GAME_KEY = {"hero_raised": "char_hero_bare"}
+
+
+def pick(picks: list[str]) -> None:
+    keys = []
+    for p in picks:
+        key, _, seed = p.partition(":")
+        src = REDO / key / f"{key}_s{seed or FIRST_SEED}.png"
+        if not src.exists():
+            sys.exit(f"missing {src}")
+        game_key = GAME_KEY.get(key) or (f"char_hero_{key[7:]}" if key.startswith("outfit_") else key)
+        for old in RAW.glob(f"{game_key}.*"):
+            old.unlink()
+        shutil.copy(src, RAW / f"{game_key}.png")
+        keys.append(game_key)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "prepare_art.py"), "--force", *keys], check=False)
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    if args and args[0] == "sheet":
+        out = REDO / "_sheet.png"
+        if "--out" in args:
+            i = args.index("--out")
+            out = Path(args[i + 1])
+            del args[i:i + 2]
+        sheet(args[1:], out)
+        return
+    if args and args[0] == "pick":
+        pick(args[1:])
+        return
+    seeds = 2
+    if "--seeds" in args:
+        i = args.index("--seeds")
+        seeds = int(args[i + 1])
+        del args[i:i + 2]
+    prompts = old_prompts()
+    keys = [a for a in args if not a.startswith("--")]
+    for flag, prefix in (("--all-bg", "bg_"), ("--all-mon", "mon_"), ("--all-npc", "npc_"), ("--all-icon", "icon_")):
+        if flag in args:
+            keys += [k for k in keys_of(prefix, prompts) if k not in keys]
+    if "--all-outfits" in args:
+        keys += [f"outfit_{a}" for a in OUTFITS if f"outfit_{a}" not in keys]
+    if not keys:
+        sys.exit(__doc__)
+    generate(keys, seeds, "--dry" in args)
+
+
+if __name__ == "__main__":
+    main()

@@ -190,8 +190,12 @@ def process_sprite(src: Path, key: str, max_res: int) -> Path:
     base_alpha = base_bg = None
     base = _outfit_base(key)
     if base is not None:
-        base_rgb = np.asarray(Image.open(base).convert("RGB")).astype(np.float32)
-        if base_rgb.shape == rgb.shape:
+        base_src = Image.open(base)
+        base_rgb = np.asarray(base_src.convert("RGB")).astype(np.float32)
+        base_given = _real_alpha(base_src)
+        if base_rgb.shape == rgb.shape and base_given is not None:
+            base_alpha = base_given  # a transparent base (Qwen): its own alpha gives the trim box
+        elif base_rgb.shape == rgb.shape:
             _, base_alpha, _, base_bg = _cutout(base_rgb, base.stem)
         else:
             print(f"  WARNING: {base.stem} is a different size, trimmed on its own (re-measure the hand anchors)")

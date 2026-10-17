@@ -376,7 +376,7 @@ export const ITEMS: ItemDef[] = [
     type: 'weapon',
     tier: 2,
     name: 'Sparkfang',
-    description: 'A drakeling fang on a copper hilt. It bites twice.',
+    description: 'A crackling spur on a copper hilt. It bites twice.',
     price: 350,
     damage: [9, 15],
     damageType: 'pierce',
