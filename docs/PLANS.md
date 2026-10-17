@@ -6,7 +6,7 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
-- **Review (art redo, 2026-10-17, branch `claude/art-direction-tests-02b582`, not merged):** while the designer was away, Claude redid all game art in the round-15 look (paper-cut backgrounds, clean cartoon characters): backgrounds, title, monsters, NPCs, weapons, item icons, the base hero and armor outfits, plus art that never existed (road rooms, Odo, Pell, clerks, road pests, gate guards, Mimic, stones, hunt items). Also built: one base hero for every class, the dragon clean-up, battle backgrounds lifted 90 px. Details and assumptions: `docs/IMPROVEMENTS_2026-10.md` ("Art redo"). Play it (`npm run dev` on the branch) and say what to change; merge to the default branch on OK. The UI is untouched.
+- **Art redo merged (2026-10-17, designer: "just merge"):** while the designer was away, Claude redid all game art in the round-15 look (paper-cut backgrounds, clean cartoon characters): backgrounds, title, monsters, NPCs, weapons, item icons, the base hero and armor outfits, plus art that never existed (road rooms, Odo, Pell, clerks, road pests, gate guards, Mimic, stones, hunt items). Also built: one base hero for every class, the dragon clean-up, battle backgrounds lifted 90 px. Details and assumptions: `docs/IMPROVEMENTS_2026-10.md` ("Art redo"). The designer OK'd it without a playtest: say what to change after playing. The UI is untouched.
 - **Now (designer, 2026-10-17): redo all graphics in one stylized, unique look.** Style first, judged on whole-screen mocks (UI by hand, art generated in a strict flat style); then Claude generates the rest in long runs (UI kit, skill icons, backgrounds, monsters, dragon clean-up...). The full list and order: `docs/ART_PLAN.md`.
 - **How to work with the designer (2026-10-17):** don't ask at every step; no long option menus. Style is picked from generated pictures with one short question. Everything else: build with sensible defaults and list what was assumed. (Replaces the 2026-10-15 "show options first" rule, which turned into too many questions.)
 - **Discuss later (designer, 2026-10-15):** the Adventurers' Guild was built on Claude's defaults; review it together (ranks, hunt kinds, numbers, clerks, how the board looks) before building more on it.
@@ -66,7 +66,7 @@ Build order (all built, see "Done" at the bottom):
 - **Open:** one clerk in Brindlemoor only, or one per town (built: one per town)?
 - **Open:** Chapter 1 is shorter now (a D-rank Ash Imp hunt gives 3 points, so Rank E can take one trip). Raise F -> E to 4-5 points?
 - **Open:** a paid "new notices" button, so a board you don't like can be rerolled before a turn-in?
-- ~~To do: art for the 3 clerks and icons for the 10 hunt items~~: made in the art redo (2026-10-17, on the art branch).
+- ~~To do: art for the 3 clerks and icons for the 10 hunt items~~: made in the art redo (2026-10-17).
 - Playtest: is 50% per kill for gather items right? Are Tough hunts (3 Ash Imps at Rank F) too risky that early?
 
 ## UI
@@ -91,7 +91,7 @@ Build order (all built, see "Done" at the bottom):
 - **Decided:** start with the class weapon only, one-way into Brindlemoor (the shop is found on arrival). Claude drafted the story hook.
 - **Built (2026-10-15, designer: "too long to get to the city, uneventful", then "first with 1 monster, second with 2, then the boss before the city"):** 3 rooms instead of 6: Overturned Cart (1 pest), Old Mill Road (2 pests), Brindlemoor Gate (Pell and a gate guard per class), each weak to that class's first skill so it teaches weak spots: Warrior Millstone Crab (Blunt: Heavy Strike), Mage Dusk Wraith (Light: Light Bolt), Rogue Hedge Troll (Poison: Gas Shot). See `docs/IMPROVEMENTS_2026-10.md`.
 - To do: real monsters (names, stats) for `burrow_rat`, `dew_slug` and `hedge_pixie`. Art made in the art redo (2026-10-17): a plump field rat, a green garden slug, a twig-haired pixie with a thorn spear.
-- ~~To do: background art for the 3 `road_*` rooms, art for Odo and Pell, the 3 gate guards~~: made in the art redo (2026-10-17, on the art branch).
+- ~~To do: background art for the 3 `road_*` rooms, art for Odo and Pell, the 3 gate guards~~: made in the art redo (2026-10-17).
 - To do: final lines for Odo and Pell (redrafted for the gate guard, listed in `docs/ROOM_LINES.md`).
 - **Open:** the designer called the Rogue "ranger" when asking for Gas Shot. Rename the class, or keep Rogue?
 - **Proposed:** more Blunt and Poison weak spots later (skeletons, golems and shelled things weak to Blunt; big beasts weak to Poison; slimes could resist Blunt). Only the gate guards use them now.
@@ -113,7 +113,7 @@ Build order (all built, see "Done" at the bottom):
 ## Dragon clean-up
 
 - **Decided:** dragons become rare (see above).
-- **Built (2026-10-17, art branch)** with the defaults from `docs/ART_PLAN.md`: Stormscale Drakeling -> Stormcrest Heron (Energy), Vent Wyrmling -> Vent Tortoise (Fire, weak to Blunt), Storm Scale -> Storm Feather, the drakeling-fang dagger's text changes; the one old dragon in the story stays (it is the rare one); no dragon on the title art.
+- **Built (2026-10-17)** with the defaults from `docs/ART_PLAN.md`: Stormscale Drakeling -> Stormcrest Heron (Energy), Vent Wyrmling -> Vent Tortoise (Fire, weak to Blunt), Storm Scale -> Storm Feather, the drakeling-fang dagger's text changes; the one old dragon in the story stays (it is the rare one); no dragon on the title art.
 - **Open:** `docs/CHAPTER3_SPEC.md` still asks for the dragon's name ("wakes in Chapter 4?"); revisit with the story spec.
 
 ## Skills, weapons and builds (discussed 2026-10-15)
@@ -200,7 +200,7 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - **Was decided:** keep generating with Higgsfield for now; redo the art later with Qwen at home if the polished look reads as AI. Files swap by key, so nothing in code changes. (Superseded by the direction tests above.)
 - **Set up (2026-10-15):** ComfyUI 0.40 portable + Qwen-Image 2.1 int8 on the designer's PC (`C:\Users\Epic\ComfyUI_windows_portable`, start with `run_nvidia_gpu.bat`, UI at http://127.0.0.1:8188). RTX 5070 Ti: ~20-50 s per image (Higgsfield ~8 min). It writes a real alpha channel (no magenta/green keying) and takes up to 10 reference images; with `mon_thornback_boar` + `mon_mossling` as style refs, a test Mire Toad matched the game's look. Generate with `scripts/qwen_batch.py` (in this repo).
 - **Built (2026-10-15):** `scripts/qwen_batch.py` runs `art/QUEUE.md` prompts on the local ComfyUI with the game's art as style references, and `prepare_art.py` takes transparent PNGs. See `docs/IMPROVEMENTS_2026-10.md`.
-- **Built (2026-10-17, art branch, waiting for review): the art redo** (see "Next up" and `docs/IMPROVEMENTS_2026-10.md`). Generated with `scripts/redo_art.py` on the local Qwen; `art/QUEUE.md` and the Higgsfield prompts are history now.
+- **Built and merged (2026-10-17): the art redo** (see "Next up" and `docs/IMPROVEMENTS_2026-10.md`). Generated with `scripts/redo_art.py` on the local Qwen; `art/QUEUE.md` and the Higgsfield prompts are history now.
   - Assumptions to check: the round-15 look is the style for everything; the base hero is the round-15 hero (messy hair, red headband), not yet the creator's layered hair; outfits are body armor only (the hero keeps his boots, gloves and helms show only as icons); the title is a dusk road to the town (no dragon); the Frozen Roost shows one dim shape in the ice.
   - Not done: the UI kit and the hand-made skill/status icons (UI comes later, by hand), our own LoRA, animation.
   - Open: armor outfits for helms, gloves and boots (layers on the base hero?), and outfits per body type once the creator has body types.
