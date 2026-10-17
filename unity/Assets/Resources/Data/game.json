@@ -1,0 +1,10409 @@
+{
+ "saveVersion": 15,
+ "balance": {
+  "restoreAfterBattle": false,
+  "innCost": 5,
+  "startingRecallScrolls": 5,
+  "baseHitChance": 0.9,
+  "minHitChance": 0.6,
+  "maxHitChance": 0.98,
+  "baseCritChance": 0.05,
+  "critPerDex": 0.005,
+  "critMultiplier": 1.5,
+  "statDamageScale": 0.6,
+  "baseFleeChance": 0.5,
+  "maxLevel": 50,
+  "skillSlots": 5,
+  "statPointsPerLevel": 3,
+  "defendDamage": 0.4,
+  "defendMp": 4,
+  "maxPlayerResist": 80,
+  "minResist": -100,
+  "gearRolls": {
+   "damage": 0.5,
+   "crit": 0.05,
+   "proc": 0.5,
+   "defense": 0.5,
+   "hp": 0.15,
+   "power": 0.5
+  },
+  "armorHpShare": {
+   "body": 0.7,
+   "helm": 0.3,
+   "gloves": 0.2,
+   "boots": 0.2
+  },
+  "setDrop": {
+   "elite": 0.25,
+   "boss": 0.4
+  },
+  "rollCurve": 1.5,
+  "bagSlots": 30,
+  "sellRate": 0.3,
+  "sellGradeBonus": 2,
+  "sigils": {
+   "dawn": {
+    "boost": 0.2,
+    "lines": 1,
+    "sell": 3
+   },
+   "dusk": {
+    "boost": 0.35,
+    "lines": 2,
+    "sell": 6
+   },
+   "eclipse": {
+    "boost": 0.6,
+    "lines": 3,
+    "sell": 12
+   }
+  },
+  "loot": {
+   "mob": {
+    "rare": 0.01,
+    "uncommon": 0.05,
+    "common": 0.06
+   },
+   "elite": {
+    "rare": 0.05,
+    "uncommon": 0.4,
+    "common": 1
+   },
+   "boss": {
+    "rare": 0.35,
+    "uncommon": 0.5,
+    "common": 1
+   },
+   "chest": {
+    "rare": 0.03,
+    "uncommon": 0.3,
+    "common": 0.5
+   },
+   "tableMob": {
+    "road": {
+     "rare": 0,
+     "uncommon": 0,
+     "common": 0.35
+    }
+   },
+   "pityAfter": 80,
+   "pityStep": 0.001,
+   "pityMax": 0.2
+  },
+  "sigilChance": {
+   "mob": {
+    "dawn": 0.02,
+    "dusk": 0.005,
+    "eclipse": 0.0005
+   },
+   "boss": {
+    "dawn": 0.2,
+    "dusk": 0.07,
+    "eclipse": 0.015
+   },
+   "elite": {
+    "dawn": 0.08,
+    "dusk": 0.02,
+    "eclipse": 0.003
+   },
+   "chest": {
+    "dawn": 0.05,
+    "dusk": 0.01,
+    "eclipse": 0.001
+   }
+  },
+  "modifierSlots": [
+   0,
+   1,
+   2,
+   2,
+   2,
+   2,
+   2
+  ],
+  "modRanges": {
+   "str": [
+    1,
+    4
+   ],
+   "int": [
+    1,
+    4
+   ],
+   "dex": [
+    1,
+    4
+   ],
+   "end": [
+    1,
+    4
+   ],
+   "crit": [
+    1,
+    4
+   ],
+   "hp": [
+    5,
+    25
+   ],
+   "mp": [
+    5,
+    20
+   ],
+   "resist": [
+    5,
+    20
+   ]
+  },
+  "forge": {
+   "craftFloor": 25,
+   "plusPower": 0.05,
+   "maxPlus": 10,
+   "reinforceChance": [
+    1,
+    1,
+    1,
+    0.9,
+    0.8,
+    0.7,
+    0.6,
+    0.5,
+    0.4,
+    0.3
+   ],
+   "reinforceRiskFrom": 4,
+   "honeGain": [
+    8,
+    15
+   ],
+   "honeDriftChance": 0.35,
+   "honeDrift": [
+    3,
+    8
+   ]
+  },
+  "mobDamage": 2,
+  "bossDamage": 1.3,
+  "enrage": {
+   "turns": 15,
+   "bossTurns": 30,
+   "step": 0.2,
+   "warn": 3
+  },
+  "grit": {
+   "step": 0.05,
+   "max": 0.25
+  },
+  "bossRepeatRewards": 0.5,
+  "heroic": {
+   "levels": 3,
+   "damage": 1.25,
+   "rewards": 1,
+   "lootRolls": 2
+  },
+  "elite": {
+   "chance": 0.08,
+   "questChance": 0.25,
+   "maxPerRoom": 1,
+   "levels": 1,
+   "hp": 1.5,
+   "damage": 1.1,
+   "rewards": 3,
+   "size": 1.2
+  },
+  "lucky": {
+   "chance": 0.015,
+   "runSpeed": 230,
+   "escapeAfter": 3,
+   "hp": 0.6,
+   "dex": 12,
+   "damage": 0.5,
+   "xp": 1.5,
+   "gold": 5,
+   "sigilChance": 0.1,
+   "sigilTiers": {
+    "dawn": 0.8,
+    "dusk": 0.17,
+    "eclipse": 0.03
+   }
+  },
+  "dropReveal": {
+   "start": 900,
+   "gap": 160,
+   "plain": 0,
+   "fine": 0,
+   "superior": 200,
+   "masterwork": 450,
+   "dawn": 700,
+   "dusk": 1000,
+   "eclipse": 1500
+  },
+  "guild": {
+   "ranks": [
+    {
+     "id": "F",
+     "minLevel": 1,
+     "toNext": 3
+    },
+    {
+     "id": "E",
+     "minLevel": 3,
+     "toNext": 4
+    },
+    {
+     "id": "D",
+     "minLevel": 6,
+     "toNext": 5
+    },
+    {
+     "id": "C",
+     "minLevel": 9,
+     "toNext": 6
+    },
+    {
+     "id": "B",
+     "minLevel": 12,
+     "toNext": 8
+    },
+    {
+     "id": "A",
+     "minLevel": 15,
+     "toNext": 10
+    },
+    {
+     "id": "S",
+     "minLevel": 20,
+     "toNext": 0
+    }
+   ],
+   "reach": 2,
+   "boardSize": 5,
+   "maxActive": 3,
+   "kills": 5,
+   "toughKills": 3,
+   "gather": 4,
+   "gatherChance": 0.5,
+   "eliteChance": 0.2,
+   "eliteKills": 6,
+   "xp": 1,
+   "gold": 1.2
+  },
+  "respawnSeconds": 45,
+  "chest": {
+   "chance": 0.3,
+   "mimicChance": 0.25
+  },
+  "walkSpeed": 300,
+  "monsterWanderSpeed": 50,
+  "monsterChaseSpeed": 150,
+  "monsterAggroRange": 260,
+  "fleeGraceSeconds": 2
+ },
+ "elements": [
+  "fire",
+  "water",
+  "ice",
+  "wind",
+  "earth",
+  "energy",
+  "light",
+  "dark"
+ ],
+ "elementLabels": {
+  "fire": "Fire",
+  "water": "Water",
+  "ice": "Ice",
+  "wind": "Wind",
+  "earth": "Earth",
+  "energy": "Energy",
+  "light": "Light",
+  "dark": "Dark"
+ },
+ "opposite": {
+  "fire": "ice",
+  "ice": "fire",
+  "water": "energy",
+  "energy": "water",
+  "earth": "wind",
+  "wind": "earth",
+  "light": "dark",
+  "dark": "light"
+ },
+ "elementColors": {
+  "fire": [
+   16773800,
+   16754483,
+   16734751,
+   9051136
+  ],
+  "water": [
+   14743551,
+   7131135,
+   2068448,
+   737146
+  ],
+  "ice": [
+   16777215,
+   12580095,
+   6211839,
+   2060210
+  ],
+  "wind": [
+   16056308,
+   12121544,
+   7329440,
+   3116906
+  ],
+  "earth": [
+   15983288,
+   13214298,
+   9071148,
+   4862996
+  ],
+  "energy": [
+   16777215,
+   16773754,
+   16765471,
+   11111423
+  ],
+  "light": [
+   16777215,
+   16775382,
+   16770442,
+   14268490
+  ],
+  "dark": [
+   15128319,
+   10648831,
+   5909916,
+   1968952
+  ]
+ },
+ "neutralColors": [
+  15134975,
+  10467327,
+  8019199
+ ],
+ "elementText": {
+  "fire": "#ff9a4d",
+  "water": "#5cc3ff",
+  "ice": "#aeeeff",
+  "wind": "#8fe8b4",
+  "earth": "#d8b46a",
+  "energy": "#ffe14d",
+  "light": "#fff2b0",
+  "dark": "#c39bff"
+ },
+ "damageTypeLabels": {
+  "melee": "Melee",
+  "pierce": "Pierce",
+  "magic": "Magic"
+ },
+ "start": {
+  "roomId": "road_cart",
+  "x": 920,
+  "y": 640
+ },
+ "townStart": {
+  "roomId": "brindlemoor",
+  "x": 620,
+  "y": 650
+ },
+ "innSpawn": {
+  "roomId": "brindlemoor",
+  "x": 760,
+  "y": 650
+ },
+ "classes": [
+  {
+   "id": "warrior",
+   "name": "Warrior",
+   "tagline": "Tough and steady. Big HP, heavy hits. Rage: gains MP when hit.",
+   "stats": {
+    "str": 8,
+    "int": 2,
+    "dex": 5,
+    "end": 7
+   },
+   "growth": {
+    "str": 2,
+    "end": 1
+   },
+   "weapon": "training_sword",
+   "armor": "travel_garb",
+   "skills": [
+    {
+     "skillId": "heavy_strike",
+     "level": 1
+    },
+    {
+     "skillId": "second_wind",
+     "level": 2
+    },
+    {
+     "skillId": "war_cry",
+     "level": 3
+    },
+    {
+     "skillId": "skull_splitter",
+     "level": 4
+    },
+    {
+     "skillId": "shield_bash",
+     "level": 6
+    },
+    {
+     "skillId": "sunder",
+     "level": 8
+    },
+    {
+     "skillId": "iron_skin",
+     "level": 10
+    },
+    {
+     "skillId": "cleave",
+     "level": 12
+    },
+    {
+     "skillId": "bloodlust",
+     "level": 14
+    },
+    {
+     "skillId": "earthshaker",
+     "level": 16
+    },
+    {
+     "skillId": "rallying_roar",
+     "level": 18
+    },
+    {
+     "skillId": "titans_wrath",
+     "level": 20
+    }
+   ],
+   "mpOnHit": 3,
+   "look": {
+    "shape": "humanoid",
+    "color": 3049182,
+    "accent": 5978654,
+    "scale": 1,
+    "art": "char_hero_bare",
+    "bare": {
+     "art": "char_hero_bare",
+     "hands": [
+      {
+       "x": 233,
+       "y": 135,
+       "angle": 40
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "mage",
+   "name": "Mage",
+   "tagline": "Fragile, but burns and freezes everything.",
+   "stats": {
+    "str": 2,
+    "int": 9,
+    "dex": 5,
+    "end": 6
+   },
+   "growth": {
+    "int": 1,
+    "end": 1
+   },
+   "weapon": "worn_staff",
+   "armor": "novice_robe",
+   "skills": [
+    {
+     "skillId": "light_bolt",
+     "level": 1
+    },
+    {
+     "skillId": "mend",
+     "level": 2
+    },
+    {
+     "skillId": "ember_bolt",
+     "level": 2
+    },
+    {
+     "skillId": "frost_lance",
+     "level": 3
+    },
+    {
+     "skillId": "meteor",
+     "level": 5
+    },
+    {
+     "skillId": "spark_chain",
+     "level": 6
+    },
+    {
+     "skillId": "stone_skin",
+     "level": 8
+    },
+    {
+     "skillId": "gale",
+     "level": 10
+    },
+    {
+     "skillId": "tidal_wave",
+     "level": 12
+    },
+    {
+     "skillId": "sunburst",
+     "level": 14
+    },
+    {
+     "skillId": "shadow_hex",
+     "level": 16
+    },
+    {
+     "skillId": "thunderstorm",
+     "level": 18
+    },
+    {
+     "skillId": "cataclysm",
+     "level": 20
+    }
+   ],
+   "look": {
+    "shape": "humanoid",
+    "color": 8207512,
+    "accent": 2890298,
+    "scale": 1,
+    "art": "char_hero_bare",
+    "bare": {
+     "art": "char_hero_bare",
+     "hands": [
+      {
+       "x": 226,
+       "y": 136,
+       "angle": 6
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "rogue",
+   "name": "Rogue",
+   "tagline": "Quick and deadly. Strikes twice, crits often.",
+   "stats": {
+    "str": 6,
+    "int": 2,
+    "dex": 9,
+    "end": 5
+   },
+   "growth": {
+    "dex": 1,
+    "str": 1
+   },
+   "weapon": "rusty_dagger",
+   "armor": "travel_garb",
+   "skills": [
+    {
+     "skillId": "gas_shot",
+     "level": 1
+    },
+    {
+     "skillId": "twin_cut",
+     "level": 2
+    },
+    {
+     "skillId": "bandage",
+     "level": 2
+    },
+    {
+     "skillId": "flurry",
+     "level": 3
+    },
+    {
+     "skillId": "envenom",
+     "level": 4
+    },
+    {
+     "skillId": "assassinate",
+     "level": 5
+    },
+    {
+     "skillId": "smoke_bomb",
+     "level": 7
+    },
+    {
+     "skillId": "expose_weakness",
+     "level": 9
+    },
+    {
+     "skillId": "shadowstep",
+     "level": 11
+    },
+    {
+     "skillId": "fan_of_knives",
+     "level": 13
+    },
+    {
+     "skillId": "hemorrhage",
+     "level": 15
+    },
+    {
+     "skillId": "death_mark",
+     "level": 18
+    },
+    {
+     "skillId": "thousand_cuts",
+     "level": 20
+    }
+   ],
+   "look": {
+    "shape": "humanoid",
+    "color": 2600544,
+    "accent": 1781279,
+    "scale": 1,
+    "art": "char_hero_bare",
+    "bare": {
+     "art": "char_hero_bare",
+     "hands": [
+      {
+       "x": 233,
+       "y": 135,
+       "angle": 75
+      },
+      {
+       "x": 49,
+       "y": 268,
+       "angle": -140
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "items": [
+  {
+   "id": "health_potion",
+   "type": "consumable",
+   "name": "Health Potion",
+   "description": "Restores 40 HP.",
+   "price": 15,
+   "iconColor": 14042433,
+   "restore": {
+    "hp": 40
+   }
+  },
+  {
+   "id": "mana_potion",
+   "type": "consumable",
+   "name": "Mana Potion",
+   "description": "Restores 20 MP.",
+   "price": 15,
+   "iconColor": 3898845,
+   "restore": {
+    "mp": 20
+   }
+  },
+  {
+   "id": "greater_health_potion",
+   "type": "consumable",
+   "name": "Greater Health Potion",
+   "description": "Restores 100 HP.",
+   "price": 40,
+   "iconColor": 14689374,
+   "restore": {
+    "hp": 100
+   }
+  },
+  {
+   "id": "greater_mana_potion",
+   "type": "consumable",
+   "name": "Greater Mana Potion",
+   "description": "Restores 45 MP.",
+   "price": 40,
+   "iconColor": 2056160,
+   "restore": {
+    "mp": 45
+   }
+  },
+  {
+   "id": "training_sword",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Training Sword",
+   "description": "Dull, but it beats fists.",
+   "price": 10,
+   "damage": [
+    4,
+    7
+   ],
+   "damageType": "melee",
+   "art": "wpn_training_sword",
+   "grip": 0.81,
+   "size": 0.6
+  },
+  {
+   "id": "worn_staff",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Worn Staff",
+   "description": "An apprentice staff. Hits with magic.",
+   "price": 15,
+   "damage": [
+    4,
+    7
+   ],
+   "damageType": "magic",
+   "art": "wpn_worn_staff",
+   "grip": 0.45,
+   "size": 1
+  },
+  {
+   "id": "rusty_dagger",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Rusty Dagger",
+   "description": "Short, quick, a bit rusty.",
+   "price": 15,
+   "damage": [
+    4,
+    7
+   ],
+   "damageType": "pierce",
+   "art": "wpn_rusty_dagger",
+   "grip": 0.81,
+   "size": 0.3,
+   "stats": {
+    "dex": 1
+   }
+  },
+  {
+   "id": "iron_sword",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Iron Sword",
+   "description": "A sturdy blade from the town forge.",
+   "price": 120,
+   "damage": [
+    7,
+    11
+   ],
+   "damageType": "melee",
+   "art": "wpn_iron_sword",
+   "grip": 0.83,
+   "size": 0.62
+  },
+  {
+   "id": "oak_staff",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Oak Staff",
+   "description": "Hits with magic. Scales with INT.",
+   "price": 100,
+   "damage": [
+    5,
+    9
+   ],
+   "damageType": "magic",
+   "art": "wpn_oak_staff",
+   "grip": 0.45,
+   "size": 1,
+   "stats": {
+    "int": 3
+   }
+  },
+  {
+   "id": "tusk_dagger",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Tusk Dagger",
+   "description": "Carved from a boar tusk. Quick and sharp.",
+   "price": 90,
+   "damage": [
+    6,
+    9
+   ],
+   "damageType": "pierce",
+   "art": "wpn_tusk_dagger",
+   "grip": 0.78,
+   "size": 0.32,
+   "stats": {
+    "dex": 2
+   }
+  },
+  {
+   "id": "hunting_knife",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Hunting Knife",
+   "description": "A trapper's knife. Quick in the hand.",
+   "price": 110,
+   "damage": [
+    6,
+    10
+   ],
+   "damageType": "pierce",
+   "art": "wpn_hunting_knife",
+   "grip": 0.8,
+   "size": 0.32,
+   "stats": {
+    "dex": 1
+   }
+  },
+  {
+   "id": "cinder_fang",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Cinder Fang",
+   "description": "A dagger of black glass, warm to the touch.",
+   "price": 140,
+   "damage": [
+    6,
+    10
+   ],
+   "damageType": "pierce",
+   "art": "wpn_cinder_fang",
+   "grip": 0.83,
+   "size": 0.32,
+   "element": "fire",
+   "stats": {
+    "dex": 1
+   },
+   "proc": {
+    "name": "Ignite",
+    "chance": 0.15,
+    "power": 0,
+    "applies": [
+     {
+      "status": "burn",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "emberbrand",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Emberbrand",
+   "description": "Its edge never quite stops glowing.",
+   "price": 160,
+   "damage": [
+    8,
+    12
+   ],
+   "damageType": "melee",
+   "art": "wpn_emberbrand",
+   "grip": 0.85,
+   "size": 0.64,
+   "element": "fire",
+   "proc": {
+    "name": "Flare",
+    "chance": 0.12,
+    "power": 0.6
+   }
+  },
+  {
+   "id": "ember_wand",
+   "type": "weapon",
+   "tier": 1,
+   "name": "Ember Wand",
+   "description": "A charred wand with a coal for a heart.",
+   "price": 150,
+   "damage": [
+    6,
+    10
+   ],
+   "damageType": "magic",
+   "art": "wpn_ember_wand",
+   "grip": 0.78,
+   "size": 0.45,
+   "element": "fire",
+   "stats": {
+    "int": 2
+   }
+  },
+  {
+   "id": "thornheart_blade",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Thornheart Blade",
+   "description": "Carved from the Thornheart. Still smells of spring rain.",
+   "price": 400,
+   "damage": [
+    12,
+    17
+   ],
+   "damageType": "melee",
+   "art": "wpn_thornheart_blade",
+   "grip": 0.85,
+   "size": 0.66,
+   "element": "earth",
+   "stats": {
+    "str": 2,
+    "end": 1
+   },
+   "proc": {
+    "name": "Thorn Burst",
+    "chance": 0.15,
+    "power": 0.8,
+    "applies": [
+     {
+      "status": "bleed",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "heartwood_staff",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Heartwood Staff",
+   "description": "A living staff that hums with old magic.",
+   "price": 400,
+   "damage": [
+    10,
+    15
+   ],
+   "damageType": "magic",
+   "art": "wpn_heartwood_staff",
+   "grip": 0.45,
+   "size": 1.05,
+   "element": "earth",
+   "stats": {
+    "int": 4
+   },
+   "proc": {
+    "name": "Verdant Pulse",
+    "chance": 0.15,
+    "power": 0,
+    "heal": 0.08
+   }
+  },
+  {
+   "id": "briar_fang",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Briar Fang",
+   "description": "A dagger grown from a single great thorn.",
+   "price": 400,
+   "damage": [
+    10,
+    14
+   ],
+   "damageType": "pierce",
+   "art": "wpn_briar_fang",
+   "grip": 0.8,
+   "size": 0.34,
+   "element": "earth",
+   "stats": {
+    "dex": 3
+   },
+   "proc": {
+    "name": "Briar Sting",
+    "chance": 0.2,
+    "power": 0,
+    "applies": [
+     {
+      "status": "poison",
+      "turns": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "steel_broadsword",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Steel Broadsword",
+   "description": "Reedwatch steel. Heavy, honest and sharp.",
+   "price": 320,
+   "damage": [
+    11,
+    16
+   ],
+   "damageType": "melee",
+   "iconColor": 11583173,
+   "art": "wpn_steel_broadsword",
+   "grip": 0.84,
+   "size": 0.64
+  },
+  {
+   "id": "yew_staff",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Yew Staff",
+   "description": "Hits with magic. Scales with INT.",
+   "price": 300,
+   "damage": [
+    8,
+    13
+   ],
+   "damageType": "magic",
+   "iconColor": 9268835,
+   "art": "wpn_yew_staff",
+   "grip": 0.45,
+   "size": 1,
+   "stats": {
+    "int": 4
+   }
+  },
+  {
+   "id": "fenwatch_stiletto",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Fenwatch Stiletto",
+   "description": "A scout's blade, thin enough to slip through mail.",
+   "price": 310,
+   "damage": [
+    9,
+    15
+   ],
+   "damageType": "pierce",
+   "iconColor": 9479342,
+   "art": "wpn_fenwatch_stiletto",
+   "grip": 0.8,
+   "size": 0.32,
+   "stats": {
+    "dex": 2
+   }
+  },
+  {
+   "id": "tidebreaker",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Tidebreaker",
+   "description": "A sea-green blade that drags at whatever it cuts.",
+   "price": 340,
+   "damage": [
+    11,
+    16
+   ],
+   "damageType": "melee",
+   "element": "water",
+   "iconColor": 2533018,
+   "art": "wpn_tidebreaker",
+   "grip": 0.86,
+   "size": 0.64,
+   "stats": {
+    "end": 1
+   },
+   "proc": {
+    "name": "Undertow",
+    "chance": 0.15,
+    "power": 0,
+    "applies": [
+     {
+      "status": "weaken",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "stormcleaver",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Stormcleaver",
+   "description": "Sparks jump from its edge on every swing.",
+   "price": 360,
+   "damage": [
+    11,
+    16
+   ],
+   "damageType": "melee",
+   "element": "energy",
+   "iconColor": 16766287,
+   "art": "wpn_stormcleaver",
+   "grip": 0.84,
+   "size": 0.66,
+   "proc": {
+    "name": "Arc Flash",
+    "chance": 0.15,
+    "power": 0.5,
+    "applies": [
+     {
+      "status": "shock",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "tidecaller_rod",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Tidecaller Rod",
+   "description": "Driftwood and pearl. The air around it is always damp.",
+   "price": 340,
+   "damage": [
+    8,
+    13
+   ],
+   "damageType": "magic",
+   "element": "water",
+   "iconColor": 5227511,
+   "art": "wpn_tidecaller_rod",
+   "grip": 0.78,
+   "size": 0.8,
+   "stats": {
+    "int": 3
+   },
+   "proc": {
+    "name": "Riptide",
+    "chance": 0.15,
+    "power": 0,
+    "applies": [
+     {
+      "status": "chill",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "sparkglass_wand",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Sparkglass Wand",
+   "description": "A wand of fused lightning-glass. It crackles in damp air.",
+   "price": 350,
+   "damage": [
+    8,
+    13
+   ],
+   "damageType": "magic",
+   "element": "energy",
+   "iconColor": 16773494,
+   "art": "wpn_sparkglass_wand",
+   "grip": 0.85,
+   "size": 0.45,
+   "stats": {
+    "int": 3
+   },
+   "proc": {
+    "name": "Static",
+    "chance": 0.15,
+    "power": 0.4,
+    "applies": [
+     {
+      "status": "shock",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "brinefang",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Brinefang",
+   "description": "A kris with a salt-crusted wavy blade. Its cuts sting.",
+   "price": 330,
+   "damage": [
+    9,
+    15
+   ],
+   "damageType": "pierce",
+   "element": "water",
+   "iconColor": 5093036,
+   "art": "wpn_brinefang",
+   "grip": 0.85,
+   "size": 0.33,
+   "stats": {
+    "dex": 2
+   },
+   "proc": {
+    "name": "Brine Cut",
+    "chance": 0.18,
+    "power": 0,
+    "applies": [
+     {
+      "status": "bleed",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "sparkfang",
+   "type": "weapon",
+   "tier": 2,
+   "name": "Sparkfang",
+   "description": "A crackling spur on a copper hilt. It bites twice.",
+   "price": 350,
+   "damage": [
+    9,
+    15
+   ],
+   "damageType": "pierce",
+   "element": "energy",
+   "iconColor": 16769154,
+   "art": "wpn_sparkfang",
+   "grip": 0.81,
+   "size": 0.33,
+   "stats": {
+    "dex": 2
+   },
+   "proc": {
+    "name": "Spark",
+    "chance": 0.18,
+    "power": 0.5
+   }
+  },
+  {
+   "id": "thunderhead_maul",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Thunderhead Maul",
+   "description": "Forged around a Stormcoil scale. Every blow rumbles.",
+   "price": 750,
+   "damage": [
+    17,
+    25
+   ],
+   "damageType": "melee",
+   "element": "energy",
+   "iconColor": 16763432,
+   "art": "wpn_thunderhead_maul",
+   "grip": 0.78,
+   "size": 0.7,
+   "stats": {
+    "str": 3,
+    "end": 1
+   },
+   "proc": {
+    "name": "Thunderclap",
+    "chance": 0.12,
+    "power": 0.8,
+    "applies": [
+     {
+      "status": "stun",
+      "turns": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "stormcoil_scepter",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Stormcoil Scepter",
+   "description": "A coil of living lightning caged in silver.",
+   "price": 750,
+   "damage": [
+    13,
+    20
+   ],
+   "damageType": "magic",
+   "element": "energy",
+   "iconColor": 16772696,
+   "art": "wpn_stormcoil_scepter",
+   "grip": 0.55,
+   "size": 0.85,
+   "stats": {
+    "int": 5
+   },
+   "proc": {
+    "name": "Chain Lightning",
+    "chance": 0.15,
+    "power": 0.4,
+    "hits": 2
+   }
+  },
+  {
+   "id": "coilfang",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Coilfang",
+   "description": "A serpent fang that still hums with stored lightning.",
+   "price": 750,
+   "damage": [
+    14,
+    21
+   ],
+   "damageType": "pierce",
+   "element": "energy",
+   "iconColor": 16774557,
+   "art": "wpn_coilfang",
+   "grip": 0.82,
+   "size": 0.35,
+   "stats": {
+    "dex": 4
+   },
+   "proc": {
+    "name": "Static Venom",
+    "chance": 0.2,
+    "power": 0,
+    "applies": [
+     {
+      "status": "shock",
+      "turns": 2
+     },
+     {
+      "status": "poison",
+      "turns": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "travel_garb",
+   "type": "armor",
+   "tier": 1,
+   "name": "Traveler's Garb",
+   "description": "Simple cloth. Better than nothing.",
+   "price": 10,
+   "iconColor": 10716252,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 3
+   }
+  },
+  {
+   "id": "novice_robe",
+   "type": "armor",
+   "tier": 1,
+   "name": "Novice Robe",
+   "description": "Thin cloth with a few protective stitches.",
+   "price": 15,
+   "iconColor": 7101351,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 6
+   }
+  },
+  {
+   "id": "leather_armor",
+   "type": "armor",
+   "tier": 1,
+   "name": "Leather Armor",
+   "description": "Good against claws and blades.",
+   "price": 80,
+   "iconColor": 9067058,
+   "defense": {
+    "melee": 6,
+    "pierce": 7,
+    "magic": 3
+   },
+   "stats": {
+    "end": 1
+   }
+  },
+  {
+   "id": "apprentice_robe",
+   "type": "armor",
+   "tier": 1,
+   "name": "Apprentice Robe",
+   "description": "Woven with warding runes. Shrugs off a little fire.",
+   "price": 90,
+   "iconColor": 4931486,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 8
+   },
+   "resists": {
+    "fire": 15
+   },
+   "stats": {
+    "int": 2
+   }
+  },
+  {
+   "id": "scale_mail",
+   "type": "armor",
+   "tier": 2,
+   "name": "Scale Mail",
+   "description": "Overlapping steel scales. Heavy, but it stops a lot.",
+   "price": 260,
+   "iconColor": 7901340,
+   "defense": {
+    "melee": 10,
+    "pierce": 11,
+    "magic": 4
+   },
+   "stats": {
+    "end": 1
+   }
+  },
+  {
+   "id": "reedweave_robe",
+   "type": "armor",
+   "tier": 2,
+   "name": "Reedweave Robe",
+   "description": "Woven from warded marsh reeds. Turns spells aside.",
+   "price": 270,
+   "iconColor": 5606191,
+   "defense": {
+    "melee": 4,
+    "pierce": 4,
+    "magic": 13
+   },
+   "stats": {
+    "int": 3
+   }
+  },
+  {
+   "id": "marshhide_vest",
+   "type": "armor",
+   "tier": 2,
+   "name": "Marshhide Vest",
+   "description": "Oiled lurker hide. Water runs right off it.",
+   "price": 300,
+   "iconColor": 5139274,
+   "defense": {
+    "melee": 9,
+    "pierce": 10,
+    "magic": 5
+   },
+   "resists": {
+    "water": 15
+   },
+   "stats": {
+    "end": 1
+   }
+  },
+  {
+   "id": "stormweave_robe",
+   "type": "armor",
+   "tier": 2,
+   "name": "Stormweave Robe",
+   "description": "Threads of wisp-silk ground the lightning.",
+   "price": 300,
+   "iconColor": 8280002,
+   "defense": {
+    "melee": 4,
+    "pierce": 4,
+    "magic": 12
+   },
+   "resists": {
+    "energy": 15
+   },
+   "stats": {
+    "int": 2
+   }
+  },
+  {
+   "id": "superior_health_potion",
+   "type": "consumable",
+   "name": "Superior Health Potion",
+   "description": "Restores 180 HP.",
+   "price": 90,
+   "iconColor": 12720219,
+   "restore": {
+    "hp": 180
+   }
+  },
+  {
+   "id": "superior_mana_potion",
+   "type": "consumable",
+   "name": "Superior Mana Potion",
+   "description": "Restores 80 MP.",
+   "price": 90,
+   "iconColor": 2635155,
+   "restore": {
+    "mp": 80
+   }
+  },
+  {
+   "id": "tempered_longsword",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Tempered Longsword",
+   "description": "Hearthold steel, quenched in snowmelt.",
+   "price": 700,
+   "damage": [
+    16,
+    24
+   ],
+   "damageType": "melee",
+   "iconColor": 13621468,
+   "art": "wpn_tempered_longsword",
+   "grip": 0.79,
+   "size": 0.66
+  },
+  {
+   "id": "larchwood_staff",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Larchwood Staff",
+   "description": "Mountain larch, banded in iron and warm to the touch.",
+   "price": 650,
+   "damage": [
+    12,
+    19
+   ],
+   "damageType": "magic",
+   "iconColor": 10586239,
+   "art": "wpn_larchwood_staff",
+   "grip": 0.45,
+   "size": 1.05,
+   "stats": {
+    "int": 2
+   }
+  },
+  {
+   "id": "ridgerunner_kris",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Ridgerunner Kris",
+   "description": "A wavy blade for climbers who fight light.",
+   "price": 680,
+   "damage": [
+    13,
+    21
+   ],
+   "damageType": "pierce",
+   "iconColor": 9479342,
+   "art": "wpn_ridgerunner_kris",
+   "grip": 0.85,
+   "size": 0.34,
+   "stats": {
+    "dex": 2
+   }
+  },
+  {
+   "id": "ridgeplate",
+   "type": "armor",
+   "tier": 3,
+   "name": "Ridgeplate",
+   "description": "Thick plates over a fur lining. Keeps out claws and cold.",
+   "price": 620,
+   "iconColor": 6323595,
+   "defense": {
+    "melee": 15,
+    "pierce": 15,
+    "magic": 6
+   },
+   "stats": {
+    "end": 2
+   }
+  },
+  {
+   "id": "fleecewool_robe",
+   "type": "armor",
+   "tier": 3,
+   "name": "Fleecewool Robe",
+   "description": "Mountain wool stitched with warding runes.",
+   "price": 620,
+   "iconColor": 15527921,
+   "defense": {
+    "melee": 6,
+    "pierce": 6,
+    "magic": 19
+   },
+   "stats": {
+    "int": 4
+   }
+  },
+  {
+   "id": "frostbite",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Frostbite",
+   "description": "A pale blade rimed with frost that never melts.",
+   "price": 760,
+   "damage": [
+    16,
+    23
+   ],
+   "damageType": "melee",
+   "element": "ice",
+   "iconColor": 8508666,
+   "art": "wpn_frostbite",
+   "grip": 0.83,
+   "size": 0.64,
+   "stats": {
+    "str": 1
+   },
+   "proc": {
+    "name": "Bite of Winter",
+    "chance": 0.15,
+    "power": 0,
+    "applies": [
+     {
+      "status": "chill",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "hoarfrost_staff",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Hoarfrost Staff",
+   "description": "Ice crystals grow along it overnight.",
+   "price": 740,
+   "damage": [
+    12,
+    18
+   ],
+   "damageType": "magic",
+   "element": "ice",
+   "iconColor": 11789820,
+   "art": "wpn_hoarfrost_staff",
+   "grip": 0.45,
+   "size": 1.05,
+   "stats": {
+    "int": 3
+   }
+  },
+  {
+   "id": "icicle_kris",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Icicle Kris",
+   "description": "Sharp, cold and a little too eager.",
+   "price": 750,
+   "damage": [
+    13,
+    20
+   ],
+   "damageType": "pierce",
+   "element": "ice",
+   "iconColor": 5227511,
+   "art": "wpn_icicle_kris",
+   "grip": 0.82,
+   "size": 0.34,
+   "stats": {
+    "dex": 2
+   },
+   "proc": {
+    "name": "Shatter",
+    "chance": 0.12,
+    "power": 0.6
+   }
+  },
+  {
+   "id": "hearthfire_blade",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Hearthfire Blade",
+   "description": "Forged over the Hearthold fire. It smells of pine smoke.",
+   "price": 760,
+   "damage": [
+    16,
+    23
+   ],
+   "damageType": "melee",
+   "element": "fire",
+   "iconColor": 16740419,
+   "art": "wpn_hearthfire_blade",
+   "grip": 0.82,
+   "size": 0.64,
+   "stats": {
+    "str": 1
+   },
+   "proc": {
+    "name": "Kindle",
+    "chance": 0.15,
+    "power": 0,
+    "applies": [
+     {
+      "status": "burn",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "kindling_rod",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Kindling Rod",
+   "description": "A rod of charred wood with an ember that will not go out.",
+   "price": 740,
+   "damage": [
+    12,
+    18
+   ],
+   "damageType": "magic",
+   "element": "fire",
+   "iconColor": 16747109,
+   "art": "wpn_kindling_rod",
+   "grip": 0.45,
+   "size": 1,
+   "stats": {
+    "int": 3
+   }
+  },
+  {
+   "id": "salamander_kris",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Salamander Kris",
+   "description": "Scale-hilted and always warm.",
+   "price": 750,
+   "damage": [
+    13,
+    20
+   ],
+   "damageType": "pierce",
+   "element": "fire",
+   "iconColor": 16755520,
+   "art": "wpn_salamander_kris",
+   "grip": 0.88,
+   "size": 0.34,
+   "stats": {
+    "dex": 2
+   },
+   "proc": {
+    "name": "Scorch",
+    "chance": 0.12,
+    "power": 0.6
+   }
+  },
+  {
+   "id": "frostpelt_vest",
+   "type": "armor",
+   "tier": 3,
+   "name": "Frostpelt Vest",
+   "description": "Wolf pelt over boiled leather. Cold slides right off.",
+   "price": 700,
+   "iconColor": 10395294,
+   "defense": {
+    "melee": 13,
+    "pierce": 13,
+    "magic": 7
+   },
+   "resists": {
+    "ice": 15
+   },
+   "stats": {
+    "end": 1
+   }
+  },
+  {
+   "id": "galeweave_robe",
+   "type": "armor",
+   "tier": 3,
+   "name": "Galeweave Robe",
+   "description": "Woven on the windiest ridge in the Frostfangs.",
+   "price": 700,
+   "iconColor": 10868391,
+   "defense": {
+    "melee": 6,
+    "pierce": 6,
+    "magic": 18
+   },
+   "resists": {
+    "wind": 15
+   },
+   "stats": {
+    "int": 3
+   }
+  },
+  {
+   "id": "snowmaw_cleaver",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Snowmaw Cleaver",
+   "description": "Hewn from the old beast's ice-hard tusk.",
+   "price": 1100,
+   "damage": [
+    18,
+    26
+   ],
+   "damageType": "melee",
+   "element": "ice",
+   "iconColor": 14808574,
+   "art": "wpn_snowmaw_cleaver",
+   "grip": 0.8,
+   "size": 0.7,
+   "stats": {
+    "str": 3
+   },
+   "proc": {
+    "name": "Avalanche",
+    "chance": 0.12,
+    "power": 0.8,
+    "applies": [
+     {
+      "status": "chill",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "mawtooth_staff",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Mawtooth Staff",
+   "description": "A staff crowned with one of Snowmaw's teeth.",
+   "price": 1100,
+   "damage": [
+    14,
+    21
+   ],
+   "damageType": "magic",
+   "element": "ice",
+   "iconColor": 11789820,
+   "art": "wpn_mawtooth_staff",
+   "grip": 0.45,
+   "size": 1.05,
+   "stats": {
+    "int": 4
+   },
+   "proc": {
+    "name": "Frozen Breath",
+    "chance": 0.12,
+    "power": 0.6,
+    "applies": [
+     {
+      "status": "chill",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "snowmaw_claw",
+   "type": "weapon",
+   "tier": 3,
+   "name": "Snowmaw Claw",
+   "description": "A curved claw set in a bone grip.",
+   "price": 1100,
+   "damage": [
+    15,
+    23
+   ],
+   "damageType": "pierce",
+   "element": "ice",
+   "iconColor": 8508666,
+   "art": "wpn_snowmaw_claw",
+   "grip": 0.79,
+   "size": 0.36,
+   "stats": {
+    "dex": 3
+   },
+   "proc": {
+    "name": "Rend",
+    "chance": 0.15,
+    "power": 0,
+    "applies": [
+     {
+      "status": "bleed",
+      "turns": 3
+     }
+    ]
+   }
+  },
+  {
+   "id": "whiteout",
+   "type": "weapon",
+   "tier": 4,
+   "name": "Whiteout",
+   "description": "A greatsword that howls like a blizzard when swung.",
+   "price": 1600,
+   "damage": [
+    25,
+    37
+   ],
+   "damageType": "melee",
+   "element": "wind",
+   "iconColor": 14742257,
+   "art": "wpn_whiteout",
+   "grip": 0.84,
+   "size": 0.72,
+   "stats": {
+    "str": 4,
+    "end": 1
+   },
+   "proc": {
+    "name": "Whiteout",
+    "chance": 0.12,
+    "power": 0.8,
+    "applies": [
+     {
+      "status": "blind",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "squall_stave",
+   "type": "weapon",
+   "tier": 4,
+   "name": "Squall Stave",
+   "description": "The Frostbinder's own stave. The wind still answers it.",
+   "price": 1600,
+   "damage": [
+    19,
+    29
+   ],
+   "damageType": "magic",
+   "element": "wind",
+   "iconColor": 11722715,
+   "art": "wpn_squall_stave",
+   "grip": 0.45,
+   "size": 1.08,
+   "stats": {
+    "int": 5
+   },
+   "proc": {
+    "name": "Squall",
+    "chance": 0.12,
+    "power": 0.8,
+    "applies": [
+     {
+      "status": "shock",
+      "turns": 2
+     }
+    ]
+   }
+  },
+  {
+   "id": "galecutter",
+   "type": "weapon",
+   "tier": 4,
+   "name": "Galecutter",
+   "description": "So light it seems to cut before you swing.",
+   "price": 1600,
+   "damage": [
+    20,
+    32
+   ],
+   "damageType": "pierce",
+   "element": "wind",
+   "iconColor": 8440772,
+   "art": "wpn_galecutter",
+   "grip": 0.87,
+   "size": 0.36,
+   "stats": {
+    "dex": 4
+   },
+   "proc": {
+    "name": "Tailwind",
+    "chance": 0.15,
+    "power": 0,
+    "applies": [
+     {
+      "status": "evasive",
+      "turns": 2,
+      "self": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "recall_scroll",
+   "type": "scroll",
+   "name": "Recall Scroll",
+   "description": "Takes you back to the last town you visited. One way: you walk back out. Not in battle.",
+   "price": 20,
+   "iconColor": 15260072,
+   "effect": "recall"
+  },
+  {
+   "id": "stone_of_might",
+   "type": "stone",
+   "name": "Stone of Might",
+   "description": "Re-rolls the Damage line of a weapon to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.",
+   "price": 30,
+   "iconColor": 15022389,
+   "line": "damage"
+  },
+  {
+   "id": "stone_of_precision",
+   "type": "stone",
+   "name": "Stone of Precision",
+   "description": "Re-rolls the Crit chance line of a weapon to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.",
+   "price": 30,
+   "iconColor": 16635957,
+   "line": "crit"
+  },
+  {
+   "id": "stone_of_warding",
+   "type": "stone",
+   "name": "Stone of Warding",
+   "description": "Re-rolls the Defense line of a piece of armor to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.",
+   "price": 30,
+   "iconColor": 2001125,
+   "line": "defense"
+  },
+  {
+   "id": "stone_of_vigor",
+   "type": "stone",
+   "name": "Stone of Vigor",
+   "description": "Re-rolls the Max HP line of a piece of armor to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.",
+   "price": 30,
+   "iconColor": 4431943,
+   "line": "hp"
+  },
+  {
+   "id": "leather_cap",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Leather Cap",
+   "description": "Boiled leather. Keeps branches out of your eyes.",
+   "price": 30,
+   "iconColor": 9067058,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 1
+   },
+   "tier": 1
+  },
+  {
+   "id": "leather_gloves",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Leather Gloves",
+   "description": "Stiff at first, then like a second skin.",
+   "price": 25,
+   "iconColor": 9067058,
+   "defense": {
+    "melee": 1,
+    "pierce": 2,
+    "magic": 1
+   },
+   "tier": 1
+  },
+  {
+   "id": "leather_boots",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Leather Boots",
+   "description": "Made for long roads and wet paths.",
+   "price": 25,
+   "iconColor": 8015403,
+   "defense": {
+    "melee": 1,
+    "pierce": 2,
+    "magic": 1
+   },
+   "tier": 1
+  },
+  {
+   "id": "apprentice_hood",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Apprentice Hood",
+   "description": "Warding thread stitched round the rim.",
+   "price": 30,
+   "iconColor": 11022898,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 2
+   },
+   "tier": 1
+  },
+  {
+   "id": "apprentice_wraps",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Apprentice Wraps",
+   "description": "Cloth wraps that keep the fingers nimble for spells.",
+   "price": 25,
+   "iconColor": 11022898,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 2
+   },
+   "tier": 1
+  },
+  {
+   "id": "apprentice_slippers",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Apprentice Slippers",
+   "description": "Soft soles, quiet steps.",
+   "price": 25,
+   "iconColor": 9054762,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 2
+   },
+   "tier": 1
+  },
+  {
+   "id": "copper_band",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Copper Band",
+   "description": "A plain band that makes the arm feel heavier, in a good way.",
+   "price": 60,
+   "iconColor": 13137203,
+   "stats": {
+    "str": 2
+   },
+   "tier": 1
+  },
+  {
+   "id": "moonstone_ring",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Moonstone Ring",
+   "description": "Cool to the touch, and quietly humming.",
+   "price": 60,
+   "iconColor": 13228272,
+   "stats": {
+    "int": 2
+   },
+   "mp": 5,
+   "tier": 1
+  },
+  {
+   "id": "fox_ring",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Fox Ring",
+   "description": "A tiny fox curls around the finger.",
+   "price": 60,
+   "iconColor": 14711342,
+   "stats": {
+    "dex": 2
+   },
+   "tier": 1
+  },
+  {
+   "id": "oak_pendant",
+   "type": "accessory",
+   "slot": "necklace",
+   "name": "Oak Pendant",
+   "description": "A carved acorn on a leather cord.",
+   "price": 70,
+   "iconColor": 9071931,
+   "hp": 12,
+   "tier": 1
+  },
+  {
+   "id": "scale_coif",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Scale Coif",
+   "description": "A hood of small steel scales.",
+   "price": 100,
+   "iconColor": 10134701,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 1
+   },
+   "tier": 2
+  },
+  {
+   "id": "scale_gauntlets",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Scale Gauntlets",
+   "description": "Scaled cuffs over padded leather.",
+   "price": 80,
+   "iconColor": 10134701,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 1
+   },
+   "tier": 2
+  },
+  {
+   "id": "scale_boots",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Scale Boots",
+   "description": "Heavy, but they keep the bog out.",
+   "price": 80,
+   "iconColor": 8226446,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 1
+   },
+   "tier": 2
+  },
+  {
+   "id": "reedweave_hood",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Reedweave Hood",
+   "description": "Woven reeds with a faint blue glow in the weave.",
+   "price": 100,
+   "iconColor": 11051594,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 4
+   },
+   "tier": 2
+  },
+  {
+   "id": "reedweave_wraps",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Reedweave Wraps",
+   "description": "Light, dry and covered in tiny runes.",
+   "price": 80,
+   "iconColor": 11051594,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 3
+   },
+   "tier": 2
+  },
+  {
+   "id": "reedweave_slippers",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Reedweave Slippers",
+   "description": "They float. Nobody knows why.",
+   "price": 80,
+   "iconColor": 9407034,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 3
+   },
+   "tier": 2
+  },
+  {
+   "id": "silver_band",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Silver Band",
+   "description": "Polished smooth by years of sword grips.",
+   "price": 160,
+   "iconColor": 12634320,
+   "stats": {
+    "str": 3,
+    "end": 1
+   },
+   "tier": 2
+  },
+  {
+   "id": "tidepearl_ring",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Tidepearl Ring",
+   "description": "A pearl that is always a little damp.",
+   "price": 160,
+   "iconColor": 10475752,
+   "stats": {
+    "int": 3
+   },
+   "resists": {
+    "water": 10
+   },
+   "tier": 2
+  },
+  {
+   "id": "eelskin_ring",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Eelskin Ring",
+   "description": "Slippery. Makes your hands quicker, somehow.",
+   "price": 160,
+   "iconColor": 4877163,
+   "stats": {
+    "dex": 3
+   },
+   "crit": 1,
+   "tier": 2
+  },
+  {
+   "id": "stormglass_amulet",
+   "type": "accessory",
+   "slot": "necklace",
+   "name": "Stormglass Amulet",
+   "description": "A bead of fused glass with a spark trapped inside.",
+   "price": 180,
+   "iconColor": 16765471,
+   "hp": 20,
+   "resists": {
+    "energy": 10
+   },
+   "tier": 2
+  },
+  {
+   "id": "ridgeplate_helm",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Ridgeplate Helm",
+   "description": "Thick steel over a fur lining.",
+   "price": 220,
+   "iconColor": 11583173,
+   "defense": {
+    "melee": 4,
+    "pierce": 4,
+    "magic": 2
+   },
+   "tier": 3
+  },
+  {
+   "id": "ridgeplate_gauntlets",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Ridgeplate Gauntlets",
+   "description": "Fur-lined, so fingers still bend in the cold.",
+   "price": 180,
+   "iconColor": 11583173,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 1
+   },
+   "tier": 3
+  },
+  {
+   "id": "ridgeplate_boots",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Ridgeplate Boots",
+   "description": "Spiked soles for ice.",
+   "price": 180,
+   "iconColor": 9479342,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 1
+   },
+   "tier": 3
+  },
+  {
+   "id": "fleecewool_hood",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Fleecewool Hood",
+   "description": "Warm wool with blue warding runes.",
+   "price": 220,
+   "iconColor": 15787730,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 5
+   },
+   "tier": 3
+  },
+  {
+   "id": "fleecewool_mittens",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Fleecewool Mittens",
+   "description": "Spellwork in mittens. Hearthold insists.",
+   "price": 180,
+   "iconColor": 15787730,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 4
+   },
+   "tier": 3
+  },
+  {
+   "id": "fleecewool_boots",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Fleecewool Boots",
+   "description": "Fur inside, runes outside.",
+   "price": 180,
+   "iconColor": 14208180,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 4
+   },
+   "tier": 3
+  },
+  {
+   "id": "gold_band",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Gold Band",
+   "description": "Heavy gold. Heavy hands.",
+   "price": 320,
+   "iconColor": 15844367,
+   "stats": {
+    "str": 4,
+    "end": 2
+   },
+   "tier": 3
+  },
+  {
+   "id": "rimeglass_ring",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Rimeglass Ring",
+   "description": "Ice that never melts, set in silver.",
+   "price": 320,
+   "iconColor": 11789820,
+   "stats": {
+    "int": 4
+   },
+   "resists": {
+    "ice": 10
+   },
+   "tier": 3
+  },
+  {
+   "id": "wolfclaw_ring",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Wolfclaw Ring",
+   "description": "A claw curled into a ring. Still sharp.",
+   "price": 320,
+   "iconColor": 15527921,
+   "stats": {
+    "dex": 4
+   },
+   "crit": 2,
+   "tier": 3
+  },
+  {
+   "id": "hearthstone_pendant",
+   "type": "accessory",
+   "slot": "necklace",
+   "name": "Hearthstone Pendant",
+   "description": "A warm red stone from the Steamvent Caves.",
+   "price": 360,
+   "iconColor": 14172949,
+   "hp": 30,
+   "resists": {
+    "fire": 10
+   },
+   "tier": 3
+  },
+  {
+   "id": "thornwarden_helm",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Thornwarden Helm",
+   "description": "Bark and bramble, grown into a helm.",
+   "price": 110,
+   "iconColor": 6196282,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 2
+   },
+   "set": "thornwarden",
+   "stats": {
+    "end": 1
+   },
+   "tier": 1
+  },
+  {
+   "id": "thornwarden_gloves",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Thornwarden Gloves",
+   "description": "Thorny knuckles. Mind the handshake.",
+   "price": 90,
+   "iconColor": 6196282,
+   "defense": {
+    "melee": 2,
+    "pierce": 1,
+    "magic": 1
+   },
+   "set": "thornwarden",
+   "tier": 1
+  },
+  {
+   "id": "thornwarden_boots",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Thornwarden Boots",
+   "description": "Roots for laces.",
+   "price": 90,
+   "iconColor": 5208624,
+   "defense": {
+    "melee": 1,
+    "pierce": 2,
+    "magic": 1
+   },
+   "set": "thornwarden",
+   "tier": 1
+  },
+  {
+   "id": "thornwarden_band",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Thornwarden Band",
+   "description": "A living thorn ring. It grows a little each spring.",
+   "price": 110,
+   "iconColor": 8038474,
+   "set": "thornwarden",
+   "stats": {
+    "end": 2
+   },
+   "resists": {
+    "earth": 5
+   },
+   "tier": 1
+  },
+  {
+   "id": "stormwatch_helm",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Stormwatch Helm",
+   "description": "Copper-crested. Lightning likes it, and it likes lightning.",
+   "price": 260,
+   "iconColor": 3829413,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 3
+   },
+   "set": "stormwatch",
+   "stats": {
+    "end": 1
+   },
+   "tier": 2
+  },
+  {
+   "id": "stormwatch_gloves",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Stormwatch Gloves",
+   "description": "Oiled hide with copper studs.",
+   "price": 220,
+   "iconColor": 3829413,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 2
+   },
+   "set": "stormwatch",
+   "tier": 2
+  },
+  {
+   "id": "stormwatch_boots",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Stormwatch Boots",
+   "description": "Waterproof, mostly.",
+   "price": 220,
+   "iconColor": 3103368,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 2
+   },
+   "set": "stormwatch",
+   "tier": 2
+  },
+  {
+   "id": "stormwatch_amulet",
+   "type": "accessory",
+   "slot": "necklace",
+   "name": "Stormwatch Amulet",
+   "description": "A storm scale on a copper chain.",
+   "price": 260,
+   "iconColor": 8042751,
+   "set": "stormwatch",
+   "hp": 15,
+   "mp": 10,
+   "tier": 2
+  },
+  {
+   "id": "frostward_helm",
+   "type": "armor",
+   "slot": "helm",
+   "name": "Frostward Helm",
+   "description": "Rime-steel that never fogs.",
+   "price": 520,
+   "iconColor": 11789820,
+   "defense": {
+    "melee": 4,
+    "pierce": 4,
+    "magic": 4
+   },
+   "set": "frostward",
+   "stats": {
+    "end": 2
+   },
+   "tier": 3
+  },
+  {
+   "id": "frostward_gloves",
+   "type": "armor",
+   "slot": "gloves",
+   "name": "Frostward Gloves",
+   "description": "White fur cuffs over rime-steel.",
+   "price": 440,
+   "iconColor": 11789820,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 2
+   },
+   "set": "frostward",
+   "tier": 3
+  },
+  {
+   "id": "frostward_boots",
+   "type": "armor",
+   "slot": "boots",
+   "name": "Frostward Boots",
+   "description": "Each step leaves a little frost.",
+   "price": 440,
+   "iconColor": 9489145,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 2
+   },
+   "set": "frostward",
+   "tier": 3
+  },
+  {
+   "id": "frostward_ring",
+   "type": "accessory",
+   "slot": "ring",
+   "name": "Frostward Ring",
+   "description": "A sliver of glacier set in white gold.",
+   "price": 520,
+   "iconColor": 14808574,
+   "set": "frostward",
+   "stats": {
+    "end": 3
+   },
+   "resists": {
+    "ice": 10
+   },
+   "tier": 3
+  },
+  {
+   "id": "scrap",
+   "type": "material",
+   "name": "Iron Scrap",
+   "description": "Salvaged metal. The smith uses it to craft and reinforce.",
+   "price": 6,
+   "iconColor": 9080726
+  },
+  {
+   "id": "dust",
+   "type": "material",
+   "name": "Honing Dust",
+   "description": "Ground from salvaged gear. Used to hone quality.",
+   "price": 12,
+   "iconColor": 13220095
+  },
+  {
+   "id": "moss_clump",
+   "type": "material",
+   "name": "Moss Clump",
+   "description": "Springy, damp and oddly tough.",
+   "price": 3,
+   "iconColor": 6200394
+  },
+  {
+   "id": "boar_tusk",
+   "type": "material",
+   "name": "Boar Tusk",
+   "description": "Hard as bone and twice as sharp.",
+   "price": 6,
+   "iconColor": 15260864
+  },
+  {
+   "id": "fen_hide",
+   "type": "material",
+   "name": "Fen Hide",
+   "description": "Slick, waterproof hide from the Mirewater Fen.",
+   "price": 10,
+   "iconColor": 4877130
+  },
+  {
+   "id": "storm_scale",
+   "type": "material",
+   "name": "Storm Feather",
+   "description": "A heron crest feather that still crackles.",
+   "price": 14,
+   "iconColor": 8042751
+  },
+  {
+   "id": "frost_pelt",
+   "type": "material",
+   "name": "Frost Pelt",
+   "description": "Thick white wolf fur, stiff with ice.",
+   "price": 16,
+   "iconColor": 15527921
+  },
+  {
+   "id": "ram_horn",
+   "type": "material",
+   "name": "Ram Horn",
+   "description": "A curled horn, scarred from a hundred head-butts.",
+   "price": 16,
+   "iconColor": 12364452
+  },
+  {
+   "id": "rime_shard",
+   "type": "material",
+   "name": "Rime Shard",
+   "description": "A splinter of glacier ice that never melts.",
+   "price": 20,
+   "iconColor": 11789820
+  },
+  {
+   "id": "salamander_scale",
+   "type": "material",
+   "name": "Salamander Scale",
+   "description": "Still warm, and faintly glowing.",
+   "price": 20,
+   "iconColor": 16747088
+  },
+  {
+   "id": "essence_fire",
+   "type": "material",
+   "name": "Fire Essence",
+   "description": "Distilled fire. The smith binds it into elemental gear.",
+   "price": 10,
+   "iconColor": 16742958
+  },
+  {
+   "id": "essence_water",
+   "type": "material",
+   "name": "Water Essence",
+   "description": "Distilled water. The smith binds it into elemental gear.",
+   "price": 10,
+   "iconColor": 3117024
+  },
+  {
+   "id": "essence_ice",
+   "type": "material",
+   "name": "Ice Essence",
+   "description": "Distilled ice. The smith binds it into elemental gear.",
+   "price": 10,
+   "iconColor": 10479359
+  },
+  {
+   "id": "essence_wind",
+   "type": "material",
+   "name": "Wind Essence",
+   "description": "Distilled wind. The smith binds it into elemental gear.",
+   "price": 10,
+   "iconColor": 7329440
+  },
+  {
+   "id": "essence_earth",
+   "type": "material",
+   "name": "Earth Essence",
+   "description": "Distilled earth. The smith binds it into elemental gear.",
+   "price": 10,
+   "iconColor": 11569724
+  },
+  {
+   "id": "essence_energy",
+   "type": "material",
+   "name": "Energy Essence",
+   "description": "Distilled energy. The smith binds it into elemental gear.",
+   "price": 10,
+   "iconColor": 16765471
+  },
+  {
+   "id": "essence_light",
+   "type": "material",
+   "name": "Light Essence",
+   "description": "Distilled light. The smith binds it into elemental gear.",
+   "price": 10,
+   "iconColor": 16773808
+  },
+  {
+   "id": "essence_dark",
+   "type": "material",
+   "name": "Dark Essence",
+   "description": "Distilled dark. The smith binds it into elemental gear.",
+   "price": 10,
+   "iconColor": 9067734
+  },
+  {
+   "id": "briarberry",
+   "type": "material",
+   "name": "Briarberry",
+   "description": "Guild hunt item. Dark berries off the Thornwood brambles; the healers pay for them.",
+   "price": 2,
+   "iconColor": 6953805
+  },
+  {
+   "id": "scorched_twig",
+   "type": "material",
+   "name": "Scorched Twig",
+   "description": "Guild hunt item. Proof of where the Ash Imps have been.",
+   "price": 3,
+   "iconColor": 5125166
+  },
+  {
+   "id": "stolen_trinket",
+   "type": "material",
+   "name": "Stolen Trinket",
+   "description": "Guild hunt item. Something the bandits took from a traveler. The Guild sends it home.",
+   "price": 4,
+   "iconColor": 13214247
+  },
+  {
+   "id": "bog_lily",
+   "type": "material",
+   "name": "Bog Lily",
+   "description": "Guild hunt item. A pale lily that only grows in fen water.",
+   "price": 5,
+   "iconColor": 14808516
+  },
+  {
+   "id": "drowned_coin",
+   "type": "material",
+   "name": "Drowned Coin",
+   "description": "Guild hunt item. Old coin from the sunken road, green with age.",
+   "price": 6,
+   "iconColor": 6130283
+  },
+  {
+   "id": "storm_glass_shard",
+   "type": "material",
+   "name": "Storm Glass Shard",
+   "description": "Guild hunt item. Sand fused by lightning.",
+   "price": 7,
+   "iconColor": 10146815
+  },
+  {
+   "id": "lichen_tuft",
+   "type": "material",
+   "name": "Lichen Tuft",
+   "description": "Guild hunt item. Frost lichen, scraped off the pass rocks.",
+   "price": 8,
+   "iconColor": 10467488
+  },
+  {
+   "id": "binding_rune",
+   "type": "material",
+   "name": "Binding Rune",
+   "description": "Guild hunt item. A chip of ice carved with a rune of cold.",
+   "price": 9,
+   "iconColor": 8508666
+  },
+  {
+   "id": "cinder_cap",
+   "type": "material",
+   "name": "Cinder Cap",
+   "description": "Guild hunt item. A mushroom that grows on hot rock.",
+   "price": 9,
+   "iconColor": 16740419
+  },
+  {
+   "id": "frost_seal",
+   "type": "material",
+   "name": "Frost Seal",
+   "description": "Guild hunt item. White wax seals the Frostbinder's acolytes stamp on everything.",
+   "price": 10,
+   "iconColor": 15527921
+  }
+ ],
+ "skills": [
+  {
+   "id": "heavy_strike",
+   "name": "Heavy Strike",
+   "description": "A leaping, crushing blow. 1.6x Blunt damage.",
+   "mpCost": 5,
+   "cooldown": 1,
+   "kind": "damage",
+   "power": 1.6,
+   "blunt": true,
+   "fx": "heavy"
+  },
+  {
+   "id": "second_wind",
+   "name": "Second Wind",
+   "description": "Catch your breath. Heal 25% of max HP.",
+   "mpCost": 6,
+   "cooldown": 4,
+   "kind": "heal",
+   "power": 0.25
+  },
+  {
+   "id": "war_cry",
+   "name": "War Cry",
+   "description": "Roar for courage. Deal 30% more damage for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "war_cry",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "skull_splitter",
+   "name": "Skull Splitter",
+   "description": "Everything into one swing. 2.4x damage.",
+   "mpCost": 10,
+   "cooldown": 3,
+   "kind": "damage",
+   "power": 2.4,
+   "fx": "heavy"
+  },
+  {
+   "id": "shield_bash",
+   "name": "Shield Bash",
+   "description": "1x Blunt damage with a 60% chance to stun for a turn.",
+   "mpCost": 8,
+   "cooldown": 4,
+   "kind": "damage",
+   "power": 1,
+   "blunt": true,
+   "applies": [
+    {
+     "status": "stun",
+     "turns": 1,
+     "chance": 0.6
+    }
+   ],
+   "fx": "heavy"
+  },
+  {
+   "id": "sunder",
+   "name": "Sunder",
+   "description": "1.3x damage and Expose: -25 to all its resistances for 3 turns.",
+   "mpCost": 8,
+   "cooldown": 4,
+   "kind": "damage",
+   "power": 1.3,
+   "applies": [
+    {
+     "status": "expose",
+     "turns": 3
+    }
+   ]
+  },
+  {
+   "id": "iron_skin",
+   "name": "Iron Skin",
+   "description": "Take 40% less damage for 3 turns.",
+   "mpCost": 10,
+   "cooldown": 6,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "iron_skin",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "cleave",
+   "name": "Cleave",
+   "description": "Two wide swings at 1.1x each.",
+   "mpCost": 10,
+   "cooldown": 2,
+   "kind": "damage",
+   "power": 1.1,
+   "hits": 2
+  },
+  {
+   "id": "bloodlust",
+   "name": "Bloodlust",
+   "description": "1.6x damage. Heal half the damage dealt.",
+   "mpCost": 12,
+   "cooldown": 4,
+   "kind": "damage",
+   "power": 1.6,
+   "lifesteal": 0.5
+  },
+  {
+   "id": "earthshaker",
+   "name": "Earthshaker",
+   "description": "Split the ground. 2x Earth damage and Weaken for 2 turns.",
+   "mpCost": 14,
+   "cooldown": 5,
+   "kind": "damage",
+   "element": "earth",
+   "power": 2,
+   "applies": [
+    {
+     "status": "weaken",
+     "turns": 2
+    }
+   ],
+   "fx": "heavy"
+  },
+  {
+   "id": "rallying_roar",
+   "name": "Rallying Roar",
+   "description": "Heal 20% of max HP, then Regen for 3 turns.",
+   "mpCost": 14,
+   "cooldown": 6,
+   "kind": "heal",
+   "power": 0.2,
+   "applies": [
+    {
+     "status": "regen",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "titans_wrath",
+   "name": "Titan's Wrath",
+   "description": "A blow that shakes mountains. 4x damage.",
+   "mpCost": 24,
+   "cooldown": 7,
+   "kind": "damage",
+   "power": 4,
+   "fx": "heavy"
+  },
+  {
+   "id": "light_bolt",
+   "name": "Light Bolt",
+   "description": "A bolt of pure light. 1.5x Light damage.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "light",
+   "power": 1.5
+  },
+  {
+   "id": "ember_bolt",
+   "name": "Staff Bolt",
+   "description": "1.5x damage in your staff's element (neutral staff: no element).",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "weapon",
+   "power": 1.5
+  },
+  {
+   "id": "mend",
+   "name": "Mend",
+   "description": "Heal 30% of max HP.",
+   "mpCost": 8,
+   "cooldown": 3,
+   "kind": "heal",
+   "power": 0.3
+  },
+  {
+   "id": "frost_lance",
+   "name": "Frost Lance",
+   "description": "2x Ice damage. 50% chance to Chill (-15% hit) for 2 turns.",
+   "mpCost": 8,
+   "cooldown": 2,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "ice",
+   "power": 2,
+   "applies": [
+    {
+     "status": "chill",
+     "turns": 2,
+     "chance": 0.5
+    }
+   ]
+  },
+  {
+   "id": "meteor",
+   "name": "Meteor",
+   "description": "Call down a falling star. 3x Fire damage.",
+   "mpCost": 18,
+   "cooldown": 5,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "fire",
+   "power": 3,
+   "fx": "heavy"
+  },
+  {
+   "id": "spark_chain",
+   "name": "Spark Chain",
+   "description": "Three arcs of Energy at 0.7x. 30% chance to Shock (takes +15%) for 2 turns.",
+   "mpCost": 10,
+   "cooldown": 2,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "energy",
+   "power": 0.7,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "shock",
+     "turns": 2,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "stone_skin",
+   "name": "Stone Skin",
+   "description": "Take 30% less damage and +25 Earth resistance for 3 turns.",
+   "mpCost": 10,
+   "cooldown": 6,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "stone_skin",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "gale",
+   "name": "Gale",
+   "description": "1.8x Wind damage and Weaken (deals 25% less) for 2 turns.",
+   "mpCost": 10,
+   "cooldown": 3,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "wind",
+   "power": 1.8,
+   "applies": [
+    {
+     "status": "weaken",
+     "turns": 2
+    }
+   ]
+  },
+  {
+   "id": "tidal_wave",
+   "name": "Tidal Wave",
+   "description": "A crashing wave. 2.6x Water damage.",
+   "mpCost": 14,
+   "cooldown": 3,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "water",
+   "power": 2.6
+  },
+  {
+   "id": "sunburst",
+   "name": "Sunburst",
+   "description": "2x Light damage. Heal 40% of the damage dealt.",
+   "mpCost": 14,
+   "cooldown": 4,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "light",
+   "power": 2,
+   "lifesteal": 0.4
+  },
+  {
+   "id": "shadow_hex",
+   "name": "Shadow Hex",
+   "description": "1x Dark damage and Shadow Rot for 4 turns: Dark damage each turn, -15 all resistances.",
+   "mpCost": 14,
+   "cooldown": 5,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "dark",
+   "power": 1,
+   "applies": [
+    {
+     "status": "shadow_rot",
+     "turns": 4
+    }
+   ]
+  },
+  {
+   "id": "thunderstorm",
+   "name": "Thunderstorm",
+   "description": "Four lightning strikes at 0.9x Energy each.",
+   "mpCost": 22,
+   "cooldown": 5,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "energy",
+   "power": 0.9,
+   "hits": 4
+  },
+  {
+   "id": "cataclysm",
+   "name": "Cataclysm",
+   "description": "Unleash your staff's element. 4.5x damage.",
+   "mpCost": 30,
+   "cooldown": 8,
+   "kind": "damage",
+   "damageType": "magic",
+   "power": 4.5,
+   "fx": "heavy"
+  },
+  {
+   "id": "gas_shot",
+   "name": "Gas Shot",
+   "description": "Throw a vial of choking gas: 0.6x damage and Poison for 3 turns.",
+   "mpCost": 4,
+   "cooldown": 2,
+   "kind": "damage",
+   "power": 0.6,
+   "applies": [
+    {
+     "status": "poison",
+     "turns": 3
+    }
+   ]
+  },
+  {
+   "id": "twin_cut",
+   "name": "Twin Cut",
+   "description": "Two quick slashes at 0.8x each.",
+   "mpCost": 4,
+   "cooldown": 1,
+   "kind": "damage",
+   "power": 0.8,
+   "hits": 2
+  },
+  {
+   "id": "bandage",
+   "name": "Bandage",
+   "description": "Heal 15% of max HP, then Regen for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 4,
+   "kind": "heal",
+   "power": 0.15,
+   "applies": [
+    {
+     "status": "regen",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "flurry",
+   "name": "Flurry",
+   "description": "Three rapid strikes at 0.65x each.",
+   "mpCost": 8,
+   "cooldown": 2,
+   "kind": "damage",
+   "power": 0.65,
+   "hits": 3
+  },
+  {
+   "id": "envenom",
+   "name": "Envenom",
+   "description": "0.8x damage and Poison for 4 turns. Poison ignores resistances.",
+   "mpCost": 7,
+   "cooldown": 4,
+   "kind": "damage",
+   "power": 0.8,
+   "applies": [
+    {
+     "status": "poison",
+     "turns": 4
+    }
+   ]
+  },
+  {
+   "id": "assassinate",
+   "name": "Assassinate",
+   "description": "Strike a vital spot. 2.6x damage, +30% crit chance.",
+   "mpCost": 12,
+   "cooldown": 4,
+   "kind": "damage",
+   "power": 2.6,
+   "critBonus": 0.3
+  },
+  {
+   "id": "smoke_bomb",
+   "name": "Smoke Bomb",
+   "description": "Vanish in smoke. Attacks against you have -40% hit chance for 2 turns.",
+   "mpCost": 8,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "evasive",
+     "turns": 2,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "expose_weakness",
+   "name": "Expose Weakness",
+   "description": "1x damage and Expose: -25 to all its resistances for 3 turns.",
+   "mpCost": 8,
+   "cooldown": 4,
+   "kind": "damage",
+   "power": 1,
+   "applies": [
+    {
+     "status": "expose",
+     "turns": 3
+    }
+   ]
+  },
+  {
+   "id": "shadowstep",
+   "name": "Shadowstep",
+   "description": "Strike from the shadows. 2x Dark damage, +50% crit chance.",
+   "mpCost": 12,
+   "cooldown": 4,
+   "kind": "damage",
+   "element": "dark",
+   "power": 2,
+   "critBonus": 0.5
+  },
+  {
+   "id": "fan_of_knives",
+   "name": "Fan of Knives",
+   "description": "Five thrown knives at 0.5x each.",
+   "mpCost": 14,
+   "cooldown": 3,
+   "kind": "damage",
+   "power": 0.5,
+   "hits": 5
+  },
+  {
+   "id": "hemorrhage",
+   "name": "Hemorrhage",
+   "description": "1.2x damage and Bleed for 4 turns.",
+   "mpCost": 12,
+   "cooldown": 4,
+   "kind": "damage",
+   "power": 1.2,
+   "applies": [
+    {
+     "status": "bleed",
+     "turns": 4
+    }
+   ]
+  },
+  {
+   "id": "death_mark",
+   "name": "Death Mark",
+   "description": "0.6x damage and Mark it: takes 30% more damage for 3 turns.",
+   "mpCost": 14,
+   "cooldown": 6,
+   "kind": "damage",
+   "power": 0.6,
+   "applies": [
+    {
+     "status": "marked",
+     "turns": 3
+    }
+   ]
+  },
+  {
+   "id": "thousand_cuts",
+   "name": "Thousand Cuts",
+   "description": "Eight blinding strikes at 0.45x each.",
+   "mpCost": 26,
+   "cooldown": 7,
+   "kind": "damage",
+   "power": 0.45,
+   "hits": 8
+  }
+ ],
+ "statuses": [
+  {
+   "id": "burn",
+   "name": "Burn",
+   "harmful": true,
+   "description": "Takes Fire damage each turn.",
+   "dot": {
+    "power": 0.3,
+    "element": "fire"
+   }
+  },
+  {
+   "id": "poison",
+   "name": "Poison",
+   "harmful": true,
+   "description": "Takes damage each turn. Ignores resistances.",
+   "dot": {
+    "power": 0.25
+   },
+   "tint": 9429867
+  },
+  {
+   "id": "bleed",
+   "name": "Bleed",
+   "harmful": true,
+   "description": "Takes damage each turn from the weapon that cut it.",
+   "dot": {
+    "power": 0.35,
+    "element": "weapon"
+   },
+   "tint": 14694970
+  },
+  {
+   "id": "spores",
+   "name": "Spores",
+   "harmful": true,
+   "description": "Choking spores. Earth damage each turn.",
+   "dot": {
+    "power": 0.3,
+    "element": "earth"
+   }
+  },
+  {
+   "id": "windchill",
+   "name": "Windchill",
+   "harmful": true,
+   "description": "Freezing wind. Wind damage each turn.",
+   "dot": {
+    "power": 0.3,
+    "element": "wind"
+   }
+  },
+  {
+   "id": "shadow_rot",
+   "name": "Shadow Rot",
+   "harmful": true,
+   "description": "Dark damage each turn and -15 to all resistances.",
+   "dot": {
+    "power": 0.3,
+    "element": "dark"
+   },
+   "resists": {
+    "all": -15
+   }
+  },
+  {
+   "id": "stun",
+   "name": "Stun",
+   "harmful": true,
+   "description": "Loses the next turn.",
+   "stun": true,
+   "tint": 16769126
+  },
+  {
+   "id": "chill",
+   "name": "Chill",
+   "harmful": true,
+   "description": "-15% hit chance.",
+   "hitChance": -0.15,
+   "tint": 12580095
+  },
+  {
+   "id": "blind",
+   "name": "Blind",
+   "harmful": true,
+   "description": "-30% hit chance.",
+   "hitChance": -0.3,
+   "tint": 9075368
+  },
+  {
+   "id": "shock",
+   "name": "Shock",
+   "harmful": true,
+   "description": "Takes 15% more damage.",
+   "damageTaken": 0.15,
+   "tint": 16769357
+  },
+  {
+   "id": "weaken",
+   "name": "Weaken",
+   "harmful": true,
+   "description": "Deals 25% less damage.",
+   "damageDealt": -0.25,
+   "tint": 11570431
+  },
+  {
+   "id": "expose",
+   "name": "Expose",
+   "harmful": true,
+   "description": "-25 to all resistances.",
+   "resists": {
+    "all": -25
+   },
+   "tint": 16751181
+  },
+  {
+   "id": "marked",
+   "name": "Marked",
+   "harmful": true,
+   "description": "Takes 30% more damage.",
+   "damageTaken": 0.3,
+   "tint": 16731469
+  },
+  {
+   "id": "war_cry",
+   "name": "War Cry",
+   "harmful": false,
+   "description": "Deals 30% more damage.",
+   "damageDealt": 0.3,
+   "tint": 16757575
+  },
+  {
+   "id": "iron_skin",
+   "name": "Iron Skin",
+   "harmful": false,
+   "description": "Takes 40% less damage.",
+   "damageTaken": -0.4,
+   "tint": 13162213
+  },
+  {
+   "id": "stone_skin",
+   "name": "Stone Skin",
+   "harmful": false,
+   "description": "Takes 30% less damage, +25 Earth resistance.",
+   "damageTaken": -0.3,
+   "resists": {
+    "earth": 25
+   },
+   "tint": 13214298
+  },
+  {
+   "id": "regen",
+   "name": "Regen",
+   "harmful": false,
+   "description": "Heals 8% of max HP each turn.",
+   "regen": 0.08,
+   "tint": 8257434
+  },
+  {
+   "id": "focus",
+   "name": "Focus",
+   "harmful": false,
+   "description": "+25% crit chance.",
+   "critChance": 0.25,
+   "tint": 16769162
+  },
+  {
+   "id": "evasive",
+   "name": "Evasive",
+   "harmful": false,
+   "description": "Attacks against it have -40% hit chance.",
+   "evasion": 0.4,
+   "tint": 12121544
+  },
+  {
+   "id": "bark_hide",
+   "name": "Bark Hide",
+   "harmful": false,
+   "description": "Takes 25% less damage.",
+   "damageTaken": -0.25,
+   "tint": 10516554
+  }
+ ],
+ "monsters": [
+  {
+   "id": "burrow_rat",
+   "name": "Burrow Rat",
+   "level": 1,
+   "look": {
+    "shape": "beast",
+    "color": 9272168,
+    "accent": 5128246,
+    "scale": 0.6,
+    "art": "mon_burrow_rat"
+   },
+   "hp": 22,
+   "stats": {
+    "str": 0,
+    "int": 0,
+    "dex": 2,
+    "end": 1
+   },
+   "damage": [
+    0,
+    0
+   ],
+   "defense": {
+    "melee": 0,
+    "pierce": 0,
+    "magic": 0
+   },
+   "attacks": [
+    {
+     "name": "Nip",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 1
+    }
+   ],
+   "xp": 5,
+   "gold": [
+    1,
+    3
+   ],
+   "loot": "road",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.1
+    }
+   ]
+  },
+  {
+   "id": "dew_slug",
+   "name": "Dew Slug",
+   "level": 1,
+   "look": {
+    "shape": "blob",
+    "color": 10467488,
+    "accent": 6257250,
+    "scale": 0.55,
+    "art": "mon_dew_slug"
+   },
+   "hp": 24,
+   "stats": {
+    "str": 0,
+    "int": 0,
+    "dex": 0,
+    "end": 1
+   },
+   "damage": [
+    0,
+    0
+   ],
+   "defense": {
+    "melee": 0,
+    "pierce": 0,
+    "magic": 0
+   },
+   "attacks": [
+    {
+     "name": "Slime",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 1
+    }
+   ],
+   "xp": 5,
+   "gold": [
+    1,
+    3
+   ],
+   "loot": "road",
+   "drops": [
+    {
+     "itemId": "mana_potion",
+     "chance": 0.1
+    }
+   ]
+  },
+  {
+   "id": "hedge_pixie",
+   "name": "Hedge Pixie",
+   "level": 1,
+   "look": {
+    "shape": "imp",
+    "color": 13031787,
+    "accent": 7043626,
+    "scale": 0.55,
+    "art": "mon_hedge_pixie"
+   },
+   "hp": 20,
+   "stats": {
+    "str": 0,
+    "int": 0,
+    "dex": 3,
+    "end": 1
+   },
+   "damage": [
+    0,
+    0
+   ],
+   "defense": {
+    "melee": 0,
+    "pierce": 0,
+    "magic": 0
+   },
+   "attacks": [
+    {
+     "name": "Pinch",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 1
+    }
+   ],
+   "xp": 6,
+   "gold": [
+    2,
+    4
+   ],
+   "loot": "road",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.1
+    }
+   ]
+  },
+  {
+   "id": "millstone_crab",
+   "name": "Millstone Crab",
+   "level": 2,
+   "boss": true,
+   "look": {
+    "shape": "beast",
+    "color": 9080726,
+    "accent": 5982778,
+    "scale": 1.3,
+    "art": "mon_millstone_crab"
+   },
+   "hp": 110,
+   "stats": {
+    "str": 4,
+    "int": 1,
+    "dex": 2,
+    "end": 6
+   },
+   "damage": [
+    5,
+    8
+   ],
+   "defense": {
+    "melee": 10,
+    "pierce": 10,
+    "magic": 4
+   },
+   "weakTo": {
+    "blunt": 100
+   },
+   "immune": [
+    "stun"
+   ],
+   "trait": "Stone shell: Blunt blows crack it. Use Heavy Strike!",
+   "attacks": [
+    {
+     "name": "Pinch",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Shell Slam",
+     "damageType": "melee",
+     "power": 1.4,
+     "weight": 1
+    }
+   ],
+   "xp": 35,
+   "gold": [
+    12,
+    18
+   ],
+   "loot": "gate_garb",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 1
+    }
+   ]
+  },
+  {
+   "id": "dusk_wraith",
+   "name": "Dusk Wraith",
+   "level": 2,
+   "boss": true,
+   "look": {
+    "shape": "imp",
+    "color": 3877466,
+    "accent": 10190079,
+    "scale": 1.2,
+    "art": "mon_dusk_wraith"
+   },
+   "hp": 115,
+   "stats": {
+    "str": 1,
+    "int": 5,
+    "dex": 4,
+    "end": 4
+   },
+   "damage": [
+    5,
+    8
+   ],
+   "element": "dark",
+   "defense": {
+    "melee": 4,
+    "pierce": 4,
+    "magic": 6
+   },
+   "resists": {
+    "dark": 50,
+    "light": -100
+   },
+   "immune": [
+    "stun"
+   ],
+   "trait": "Made of shadow: Light burns it. Use Light Bolt!",
+   "attacks": [
+    {
+     "name": "Chill Touch",
+     "damageType": "magic",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Wail",
+     "damageType": "magic",
+     "power": 1.4,
+     "weight": 1
+    }
+   ],
+   "xp": 35,
+   "gold": [
+    12,
+    18
+   ],
+   "loot": "gate_robe",
+   "drops": [
+    {
+     "itemId": "mana_potion",
+     "chance": 1
+    }
+   ]
+  },
+  {
+   "id": "hedge_troll",
+   "name": "Hedge Troll",
+   "level": 2,
+   "boss": true,
+   "look": {
+    "shape": "humanoid",
+    "color": 6122298,
+    "accent": 3811866,
+    "scale": 1.4,
+    "art": "mon_hedge_troll"
+   },
+   "hp": 110,
+   "stats": {
+    "str": 5,
+    "int": 1,
+    "dex": 1,
+    "end": 7
+   },
+   "damage": [
+    4,
+    7
+   ],
+   "defense": {
+    "melee": 14,
+    "pierce": 14,
+    "magic": 4
+   },
+   "weakTo": {
+    "poison": 200
+   },
+   "immune": [
+    "stun"
+   ],
+   "trait": "Thick hide: Poison eats through. Use Gas Shot!",
+   "attacks": [
+    {
+     "name": "Club",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Stomp",
+     "damageType": "melee",
+     "power": 1.4,
+     "weight": 1
+    }
+   ],
+   "xp": 35,
+   "gold": [
+    12,
+    18
+   ],
+   "loot": "gate_garb",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 1
+    }
+   ]
+  },
+  {
+   "id": "mossling",
+   "name": "Mossling",
+   "level": 1,
+   "look": {
+    "shape": "blob",
+    "color": 6200394,
+    "accent": 3104037,
+    "scale": 0.75,
+    "art": "mon_mossling"
+   },
+   "hp": 34,
+   "stats": {
+    "str": 3,
+    "int": 3,
+    "dex": 2,
+    "end": 3
+   },
+   "damage": [
+    4,
+    7
+   ],
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 2
+   },
+   "resists": {
+    "fire": -50,
+    "wind": -25,
+    "ice": -25
+   },
+   "trait": "Bursts into spores once when hurt.",
+   "attacks": [
+    {
+     "name": "Slam",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Spore Burst",
+     "damageType": "magic",
+     "element": "earth",
+     "power": 0.8,
+     "weight": 1,
+     "hpBelow": 0.5,
+     "applies": [
+      {
+       "status": "spores",
+       "turns": 3
+      }
+     ]
+    },
+    {
+     "name": "Spore Puff",
+     "damageType": "magic",
+     "element": "earth",
+     "power": 1.1,
+     "weight": 1,
+     "applies": [
+      {
+       "status": "spores",
+       "turns": 2,
+       "chance": 0.3
+      }
+     ]
+    }
+   ],
+   "xp": 14,
+   "gold": [
+    3,
+    7
+   ],
+   "loot": "thornwood",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.2
+    },
+    {
+     "itemId": "moss_clump",
+     "chance": 0.6
+    },
+    {
+     "itemId": "essence_earth",
+     "chance": 0.15
+    }
+   ]
+  },
+  {
+   "id": "thornback_boar",
+   "name": "Thornback Boar",
+   "level": 2,
+   "look": {
+    "shape": "beast",
+    "color": 9067068,
+    "accent": 4861727,
+    "scale": 1.1,
+    "art": "mon_thornback_boar"
+   },
+   "hp": 46,
+   "stats": {
+    "str": 6,
+    "int": 1,
+    "dex": 4,
+    "end": 5
+   },
+   "damage": [
+    4,
+    8
+   ],
+   "defense": {
+    "melee": 6,
+    "pierce": 4,
+    "magic": 1
+   },
+   "resists": {
+    "wind": -50,
+    "water": -25,
+    "energy": -25
+   },
+   "trait": "Opens with a Thorn Charge.",
+   "attacks": [
+    {
+     "name": "Gore",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Thorn Charge",
+     "damageType": "melee",
+     "power": 1.5,
+     "weight": 1,
+     "opener": true
+    },
+    {
+     "name": "Trample",
+     "damageType": "melee",
+     "power": 1.3,
+     "weight": 1
+    }
+   ],
+   "xp": 22,
+   "gold": [
+    5,
+    10
+   ],
+   "loot": "thornwood",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.15
+    },
+    {
+     "itemId": "boar_tusk",
+     "chance": 0.5
+    },
+    {
+     "itemId": "essence_earth",
+     "chance": 0.2
+    }
+   ]
+  },
+  {
+   "id": "ash_imp",
+   "name": "Ash Imp",
+   "level": 3,
+   "tough": true,
+   "look": {
+    "shape": "imp",
+    "color": 12600875,
+    "accent": 2824722,
+    "scale": 0.8,
+    "art": "mon_ash_imp"
+   },
+   "hp": 64,
+   "stats": {
+    "str": 3,
+    "int": 9,
+    "dex": 8,
+    "end": 4
+   },
+   "damage": [
+    10,
+    14
+   ],
+   "element": "fire",
+   "defense": {
+    "melee": 4,
+    "pierce": 4,
+    "magic": 8
+   },
+   "resists": {
+    "fire": 100,
+    "earth": 25,
+    "wind": 25,
+    "ice": -75,
+    "water": -50
+   },
+   "trait": "Flares up once when hurt: +30% damage.",
+   "attacks": [
+    {
+     "name": "Flare Up",
+     "damageType": "magic",
+     "power": 0,
+     "weight": 1,
+     "hpBelow": 0.5,
+     "applies": [
+      {
+       "status": "war_cry",
+       "turns": 3,
+       "self": true
+      }
+     ]
+    },
+    {
+     "name": "Claw",
+     "damageType": "melee",
+     "power": 0.9,
+     "weight": 2
+    },
+    {
+     "name": "Cinder Spit",
+     "damageType": "magic",
+     "power": 1.2,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "burn",
+       "turns": 2,
+       "chance": 0.3
+      }
+     ]
+    }
+   ],
+   "xp": 38,
+   "gold": [
+    12,
+    18
+   ],
+   "loot": "thornwood",
+   "drops": [
+    {
+     "itemId": "mana_potion",
+     "chance": 0.25
+    },
+    {
+     "itemId": "essence_fire",
+     "chance": 0.5
+    }
+   ]
+  },
+  {
+   "id": "bramble_bandit",
+   "name": "Bramble Bandit",
+   "level": 3,
+   "look": {
+    "shape": "humanoid",
+    "color": 7031690,
+    "accent": 2760248,
+    "scale": 1,
+    "art": "mon_bramble_bandit"
+   },
+   "hp": 54,
+   "stats": {
+    "str": 6,
+    "int": 3,
+    "dex": 6,
+    "end": 6
+   },
+   "damage": [
+    5,
+    9
+   ],
+   "defense": {
+    "melee": 6,
+    "pierce": 6,
+    "magic": 4
+   },
+   "resists": {
+    "light": -50,
+    "energy": -25,
+    "ice": -25
+   },
+   "trait": "Opens with a Dirty Trick (may Blind).",
+   "attacks": [
+    {
+     "name": "Stab",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Dirty Trick",
+     "damageType": "melee",
+     "power": 1.2,
+     "weight": 1,
+     "opener": true,
+     "applies": [
+      {
+       "status": "blind",
+       "turns": 2,
+       "chance": 0.5
+      }
+     ]
+    },
+    {
+     "name": "Slash",
+     "damageType": "melee",
+     "power": 1.2,
+     "weight": 1
+    }
+   ],
+   "xp": 32,
+   "gold": [
+    10,
+    18
+   ],
+   "loot": "thornwood",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.3
+    },
+    {
+     "itemId": "scrap",
+     "chance": 0.5,
+     "qty": 2
+    },
+    {
+     "itemId": "dust",
+     "chance": 0.2
+    },
+    {
+     "itemId": "essence_dark",
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "barkshell_beetle",
+   "name": "Barkshell Beetle",
+   "level": 4,
+   "tough": true,
+   "look": {
+    "shape": "beast",
+    "color": 5917226,
+    "accent": 10254906,
+    "scale": 1,
+    "art": "mon_barkshell_beetle"
+   },
+   "hp": 84,
+   "stats": {
+    "str": 8,
+    "int": 2,
+    "dex": 3,
+    "end": 8
+   },
+   "damage": [
+    17,
+    22
+   ],
+   "element": "earth",
+   "defense": {
+    "melee": 24,
+    "pierce": 24,
+    "magic": 3
+   },
+   "resists": {
+    "earth": 75,
+    "water": 25,
+    "ice": 25,
+    "fire": -75,
+    "wind": -50
+   },
+   "trait": "Shells up every 3rd move (-25% damage taken).",
+   "attacks": [
+    {
+     "name": "Mandible Snap",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Shell Up",
+     "damageType": "melee",
+     "power": 0,
+     "weight": 1,
+     "every": 3,
+     "applies": [
+      {
+       "status": "bark_hide",
+       "turns": 2,
+       "self": true
+      }
+     ]
+    },
+    {
+     "name": "Ram",
+     "damageType": "melee",
+     "power": 1.2,
+     "weight": 1
+    }
+   ],
+   "xp": 50,
+   "gold": [
+    14,
+    22
+   ],
+   "loot": "thornwood",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.25
+    },
+    {
+     "itemId": "scrap",
+     "chance": 0.4,
+     "qty": 2
+    },
+    {
+     "itemId": "dust",
+     "chance": 0.3
+    },
+    {
+     "itemId": "essence_earth",
+     "chance": 0.5
+    }
+   ]
+  },
+  {
+   "id": "thornheart",
+   "name": "The Thornheart",
+   "level": 5,
+   "boss": true,
+   "look": {
+    "shape": "beast",
+    "color": 4863014,
+    "accent": 3104037,
+    "scale": 1.5,
+    "art": "mon_thornheart"
+   },
+   "hp": 220,
+   "stats": {
+    "str": 8,
+    "int": 7,
+    "dex": 4,
+    "end": 10
+   },
+   "damage": [
+    15,
+    20
+   ],
+   "element": "earth",
+   "defense": {
+    "melee": 4,
+    "pierce": 4,
+    "magic": 18
+   },
+   "resists": {
+    "earth": 75,
+    "water": 50,
+    "fire": -25,
+    "wind": -25
+   },
+   "immune": [
+    "stun"
+   ],
+   "trait": "Every 3rd move: winds up Root Crush. Defend on the beat!",
+   "attacks": [
+    {
+     "name": "Bramble Lash",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 4
+    },
+    {
+     "name": "Spore Cloud",
+     "damageType": "magic",
+     "power": 0.9,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "spores",
+       "turns": 3,
+       "chance": 0.7
+      }
+     ]
+    },
+    {
+     "name": "Bark Hide",
+     "damageType": "melee",
+     "power": 0,
+     "weight": 1,
+     "applies": [
+      {
+       "status": "bark_hide",
+       "turns": 2,
+       "self": true
+      }
+     ]
+    },
+    {
+     "name": "Root Crush",
+     "damageType": "melee",
+     "power": 2.6,
+     "weight": 2,
+     "every": 3,
+     "windup": "The Thornheart sinks its roots deep into the earth... (Defend or heal!)"
+    }
+   ],
+   "heroic": {
+    "text": "Seed Burst every 4th move: Spores and Poison at once.",
+    "attacks": [
+     {
+      "name": "Seed Burst",
+      "damageType": "magic",
+      "element": "earth",
+      "power": 0.6,
+      "weight": 1,
+      "every": 4,
+      "applies": [
+       {
+        "status": "spores",
+        "turns": 3
+       },
+       {
+        "status": "poison",
+        "turns": 3
+       }
+      ]
+     }
+    ]
+   },
+   "xp": 120,
+   "gold": [
+    60,
+    80
+   ],
+   "loot": "thornwood",
+   "drops": [
+    {
+     "itemId": "essence_earth",
+     "chance": 1,
+     "qty": 3
+    },
+    {
+     "itemId": "dust",
+     "chance": 1,
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "mire_toad",
+   "name": "Mire Toad",
+   "level": 6,
+   "look": {
+    "shape": "blob",
+    "color": 5209946,
+    "accent": 3033651,
+    "scale": 0.9,
+    "art": "mon_mire_toad"
+   },
+   "hp": 170,
+   "stats": {
+    "str": 10,
+    "int": 4,
+    "dex": 6,
+    "end": 8
+   },
+   "damage": [
+    11,
+    16
+   ],
+   "element": "water",
+   "defense": {
+    "melee": 6,
+    "pierce": 8,
+    "magic": 6
+   },
+   "resists": {
+    "water": 50,
+    "energy": -50,
+    "fire": 25
+   },
+   "trait": "Wallows once when hurt: heals 25%. Finish it fast.",
+   "attacks": [
+    {
+     "name": "Belly Slam",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Tongue Lash",
+     "damageType": "pierce",
+     "power": 1.1,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "poison",
+       "turns": 3,
+       "chance": 0.3
+      }
+     ]
+    },
+    {
+     "name": "Wallow",
+     "damageType": "melee",
+     "power": 0,
+     "weight": 1,
+     "hpBelow": 0.4,
+     "heal": 0.25
+    }
+   ],
+   "xp": 45,
+   "gold": [
+    12,
+    20
+   ],
+   "loot": "fen",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.2
+    },
+    {
+     "itemId": "fen_hide",
+     "chance": 0.5
+    },
+    {
+     "itemId": "essence_water",
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "spark_wisp",
+   "name": "Spark Wisp",
+   "level": 7,
+   "look": {
+    "shape": "imp",
+    "color": 16769357,
+    "accent": 8019199,
+    "scale": 0.75,
+    "art": "mon_spark_wisp"
+   },
+   "hp": 140,
+   "stats": {
+    "str": 3,
+    "int": 12,
+    "dex": 10,
+    "end": 6
+   },
+   "damage": [
+    12,
+    17
+   ],
+   "element": "energy",
+   "defense": {
+    "melee": 4,
+    "pierce": 4,
+    "magic": 16
+   },
+   "resists": {
+    "energy": 75,
+    "water": -50,
+    "earth": 25
+   },
+   "trait": "Flickers out of reach every 3rd move (-40% to hit it).",
+   "attacks": [
+    {
+     "name": "Static Bolt",
+     "damageType": "magic",
+     "power": 1,
+     "weight": 3,
+     "applies": [
+      {
+       "status": "shock",
+       "turns": 2,
+       "chance": 0.3
+      }
+     ]
+    },
+    {
+     "name": "Flicker",
+     "damageType": "magic",
+     "power": 0,
+     "weight": 1,
+     "every": 3,
+     "applies": [
+      {
+       "status": "evasive",
+       "turns": 2,
+       "self": true
+      }
+     ]
+    },
+    {
+     "name": "Arc",
+     "damageType": "magic",
+     "power": 1.3,
+     "weight": 1
+    }
+   ],
+   "xp": 52,
+   "gold": [
+    14,
+    22
+   ],
+   "loot": "fen",
+   "drops": [
+    {
+     "itemId": "mana_potion",
+     "chance": 0.25
+    },
+    {
+     "itemId": "essence_energy",
+     "chance": 0.5
+    }
+   ]
+  },
+  {
+   "id": "bog_lurker",
+   "name": "Bog Lurker",
+   "level": 7,
+   "look": {
+    "shape": "beast",
+    "color": 4151882,
+    "accent": 2043686,
+    "scale": 1.15,
+    "art": "mon_bog_lurker"
+   },
+   "hp": 240,
+   "stats": {
+    "str": 13,
+    "int": 3,
+    "dex": 4,
+    "end": 11
+   },
+   "damage": [
+    12,
+    18
+   ],
+   "element": "water",
+   "defense": {
+    "melee": 9,
+    "pierce": 7,
+    "magic": 5
+   },
+   "resists": {
+    "water": 50,
+    "energy": -50
+   },
+   "trait": "Ambushes from the mud: its first blow hits hard.",
+   "attacks": [
+    {
+     "name": "Ambush",
+     "damageType": "melee",
+     "power": 1.8,
+     "weight": 1,
+     "opener": true
+    },
+    {
+     "name": "Maul",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Clammy Grip",
+     "damageType": "melee",
+     "power": 0.9,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "chill",
+       "turns": 2,
+       "chance": 0.5
+      }
+     ]
+    }
+   ],
+   "xp": 58,
+   "gold": [
+    14,
+    24
+   ],
+   "loot": "fen",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.2
+    },
+    {
+     "itemId": "fen_hide",
+     "chance": 0.6
+    },
+    {
+     "itemId": "essence_water",
+     "chance": 0.4
+    }
+   ]
+  },
+  {
+   "id": "sunken_revenant",
+   "name": "Sunken Revenant",
+   "level": 8,
+   "look": {
+    "shape": "humanoid",
+    "color": 4877163,
+    "accent": 1911595,
+    "scale": 1,
+    "art": "mon_sunken_revenant"
+   },
+   "hp": 220,
+   "stats": {
+    "str": 11,
+    "int": 8,
+    "dex": 9,
+    "end": 9
+   },
+   "damage": [
+    13,
+    19
+   ],
+   "element": "dark",
+   "defense": {
+    "melee": 8,
+    "pierce": 10,
+    "magic": 8
+   },
+   "resists": {
+    "dark": 50,
+    "light": -50,
+    "water": 25
+   },
+   "trait": "Rises once at low HP, healing 30%.",
+   "attacks": [
+    {
+     "name": "Rusted Blade",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Grave Touch",
+     "damageType": "magic",
+     "power": 1.1,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "shadow_rot",
+       "turns": 2,
+       "chance": 0.35
+      }
+     ]
+    },
+    {
+     "name": "Grave Rise",
+     "damageType": "magic",
+     "power": 0,
+     "weight": 1,
+     "hpBelow": 0.3,
+     "heal": 0.3
+    }
+   ],
+   "xp": 68,
+   "gold": [
+    18,
+    28
+   ],
+   "loot": "fen",
+   "drops": [
+    {
+     "itemId": "greater_health_potion",
+     "chance": 0.08
+    },
+    {
+     "itemId": "mana_potion",
+     "chance": 0.2
+    },
+    {
+     "itemId": "scrap",
+     "chance": 0.4,
+     "qty": 2
+    },
+    {
+     "itemId": "dust",
+     "chance": 0.3
+    },
+    {
+     "itemId": "essence_dark",
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "stormscale_drakeling",
+   "name": "Stormcrest Heron",
+   "level": 9,
+   "tough": true,
+   "look": {
+    "shape": "beast",
+    "color": 3829413,
+    "accent": 16765471,
+    "scale": 0.95,
+    "art": "mon_stormcrest_heron"
+   },
+   "hp": 240,
+   "stats": {
+    "str": 12,
+    "int": 8,
+    "dex": 12,
+    "end": 10
+   },
+   "damage": [
+    14,
+    20
+   ],
+   "element": "energy",
+   "defense": {
+    "melee": 10,
+    "pierce": 10,
+    "magic": 12
+   },
+   "resists": {
+    "energy": 75,
+    "wind": 25,
+    "earth": 25,
+    "water": -75,
+    "ice": -25
+   },
+   "trait": "Every 3rd move: Crest Spark (Shock).",
+   "attacks": [
+    {
+     "name": "Spear Beak",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Crest Spark",
+     "damageType": "magic",
+     "power": 1.6,
+     "weight": 1,
+     "every": 3,
+     "applies": [
+      {
+       "status": "shock",
+       "turns": 2
+      }
+     ]
+    },
+    {
+     "name": "Wing Buffet",
+     "damageType": "melee",
+     "power": 1.1,
+     "weight": 2
+    },
+    {
+     "name": "Wade Off",
+     "damageType": "pierce",
+     "power": 0,
+     "weight": 1,
+     "applies": [
+      {
+       "status": "evasive",
+       "turns": 2,
+       "self": true
+      }
+     ]
+    }
+   ],
+   "xp": 80,
+   "gold": [
+    20,
+    32
+   ],
+   "loot": "fen",
+   "drops": [
+    {
+     "itemId": "greater_health_potion",
+     "chance": 0.08
+    },
+    {
+     "itemId": "storm_scale",
+     "chance": 0.5
+    },
+    {
+     "itemId": "essence_energy",
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "volt_eel",
+   "name": "Volt Eel",
+   "level": 8,
+   "tough": true,
+   "look": {
+    "shape": "beast",
+    "color": 3112847,
+    "accent": 16769357,
+    "scale": 0.9,
+    "art": "mon_volt_eel"
+   },
+   "hp": 210,
+   "stats": {
+    "str": 8,
+    "int": 12,
+    "dex": 10,
+    "end": 9
+   },
+   "damage": [
+    12,
+    18
+   ],
+   "element": "energy",
+   "defense": {
+    "melee": 7,
+    "pierce": 6,
+    "magic": 10
+   },
+   "resists": {
+    "energy": 150,
+    "earth": -75,
+    "water": -25
+   },
+   "trait": "Absorbs Energy: lightning heals it. Every 3rd move: Discharge.",
+   "attacks": [
+    {
+     "name": "Bite",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Coil Squeeze",
+     "damageType": "melee",
+     "power": 0.9,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "weaken",
+       "turns": 2,
+       "chance": 0.4
+      }
+     ]
+    },
+    {
+     "name": "Discharge",
+     "damageType": "magic",
+     "power": 1.5,
+     "weight": 1,
+     "every": 3,
+     "applies": [
+      {
+       "status": "shock",
+       "turns": 2
+      }
+     ]
+    }
+   ],
+   "xp": 72,
+   "gold": [
+    18,
+    28
+   ],
+   "loot": "fen",
+   "drops": [
+    {
+     "itemId": "mana_potion",
+     "chance": 0.2
+    },
+    {
+     "itemId": "essence_energy",
+     "chance": 0.4
+    }
+   ]
+  },
+  {
+   "id": "bogmother",
+   "name": "The Bogmother",
+   "level": 8,
+   "boss": true,
+   "look": {
+    "shape": "blob",
+    "color": 4873530,
+    "accent": 2765600,
+    "scale": 1.5,
+    "art": "mon_bogmother"
+   },
+   "hp": 340,
+   "stats": {
+    "str": 12,
+    "int": 12,
+    "dex": 6,
+    "end": 14
+   },
+   "damage": [
+    20,
+    26
+   ],
+   "element": "water",
+   "defense": {
+    "melee": 6,
+    "pierce": 6,
+    "magic": 14
+   },
+   "resists": {
+    "water": 75,
+    "energy": -50,
+    "earth": 25
+   },
+   "immune": [
+    "stun"
+   ],
+   "trait": "Every 3rd: Drag Under (Defend!). Every 4th: heals 12%.",
+   "attacks": [
+    {
+     "name": "Mire Slap",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 4
+    },
+    {
+     "name": "Bile Spit",
+     "damageType": "magic",
+     "power": 0.9,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "weaken",
+       "turns": 2,
+       "chance": 0.6
+      }
+     ]
+    },
+    {
+     "name": "Drag Under",
+     "damageType": "melee",
+     "power": 3.2,
+     "weight": 2,
+     "every": 3,
+     "windup": "The Bogmother sinks into the mire, reaching for your legs... (Defend or heal!)"
+    },
+    {
+     "name": "Wallow",
+     "damageType": "melee",
+     "power": 0,
+     "weight": 1,
+     "every": 4,
+     "heal": 0.12
+    }
+   ],
+   "heroic": {
+    "text": "Leech Swarm every 4th move: a long Poison.",
+    "attacks": [
+     {
+      "name": "Leech Swarm",
+      "damageType": "magic",
+      "power": 0.7,
+      "weight": 1,
+      "every": 4,
+      "applies": [
+       {
+        "status": "poison",
+        "turns": 4
+       }
+      ]
+     }
+    ]
+   },
+   "xp": 350,
+   "gold": [
+    120,
+    160
+   ],
+   "loot": "bogmother",
+   "drops": [
+    {
+     "itemId": "essence_water",
+     "chance": 1,
+     "qty": 3
+    },
+    {
+     "itemId": "fen_hide",
+     "chance": 1,
+     "qty": 2
+    },
+    {
+     "itemId": "dust",
+     "chance": 1,
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "stormcoil",
+   "name": "The Stormcoil",
+   "level": 10,
+   "boss": true,
+   "look": {
+    "shape": "beast",
+    "color": 2841994,
+    "accent": 16765471,
+    "scale": 1.6,
+    "art": "mon_stormcoil"
+   },
+   "hp": 430,
+   "stats": {
+    "str": 14,
+    "int": 14,
+    "dex": 10,
+    "end": 15
+   },
+   "damage": [
+    23,
+    31
+   ],
+   "element": "energy",
+   "defense": {
+    "melee": 7,
+    "pierce": 7,
+    "magic": 15
+   },
+   "resists": {
+    "energy": 50,
+    "water": -50,
+    "wind": 25
+   },
+   "immune": [
+    "stun"
+   ],
+   "trait": "Big hit every 3rd move. At half HP: Energy turns to Water.",
+   "heroic": {
+    "text": "Opens with Overcharge: +30% damage for 3 turns.",
+    "attacks": [
+     {
+      "name": "Overcharge",
+      "damageType": "magic",
+      "power": 0,
+      "weight": 1,
+      "opener": true,
+      "applies": [
+       {
+        "status": "war_cry",
+        "turns": 3,
+        "self": true
+       }
+      ]
+     }
+    ]
+   },
+   "attacks": [
+    {
+     "name": "Coil Lash",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 4
+    },
+    {
+     "name": "Static Field",
+     "damageType": "magic",
+     "power": 0.8,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "shock",
+       "turns": 2,
+       "chance": 0.6
+      }
+     ]
+    },
+    {
+     "name": "Thunderhead",
+     "damageType": "magic",
+     "power": 3,
+     "weight": 2,
+     "every": 3,
+     "windup": "Storm clouds gather around the Stormcoil... (Defend or heal!)"
+    }
+   ],
+   "phase": {
+    "at": 0.5,
+    "text": "The Stormcoil sheds its crackling skin! Beneath, its scales run with seawater. It is a Water creature now.",
+    "element": "water",
+    "resists": {
+     "water": 50,
+     "energy": -50,
+     "ice": 25
+    },
+    "attacks": [
+     {
+      "name": "Coil Lash",
+      "damageType": "melee",
+      "power": 1,
+      "weight": 4
+     },
+     {
+      "name": "Riptide",
+      "damageType": "magic",
+      "power": 0.9,
+      "weight": 2,
+      "applies": [
+       {
+        "status": "chill",
+        "turns": 2,
+        "chance": 0.6
+       }
+      ]
+     },
+     {
+      "name": "Tidal Crush",
+      "damageType": "melee",
+      "power": 3,
+      "weight": 2,
+      "every": 3,
+      "windup": "The Stormcoil rears up and pulls a wall of water behind it... (Defend or heal!)"
+     }
+    ]
+   },
+   "xp": 600,
+   "gold": [
+    200,
+    260
+   ],
+   "loot": "fen",
+   "drops": [
+    {
+     "itemId": "essence_energy",
+     "chance": 1,
+     "qty": 4
+    },
+    {
+     "itemId": "storm_scale",
+     "chance": 1,
+     "qty": 3
+    },
+    {
+     "itemId": "dust",
+     "chance": 1,
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "drift_wolf",
+   "name": "Drift Wolf",
+   "level": 10,
+   "look": {
+    "shape": "beast",
+    "color": 14673644,
+    "accent": 7176081,
+    "scale": 1,
+    "art": "mon_drift_wolf"
+   },
+   "hp": 260,
+   "stats": {
+    "str": 14,
+    "int": 4,
+    "dex": 14,
+    "end": 10
+   },
+   "damage": [
+    16,
+    22
+   ],
+   "defense": {
+    "melee": 8,
+    "pierce": 8,
+    "magic": 6
+   },
+   "resists": {
+    "fire": -50,
+    "earth": -25,
+    "energy": -25
+   },
+   "trait": "Opens with a Howl: +30% damage for 3 turns.",
+   "attacks": [
+    {
+     "name": "Bite",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Howl",
+     "damageType": "melee",
+     "power": 0,
+     "weight": 1,
+     "opener": true,
+     "applies": [
+      {
+       "status": "war_cry",
+       "turns": 3,
+       "self": true
+      }
+     ]
+    },
+    {
+     "name": "Lunge",
+     "damageType": "pierce",
+     "power": 1.2,
+     "weight": 1
+    }
+   ],
+   "xp": 95,
+   "gold": [
+    20,
+    30
+   ],
+   "loot": "frostfang",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.2
+    },
+    {
+     "itemId": "frost_pelt",
+     "chance": 0.5
+    },
+    {
+     "itemId": "essence_ice",
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "crag_ram",
+   "name": "Crag Ram",
+   "level": 10,
+   "look": {
+    "shape": "beast",
+    "color": 9272168,
+    "accent": 14142664,
+    "scale": 1.1,
+    "art": "mon_crag_ram"
+   },
+   "hp": 260,
+   "stats": {
+    "str": 15,
+    "int": 2,
+    "dex": 8,
+    "end": 12
+   },
+   "damage": [
+    15,
+    21
+   ],
+   "defense": {
+    "melee": 12,
+    "pierce": 10,
+    "magic": 5
+   },
+   "resists": {
+    "fire": -25,
+    "wind": -50
+   },
+   "trait": "Every 3rd move: winds up a Headlong Charge.",
+   "attacks": [
+    {
+     "name": "Butt",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Stomp",
+     "damageType": "melee",
+     "power": 1.2,
+     "weight": 1
+    },
+    {
+     "name": "Headlong Charge",
+     "damageType": "melee",
+     "power": 2.1,
+     "weight": 1,
+     "every": 3,
+     "windup": "The Crag Ram paws the snow and lowers its horns... (Defend!)"
+    }
+   ],
+   "xp": 100,
+   "gold": [
+    20,
+    32
+   ],
+   "loot": "frostfang",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.2
+    },
+    {
+     "itemId": "ram_horn",
+     "chance": 0.5
+    },
+    {
+     "itemId": "essence_ice",
+     "chance": 0.2
+    }
+   ]
+  },
+  {
+   "id": "gust_sprite",
+   "name": "Gust Sprite",
+   "level": 11,
+   "look": {
+    "shape": "imp",
+    "color": 11722715,
+    "accent": 5093036,
+    "scale": 0.8,
+    "art": "mon_gust_sprite"
+   },
+   "hp": 240,
+   "stats": {
+    "str": 6,
+    "int": 14,
+    "dex": 16,
+    "end": 8
+   },
+   "damage": [
+    17,
+    23
+   ],
+   "element": "wind",
+   "defense": {
+    "melee": 6,
+    "pierce": 6,
+    "magic": 12
+   },
+   "resists": {
+    "wind": 50,
+    "earth": -50,
+    "ice": -25
+   },
+   "trait": "Swirls out of reach every 3rd move (-40% to hit it).",
+   "attacks": [
+    {
+     "name": "Gust",
+     "damageType": "magic",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Downdraft",
+     "damageType": "magic",
+     "power": 1.3,
+     "weight": 1
+    },
+    {
+     "name": "Swirl",
+     "damageType": "magic",
+     "power": 0,
+     "weight": 1,
+     "every": 3,
+     "applies": [
+      {
+       "status": "evasive",
+       "turns": 2,
+       "self": true
+      }
+     ]
+    }
+   ],
+   "xp": 110,
+   "gold": [
+    22,
+    34
+   ],
+   "loot": "frostfang",
+   "drops": [
+    {
+     "itemId": "mana_potion",
+     "chance": 0.25
+    },
+    {
+     "itemId": "essence_wind",
+     "chance": 0.5
+    }
+   ]
+  },
+  {
+   "id": "rime_acolyte",
+   "name": "Rime Acolyte",
+   "level": 12,
+   "look": {
+    "shape": "humanoid",
+    "color": 9489145,
+    "accent": 1713022,
+    "scale": 1,
+    "art": "mon_rime_acolyte"
+   },
+   "hp": 280,
+   "stats": {
+    "str": 8,
+    "int": 16,
+    "dex": 10,
+    "end": 10
+   },
+   "damage": [
+    18,
+    24
+   ],
+   "element": "ice",
+   "defense": {
+    "melee": 8,
+    "pierce": 8,
+    "magic": 12
+   },
+   "resists": {
+    "ice": 50,
+    "fire": -50,
+    "light": -25
+   },
+   "trait": "Mends once at half HP: heals 25%.",
+   "attacks": [
+    {
+     "name": "Frost Bolt",
+     "damageType": "magic",
+     "power": 1,
+     "weight": 3,
+     "applies": [
+      {
+       "status": "chill",
+       "turns": 2,
+       "chance": 0.3
+      }
+     ]
+    },
+    {
+     "name": "Ice Shard",
+     "damageType": "magic",
+     "power": 1.3,
+     "weight": 1
+    },
+    {
+     "name": "Frost Mend",
+     "damageType": "magic",
+     "power": 0,
+     "weight": 1,
+     "hpBelow": 0.5,
+     "heal": 0.25
+    }
+   ],
+   "xp": 125,
+   "gold": [
+    25,
+    38
+   ],
+   "loot": "frostfang",
+   "drops": [
+    {
+     "itemId": "greater_mana_potion",
+     "chance": 0.1
+    },
+    {
+     "itemId": "essence_ice",
+     "chance": 0.5
+    },
+    {
+     "itemId": "dust",
+     "chance": 0.3
+    },
+    {
+     "itemId": "scrap",
+     "chance": 0.4,
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "glacier_golem",
+   "name": "Glacier Golem",
+   "level": 12,
+   "tough": true,
+   "look": {
+    "shape": "humanoid",
+    "color": 11789820,
+    "accent": 5211084,
+    "scale": 1.35,
+    "art": "mon_glacier_golem"
+   },
+   "hp": 400,
+   "stats": {
+    "str": 18,
+    "int": 4,
+    "dex": 6,
+    "end": 18
+   },
+   "damage": [
+    22,
+    28
+   ],
+   "element": "ice",
+   "defense": {
+    "melee": 26,
+    "pierce": 26,
+    "magic": 8
+   },
+   "resists": {
+    "ice": 75,
+    "water": 25,
+    "earth": 25,
+    "fire": -75,
+    "energy": -50
+   },
+   "trait": "Hardens every 3rd move (-25% damage taken).",
+   "attacks": [
+    {
+     "name": "Glacier Fist",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Crush",
+     "damageType": "melee",
+     "power": 1.3,
+     "weight": 1
+    },
+    {
+     "name": "Harden",
+     "damageType": "melee",
+     "power": 0,
+     "weight": 1,
+     "every": 3,
+     "applies": [
+      {
+       "status": "bark_hide",
+       "turns": 2,
+       "self": true
+      }
+     ]
+    }
+   ],
+   "xp": 180,
+   "gold": [
+    35,
+    50
+   ],
+   "loot": "frostfang",
+   "drops": [
+    {
+     "itemId": "rime_shard",
+     "chance": 0.6
+    },
+    {
+     "itemId": "essence_ice",
+     "chance": 1,
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "chance": 0.4,
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "ember_salamander",
+   "name": "Ember Salamander",
+   "level": 12,
+   "look": {
+    "shape": "beast",
+    "color": 16740419,
+    "accent": 5125166,
+    "scale": 0.9,
+    "art": "mon_ember_salamander"
+   },
+   "hp": 290,
+   "stats": {
+    "str": 12,
+    "int": 12,
+    "dex": 12,
+    "end": 10
+   },
+   "damage": [
+    18,
+    24
+   ],
+   "element": "fire",
+   "defense": {
+    "melee": 8,
+    "pierce": 8,
+    "magic": 8
+   },
+   "resists": {
+    "fire": 150,
+    "ice": -50,
+    "water": -25
+   },
+   "trait": "Absorbs Fire: flames heal it.",
+   "attacks": [
+    {
+     "name": "Bite",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Spit Flame",
+     "damageType": "magic",
+     "power": 1.1,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "burn",
+       "turns": 2,
+       "chance": 0.3
+      }
+     ]
+    }
+   ],
+   "xp": 125,
+   "gold": [
+    25,
+    38
+   ],
+   "loot": "frostfang",
+   "drops": [
+    {
+     "itemId": "health_potion",
+     "chance": 0.2
+    },
+    {
+     "itemId": "salamander_scale",
+     "chance": 0.5
+    },
+    {
+     "itemId": "essence_fire",
+     "chance": 0.5
+    }
+   ]
+  },
+  {
+   "id": "vent_wyrmling",
+   "name": "Vent Tortoise",
+   "level": 13,
+   "tough": true,
+   "look": {
+    "shape": "beast",
+    "color": 14172949,
+    "accent": 16763432,
+    "scale": 1.05,
+    "art": "mon_vent_tortoise"
+   },
+   "hp": 420,
+   "stats": {
+    "str": 16,
+    "int": 14,
+    "dex": 12,
+    "end": 14
+   },
+   "damage": [
+    22,
+    29
+   ],
+   "element": "fire",
+   "defense": {
+    "melee": 12,
+    "pierce": 12,
+    "magic": 12
+   },
+   "resists": {
+    "fire": 75,
+    "earth": 25,
+    "wind": 25,
+    "ice": -75,
+    "water": -50
+   },
+   "weakTo": {
+    "blunt": 50
+   },
+   "trait": "Opens with a Steam Burst (Burn).",
+   "attacks": [
+    {
+     "name": "Steam Burst",
+     "damageType": "magic",
+     "power": 1.3,
+     "weight": 1,
+     "opener": true,
+     "applies": [
+      {
+       "status": "burn",
+       "turns": 3
+      }
+     ]
+    },
+    {
+     "name": "Snap",
+     "damageType": "pierce",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Scald",
+     "damageType": "magic",
+     "power": 1.2,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "burn",
+       "turns": 2,
+       "chance": 0.5
+      }
+     ]
+    }
+   ],
+   "xp": 190,
+   "gold": [
+    38,
+    52
+   ],
+   "loot": "frostfang",
+   "drops": [
+    {
+     "itemId": "salamander_scale",
+     "chance": 0.6
+    },
+    {
+     "itemId": "essence_fire",
+     "chance": 1,
+     "qty": 2
+    },
+    {
+     "itemId": "greater_health_potion",
+     "chance": 0.15
+    }
+   ]
+  },
+  {
+   "id": "old_snowmaw",
+   "name": "Old Snowmaw",
+   "level": 12,
+   "boss": true,
+   "look": {
+    "shape": "beast",
+    "color": 16119285,
+    "accent": 9479342,
+    "scale": 1.6,
+    "art": "mon_old_snowmaw"
+   },
+   "hp": 600,
+   "stats": {
+    "str": 18,
+    "int": 10,
+    "dex": 8,
+    "end": 18
+   },
+   "damage": [
+    28,
+    36
+   ],
+   "element": "ice",
+   "defense": {
+    "melee": 10,
+    "pierce": 10,
+    "magic": 12
+   },
+   "resists": {
+    "ice": 75,
+    "water": 25,
+    "fire": -50
+   },
+   "immune": [
+    "stun"
+   ],
+   "shell": {
+    "name": "Frost Shell",
+    "element": "fire",
+    "hits": 3,
+    "reduction": 0.6,
+    "reformAt": 0.5
+   },
+   "trait": "Every 3rd move: winds up Avalanche. Defend on the beat!",
+   "attacks": [
+    {
+     "name": "Maul",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 4
+    },
+    {
+     "name": "Frost Breath",
+     "damageType": "magic",
+     "power": 0.9,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "chill",
+       "turns": 2,
+       "chance": 0.6
+      }
+     ]
+    },
+    {
+     "name": "Avalanche",
+     "damageType": "melee",
+     "power": 3.4,
+     "weight": 2,
+     "every": 3,
+     "windup": "Old Snowmaw rears up and roars. Snow starts to slide off the slope above... (Defend or heal!)"
+    }
+   ],
+   "heroic": {
+    "text": "Whiteout Roar every 4th move: Chill and Blind.",
+    "attacks": [
+     {
+      "name": "Whiteout Roar",
+      "damageType": "magic",
+      "power": 0.6,
+      "weight": 1,
+      "every": 4,
+      "applies": [
+       {
+        "status": "chill",
+        "turns": 2
+       },
+       {
+        "status": "blind",
+        "turns": 2
+       }
+      ]
+     }
+    ]
+   },
+   "xp": 700,
+   "gold": [
+    220,
+    280
+   ],
+   "loot": "snowmaw",
+   "drops": [
+    {
+     "itemId": "essence_ice",
+     "chance": 1,
+     "qty": 3
+    },
+    {
+     "itemId": "frost_pelt",
+     "chance": 1,
+     "qty": 2
+    },
+    {
+     "itemId": "dust",
+     "chance": 1,
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "frostbinder",
+   "name": "The Frostbinder",
+   "level": 14,
+   "boss": true,
+   "look": {
+    "shape": "humanoid",
+    "color": 6056896,
+    "accent": 14808574,
+    "scale": 1.3,
+    "art": "mon_frostbinder"
+   },
+   "hp": 650,
+   "stats": {
+    "str": 12,
+    "int": 20,
+    "dex": 14,
+    "end": 16
+   },
+   "damage": [
+    26,
+    34
+   ],
+   "element": "ice",
+   "defense": {
+    "melee": 8,
+    "pierce": 8,
+    "magic": 16
+   },
+   "resists": {
+    "ice": 50,
+    "wind": 25,
+    "fire": -50
+   },
+   "immune": [
+    "stun"
+   ],
+   "trait": "Big hit every 3rd move. At half HP: turns Wind (Blizzard).",
+   "heroic": {
+    "text": "Shatter every 5th move: a heavy Ice blow.",
+    "attacks": [
+     {
+      "name": "Shatter",
+      "damageType": "magic",
+      "element": "ice",
+      "power": 1.8,
+      "weight": 1,
+      "every": 5
+     }
+    ]
+   },
+   "attacks": [
+    {
+     "name": "Ice Lance",
+     "damageType": "magic",
+     "power": 1,
+     "weight": 4
+    },
+    {
+     "name": "Frostbind",
+     "damageType": "magic",
+     "power": 0.8,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "weaken",
+       "turns": 2,
+       "chance": 0.6
+      }
+     ]
+    },
+    {
+     "name": "Glacial Prison",
+     "damageType": "magic",
+     "power": 2.8,
+     "weight": 2,
+     "every": 3,
+     "windup": "The Frostbinder raises her stave. Ice crawls across the floor toward you... (Defend or heal!)"
+    }
+   ],
+   "phase": {
+    "at": 0.5,
+    "text": "The Frostbinder presses a hand to the dragon's ice and drinks its strength! She dissolves into a howling blizzard. She is a Wind creature now.",
+    "element": "wind",
+    "resists": {
+     "wind": 50,
+     "ice": 25,
+     "earth": -50
+    },
+    "attacks": [
+     {
+      "name": "Cyclone",
+      "damageType": "magic",
+      "power": 2.8,
+      "weight": 2,
+      "every": 3,
+      "windup": "The wind screams into a funnel around the Frostbinder... (Defend or heal!)"
+     },
+     {
+      "name": "Gale Slash",
+      "damageType": "magic",
+      "power": 1,
+      "weight": 4
+     },
+     {
+      "name": "Whiteout",
+      "damageType": "magic",
+      "power": 0.8,
+      "weight": 2,
+      "applies": [
+       {
+        "status": "blind",
+        "turns": 2,
+        "chance": 0.6
+       }
+      ]
+     },
+     {
+      "name": "Blizzard",
+      "damageType": "magic",
+      "power": 0.6,
+      "weight": 1,
+      "every": 2,
+      "applies": [
+       {
+        "status": "windchill",
+        "turns": 3
+       }
+      ]
+     }
+    ]
+   },
+   "xp": 1000,
+   "gold": [
+    300,
+    380
+   ],
+   "loot": "frostfang",
+   "drops": [
+    {
+     "itemId": "essence_ice",
+     "chance": 1,
+     "qty": 3
+    },
+    {
+     "itemId": "essence_wind",
+     "chance": 1,
+     "qty": 3
+    },
+    {
+     "itemId": "dust",
+     "chance": 1,
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "mimic",
+   "name": "Mimic",
+   "level": 1,
+   "tough": true,
+   "chestLoot": true,
+   "look": {
+    "shape": "chest",
+    "color": 9263659,
+    "accent": 13934615,
+    "scale": 1,
+    "art": "mon_mimic"
+   },
+   "hp": 58,
+   "stats": {
+    "str": 5,
+    "int": 3,
+    "dex": 4,
+    "end": 5
+   },
+   "damage": [
+    4,
+    8
+   ],
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 2
+   },
+   "resists": {
+    "earth": 25,
+    "fire": -50,
+    "energy": -25
+   },
+   "attacks": [
+    {
+     "name": "Chomp",
+     "damageType": "melee",
+     "power": 1,
+     "weight": 3
+    },
+    {
+     "name": "Tongue Lash",
+     "damageType": "pierce",
+     "power": 0.9,
+     "weight": 2,
+     "applies": [
+      {
+       "status": "weaken",
+       "turns": 2,
+       "chance": 0.4
+      }
+     ]
+    },
+    {
+     "name": "Lid Slam",
+     "damageType": "melee",
+     "power": 2.2,
+     "weight": 1,
+     "windup": "The mimic opens its lid wide. Very wide... (Defend!)"
+    }
+   ],
+   "xp": 20,
+   "gold": [
+    5,
+    10
+   ],
+   "drops": []
+  },
+  {
+   "id": "lucky_impling",
+   "name": "Lucky Impling",
+   "level": 1,
+   "lucky": true,
+   "look": {
+    "shape": "imp",
+    "color": 15844367,
+    "accent": 3066993,
+    "scale": 0.6,
+    "art": "mon_lucky_impling"
+   },
+   "hp": 16,
+   "stats": {
+    "str": 2,
+    "int": 2,
+    "dex": 8,
+    "end": 2
+   },
+   "damage": [
+    2,
+    4
+   ],
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 2
+   },
+   "attacks": [
+    {
+     "name": "Coin Flick",
+     "damageType": "pierce",
+     "power": 0.6,
+     "weight": 2
+    },
+    {
+     "name": "Jingle Taunt",
+     "damageType": "magic",
+     "power": 0,
+     "weight": 1
+    }
+   ],
+   "xp": 15,
+   "gold": [
+    20,
+    30
+   ],
+   "drops": []
+  }
+ ],
+ "zones": [
+  {
+   "id": "road",
+   "name": "Old Road",
+   "recommendedLevel": [
+    1,
+    1
+   ],
+   "background": "bg_old_road",
+   "backdrop": {
+    "kind": "forest"
+   },
+   "encounters": [
+    {
+     "monsterId": "burrow_rat",
+     "weight": 4
+    },
+    {
+     "monsterId": "dew_slug",
+     "weight": 3
+    },
+    {
+     "monsterId": "hedge_pixie",
+     "weight": 2
+    }
+   ]
+  },
+  {
+   "id": "thornwood",
+   "name": "Thornwood",
+   "recommendedLevel": [
+    1,
+    3
+   ],
+   "background": "bg_thornwood",
+   "backdrop": {
+    "kind": "forest"
+   },
+   "gather": "briarberry",
+   "encounters": [
+    {
+     "monsterId": "mossling",
+     "weight": 5
+    },
+    {
+     "monsterId": "thornback_boar",
+     "weight": 4
+    },
+    {
+     "monsterId": "ash_imp",
+     "weight": 1
+    }
+   ]
+  },
+  {
+   "id": "thornwood_deep",
+   "name": "Deep Thornwood",
+   "recommendedLevel": [
+    2,
+    5
+   ],
+   "background": [
+    "bg_thornwood_deep",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.35
+   },
+   "gather": "scorched_twig",
+   "encounters": [
+    {
+     "monsterId": "thornback_boar",
+     "weight": 2
+    },
+    {
+     "monsterId": "bramble_bandit",
+     "weight": 4
+    },
+    {
+     "monsterId": "ash_imp",
+     "weight": 2
+    },
+    {
+     "monsterId": "barkshell_beetle",
+     "weight": 2
+    }
+   ]
+  },
+  {
+   "id": "bramble_hideout",
+   "name": "Bramble Hideout",
+   "recommendedLevel": [
+    3,
+    4
+   ],
+   "background": [
+    "bg_bramble_hideout",
+    "bg_thornwood_deep",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.4
+   },
+   "gather": "stolen_trinket",
+   "encounters": [
+    {
+     "monsterId": "bramble_bandit",
+     "weight": 5
+    },
+    {
+     "monsterId": "thornback_boar",
+     "weight": 1
+    }
+   ]
+  },
+  {
+   "id": "thornheart_hollow",
+   "name": "Thornheart Hollow",
+   "recommendedLevel": [
+    4,
+    6
+   ],
+   "background": [
+    "bg_thornheart_hollow",
+    "bg_thornwood_deep",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.5
+   },
+   "encounters": []
+  },
+  {
+   "id": "fen",
+   "name": "Mirewater Fen",
+   "recommendedLevel": [
+    6,
+    7
+   ],
+   "background": "bg_fen_road",
+   "backdrop": {
+    "kind": "marsh"
+   },
+   "gather": "bog_lily",
+   "encounters": [
+    {
+     "monsterId": "mire_toad",
+     "weight": 5
+    },
+    {
+     "monsterId": "spark_wisp",
+     "weight": 3
+    }
+   ]
+  },
+  {
+   "id": "causeway",
+   "name": "Sunken Causeway",
+   "recommendedLevel": [
+    7,
+    9
+   ],
+   "background": [
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.25
+   },
+   "gather": "drowned_coin",
+   "encounters": [
+    {
+     "monsterId": "spark_wisp",
+     "weight": 2
+    },
+    {
+     "monsterId": "bog_lurker",
+     "weight": 4
+    },
+    {
+     "monsterId": "sunken_revenant",
+     "weight": 3
+    },
+    {
+     "monsterId": "stormscale_drakeling",
+     "weight": 2
+    },
+    {
+     "monsterId": "volt_eel",
+     "weight": 2
+    }
+   ]
+  },
+  {
+   "id": "eel_pools",
+   "name": "Eel Pools",
+   "recommendedLevel": [
+    8,
+    9
+   ],
+   "background": [
+    "bg_eel_pools",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.3
+   },
+   "encounters": [
+    {
+     "monsterId": "volt_eel",
+     "weight": 3
+    },
+    {
+     "monsterId": "bog_lurker",
+     "weight": 2
+    }
+   ]
+  },
+  {
+   "id": "stormlit_flats",
+   "name": "Stormlit Flats",
+   "recommendedLevel": [
+    9,
+    10
+   ],
+   "background": [
+    "bg_stormlit_flats",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.4
+   },
+   "gather": "storm_glass_shard",
+   "encounters": [
+    {
+     "monsterId": "spark_wisp",
+     "weight": 3
+    },
+    {
+     "monsterId": "sunken_revenant",
+     "weight": 3
+    },
+    {
+     "monsterId": "bog_lurker",
+     "weight": 1
+    },
+    {
+     "monsterId": "volt_eel",
+     "weight": 1
+    }
+   ]
+  },
+  {
+   "id": "bog_hollow",
+   "name": "Bog Hollow",
+   "recommendedLevel": [
+    8,
+    9
+   ],
+   "background": [
+    "bg_bog_hollow",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.35
+   },
+   "encounters": []
+  },
+  {
+   "id": "drowned_shrine",
+   "name": "Drowned Shrine",
+   "recommendedLevel": [
+    9,
+    11
+   ],
+   "background": [
+    "bg_drowned_shrine",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.45
+   },
+   "encounters": []
+  },
+  {
+   "id": "frostfang",
+   "name": "Frostfang Pass",
+   "recommendedLevel": [
+    10,
+    11
+   ],
+   "background": "bg_frostfang_pass",
+   "backdrop": {
+    "kind": "snow"
+   },
+   "gather": "lichen_tuft",
+   "encounters": [
+    {
+     "monsterId": "drift_wolf",
+     "weight": 5
+    },
+    {
+     "monsterId": "crag_ram",
+     "weight": 4
+    }
+   ]
+  },
+  {
+   "id": "windscour",
+   "name": "Windscour Ridge",
+   "recommendedLevel": [
+    11,
+    13
+   ],
+   "background": [
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.15
+   },
+   "gather": "binding_rune",
+   "encounters": [
+    {
+     "monsterId": "drift_wolf",
+     "weight": 1
+    },
+    {
+     "monsterId": "gust_sprite",
+     "weight": 4
+    },
+    {
+     "monsterId": "rime_acolyte",
+     "weight": 3
+    },
+    {
+     "monsterId": "glacier_golem",
+     "weight": 2
+    }
+   ]
+  },
+  {
+   "id": "steamvent",
+   "name": "Steamvent Caves",
+   "recommendedLevel": [
+    12,
+    13
+   ],
+   "background": "bg_steamvent_caves",
+   "backdrop": {
+    "kind": "cave"
+   },
+   "gather": "cinder_cap",
+   "encounters": [
+    {
+     "monsterId": "ember_salamander",
+     "weight": 5
+    },
+    {
+     "monsterId": "vent_wyrmling",
+     "weight": 2
+    }
+   ]
+  },
+  {
+   "id": "snowmaw_den",
+   "name": "Snowmaw's Den",
+   "recommendedLevel": [
+    12,
+    13
+   ],
+   "background": [
+    "bg_snowmaw_den",
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.3
+   },
+   "encounters": []
+  },
+  {
+   "id": "whiteout",
+   "name": "Whiteout Ledge",
+   "recommendedLevel": [
+    13,
+    14
+   ],
+   "background": [
+    "bg_whiteout_ledge",
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.25
+   },
+   "gather": "frost_seal",
+   "encounters": [
+    {
+     "monsterId": "rime_acolyte",
+     "weight": 4
+    },
+    {
+     "monsterId": "gust_sprite",
+     "weight": 3
+    },
+    {
+     "monsterId": "glacier_golem",
+     "weight": 1
+    }
+   ]
+  },
+  {
+   "id": "frozen_roost",
+   "name": "The Frozen Roost",
+   "recommendedLevel": [
+    13,
+    15
+   ],
+   "background": [
+    "bg_frozen_roost",
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.4
+   },
+   "encounters": []
+  }
+ ],
+ "rooms": [
+  {
+   "id": "road_cart",
+   "name": "Overturned Cart",
+   "map": {
+    "area": "road",
+    "x": 2,
+    "y": 0
+   },
+   "background": [
+    "bg_road_cart",
+    "bg_old_road"
+   ],
+   "backdrop": {
+    "kind": "forest"
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "leaves"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "road_mill",
+     "label": "Old Mill Road"
+    }
+   ],
+   "npcs": [
+    {
+     "id": "odo",
+     "name": "Odo",
+     "title": "Carter",
+     "x": 1080,
+     "y": 610,
+     "look": {
+      "shape": "humanoid",
+      "color": 8219215,
+      "accent": 14272419,
+      "scale": 1,
+      "art": "npc_odo"
+     },
+     "role": {
+      "kind": "talk"
+     },
+     "dialogue": [
+      "Brindlemoor is just up the road, west. The hedges are full of pests, but they barely bite. Pick up what they drop: you will want more than a weapon.",
+      "Something big came out of the hedges last night and tipped my cart. It went toward the town gate.",
+      "Me? I will sit here with my broken wheel until someone from town comes by. Go on."
+     ]
+    }
+   ],
+   "zoneId": "road",
+   "monsterCount": 1,
+   "wakeAt": {
+    "roomId": "road_cart",
+    "x": 920,
+    "y": 640
+   }
+  },
+  {
+   "id": "road_mill",
+   "name": "Old Mill Road",
+   "map": {
+    "area": "road",
+    "x": 1,
+    "y": 0
+   },
+   "background": [
+    "bg_road_mill",
+    "bg_old_road"
+   ],
+   "backdrop": {
+    "kind": "forest"
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "dust"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "road_cart",
+     "label": "Overturned Cart"
+    },
+    {
+     "side": "left",
+     "to": "road_gate",
+     "label": "Brindlemoor Gate"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "road",
+   "monsterCount": 2,
+   "wakeAt": {
+    "roomId": "road_cart",
+    "x": 920,
+    "y": 640
+   }
+  },
+  {
+   "id": "road_gate",
+   "name": "Brindlemoor Gate",
+   "map": {
+    "area": "road",
+    "x": 0,
+    "y": 0
+   },
+   "background": [
+    "bg_road_gate",
+    "bg_old_road"
+   ],
+   "backdrop": {
+    "kind": "forest"
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "dust"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "road_mill",
+     "label": "Old Mill Road"
+    },
+    {
+     "side": "left",
+     "to": "brindlemoor",
+     "label": "Brindlemoor",
+     "guarded": true,
+     "blocker": "barricade"
+    }
+   ],
+   "npcs": [
+    {
+     "id": "pell",
+     "name": "Pell",
+     "title": "Gatekeeper",
+     "x": 1000,
+     "y": 610,
+     "look": {
+      "shape": "humanoid",
+      "color": 3426654,
+      "accent": 12436423,
+      "scale": 1.05,
+      "art": "npc_pell"
+     },
+     "role": {
+      "kind": "talk"
+     },
+     "dialogue": [
+      "Brindlemoor is shut! That thing sat down right in front of the gate, and I climbed out over the wall.",
+      "Steel alone will take all day. Every beast has a weak spot: look at what it is weak to, and hit it there.",
+      "Once it is gone: Tobin sells gear, Ilsa has beds, and Elder Maren always has work for a new blade."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "Brindlemoor's gate, barred shut.",
+     "Something big squats in front of it, breathing slow and heavy."
+    ],
+    "panTo": 300
+   },
+   "boss": {
+    "monsterId": "millstone_crab",
+    "byClass": {
+     "warrior": "millstone_crab",
+     "mage": "dusk_wraith",
+     "rogue": "hedge_troll"
+    },
+    "x": 430,
+    "y": 640,
+    "intro": "It squats in front of the gate and will not budge."
+   },
+   "zoneId": "road",
+   "wakeAt": {
+    "roomId": "road_gate",
+    "x": 1120,
+    "y": 640
+   }
+  },
+  {
+   "id": "brindlemoor",
+   "name": "Brindlemoor",
+   "map": {
+    "area": "thornwood",
+    "x": 0,
+    "y": 1
+   },
+   "town": {
+    "x": 620,
+    "y": 650
+   },
+   "background": "bg_brindlemoor",
+   "backdrop": {
+    "kind": "town"
+   },
+   "walk": [
+    590,
+    700
+   ],
+   "ambient": [
+    "dust"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "fen_road",
+     "label": "Mirewater Fen",
+     "requiresQuest": "rising_waters",
+     "blocker": "barricade"
+    },
+    {
+     "side": "right",
+     "to": "thornwood_path",
+     "label": "Thornwood"
+    },
+    {
+     "side": "back",
+     "x": 1080,
+     "frame": "gate",
+     "to": "frostfang_pass",
+     "label": "Frostfang Pass",
+     "requiresQuest": "cold_scale",
+     "blocker": "snowdrift"
+    }
+   ],
+   "npcs": [
+    {
+     "id": "elder_maren",
+     "name": "Elder Maren",
+     "title": "Town Elder",
+     "x": 150,
+     "y": 615,
+     "look": {
+      "shape": "humanoid",
+      "color": 8359053,
+      "accent": 15528177,
+      "scale": 1,
+      "art": "npc_elder_maren"
+     },
+     "role": {
+      "kind": "talk"
+     },
+     "dialogue": [
+      "Ah, a new face. Welcome to Brindlemoor.",
+      "Since the old dragon went quiet, the Thornwood has grown restless. Imps, boars, bandits...",
+      "Grow strong out there. Visit Tobin for gear and Ilsa when you need rest. The forest is east, through the gate."
+     ]
+    },
+    {
+     "id": "tobin",
+     "name": "Tobin",
+     "title": "Shopkeeper",
+     "x": 500,
+     "y": 605,
+     "look": {
+      "shape": "humanoid",
+      "color": 12154638,
+      "accent": 6109706,
+      "scale": 1,
+      "art": "npc_tobin"
+     },
+     "role": {
+      "kind": "shop",
+      "stock": [
+       "health_potion",
+       "mana_potion",
+       "recall_scroll",
+       "iron_sword",
+       "hunting_knife",
+       "oak_staff",
+       "leather_armor",
+       "leather_cap",
+       "leather_gloves",
+       "leather_boots",
+       "apprentice_robe",
+       "apprentice_hood",
+       "apprentice_wraps",
+       "apprentice_slippers",
+       "stone_of_might",
+       "stone_of_precision",
+       "stone_of_warding",
+       "stone_of_vigor"
+      ]
+     },
+     "dialogue": [
+      "Best prices this side of the river. Have a look!"
+     ]
+    },
+    {
+     "id": "hulda",
+     "name": "Hulda",
+     "title": "Smith",
+     "x": 320,
+     "y": 610,
+     "look": {
+      "shape": "humanoid",
+      "color": 7228202,
+      "accent": 2829099,
+      "scale": 1.05,
+      "art": "npc_hulda"
+     },
+     "role": {
+      "kind": "forge",
+      "recipes": [
+       "tusk_dagger",
+       "apprentice_robe",
+       "cinder_fang",
+       "emberbrand",
+       "ember_wand",
+       "marshhide_vest",
+       "tidebreaker",
+       "tidecaller_rod",
+       "brinefang",
+       "stormweave_robe",
+       "stormcleaver",
+       "sparkglass_wand",
+       "sparkfang",
+       "frostbite",
+       "hoarfrost_staff",
+       "icicle_kris",
+       "hearthfire_blade",
+       "kindling_rod",
+       "salamander_kris",
+       "frostpelt_vest",
+       "galeweave_robe",
+       "thornwarden_helm",
+       "thornwarden_gloves",
+       "thornwarden_boots",
+       "thornwarden_band",
+       "stormwatch_helm",
+       "stormwatch_gloves",
+       "stormwatch_boots",
+       "stormwatch_amulet",
+       "frostward_helm",
+       "frostward_gloves",
+       "frostward_boots",
+       "frostward_ring"
+      ]
+     },
+     "feature": "forge",
+     "dialogue": [
+      "Tobin's blades are honest, but they're plain. Bring me scrap, dust and whatever the wilds drop, and I'll make them sing.",
+      "I can reinforce what you carry, hone it, or break it down for parts."
+     ]
+    },
+    {
+     "id": "ilsa",
+     "name": "Ilsa",
+     "title": "Innkeeper",
+     "x": 850,
+     "y": 610,
+     "look": {
+      "shape": "humanoid",
+      "color": 11088422,
+      "accent": 16108455,
+      "scale": 1,
+      "art": "npc_ilsa"
+     },
+     "role": {
+      "kind": "inn"
+     },
+     "dialogue": [
+      "A warm bed and a hot meal. You look like you need both."
+     ]
+    },
+    {
+     "id": "guild_tamsin",
+     "name": "Tamsin",
+     "title": "Guild Clerk",
+     "x": 680,
+     "y": 605,
+     "look": {
+      "shape": "humanoid",
+      "color": 3046747,
+      "accent": 15784360,
+      "scale": 1,
+      "art": "npc_guild_tamsin"
+     },
+     "role": {
+      "kind": "guild"
+     },
+     "dialogue": [
+      "Adventurers' Guild. Pick a notice, bring proof, get paid. Do enough and the Guild ranks you up."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "thornwood_path",
+   "name": "Thornwood Path",
+   "map": {
+    "area": "thornwood",
+    "x": 1,
+    "y": 1
+   },
+   "background": "bg_thornwood",
+   "backdrop": {
+    "kind": "forest"
+   },
+   "walk": [
+    530,
+    700
+   ],
+   "ambient": [
+    "leaves"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "brindlemoor",
+     "label": "Brindlemoor"
+    },
+    {
+     "side": "right",
+     "to": "fallen_oak",
+     "label": "Fallen Oak"
+    },
+    {
+     "side": "down",
+     "x": 640,
+     "to": "hunters_camp",
+     "label": "Hunters' Camp"
+    }
+   ],
+   "npcs": [
+    {
+     "id": "gate_guard",
+     "name": "Garrick",
+     "title": "Guard",
+     "x": 170,
+     "y": 610,
+     "look": {
+      "shape": "humanoid",
+      "color": 3426654,
+      "accent": 12436423,
+      "scale": 1.05,
+      "art": "npc_gate_guard"
+     },
+     "role": {
+      "kind": "talk"
+     },
+     "dialogue": [
+      "I keep watch on the forest road. Monsters do not get past me into town.",
+      "Monsters out there can see you coming. If one charges, fight or run. Can't outrun a boar for long, mind."
+     ]
+    }
+   ],
+   "zoneId": "thornwood",
+   "monsterCount": 3
+  },
+  {
+   "id": "hunters_camp",
+   "name": "Hunters' Camp",
+   "map": {
+    "area": "thornwood",
+    "x": 1,
+    "y": 2
+   },
+   "background": [
+    "bg_hunters_camp",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.15
+   },
+   "walk": [
+    530,
+    700
+   ],
+   "ambient": [
+    "fireflies"
+   ],
+   "exits": [
+    {
+     "side": "back",
+     "x": 640,
+     "to": "thornwood_path",
+     "label": "Thornwood Path"
+    }
+   ],
+   "npcs": [],
+   "campfire": {
+    "x": 400,
+    "y": 640
+   },
+   "inspect": [
+    {
+     "id": "hunters_note",
+     "label": "Torn note",
+     "x": 880,
+     "y": 610,
+     "look": "note",
+     "lines": [
+      "The boars are running the wrong way: out of the deep wood, not into it.",
+      "Whatever woke in the Hollow is not hunting them. It is pushing them out. We leave at first light. B."
+     ]
+    },
+    {
+     "id": "hunters_marks",
+     "label": "Scored log",
+     "x": 1110,
+     "y": 660,
+     "look": "marks",
+     "lines": [
+      "Deep grooves across a fallen trunk. Not claws: roots, dragged through the wood like fingers."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "A hunters' camp, left in a hurry. The fire pit is still warm.",
+     "Far off in the trees, something old creaks, like a door that has not opened in a hundred years."
+    ],
+    "panTo": 1000
+   }
+  },
+  {
+   "id": "fallen_oak",
+   "name": "Fallen Oak",
+   "map": {
+    "area": "thornwood",
+    "x": 2,
+    "y": 1
+   },
+   "background": [
+    "bg_fallen_oak",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.15
+   },
+   "walk": [
+    530,
+    700
+   ],
+   "ambient": [
+    "leaves"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "thornwood_path",
+     "label": "Thornwood Path"
+    },
+    {
+     "side": "right",
+     "to": "woodcutters_clearing",
+     "label": "Woodcutters' Clearing"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "thornwood",
+   "monsterCount": 2
+  },
+  {
+   "id": "woodcutters_clearing",
+   "name": "Woodcutters' Clearing",
+   "map": {
+    "area": "thornwood",
+    "x": 3,
+    "y": 1
+   },
+   "background": [
+    "bg_woodcutters_clearing",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.2
+   },
+   "walk": [
+    530,
+    700
+   ],
+   "ambient": [
+    "leaves",
+    "dust"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "fallen_oak",
+     "label": "Fallen Oak"
+    },
+    {
+     "side": "right",
+     "to": "thornwood_deep",
+     "label": "Deep Thornwood"
+    }
+   ],
+   "npcs": [],
+   "inspect": [
+    {
+     "id": "guild_sign",
+     "label": "Guild sign",
+     "x": 330,
+     "y": 620,
+     "look": "sign",
+     "lines": [
+      "Woodcutters' Guild. No cutting past this sign. By order of Elder Maren.",
+      "Carved underneath, fresh: THE TREES CUT BACK."
+     ]
+    },
+    {
+     "id": "sprouting_stump",
+     "label": "Old stump",
+     "x": 900,
+     "y": 650,
+     "look": "marks",
+     "lines": [
+      "Cut a week ago, by the look of it. It already has new shoots as long as your arm."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "A clearing full of fresh stumps. The axes are still stuck in them.",
+     "The woodcutters left in a hurry. Deeper in, the trees grow so close the light turns green."
+    ],
+    "panTo": 1100
+   }
+  },
+  {
+   "id": "thornwood_deep",
+   "name": "Deep Thornwood",
+   "map": {
+    "area": "thornwood",
+    "x": 4,
+    "y": 1
+   },
+   "background": [
+    "bg_thornwood_deep",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.35
+   },
+   "walk": [
+    530,
+    700
+   ],
+   "ambient": [
+    "leaves",
+    "fireflies"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "woodcutters_clearing",
+     "label": "Woodcutters' Clearing"
+    },
+    {
+     "side": "right",
+     "to": "briar_wall",
+     "label": "Briar Wall"
+    },
+    {
+     "side": "down",
+     "x": 900,
+     "to": "bramble_hideout",
+     "label": "Bramble Hideout"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "thornwood_deep",
+   "monsterCount": 3
+  },
+  {
+   "id": "bramble_hideout",
+   "name": "Bramble Hideout",
+   "map": {
+    "area": "thornwood",
+    "x": 4,
+    "y": 2
+   },
+   "background": [
+    "bg_bramble_hideout",
+    "bg_thornwood_deep",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.4
+   },
+   "walk": [
+    530,
+    700
+   ],
+   "ambient": [
+    "fireflies"
+   ],
+   "exits": [
+    {
+     "side": "back",
+     "x": 640,
+     "to": "thornwood_deep",
+     "label": "Deep Thornwood"
+    }
+   ],
+   "npcs": [],
+   "inspect": [
+    {
+     "id": "bandit_tally",
+     "label": "Bandit's tally",
+     "x": 200,
+     "y": 620,
+     "look": "note",
+     "lines": [
+      "Purses taken: 31. Lads lost to the trees: 6.",
+      "The forest is worse than the guards. Last night the brambles moved the path again."
+     ]
+    },
+    {
+     "id": "stolen_crates",
+     "label": "Stolen crates",
+     "x": 1120,
+     "y": 640,
+     "look": "marks",
+     "lines": [
+      "Crates stamped with Tobin's mark. So that is where his spring stock went."
+     ]
+    }
+   ],
+   "zoneId": "bramble_hideout",
+   "monsterCount": 2
+  },
+  {
+   "id": "briar_wall",
+   "name": "Briar Wall",
+   "map": {
+    "area": "thornwood",
+    "x": 5,
+    "y": 1
+   },
+   "background": [
+    "bg_briar_wall",
+    "bg_thornwood_deep",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.45
+   },
+   "walk": [
+    530,
+    700
+   ],
+   "ambient": [
+    "fireflies"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "thornwood_deep",
+     "label": "Deep Thornwood"
+    },
+    {
+     "side": "right",
+     "to": "thornheart_hollow",
+     "label": "Thornheart Hollow",
+     "requiresQuest": "heart_of_thorns"
+    }
+   ],
+   "npcs": [],
+   "campfire": {
+    "x": 380,
+    "y": 640
+   },
+   "inspect": [
+    {
+     "id": "briar_bones",
+     "label": "Old bones",
+     "x": 820,
+     "y": 650,
+     "look": "bones",
+     "lines": [
+      "A deer, caught in the thorns and never let go. The vines grew right through it."
+     ]
+    },
+    {
+     "id": "briar_thorns",
+     "label": "Thorns",
+     "x": 1020,
+     "y": 600,
+     "look": "marks",
+     "lines": [
+      "The thorns lean toward you while you look. When you step back, they settle."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "The path ends in a wall of thorns as tall as a house.",
+     "It creaks in and out, slow and even, like something asleep behind it is breathing."
+    ],
+    "panTo": 1150
+   }
+  },
+  {
+   "id": "thornheart_hollow",
+   "name": "Thornheart Hollow",
+   "map": {
+    "area": "thornwood",
+    "x": 6,
+    "y": 1
+   },
+   "background": [
+    "bg_thornheart_hollow",
+    "bg_thornwood_deep",
+    "bg_thornwood"
+   ],
+   "backdrop": {
+    "kind": "forest",
+    "shade": 0.5
+   },
+   "walk": [
+    530,
+    700
+   ],
+   "ambient": [
+    "fireflies",
+    "leaves"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "briar_wall",
+     "label": "Briar Wall"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "thornheart_hollow",
+   "boss": {
+    "monsterId": "thornheart",
+    "x": 930,
+    "y": 630,
+    "questId": "heart_of_thorns",
+    "intro": "Ancient bark creaks as it turns toward you."
+   }
+  },
+  {
+   "id": "fen_road",
+   "name": "Fen Road",
+   "map": {
+    "area": "fen",
+    "x": 8,
+    "y": 0
+   },
+   "background": "bg_fen_road",
+   "backdrop": {
+    "kind": "marsh"
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "mist",
+    "fireflies"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "brindlemoor",
+     "label": "Brindlemoor"
+    },
+    {
+     "side": "left",
+     "to": "reedwatch",
+     "label": "Reedwatch"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "fen",
+   "monsterCount": 3
+  },
+  {
+   "id": "reedwatch",
+   "name": "Reedwatch",
+   "map": {
+    "area": "fen",
+    "x": 7,
+    "y": 0
+   },
+   "town": {
+    "x": 840,
+    "y": 650
+   },
+   "background": "bg_reedwatch",
+   "backdrop": {
+    "kind": "outpost"
+   },
+   "walk": [
+    590,
+    700
+   ],
+   "ambient": [
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "fen_road",
+     "label": "Fen Road"
+    },
+    {
+     "side": "left",
+     "to": "sunken_causeway",
+     "label": "Sunken Causeway"
+    }
+   ],
+   "npcs": [
+    {
+     "id": "captain_hale",
+     "name": "Captain Hale",
+     "title": "Reedwatch Captain",
+     "x": 210,
+     "y": 615,
+     "look": {
+      "shape": "humanoid",
+      "color": 3038798,
+      "accent": 11583173,
+      "scale": 1.05,
+      "art": "npc_captain_hale"
+     },
+     "role": {
+      "kind": "talk"
+     },
+     "dialogue": [
+      "Reedwatch holds the only dry ground for a day's walk. My scouts and I keep it that way.",
+      "Past the causeway the water gets deep and the storms get strange. Watch your footing."
+     ]
+    },
+    {
+     "id": "wren",
+     "name": "Wren",
+     "title": "Quartermaster",
+     "x": 560,
+     "y": 605,
+     "look": {
+      "shape": "humanoid",
+      "color": 9268835,
+      "accent": 4073251,
+      "scale": 0.95,
+      "art": "npc_wren"
+     },
+     "role": {
+      "kind": "shop",
+      "stock": [
+       "stone_of_might",
+       "stone_of_precision",
+       "stone_of_warding",
+       "stone_of_vigor",
+       "recall_scroll",
+       "health_potion",
+       "mana_potion",
+       "greater_health_potion",
+       "greater_mana_potion",
+       "steel_broadsword",
+       "yew_staff",
+       "fenwatch_stiletto",
+       "scale_mail",
+       "scale_coif",
+       "scale_gauntlets",
+       "scale_boots",
+       "reedweave_robe",
+       "reedweave_hood",
+       "reedweave_wraps",
+       "reedweave_slippers"
+      ]
+     },
+     "dialogue": [
+      "Steel from the city, potions from the Sister. Dry goods, mostly. Mostly dry."
+     ]
+    },
+    {
+     "id": "ottilie",
+     "name": "Sister Ottilie",
+     "title": "Healer",
+     "x": 900,
+     "y": 610,
+     "look": {
+      "shape": "humanoid",
+      "color": 15262416,
+      "accent": 6060682,
+      "scale": 1,
+      "art": "npc_ottilie"
+     },
+     "role": {
+      "kind": "inn"
+     },
+     "dialogue": [
+      "Sit, rest, dry your boots. The fen takes its toll on everyone."
+     ]
+    },
+    {
+     "id": "guild_ivo",
+     "name": "Ivo",
+     "title": "Guild Clerk",
+     "x": 385,
+     "y": 605,
+     "look": {
+      "shape": "humanoid",
+      "color": 3046747,
+      "accent": 9268835,
+      "scale": 1,
+      "art": "npc_guild_ivo"
+     },
+     "role": {
+      "kind": "guild"
+     },
+     "dialogue": [
+      "Same board as Brindlemoor, just wetter. Hunts in, coin out."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "sunken_causeway",
+   "name": "Sunken Causeway",
+   "map": {
+    "area": "fen",
+    "x": 6,
+    "y": 0
+   },
+   "background": [
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.25
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "rain",
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "reedwatch",
+     "label": "Reedwatch"
+    },
+    {
+     "side": "left",
+     "to": "whispering_reeds",
+     "label": "Whispering Reeds"
+    },
+    {
+     "side": "down",
+     "x": 760,
+     "to": "eel_pools",
+     "label": "Eel Pools"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "causeway",
+   "monsterCount": 3,
+   "wakeAt": {
+    "roomId": "reedwatch",
+    "x": 840,
+    "y": 650
+   }
+  },
+  {
+   "id": "eel_pools",
+   "name": "Eel Pools",
+   "map": {
+    "area": "fen",
+    "x": 6,
+    "y": 1
+   },
+   "background": [
+    "bg_eel_pools",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.3
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "back",
+     "x": 640,
+     "to": "sunken_causeway",
+     "label": "Sunken Causeway"
+    }
+   ],
+   "npcs": [],
+   "inspect": [
+    {
+     "id": "eel_warning",
+     "label": "Warning post",
+     "x": 230,
+     "y": 620,
+     "look": "sign",
+     "lines": [
+      "Scratched into the post: DON'T HIT THE EELS WITH LIGHTNING.",
+      "Under it, in another hand: we know now."
+     ]
+    }
+   ],
+   "zoneId": "eel_pools",
+   "monsterCount": 2,
+   "chest": {
+    "x": 1130,
+    "y": 660
+   },
+   "wakeAt": {
+    "roomId": "reedwatch",
+    "x": 840,
+    "y": 650
+   }
+  },
+  {
+   "id": "whispering_reeds",
+   "name": "Whispering Reeds",
+   "map": {
+    "area": "fen",
+    "x": 5,
+    "y": 0
+   },
+   "background": [
+    "bg_whispering_reeds",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.3
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "mist",
+    "fireflies"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "sunken_causeway",
+     "label": "Sunken Causeway"
+    },
+    {
+     "side": "left",
+     "to": "stilt_village",
+     "label": "Stilt Village"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "causeway",
+   "monsterCount": 2,
+   "wakeAt": {
+    "roomId": "reedwatch",
+    "x": 840,
+    "y": 650
+   }
+  },
+  {
+   "id": "stilt_village",
+   "name": "Stilt Village",
+   "map": {
+    "area": "fen",
+    "x": 4,
+    "y": 0
+   },
+   "background": [
+    "bg_stilt_village",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.3
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "whispering_reeds",
+     "label": "Whispering Reeds"
+    },
+    {
+     "side": "left",
+     "to": "bog_hollow",
+     "label": "Bog Hollow",
+     "requiresQuest": "mother_of_the_mire",
+     "blocker": "reeds"
+    }
+   ],
+   "npcs": [],
+   "campfire": {
+    "x": 900,
+    "y": 640
+   },
+   "inspect": [
+    {
+     "id": "fisher_slate",
+     "label": "Fisher's slate",
+     "x": 560,
+     "y": 615,
+     "look": "note",
+     "lines": [
+      "Toads in the nets again, twice the size of last year's.",
+      "Mother is feeding them. We leave for Reedwatch tomorrow."
+     ]
+    },
+    {
+     "id": "gnawed_stilt",
+     "label": "Gnawed stilt",
+     "x": 220,
+     "y": 640,
+     "look": "marks",
+     "lines": [
+      "A stilt as thick as a man, bitten halfway through. The tooth marks are the size of your hand."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "Fishers' huts on tall stilts, all empty. The boats are tied up high, out of the water's reach.",
+     "Out past the reeds, something big rolls over in the mud, and the whole pool slops against the stilts."
+    ],
+    "panTo": 150
+   },
+   "wakeAt": {
+    "roomId": "reedwatch",
+    "x": 840,
+    "y": 650
+   }
+  },
+  {
+   "id": "bog_hollow",
+   "name": "Bog Hollow",
+   "map": {
+    "area": "fen",
+    "x": 3,
+    "y": 0
+   },
+   "background": [
+    "bg_bog_hollow",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.35
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "mist",
+    "fireflies"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "stilt_village",
+     "label": "Stilt Village"
+    },
+    {
+     "side": "left",
+     "to": "stormlit_flats",
+     "label": "Stormlit Flats",
+     "requiresQuest": "eye_of_the_storm",
+     "blocker": "reeds"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "bog_hollow",
+   "boss": {
+    "monsterId": "bogmother",
+    "x": 360,
+    "y": 548,
+    "questId": "mother_of_the_mire",
+    "intro": "The pool bubbles, and something enormous heaves itself out of the mud."
+   },
+   "wakeAt": {
+    "roomId": "reedwatch",
+    "x": 840,
+    "y": 650
+   }
+  },
+  {
+   "id": "stormlit_flats",
+   "name": "Stormlit Flats",
+   "map": {
+    "area": "fen",
+    "x": 2,
+    "y": 0
+   },
+   "background": [
+    "bg_stormlit_flats",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.4
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "rain",
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "bog_hollow",
+     "label": "Bog Hollow"
+    },
+    {
+     "side": "left",
+     "to": "shrine_steps",
+     "label": "Shrine Steps"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "stormlit_flats",
+   "monsterCount": 3,
+   "wakeAt": {
+    "roomId": "reedwatch",
+    "x": 840,
+    "y": 650
+   }
+  },
+  {
+   "id": "shrine_steps",
+   "name": "Shrine Steps",
+   "map": {
+    "area": "fen",
+    "x": 1,
+    "y": 0
+   },
+   "background": [
+    "bg_shrine_steps",
+    "bg_drowned_shrine",
+    "bg_sunken_causeway"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.45
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "rain"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "stormlit_flats",
+     "label": "Stormlit Flats"
+    },
+    {
+     "side": "left",
+     "to": "drowned_shrine",
+     "label": "Drowned Shrine"
+    }
+   ],
+   "npcs": [],
+   "campfire": {
+    "x": 880,
+    "y": 640
+   },
+   "inspect": [
+    {
+     "id": "shrine_carving",
+     "label": "Worn carving",
+     "x": 520,
+     "y": 610,
+     "look": "sign",
+     "lines": [
+      "A shrine to the river, older than Reedwatch.",
+      "Someone has scratched a coiled serpent over the old carvings, again and again."
+     ]
+    },
+    {
+     "id": "shrine_offerings",
+     "label": "Offerings",
+     "x": 250,
+     "y": 650,
+     "look": "bones",
+     "lines": [
+      "Fish bones and copper coins on the top step. Fresh. Someone still comes here to ask the storm for mercy."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "Old stone steps lead down into the water. The rain falls sideways here.",
+     "Ahead, lightning strikes the same drowned stone, again and again, as if something down there is calling it."
+    ],
+    "panTo": 150
+   },
+   "wakeAt": {
+    "roomId": "reedwatch",
+    "x": 840,
+    "y": 650
+   }
+  },
+  {
+   "id": "drowned_shrine",
+   "name": "Drowned Shrine",
+   "map": {
+    "area": "fen",
+    "x": 0,
+    "y": 0
+   },
+   "background": [
+    "bg_drowned_shrine",
+    "bg_sunken_causeway",
+    "bg_fen_road"
+   ],
+   "backdrop": {
+    "kind": "marsh",
+    "shade": 0.45
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "rain",
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "right",
+     "to": "shrine_steps",
+     "label": "Shrine Steps"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "drowned_shrine",
+   "boss": {
+    "monsterId": "stormcoil",
+    "x": 330,
+    "y": 630,
+    "questId": "eye_of_the_storm",
+    "intro": "Lightning crawls over the drowned stones. The Stormcoil uncoils from around a great, dull scale."
+   },
+   "wakeAt": {
+    "roomId": "reedwatch",
+    "x": 840,
+    "y": 650
+   }
+  },
+  {
+   "id": "frostfang_pass",
+   "name": "Frostfang Pass",
+   "map": {
+    "area": "frostfang",
+    "x": 0,
+    "y": 1
+   },
+   "background": "bg_frostfang_pass",
+   "backdrop": {
+    "kind": "snow"
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "snow"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "brindlemoor",
+     "label": "Brindlemoor"
+    },
+    {
+     "side": "right",
+     "to": "hearthold",
+     "label": "Hearthold"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "frostfang",
+   "monsterCount": 3,
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "hearthold",
+   "name": "Hearthold",
+   "map": {
+    "area": "frostfang",
+    "x": 1,
+    "y": 1
+   },
+   "town": {
+    "x": 900,
+    "y": 650
+   },
+   "background": "bg_hearthold",
+   "backdrop": {
+    "kind": "village"
+   },
+   "walk": [
+    590,
+    700
+   ],
+   "ambient": [
+    "snow"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "frostfang_pass",
+     "label": "Frostfang Pass"
+    },
+    {
+     "side": "right",
+     "to": "windscour_ridge",
+     "label": "Windscour Ridge"
+    }
+   ],
+   "npcs": [
+    {
+     "id": "ranger_sabine",
+     "name": "Sabine",
+     "title": "Ranger",
+     "x": 230,
+     "y": 615,
+     "look": {
+      "shape": "humanoid",
+      "color": 3046706,
+      "accent": 14142664,
+      "scale": 1,
+      "art": "npc_ranger_sabine"
+     },
+     "role": {
+      "kind": "talk"
+     },
+     "dialogue": [
+      "Another one from the lowlands. You'll want a thicker coat.",
+      "Winter came early this year and never left. The ridge is crawling with things that like it that way."
+     ]
+    },
+    {
+     "id": "gunnar",
+     "name": "Gunnar",
+     "title": "Trader",
+     "x": 620,
+     "y": 610,
+     "look": {
+      "shape": "humanoid",
+      "color": 9268835,
+      "accent": 4073251,
+      "scale": 1.1,
+      "art": "npc_gunnar"
+     },
+     "role": {
+      "kind": "shop",
+      "stock": [
+       "stone_of_might",
+       "stone_of_precision",
+       "stone_of_warding",
+       "stone_of_vigor",
+       "recall_scroll",
+       "superior_health_potion",
+       "superior_mana_potion",
+       "greater_health_potion",
+       "greater_mana_potion",
+       "tempered_longsword",
+       "larchwood_staff",
+       "ridgerunner_kris",
+       "ridgeplate",
+       "ridgeplate_helm",
+       "ridgeplate_gauntlets",
+       "ridgeplate_boots",
+       "fleecewool_robe",
+       "fleecewool_hood",
+       "fleecewool_mittens",
+       "fleecewool_boots",
+       "frostbite",
+       "hoarfrost_staff",
+       "icicle_kris",
+       "hearthfire_blade",
+       "kindling_rod",
+       "salamander_kris",
+       "frostpelt_vest",
+       "galeweave_robe"
+      ]
+     },
+     "dialogue": [
+      "Mountain steel, mountain wool. Nothing fancy, nothing that breaks. I buy too, if it is not frozen solid."
+     ]
+    },
+    {
+     "id": "hearthkeeper_moll",
+     "name": "Moll",
+     "title": "Hearthkeeper",
+     "x": 1000,
+     "y": 610,
+     "look": {
+      "shape": "humanoid",
+      "color": 12986408,
+      "accent": 16769202,
+      "scale": 1,
+      "art": "npc_hearthkeeper_moll"
+     },
+     "role": {
+      "kind": "inn"
+     },
+     "dialogue": [
+      "Come in, come in, shut the door! The fire is the only warm thing left on this mountain."
+     ]
+    },
+    {
+     "id": "guild_edda",
+     "name": "Edda",
+     "title": "Guild Clerk",
+     "x": 425,
+     "y": 605,
+     "look": {
+      "shape": "humanoid",
+      "color": 3046747,
+      "accent": 13621468,
+      "scale": 1,
+      "art": "npc_guild_edda"
+     },
+     "role": {
+      "kind": "guild"
+     },
+     "dialogue": [
+      "The Guild pays double the cold, or it feels that way. What will it be?"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "windscour_ridge",
+   "name": "Windscour Ridge",
+   "map": {
+    "area": "frostfang",
+    "x": 2,
+    "y": 1
+   },
+   "background": [
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.15
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "snow"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "hearthold",
+     "label": "Hearthold"
+    },
+    {
+     "side": "right",
+     "to": "high_trail",
+     "label": "The High Trail"
+    },
+    {
+     "side": "back",
+     "x": 640,
+     "frame": "cave",
+     "to": "steamvent_caves",
+     "label": "Steamvent Caves"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "windscour",
+   "monsterCount": 3,
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "steamvent_caves",
+   "name": "Steamvent Caves",
+   "map": {
+    "area": "frostfang",
+    "x": 2,
+    "y": 0
+   },
+   "background": "bg_steamvent_caves",
+   "backdrop": {
+    "kind": "cave"
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "embers",
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "windscour_ridge",
+     "label": "Windscour Ridge"
+    },
+    {
+     "side": "right",
+     "to": "hot_springs",
+     "label": "Hot Springs"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "steamvent",
+   "monsterCount": 3,
+   "chest": {
+    "x": 1100,
+    "y": 660
+   },
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "hot_springs",
+   "name": "Hot Springs",
+   "map": {
+    "area": "frostfang",
+    "x": 3,
+    "y": 0
+   },
+   "background": [
+    "bg_hot_springs",
+    "bg_steamvent_caves"
+   ],
+   "backdrop": {
+    "kind": "cave",
+    "shade": 0.1
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "mist",
+    "embers"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "steamvent_caves",
+     "label": "Steamvent Caves"
+    }
+   ],
+   "npcs": [],
+   "campfire": {
+    "x": 560,
+    "y": 650
+   },
+   "inspect": [
+    {
+     "id": "springs_note",
+     "label": "Old note",
+     "x": 940,
+     "y": 620,
+     "look": "note",
+     "lines": [
+      "Gone for water. If you read this, bring a bucket. M.",
+      "The ink has run in the steam. Nobody from Hearthold has made it down here since the snows came."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "Warm water steams in a deep cave pool. For the first time since the pass, your fingers stop aching.",
+     "Whatever is chilling the mountain, its spell stops at the water's edge."
+    ],
+    "panTo": 900
+   },
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "high_trail",
+   "name": "The High Trail",
+   "map": {
+    "area": "frostfang",
+    "x": 3,
+    "y": 1
+   },
+   "background": [
+    "bg_high_trail",
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.2
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "snow"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "windscour_ridge",
+     "label": "Windscour Ridge"
+    },
+    {
+     "side": "right",
+     "to": "rangers_lookout",
+     "label": "Ranger's Lookout"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "windscour",
+   "monsterCount": 2,
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "rangers_lookout",
+   "name": "Ranger's Lookout",
+   "map": {
+    "area": "frostfang",
+    "x": 4,
+    "y": 1
+   },
+   "background": [
+    "bg_rangers_lookout",
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.25
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "snow"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "high_trail",
+     "label": "The High Trail"
+    },
+    {
+     "side": "right",
+     "to": "snowmaw_den",
+     "label": "Snowmaw's Den",
+     "requiresQuest": "the_old_one",
+     "blocker": "snowdrift"
+    }
+   ],
+   "npcs": [],
+   "campfire": {
+    "x": 420,
+    "y": 650
+   },
+   "inspect": [
+    {
+     "id": "ranger_log",
+     "label": "Ranger's log",
+     "x": 700,
+     "y": 615,
+     "look": "note",
+     "lines": [
+      "Day 40. The old bear has not slept all winter. She paces the den mouth like a dog on a chain.",
+      "Day 41. A woman in white came down from the roost. She spoke to the bear, and the bear sat. Going closer tomorrow. T."
+     ]
+    },
+    {
+     "id": "lookout_door",
+     "label": "Clawed door",
+     "x": 1000,
+     "y": 600,
+     "look": "marks",
+     "lines": [
+      "Deep claw marks on the door, on the outside. Whatever made them wanted in, then gave up."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "A rangers' lookout, half buried in snow. The fire pit is cold and the door hangs open.",
+     "Further on, at the mouth of a den, a great white shape paces back and forth. Back and forth."
+    ],
+    "panTo": 1150
+   },
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "snowmaw_den",
+   "name": "Snowmaw's Den",
+   "map": {
+    "area": "frostfang",
+    "x": 5,
+    "y": 1
+   },
+   "background": [
+    "bg_snowmaw_den",
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.3
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "snow"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "rangers_lookout",
+     "label": "Ranger's Lookout"
+    },
+    {
+     "side": "right",
+     "to": "whiteout_ledge",
+     "label": "Whiteout Ledge",
+     "requiresQuest": "the_frozen_roost",
+     "blocker": "snowdrift"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "snowmaw_den",
+   "boss": {
+    "monsterId": "old_snowmaw",
+    "x": 900,
+    "y": 630,
+    "questId": "the_old_one",
+    "intro": "A snowbank stands up. It has eyes, and very large teeth."
+   },
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "whiteout_ledge",
+   "name": "Whiteout Ledge",
+   "map": {
+    "area": "frostfang",
+    "x": 6,
+    "y": 1
+   },
+   "background": [
+    "bg_whiteout_ledge",
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.25
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "snow",
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "snowmaw_den",
+     "label": "Snowmaw's Den"
+    },
+    {
+     "side": "right",
+     "to": "roost_stair",
+     "label": "Roost Stair"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "whiteout",
+   "monsterCount": 3,
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "roost_stair",
+   "name": "Roost Stair",
+   "map": {
+    "area": "frostfang",
+    "x": 7,
+    "y": 1
+   },
+   "background": [
+    "bg_roost_stair",
+    "bg_frozen_roost",
+    "bg_windscour_ridge"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.35
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "snow"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "whiteout_ledge",
+     "label": "Whiteout Ledge"
+    },
+    {
+     "side": "right",
+     "to": "frozen_roost",
+     "label": "The Frozen Roost"
+    }
+   ],
+   "npcs": [],
+   "campfire": {
+    "x": 400,
+    "y": 650
+   },
+   "inspect": [
+    {
+     "id": "rune_pillar",
+     "label": "Rune pillar",
+     "x": 760,
+     "y": 600,
+     "look": "sign",
+     "lines": [
+      "The same rune Sabine found in the golem's core. Up close, the ice hums.",
+      "This cold is not weather. Someone is making it."
+     ]
+    },
+    {
+     "id": "roost_footprints",
+     "label": "Footprints",
+     "x": 1040,
+     "y": 660,
+     "look": "marks",
+     "lines": [
+      "Small bare footprints in the snow. Whoever made them does not feel the cold."
+     ]
+    }
+   ],
+   "firstVisit": {
+    "lines": [
+     "Steps cut into the mountain, older than Hearthold. Blue runes glow in the ice on either side.",
+     "At the top, a light flickers behind a wall of ice. The wind sings one long, cold note."
+    ],
+    "panTo": 1150
+   },
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  },
+  {
+   "id": "frozen_roost",
+   "name": "The Frozen Roost",
+   "map": {
+    "area": "frostfang",
+    "x": 8,
+    "y": 1
+   },
+   "background": [
+    "bg_frozen_roost",
+    "bg_windscour_ridge",
+    "bg_frostfang_pass"
+   ],
+   "backdrop": {
+    "kind": "snow",
+    "shade": 0.4
+   },
+   "walk": [
+    540,
+    700
+   ],
+   "ambient": [
+    "snow",
+    "mist"
+   ],
+   "exits": [
+    {
+     "side": "left",
+     "to": "roost_stair",
+     "label": "Roost Stair"
+    }
+   ],
+   "npcs": [],
+   "zoneId": "frozen_roost",
+   "boss": {
+    "monsterId": "frostbinder",
+    "x": 930,
+    "y": 630,
+    "questId": "the_frozen_roost",
+    "intro": "Behind a wall of blue ice, something enormous sleeps. In front of it, a woman in white turns around and smiles."
+   },
+   "wakeAt": {
+    "roomId": "hearthold",
+    "x": 900,
+    "y": 650
+   }
+  }
+ ],
+ "quests": [
+  {
+   "id": "heart_of_thorns",
+   "name": "Heart of Thorns",
+   "giver": "elder_maren",
+   "requiresRank": "E",
+   "objective": {
+    "kind": "kill",
+    "monsterId": "thornheart",
+    "count": 1
+   },
+   "goal": "Defeat the Thornheart",
+   "offer": [
+    "The moss, the bandits, the imps... it all points to one thing.",
+    "An ancient heartwood tree has woken in the hollow past the Deep Thornwood. The Thornheart. The thorn wall that blocks the path will part for you now.",
+    "Watch it closely. When it gathers its strength, brace yourself: Defend, or heal."
+   ],
+   "reminder": "The Thornheart waits in the hollow past the Deep Thornwood. Stock up on potions first.",
+   "complete": [
+    "You did it. Listen... the forest is already quieter.",
+    "This was carved from the Thornheart itself. It belongs with you now.",
+    "I fear this is only the beginning. But tonight, Brindlemoor celebrates you."
+   ],
+   "rewards": {
+    "xp": 250,
+    "gold": 150,
+    "classItems": {
+     "warrior": "thornheart_blade",
+     "mage": "heartwood_staff",
+     "rogue": "briar_fang"
+    }
+   },
+   "endsChapter": "Chapter 1: The Restless Thornwood"
+  },
+  {
+   "id": "rising_waters",
+   "name": "Rising Waters",
+   "giver": "elder_maren",
+   "requires": "heart_of_thorns",
+   "objective": {
+    "kind": "kill",
+    "monsterId": "mire_toad",
+    "count": 4
+   },
+   "goal": "Mire Toads defeated",
+   "offer": [
+    "The Thornheart is gone, yet the land is still uneasy. Last night the river west of town burst its banks.",
+    "The Mirewater Fen is creeping toward our fields, and folk say it crackles like a storm that never breaks.",
+    "I've told Garrick to take down the barricade on the west road. Clear the Mire Toads off the Fen Road, four of them, then come back to me."
+   ],
+   "reminder": "Four Mire Toads on the Fen Road, west of town. Mind their tongues.",
+   "complete": [
+    "Good. The road is passable again.",
+    "Past the Fen Road stands Reedwatch, an old outpost. Captain Hale holds it. Tell him I sent you, and take these: the fen is no place to run dry."
+   ],
+   "rewards": {
+    "xp": 150,
+    "gold": 80,
+    "items": [
+     "greater_health_potion",
+     "greater_health_potion"
+    ]
+   }
+  },
+  {
+   "id": "mother_of_the_mire",
+   "name": "Mother of the Mire",
+   "giver": "captain_hale",
+   "requires": "rising_waters",
+   "requiresRank": "D",
+   "objective": {
+    "kind": "kill",
+    "monsterId": "bogmother",
+    "count": 1
+   },
+   "goal": "Defeat the Bogmother",
+   "offer": [
+    "The toads, the lurkers... they all crawl out of Bog Hollow, past the causeway. Something huge lives in that pool. We call her the Bogmother.",
+    "My men will cut a path through the reeds for you. She'll sink into the mud before a big strike: brace yourself."
+   ],
+   "reminder": "Bog Hollow is past the Sunken Causeway. When she sinks into the mire, defend or heal.",
+   "complete": [
+    "The Bogmother, dead? The whole outpost will drink to you tonight.",
+    "But my scouts saw what lies beyond the hollow. An old shrine, half drowned... and lightning crawling over it."
+   ],
+   "rewards": {
+    "xp": 400,
+    "gold": 200,
+    "items": [
+     "greater_health_potion",
+     "greater_health_potion",
+     "greater_health_potion"
+    ]
+   }
+  },
+  {
+   "id": "eye_of_the_storm",
+   "name": "Eye of the Storm",
+   "giver": "captain_hale",
+   "requires": "mother_of_the_mire",
+   "objective": {
+    "kind": "kill",
+    "monsterId": "stormcoil",
+    "count": 1
+   },
+   "goal": "Defeat the Stormcoil",
+   "offer": [
+    "The storms, the wisps, the flood: it all comes from the Drowned Shrine. A great serpent coils there, around something that glows.",
+    "We'll clear the reeds past Bog Hollow. Be warned: my scouts swear it changed color while they watched. Bring more than one trick."
+   ],
+   "reminder": "The Drowned Shrine lies past Bog Hollow. Lightning first, then water. Bring both, or something neutral.",
+   "complete": [
+    "The rain has stopped. For the first time in a month, I can see the stars over the fen.",
+    "And this... a scale as big as a shield, dull and cold. That is no serpent scale. That is a dragon's.",
+    "Take this, forged in our smithy around a piece of the Stormcoil. Then go tell Maren what you found. She will want to know about that scale."
+   ],
+   "rewards": {
+    "xp": 600,
+    "gold": 300,
+    "classItems": {
+     "warrior": "thunderhead_maul",
+     "mage": "stormcoil_scepter",
+     "rogue": "coilfang"
+    }
+   },
+   "endsChapter": "Chapter 2: Rising Waters"
+  },
+  {
+   "id": "cold_scale",
+   "name": "Cold Scale",
+   "giver": "elder_maren",
+   "requires": "eye_of_the_storm",
+   "objective": {
+    "kind": "kill",
+    "monsterId": "drift_wolf",
+    "count": 4
+   },
+   "goal": "Drift Wolves defeated",
+   "offer": [
+    "Let me see that scale. Hm. A dragon's scale should be warm, even shed. This one is cold as river ice, and look: frost, in my own kitchen.",
+    "The old dragon flew north to the Frostfangs, years ago. If something up there is chilling it, I want to know what.",
+    "I will have Garrick dig out the north gate. Mind the wolves on the pass: four of them, and the road is yours."
+   ],
+   "reminder": "The north gate is open. Four Drift Wolves on the Frostfang Pass, then on to Hearthold.",
+   "complete": [
+    "Hearthold is just past the pass. Ask for Sabine; she knows those peaks better than anyone.",
+    "And take these. It is colder than it looks."
+   ],
+   "rewards": {
+    "xp": 300,
+    "gold": 120,
+    "items": [
+     "superior_health_potion",
+     "superior_health_potion"
+    ]
+   }
+  },
+  {
+   "id": "the_old_one",
+   "name": "The Old One in the Den",
+   "giver": "ranger_sabine",
+   "requires": "cold_scale",
+   "requiresRank": "C",
+   "objective": {
+    "kind": "kill",
+    "monsterId": "old_snowmaw",
+    "count": 1
+   },
+   "goal": "Defeat Old Snowmaw",
+   "offer": [
+    "The trail to the roost runs through a den past the ridge. Old Snowmaw lives there. She used to sleep through winter. Now she guards the way like a dog on a chain.",
+    "I will clear the drifts. Her hide is packed ice: hit her with fire until it cracks, or you are just knocking snow off.",
+    "And when she rears up and the slope starts to slide, Defend."
+   ],
+   "reminder": "Snowmaw's Den is past Windscour Ridge. Fire cracks her shell; it grows back once. Defend against the Avalanche.",
+   "complete": [
+    "You beat Old Snowmaw? Then nothing stands between you and the roost but whoever made all this.",
+    "Rest first. You will need it."
+   ],
+   "rewards": {
+    "xp": 700,
+    "gold": 260,
+    "items": [
+     "superior_health_potion",
+     "superior_health_potion",
+     "superior_health_potion"
+    ]
+   }
+  },
+  {
+   "id": "the_frozen_roost",
+   "name": "The Frozen Roost",
+   "giver": "ranger_sabine",
+   "requires": "the_old_one",
+   "objective": {
+    "kind": "kill",
+    "monsterId": "frostbinder",
+    "count": 1
+   },
+   "goal": "Defeat the Frostbinder",
+   "offer": [
+    "The dragon's roost is just past the den. My scouts saw a woman up there, all in white, and a wall of blue ice taller than the watchtower.",
+    "Whatever she is doing, it is why winter will not leave. Bring fire. And bring something for the wind: they say when she is angry, she turns into the storm."
+   ],
+   "reminder": "The Frozen Roost is past the den. Fire for the ice, Earth for the storm.",
+   "complete": [
+    "The wind just... stopped. I can hear the meltwater running for the first time in a year.",
+    "You saw it? The dragon, in the ice? And it looked at you? Then it is alive. Maren will want to hear every word.",
+    "Take this. She left it behind when the storm blew itself out."
+   ],
+   "rewards": {
+    "xp": 1000,
+    "gold": 400,
+    "classItems": {
+     "warrior": "whiteout",
+     "mage": "squall_stave",
+     "rogue": "galecutter"
+    }
+   },
+   "endsChapter": "Chapter 3: The Frozen Roost"
+  }
+ ],
+ "affixes": [
+  {
+   "id": "hulking",
+   "name": "Hulking",
+   "description": "+50% HP.",
+   "hp": 0.5
+  },
+  {
+   "id": "frenzied",
+   "name": "Frenzied",
+   "description": "Deals 25% more damage.",
+   "damage": 0.25
+  },
+  {
+   "id": "warded",
+   "name": "Warded",
+   "description": "+25 to all resistances.",
+   "resists": {
+    "all": 25
+   }
+  },
+  {
+   "id": "venomous",
+   "name": "Venomous",
+   "description": "Its attacks may poison (30%).",
+   "applies": [
+    {
+     "status": "poison",
+     "turns": 3,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "ironhide",
+   "name": "Ironhide",
+   "description": "+50% defense.",
+   "defense": 0.5
+  }
+ ],
+ "recipes": [
+  {
+   "id": "tusk_dagger",
+   "result": "tusk_dagger",
+   "gold": 25,
+   "materials": [
+    {
+     "itemId": "boar_tusk",
+     "qty": 3
+    },
+    {
+     "itemId": "scrap",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "id": "apprentice_robe",
+   "result": "apprentice_robe",
+   "gold": 30,
+   "materials": [
+    {
+     "itemId": "moss_clump",
+     "qty": 4
+    },
+    {
+     "itemId": "scrap",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "id": "cinder_fang",
+   "result": "cinder_fang",
+   "gold": 50,
+   "materials": [
+    {
+     "itemId": "essence_fire",
+     "qty": 4
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "emberbrand",
+   "result": "emberbrand",
+   "gold": 60,
+   "materials": [
+    {
+     "itemId": "essence_fire",
+     "qty": 5
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "ember_wand",
+   "result": "ember_wand",
+   "gold": 50,
+   "materials": [
+    {
+     "itemId": "essence_fire",
+     "qty": 4
+    },
+    {
+     "itemId": "scrap",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "id": "marshhide_vest",
+   "result": "marshhide_vest",
+   "gold": 110,
+   "materials": [
+    {
+     "itemId": "fen_hide",
+     "qty": 4
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "tidebreaker",
+   "result": "tidebreaker",
+   "gold": 140,
+   "materials": [
+    {
+     "itemId": "essence_water",
+     "qty": 5
+    },
+    {
+     "itemId": "fen_hide",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 4
+    }
+   ]
+  },
+  {
+   "id": "tidecaller_rod",
+   "result": "tidecaller_rod",
+   "gold": 130,
+   "materials": [
+    {
+     "itemId": "essence_water",
+     "qty": 4
+    },
+    {
+     "itemId": "fen_hide",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "brinefang",
+   "result": "brinefang",
+   "gold": 120,
+   "materials": [
+    {
+     "itemId": "essence_water",
+     "qty": 4
+    },
+    {
+     "itemId": "fen_hide",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "stormweave_robe",
+   "result": "stormweave_robe",
+   "gold": 110,
+   "materials": [
+    {
+     "itemId": "essence_energy",
+     "qty": 3
+    },
+    {
+     "itemId": "storm_scale",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "id": "stormcleaver",
+   "result": "stormcleaver",
+   "gold": 150,
+   "materials": [
+    {
+     "itemId": "essence_energy",
+     "qty": 5
+    },
+    {
+     "itemId": "storm_scale",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 4
+    }
+   ]
+  },
+  {
+   "id": "sparkglass_wand",
+   "result": "sparkglass_wand",
+   "gold": 130,
+   "materials": [
+    {
+     "itemId": "essence_energy",
+     "qty": 5
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "sparkfang",
+   "result": "sparkfang",
+   "gold": 130,
+   "materials": [
+    {
+     "itemId": "essence_energy",
+     "qty": 4
+    },
+    {
+     "itemId": "storm_scale",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "frostbite",
+   "result": "frostbite",
+   "gold": 240,
+   "materials": [
+    {
+     "itemId": "essence_ice",
+     "qty": 5
+    },
+    {
+     "itemId": "rime_shard",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 4
+    }
+   ]
+  },
+  {
+   "id": "hoarfrost_staff",
+   "result": "hoarfrost_staff",
+   "gold": 230,
+   "materials": [
+    {
+     "itemId": "essence_ice",
+     "qty": 6
+    },
+    {
+     "itemId": "rime_shard",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "icicle_kris",
+   "result": "icicle_kris",
+   "gold": 230,
+   "materials": [
+    {
+     "itemId": "essence_ice",
+     "qty": 5
+    },
+    {
+     "itemId": "frost_pelt",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "hearthfire_blade",
+   "result": "hearthfire_blade",
+   "gold": 240,
+   "materials": [
+    {
+     "itemId": "essence_fire",
+     "qty": 5
+    },
+    {
+     "itemId": "salamander_scale",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 4
+    }
+   ]
+  },
+  {
+   "id": "kindling_rod",
+   "result": "kindling_rod",
+   "gold": 230,
+   "materials": [
+    {
+     "itemId": "essence_fire",
+     "qty": 6
+    },
+    {
+     "itemId": "salamander_scale",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "salamander_kris",
+   "result": "salamander_kris",
+   "gold": 230,
+   "materials": [
+    {
+     "itemId": "essence_fire",
+     "qty": 5
+    },
+    {
+     "itemId": "salamander_scale",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "frostpelt_vest",
+   "result": "frostpelt_vest",
+   "gold": 200,
+   "materials": [
+    {
+     "itemId": "frost_pelt",
+     "qty": 4
+    },
+    {
+     "itemId": "ram_horn",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "galeweave_robe",
+   "result": "galeweave_robe",
+   "gold": 200,
+   "materials": [
+    {
+     "itemId": "essence_wind",
+     "qty": 4
+    },
+    {
+     "itemId": "frost_pelt",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "id": "thornwarden_helm",
+   "result": "thornwarden_helm",
+   "gold": 60,
+   "materials": [
+    {
+     "itemId": "moss_clump",
+     "qty": 5
+    },
+    {
+     "itemId": "boar_tusk",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "thornwarden_gloves",
+   "result": "thornwarden_gloves",
+   "gold": 50,
+   "materials": [
+    {
+     "itemId": "moss_clump",
+     "qty": 4
+    },
+    {
+     "itemId": "boar_tusk",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "id": "thornwarden_boots",
+   "result": "thornwarden_boots",
+   "gold": 50,
+   "materials": [
+    {
+     "itemId": "moss_clump",
+     "qty": 4
+    },
+    {
+     "itemId": "boar_tusk",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 1
+    }
+   ]
+  },
+  {
+   "id": "thornwarden_band",
+   "result": "thornwarden_band",
+   "gold": 70,
+   "materials": [
+    {
+     "itemId": "essence_earth",
+     "qty": 3
+    },
+    {
+     "itemId": "boar_tusk",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "stormwatch_helm",
+   "result": "stormwatch_helm",
+   "gold": 140,
+   "materials": [
+    {
+     "itemId": "fen_hide",
+     "qty": 3
+    },
+    {
+     "itemId": "storm_scale",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "stormwatch_gloves",
+   "result": "stormwatch_gloves",
+   "gold": 120,
+   "materials": [
+    {
+     "itemId": "fen_hide",
+     "qty": 3
+    },
+    {
+     "itemId": "storm_scale",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "stormwatch_boots",
+   "result": "stormwatch_boots",
+   "gold": 120,
+   "materials": [
+    {
+     "itemId": "fen_hide",
+     "qty": 3
+    },
+    {
+     "itemId": "storm_scale",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "stormwatch_amulet",
+   "result": "stormwatch_amulet",
+   "gold": 150,
+   "materials": [
+    {
+     "itemId": "essence_energy",
+     "qty": 3
+    },
+    {
+     "itemId": "essence_water",
+     "qty": 3
+    },
+    {
+     "itemId": "storm_scale",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "frostward_helm",
+   "result": "frostward_helm",
+   "gold": 280,
+   "materials": [
+    {
+     "itemId": "frost_pelt",
+     "qty": 3
+    },
+    {
+     "itemId": "rime_shard",
+     "qty": 2
+    },
+    {
+     "itemId": "scrap",
+     "qty": 4
+    }
+   ]
+  },
+  {
+   "id": "frostward_gloves",
+   "result": "frostward_gloves",
+   "gold": 240,
+   "materials": [
+    {
+     "itemId": "frost_pelt",
+     "qty": 3
+    },
+    {
+     "itemId": "rime_shard",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "frostward_boots",
+   "result": "frostward_boots",
+   "gold": 240,
+   "materials": [
+    {
+     "itemId": "frost_pelt",
+     "qty": 3
+    },
+    {
+     "itemId": "ram_horn",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "frostward_ring",
+   "result": "frostward_ring",
+   "gold": 300,
+   "materials": [
+    {
+     "itemId": "essence_ice",
+     "qty": 4
+    },
+    {
+     "itemId": "rime_shard",
+     "qty": 2
+    }
+   ]
+  }
+ ],
+ "lootTables": [
+  {
+   "id": "gate_garb",
+   "tiers": {
+    "common": [
+     {
+      "itemId": "travel_garb"
+     }
+    ],
+    "uncommon": [],
+    "rare": []
+   }
+  },
+  {
+   "id": "gate_robe",
+   "tiers": {
+    "common": [
+     {
+      "itemId": "novice_robe"
+     }
+    ],
+    "uncommon": [],
+    "rare": []
+   }
+  },
+  {
+   "id": "road",
+   "tiers": {
+    "common": [
+     {
+      "itemId": "travel_garb",
+      "weight": 2
+     },
+     {
+      "itemId": "novice_robe",
+      "weight": 2
+     },
+     {
+      "itemId": "training_sword"
+     },
+     {
+      "itemId": "worn_staff"
+     },
+     {
+      "itemId": "rusty_dagger"
+     }
+    ],
+    "uncommon": [],
+    "rare": []
+   }
+  },
+  {
+   "id": "thornwood",
+   "tiers": {
+    "common": [
+     {
+      "itemId": "iron_sword"
+     },
+     {
+      "itemId": "oak_staff"
+     },
+     {
+      "itemId": "hunting_knife"
+     },
+     {
+      "itemId": "leather_armor"
+     },
+     {
+      "itemId": "apprentice_robe"
+     },
+     {
+      "itemId": "leather_cap"
+     },
+     {
+      "itemId": "leather_gloves"
+     },
+     {
+      "itemId": "leather_boots"
+     },
+     {
+      "itemId": "apprentice_hood"
+     },
+     {
+      "itemId": "apprentice_wraps"
+     },
+     {
+      "itemId": "apprentice_slippers"
+     }
+    ],
+    "uncommon": [
+     {
+      "itemId": "tusk_dagger"
+     },
+     {
+      "itemId": "cinder_fang"
+     },
+     {
+      "itemId": "emberbrand"
+     },
+     {
+      "itemId": "ember_wand"
+     },
+     {
+      "itemId": "copper_band"
+     },
+     {
+      "itemId": "moonstone_ring"
+     },
+     {
+      "itemId": "fox_ring"
+     },
+     {
+      "itemId": "oak_pendant"
+     }
+    ],
+    "rare": [
+     {
+      "itemId": "thornheart_blade"
+     },
+     {
+      "itemId": "heartwood_staff"
+     },
+     {
+      "itemId": "briar_fang"
+     }
+    ]
+   },
+   "set": "thornwarden"
+  },
+  {
+   "id": "fen",
+   "tiers": {
+    "common": [
+     {
+      "itemId": "steel_broadsword"
+     },
+     {
+      "itemId": "yew_staff"
+     },
+     {
+      "itemId": "fenwatch_stiletto"
+     },
+     {
+      "itemId": "scale_mail"
+     },
+     {
+      "itemId": "reedweave_robe"
+     },
+     {
+      "itemId": "scale_coif"
+     },
+     {
+      "itemId": "scale_gauntlets"
+     },
+     {
+      "itemId": "scale_boots"
+     },
+     {
+      "itemId": "reedweave_hood"
+     },
+     {
+      "itemId": "reedweave_wraps"
+     },
+     {
+      "itemId": "reedweave_slippers"
+     }
+    ],
+    "uncommon": [
+     {
+      "itemId": "silver_band"
+     },
+     {
+      "itemId": "tidepearl_ring"
+     },
+     {
+      "itemId": "eelskin_ring"
+     },
+     {
+      "itemId": "stormglass_amulet"
+     },
+     {
+      "itemId": "tidebreaker"
+     },
+     {
+      "itemId": "tidecaller_rod"
+     },
+     {
+      "itemId": "brinefang"
+     },
+     {
+      "itemId": "stormcleaver"
+     },
+     {
+      "itemId": "sparkglass_wand"
+     },
+     {
+      "itemId": "sparkfang"
+     },
+     {
+      "itemId": "marshhide_vest"
+     },
+     {
+      "itemId": "stormweave_robe"
+     }
+    ],
+    "rare": [
+     {
+      "itemId": "thunderhead_maul"
+     },
+     {
+      "itemId": "stormcoil_scepter"
+     },
+     {
+      "itemId": "coilfang"
+     }
+    ]
+   },
+   "set": "stormwatch"
+  },
+  {
+   "id": "bogmother",
+   "tiers": {
+    "common": [
+     {
+      "itemId": "scale_mail"
+     },
+     {
+      "itemId": "reedweave_robe"
+     },
+     {
+      "itemId": "marshhide_vest"
+     }
+    ],
+    "uncommon": [
+     {
+      "itemId": "stormcleaver"
+     },
+     {
+      "itemId": "sparkglass_wand"
+     },
+     {
+      "itemId": "sparkfang"
+     },
+     {
+      "itemId": "stormweave_robe"
+     }
+    ],
+    "rare": [
+     {
+      "itemId": "tidebreaker"
+     },
+     {
+      "itemId": "tidecaller_rod"
+     },
+     {
+      "itemId": "brinefang"
+     }
+    ]
+   },
+   "set": "stormwatch"
+  },
+  {
+   "id": "frostfang",
+   "tiers": {
+    "common": [
+     {
+      "itemId": "tempered_longsword"
+     },
+     {
+      "itemId": "larchwood_staff"
+     },
+     {
+      "itemId": "ridgerunner_kris"
+     },
+     {
+      "itemId": "ridgeplate"
+     },
+     {
+      "itemId": "fleecewool_robe"
+     },
+     {
+      "itemId": "ridgeplate_helm"
+     },
+     {
+      "itemId": "ridgeplate_gauntlets"
+     },
+     {
+      "itemId": "ridgeplate_boots"
+     },
+     {
+      "itemId": "fleecewool_hood"
+     },
+     {
+      "itemId": "fleecewool_mittens"
+     },
+     {
+      "itemId": "fleecewool_boots"
+     }
+    ],
+    "uncommon": [
+     {
+      "itemId": "gold_band"
+     },
+     {
+      "itemId": "rimeglass_ring"
+     },
+     {
+      "itemId": "wolfclaw_ring"
+     },
+     {
+      "itemId": "hearthstone_pendant"
+     },
+     {
+      "itemId": "frostbite"
+     },
+     {
+      "itemId": "hoarfrost_staff"
+     },
+     {
+      "itemId": "icicle_kris"
+     },
+     {
+      "itemId": "hearthfire_blade"
+     },
+     {
+      "itemId": "kindling_rod"
+     },
+     {
+      "itemId": "salamander_kris"
+     },
+     {
+      "itemId": "frostpelt_vest"
+     },
+     {
+      "itemId": "galeweave_robe"
+     }
+    ],
+    "rare": [
+     {
+      "itemId": "whiteout"
+     },
+     {
+      "itemId": "squall_stave"
+     },
+     {
+      "itemId": "galecutter"
+     }
+    ]
+   },
+   "set": "frostward"
+  },
+  {
+   "id": "snowmaw",
+   "tiers": {
+    "common": [
+     {
+      "itemId": "ridgeplate"
+     },
+     {
+      "itemId": "fleecewool_robe"
+     },
+     {
+      "itemId": "frostpelt_vest"
+     }
+    ],
+    "uncommon": [
+     {
+      "itemId": "hearthfire_blade"
+     },
+     {
+      "itemId": "kindling_rod"
+     },
+     {
+      "itemId": "salamander_kris"
+     },
+     {
+      "itemId": "galeweave_robe"
+     }
+    ],
+    "rare": [
+     {
+      "itemId": "snowmaw_cleaver"
+     },
+     {
+      "itemId": "mawtooth_staff"
+     },
+     {
+      "itemId": "snowmaw_claw"
+     }
+    ]
+   },
+   "set": "frostward"
+  }
+ ],
+ "features": [
+  {
+   "id": "elites",
+   "name": "Elite monsters",
+   "text": "Now and then a monster spawns as an Elite: bigger, glowing gold, with one affix. Tougher, but 3x XP and gold and a guaranteed piece of gear.",
+   "unlockedBy": "heart_of_thorns"
+  },
+  {
+   "id": "chests",
+   "name": "Treasure chests",
+   "text": "Some monster rooms hide a chest. Walk into it for gold, materials and often gear.",
+   "unlockedBy": "heart_of_thorns"
+  },
+  {
+   "id": "weapon_swap",
+   "name": "Spare weapon",
+   "text": "Carry a second weapon in the Spare slot (Inventory) and swap to it mid-fight with Swap. It costs your turn, so bring one of the element your foe is weak to.",
+   "unlockedBy": "heart_of_thorns"
+  },
+  {
+   "id": "materials",
+   "name": "Materials",
+   "text": "Monsters now drop parts and elemental essences. They sit in their own pouch (Inventory, Materials tab). Keep them: they will matter soon.",
+   "unlockedBy": "heart_of_thorns",
+   "disabled": true
+  },
+  {
+   "id": "forge",
+   "name": "Hulda's forge",
+   "text": "Hulda the smith has opened her forge in Brindlemoor: craft gear from materials, reinforce it up to +10, hone its quality and salvage what you do not need.",
+   "unlockedBy": "eye_of_the_storm",
+   "disabled": true
+  },
+  {
+   "id": "sigils",
+   "name": "Sigils",
+   "text": "Dropped gear can now be a rare Sigil version: stronger, glowing, and with extra lines (Dawn +1, Dusk +2, Eclipse +3). Bosses drop them most.",
+   "unlockedBy": "eye_of_the_storm"
+  },
+  {
+   "id": "mimics",
+   "name": "Mimics",
+   "text": "Some chests bite. Watch for one that breathes, or whose lid twitches when you come near.",
+   "unlockedBy": "eye_of_the_storm"
+  }
+ ],
+ "sets": [
+  {
+   "id": "thornwarden",
+   "name": "Thornwarden",
+   "pieces": [
+    "thornwarden_helm",
+    "thornwarden_gloves",
+    "thornwarden_boots",
+    "thornwarden_band"
+   ],
+   "bonuses": [
+    {
+     "pieces": 2,
+     "hpPct": 8
+    },
+    {
+     "pieces": 4,
+     "damagePct": 8,
+     "resists": {
+      "earth": 15
+     }
+    }
+   ]
+  },
+  {
+   "id": "stormwatch",
+   "name": "Stormwatch",
+   "pieces": [
+    "stormwatch_helm",
+    "stormwatch_gloves",
+    "stormwatch_boots",
+    "stormwatch_amulet"
+   ],
+   "bonuses": [
+    {
+     "pieces": 2,
+     "resists": {
+      "water": 15,
+      "energy": 15
+     }
+    },
+    {
+     "pieces": 4,
+     "crit": 4,
+     "damagePct": 8
+    }
+   ]
+  },
+  {
+   "id": "frostward",
+   "name": "Frostward",
+   "pieces": [
+    "frostward_helm",
+    "frostward_gloves",
+    "frostward_boots",
+    "frostward_ring"
+   ],
+   "bonuses": [
+    {
+     "pieces": 2,
+     "defensePct": 10,
+     "resists": {
+      "ice": 15
+     }
+    },
+    {
+     "pieces": 4,
+     "hpPct": 10,
+     "damagePct": 10
+    }
+   ]
+  }
+ ],
+ "mapAreas": [
+  {
+   "id": "road",
+   "name": "The Old Road"
+  },
+  {
+   "id": "thornwood",
+   "name": "Brindlemoor and the Thornwood"
+  },
+  {
+   "id": "fen",
+   "name": "Mirewater Fen"
+  },
+  {
+   "id": "frostfang",
+   "name": "Frostfang Mountains"
+  }
+ ],
+ "promotions": {
+  "E": {
+   "gold": 30,
+   "items": [
+    "leather_armor",
+    "health_potion",
+    "health_potion"
+   ]
+  },
+  "D": {
+   "gold": 150,
+   "classItems": {
+    "warrior": "scale_mail",
+    "mage": "reedweave_robe",
+    "rogue": "scale_mail"
+   },
+   "items": [
+    "greater_health_potion",
+    "greater_health_potion"
+   ]
+  },
+  "C": {
+   "gold": 200,
+   "classItems": {
+    "warrior": "frostpelt_vest",
+    "mage": "galeweave_robe",
+    "rogue": "frostpelt_vest"
+   },
+   "items": [
+    "superior_health_potion",
+    "superior_health_potion"
+   ]
+  },
+  "B": {
+   "gold": 400,
+   "items": [
+    "superior_health_potion",
+    "superior_health_potion",
+    "superior_mana_potion"
+   ]
+  },
+  "A": {
+   "gold": 800
+  },
+  "S": {
+   "gold": 2000
+  }
+ },
+ "chapterStarts": [
+  {
+   "chapter": 1,
+   "level": 1
+  },
+  {
+   "chapter": 2,
+   "level": 6,
+   "after": "heart_of_thorns",
+   "weapon": {
+    "warrior": "thornheart_blade",
+    "mage": "heartwood_staff",
+    "rogue": "briar_fang"
+   },
+   "armor": {
+    "warrior": "leather_armor",
+    "mage": "apprentice_robe",
+    "rogue": "leather_armor"
+   },
+   "kit": {
+    "warrior": [
+     "leather_cap",
+     "leather_gloves",
+     "leather_boots"
+    ],
+    "mage": [
+     "apprentice_hood",
+     "apprentice_wraps",
+     "apprentice_slippers"
+    ],
+    "rogue": [
+     "leather_cap",
+     "leather_gloves",
+     "leather_boots"
+    ]
+   },
+   "potions": [
+    [
+     "health_potion",
+     5
+    ],
+    [
+     "mana_potion",
+     3
+    ]
+   ],
+   "gold": 300
+  },
+  {
+   "chapter": 3,
+   "level": 10,
+   "after": "eye_of_the_storm",
+   "weapon": {
+    "warrior": "thunderhead_maul",
+    "mage": "stormcoil_scepter",
+    "rogue": "coilfang"
+   },
+   "armor": {
+    "warrior": "scale_mail",
+    "mage": "reedweave_robe",
+    "rogue": "scale_mail"
+   },
+   "kit": {
+    "warrior": [
+     "scale_coif",
+     "scale_gauntlets",
+     "scale_boots"
+    ],
+    "mage": [
+     "reedweave_hood",
+     "reedweave_wraps",
+     "reedweave_slippers"
+    ],
+    "rogue": [
+     "scale_coif",
+     "scale_gauntlets",
+     "scale_boots"
+    ]
+   },
+   "potions": [
+    [
+     "greater_health_potion",
+     5
+    ],
+    [
+     "greater_mana_potion",
+     3
+    ]
+   ],
+   "gold": 800
+  }
+ ]
+}
