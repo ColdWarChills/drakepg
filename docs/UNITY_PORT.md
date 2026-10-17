@@ -124,7 +124,7 @@ Built in one PC session (designer: "continue without questions until you have th
 | 5 Battle | done: every event animated (lunges, combos, projectiles, element bursts, statuses, shells, phases, enrage, swap, flee, Lucky escape, defeat), intents, weak spots, loot odds line, status chips, log. |
 | 6 Room | done: walking (keys and click), depth by feet y, exits (side, back, down) and blockers, NPCs and roles, roaming monsters (wander, alert, chase, Lucky runs, Elites), chests and mimics, campfires, notes, first-visit scenes, bosses and guards, quests and tracker, recall, chapter complete. |
 | 7 Menus | done: inventory and shop (drag, compare, stones), character and skills, map, guild board, forge, cheat menu (backtick or tap the room name 5x), dialogue, "New!" popup, menu (save, sound, story text, fullscreen). |
-| 8 Saves and WebGL | saves done (PlayerPrefs, web format); WebGL build: see below. Web save import has the code (`Saves.Import`) but no button yet. |
+| 8 Saves and WebGL | done except web save import (the code is there, `Saves.Import`, no button yet). Web build: menu Drakepg > Build WebGL (4-8 min) to `unity/Build/WebGL`, 100 MB (88 MB of it art); serve the folder with any static server (`python -m http.server --directory unity/Build/WebGL`, or the `unity-web` entry in `.claude/launch.json`). Checked in the browser: title, create (clicks, typing a name), a new game on the road, dialogue, click-to-walk, a save kept across a reload. |
 | 9 Switch | not started: needs the designer's play-through first. |
 
 **How it's built** (differs from the plan above where noted):
@@ -136,6 +136,8 @@ Built in one PC session (designer: "continue without questions until you have th
 
 **Known differences and gaps:**
 - No touch-screen hints (desktop controls text only); no hand cursor over clickable things.
+- In the browser the first click only focuses the game. Capital letters in the name box came through the test browser's automation as nothing: check by hand with a real keyboard.
+- The web build is 100 MB because all art is in it at full 2x size: texture crunch or a 1x size for backgrounds would cut it a lot (a visual trade-off for the designer to judge).
 - Text outlines are thinner than Phaser's stroke. Glyphs like ✦ ✔ ✓ may be missing in the browser build (no system font fallback there): check in the web build, add a font asset if so.
 - Item icons get the Sigil pulse, not its particle twinkles; the wardrobe/inventory hero is a still picture.
 - `npm run sim` / `pace` aren't EditMode tests yet (the golden tests cover the rules).
