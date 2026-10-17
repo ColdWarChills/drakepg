@@ -89,6 +89,7 @@ namespace Drakepg
         {
             get
             {
+                if (NameBox.Focused != null) return true;
                 var focused = GameRoot.I?.DesignRoot?.panel?.focusController?.focusedElement as VisualElement;
                 return focused is TextField || focused?.GetFirstAncestorOfType<TextField>() != null;
             }

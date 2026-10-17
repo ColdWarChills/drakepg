@@ -32,7 +32,7 @@ namespace Drakepg
         string selected = "warrior";
         bool starting;
         int chapter = 1;
-        TextField nameInput;
+        NameBox nameInput;
 
         public override void Enter()
         {
@@ -46,7 +46,7 @@ namespace Drakepg
             Ui.Text(Root, w / 2, 50, "Create Your Hero", 44, Palette.TextGold, true, 0.5f, 0.5f, stroke: true);
             Ui.Text(Root, w / 2 - 260, 140, "Name", 22, Palette.TextDim, ax: 1, ay: 0.5f);
             BuildNameInput(w / 2 - 60, 140);
-            new UiButton(Root, w / 2 + 230, 140, "Random", () => nameInput.value = Names[Random.Range(0, Names.Length)], 120, 44, 18);
+            new UiButton(Root, w / 2 + 230, 140, "Random", () => nameInput.Value = Names[Random.Range(0, Names.Length)], 120, 44, 18);
 
             var classes = Db.Data.Classes;
             for (int i = 0; i < classes.Count; i++) BuildCard(classes[i], w / 2 + (i - 1) * (CardW + 30));
@@ -55,33 +55,17 @@ namespace Drakepg
             new UiButton(Root, w / 2, 668, "Begin Adventure", Begin, 300, 60, 24);
             BuildChapterPicker(40, 668);
             new UiButton(Root, 80, 40, "Back", () => GameRoot.I.Go(new TitleScreen()), 120, 44, 18);
+            // Clicking anywhere else stops typing, so number keys pick classes again.
             Root.RegisterCallback<PointerDownEvent>(e =>
             {
-                if (e.target != nameInput && (e.target as VisualElement)?.GetFirstAncestorOfType<TextField>() == null) nameInput.Blur();
+                if (e.target != nameInput) nameInput.Unfocus();
             }, TrickleDown.TrickleDown);
         }
 
         void BuildNameInput(float x, float y)
         {
             const float w = 340, h = 46;
-            nameInput = new TextField { maxLength = MaxName, isDelayed = false };
-            nameInput.textEdition.placeholder = "Hero";
-            Ui.Place(nameInput, x - w / 2, y - h / 2);
-            Ui.Size(nameInput, w, h);
-            nameInput.style.marginLeft = nameInput.style.marginTop = 0;
-            var input = nameInput.Q(TextField.textInputUssName);
-            if (input != null)
-            {
-                input.style.backgroundColor = Palette.Panel;
-                Ui.Border(input, 2, Palette.PanelBorder);
-                Ui.Round(input, 10);
-                input.style.fontSize = 24;
-                input.style.color = Palette.Text;
-                input.style.unityTextAlign = TextAnchor.MiddleCenter;
-            }
-            nameInput.RegisterCallback<FocusInEvent>(_ => { if (input != null) Ui.Border(input, 2, Palette.Gold); });
-            nameInput.RegisterCallback<FocusOutEvent>(_ => { if (input != null) Ui.Border(input, 2, Palette.PanelBorder); });
-            Root.Add(nameInput);
+            nameInput = new NameBox(Root, x - w / 2, y - h / 2, w, h, "Hero", MaxName);
         }
 
         void BuildCard(ClassDef cls, float x)
@@ -189,6 +173,7 @@ namespace Drakepg
 
         public override void Tick(float dt)
         {
+            nameInput.Tick(dt);
             if (!InputEnabled || UiModal.OpenCount > 0) return;
             if (Keys.Pressed(Key.Digit1)) Select("warrior");
             if (Keys.Pressed(Key.Digit2)) Select("mage");
@@ -202,10 +187,10 @@ namespace Drakepg
         {
             if (starting) return;
             starting = true;
-            var name = (nameInput.value ?? "").Trim();
+            var name = nameInput.Value.Trim();
             if (name.Length == 0) name = "Hero";
             if (name.Length > MaxName) name = name.Substring(0, MaxName);
-            nameInput.Blur();
+            nameInput.Unfocus();
             Saves.Clear();
             var player = Player.CreateNew(name, selected);
             var start = Db.Data.ChapterStarts.Find(s => s.Chapter == chapter);
