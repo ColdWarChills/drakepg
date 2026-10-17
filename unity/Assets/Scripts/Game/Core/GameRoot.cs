@@ -286,6 +286,11 @@ namespace Drakepg
             }
         }
 
+        void LateUpdate()
+        {
+            if (DesignRoot != null) UiSmooth.Pass(DesignRoot, DesignRoot.resolvedStyle.scale.value.x);
+        }
+
         /// <summary>Fit the design area in the window (black bars on the sides) and center the UI over it.</summary>
         void Layout()
         {

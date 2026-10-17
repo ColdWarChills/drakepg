@@ -66,6 +66,8 @@ namespace Drakepg
             public string Label, Sub, Hover;
             public bool Enabled = true;
             public Action Run;
+            /// <summary>Skills and items: a color of their own (stripe, border, tint) so they read apart at a glance.</summary>
+            public Color? Accent;
         }
 
         /// <summary>A fighter on screen: position, tilt and squash applied to its figure every frame.</summary>
@@ -612,7 +614,7 @@ namespace Drakepg
             var element = skill.Element != null && skill.Element != "weapon" ? Db.Data.ElementLabels[skill.Element] : null;
             var fresh = battle.Player.Data.FreshSkills.Contains(skill.Id) ? "NEW · " : "";
             var poisons = skill.Applies?.Any(a => a.Status == "poison" && !a.Self) == true;
-            var kind = element ?? (skill.Blunt ? "Blunt" : poisons ? "Poison" : null);
+            var kind = element ?? (skill.Blunt ? "Blunt" : poisons ? "Poison" : skill.Kind == "heal" ? "Heal" : skill.Kind == "buff" ? "Buff" : null);
             // Teach weak spots: the button says when this skill lands on one.
             var effect = battle.SkillEffect(skill);
             var sub = cd > 0 ? $"Ready in {cd}" : $"{fresh}{JsMath.Str(skill.MpCost)} MP{(kind != null ? $" · {kind}" : "")}{(effect != null ? $" · {EffectLabels[effect]}" : "")}";
@@ -620,8 +622,22 @@ namespace Drakepg
             return new MenuButton
             {
                 Label = skill.Name, Sub = sub, Enabled = battle.CanUseSkill(skill.Id), Hover = $"{skill.Name}: {skill.Description}{cdText}",
-                Run = () => Act(() => battle.UseSkill(skill.Id)),
+                Run = () => Act(() => battle.UseSkill(skill.Id)), Accent = SkillColor(skill),
             };
+        }
+
+        /// <summary>
+        /// A skill's color: green heals, gold buffs, attacks in their element's color (a weapon-element attack in the
+        /// weapon's), poison green-yellow, plain attacks steel.
+        /// </summary>
+        Color SkillColor(SkillDef skill)
+        {
+            if (skill.Kind == "heal") return Design.Hex(0x5cc85c);
+            if (skill.Kind == "buff") return Design.Hex(0xe0b040);
+            var element = skill.Element == "weapon" ? battle.Player.WeaponElement : skill.Element;
+            if (element != null) return Design.Hex(ColorsOf(element)[1]);
+            if (skill.Applies?.Any(a => a.Status == "poison" && !a.Self) == true) return Design.Css("#8fe36b");
+            return Design.Hex(0x9fb4c8);
         }
 
         /// <summary>Swap to the spare weapon: its element and how it would land, or a hint when there's no spare.</summary>
@@ -695,6 +711,7 @@ namespace Drakepg
                     buttons.Add(new MenuButton
                     {
                         Label = item.Name, Sub = $"x{entry.Qty}", Hover = $"{item.Name}: {item.Description}",
+                        Accent = item.IconColor.HasValue ? Design.Hex(item.IconColor.Value) : (Color?)null,
                         Run = () =>
                         {
                             if (!battle.CanUseItem(item.Id)) PushLog($"{item.Name} would have no effect right now.");
@@ -715,14 +732,27 @@ namespace Drakepg
                 var b = buttons[i];
                 var x = 650 + i % cols * (bw + 10) + bw / 2;
                 var y = 590 + i / cols * (bh + 10);
-                var btn = new UiButton(menu, x, y, b.Label, () => b.Run(), bw, bh, b.Label.Length > 13 ? 17 : 20, b.Sub);
+                var tint = b.Accent.HasValue ? Color.Lerp(Palette.Button, b.Accent.Value, 0.22f) : Palette.Button;
+                var btn = new UiButton(menu, x, y, b.Label, () => b.Run(), bw, bh, b.Label.Length > 13 ? 17 : 20, b.Sub, tint);
+                if (b.Accent is Color accent)
+                {
+                    Ui.Border(btn, 2, Color.Lerp(Palette.PanelBorder, accent, 0.7f));
+                    // A colored bar down the left edge, like a tab.
+                    var bar = Ui.Rect(btn, 8, 10, 6, bh - 24, accent, 3);
+                    bar.style.position = Position.Absolute;
+                    if (!b.Enabled) bar.style.opacity = 0.4f;
+                    // Center the texts in the room right of the bar; long lines ("10 MP · Energy · Weak!") get smaller.
+                    btn.style.paddingLeft = 14;
+                    var texts = btn.Query<Label>().ToList();
+                    if (texts.Count > 1 && (b.Sub?.Length ?? 0) > 17) texts[1].style.fontSize = 13;
+                }
                 if (!b.Enabled) btn.SetEnabled(false);
                 if (b.Hover != null)
                 {
                     btn.RegisterCallback<PointerEnterEvent>(_ => logText.text = b.Hover);
                     btn.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
                 }
-                Ui.Text(btn, 10, 6, $"{i + 1}", 13, Palette.TextDim).style.position = Position.Absolute;
+                Ui.Text(btn, b.Accent.HasValue ? 20 : 10, 6, $"{i + 1}", 13, Palette.TextDim).style.position = Position.Absolute;
                 btn.style.opacity = 0;
                 btn.style.scale = new Scale(Vector3.one * 0.8f);
                 Anim.Float(0.8f, 1, 0.18f, s =>
