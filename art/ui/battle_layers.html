@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- UI direction "Layered paper cut-outs": the UI made the way the backgrounds are, from stacked sheets of colored
+     paper with gently curved cuts and soft shadows between the layers, in the scenery's palette. Drawn by hand in code
+     (mocklib.js); the scene behind is a capture of the game. -->
+<style>
+  @font-face { font-family: Almendra; src: url(../../unity/Assets/Resources/Fonts/Almendra-Bold.ttf); }
+  @font-face { font-family: Kalam; src: url(../../unity/Assets/Resources/Fonts/Kalam-Regular.ttf); }
+  @font-face { font-family: Kalam; font-weight: 700; src: url(../../unity/Assets/Resources/Fonts/Kalam-Bold.ttf); }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 720px; overflow: hidden; background: #111; font-family: Kalam, cursive; color: #2a1d16; }
+  .box { position: absolute; }
+  .box > .content { position: relative; z-index: 1; height: 100%; }
+  .name { font-family: Almendra; font-size: 27px; line-height: 1; display: flex; align-items: baseline; gap: 10px; }
+  .name small { font-family: Kalam; font-weight: 700; font-size: 18px; color: #6b5440; }
+  .tag { margin-left: auto; font-size: 15px; font-weight: 700; color: #6b5440; }
+  .bar { position: relative; height: 26px; margin-top: 10px; }
+  .bar.thin { height: 20px; margin-top: 8px; }
+  .bar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px;
+    color: #fff4dc; text-shadow: 0 1px 0 #2a1d16, 0 -1px 0 #2a1d16, 1px 0 0 #2a1d16, -1px 0 0 #2a1d16; z-index: 1; }
+  .bar.thin > span { font-size: 14px; }
+  .line { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; height: 30px; white-space: nowrap; }
+  .dim { color: #6b5440; } .gold { color: #8f6210; } .good { color: #2f7a32; } .ink { color: #2a1d16; }
+  .btn .content { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .btn .label { font-family: Almendra; font-size: 23px; line-height: 1; display: flex; align-items: center; gap: 8px; }
+  .btn .sub { font-size: 13px; font-weight: 700; line-height: 1.1; margin-top: 2px; opacity: .8; }
+  .btn.main .content { color: #fff4dc; }
+  .key { position: absolute; left: -8px; top: -10px; width: 26px; height: 26px; z-index: 2; display: grid; place-items: center;
+    font-weight: 700; font-size: 14px; color: #efe2c2; }
+  .key svg { position: absolute; inset: 0; overflow: visible; }
+  .key b { position: relative; }
+  .log { font-size: 19px; line-height: 1.35; }
+</style>
+<script src="mocklib.js"></script>
+</head>
+<body>
+<script>
+defs(`
+  <filter id="paper" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="7"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 .2  0 0 0 0 .15  0 0 0 0 .1  0 0 0 .35 -.12"/>
+  </filter>
+  <filter id="drop" x="-10%" y="-10%" width="130%" height="140%"><feGaussianBlur stdDeviation="3.5"/></filter>`);
+const S = stage();
+const FOREST = '#2c4535', MOSS = '#6d7f3c', MUSTARD = '#c9a14a', CREAM = '#efe2c2', DEEP = '#1c2c22';
+
+// Stacked paper: each layer (back first) is a gently curved cut sheet, offset down-right, with a soft shadow under it.
+function stack(box, w, h, seed, layers, { r = 18, amp = 2.4, wave = 90 } = {}) {
+  const svg = layer(box, w, h);
+  layers.forEach(([color, dx, dy, grow], i) => {
+    const shape = wavyRect(dx - grow, dy - grow, w + grow * 2, h + grow * 2, seed + i * 7, { r: r + grow, amp, wave });
+    el('path', { d: shape, fill: 'rgba(15,22,14,.38)', transform: 'translate(1.5 4)', filter: 'url(#drop)' }, svg);
+    el('path', { d: shape, fill: color }, svg);
+    if (i === layers.length - 1) {
+      const id = 'c' + seed;
+      el('clipPath', { id }, el('defs', {}, svg)).appendChild(el('path', { d: shape }));
+      el('rect', { x: -10, y: -10, width: w + 20, height: h + 20, filter: 'url(#paper)', 'clip-path': `url(#${id})`, opacity: .8 }, svg);
+    }
+  });
+}
+
+function box(r, cls = 'box') { return div(cls, `left:${r.x}px; top:${r.y}px; width:${r.w}px; height:${r.h}px`, S); }
+
+// A bar: a slot cut into the sheet (dark forest), the value a strip of colored paper with a curved end.
+function bar(parent, value, color, shade, text, seed, thin = false) {
+  const b = div('bar' + (thin ? ' thin' : ''), '', parent);
+  const w = parent.clientWidth - 44, h = thin ? 20 : 26;
+  b.style.width = w + 'px';
+  const svg = layer(b, w, h);
+  el('path', { d: wavyRect(0, 0, w, h, seed, { r: h / 2, amp: .8, wave: 60 }), fill: DEEP }, svg);
+  const fw = Math.max(h, (w - 6) * value);
+  el('path', { d: wavyRect(3, 4, fw, h - 6, seed + 1, { r: (h - 6) / 2, amp: .6, wave: 50 }), fill: shade }, svg);
+  el('path', { d: wavyRect(3, 3, fw, h - 7, seed + 2, { r: (h - 7) / 2, amp: .6, wave: 50 }), fill: color }, svg);
+  b.insertAdjacentHTML('beforeend', `<span>${text}</span>`);
+}
+
+const L = LAYOUT, D = DATA;
+const words = (list) => list.map(([t, k]) => k.startsWith('#') ? `<span style="color:${k}">${t}</span>` : `<span class="${k}">${t}</span>`).join('');
+
+// Hero and foe: cream on mustard on forest.
+{
+  const p = box(L.hero); stack(p, L.hero.w, L.hero.h, 11, [[FOREST, 3, 5, 8], [MUSTARD, 1.5, 2.5, 4], [CREAM, 0, 0, 0]], { amp: 3.2, wave: 120 });
+  const c = div('content', 'padding: 20px 22px 0 22px', p);
+  div('name', '', c, `${D.hero.name} <small>${D.hero.lv}</small><span class="tag">${D.hero.tag}</span>`);
+  bar(c, D.hero.hp[0] / D.hero.hp[1], '#c8452f', '#8e2c1d', `HP ${D.hero.hp[0]} / ${D.hero.hp[1]}`, 21);
+  bar(c, D.hero.mp[0] / D.hero.mp[1], '#3d6fa8', '#284c78', `MP ${D.hero.mp[0]} / ${D.hero.mp[1]}`, 22, true);
+}
+{
+  const p = box(L.foe); stack(p, L.foe.w, L.foe.h, 12, [[FOREST, 3, 5, 8], [MUSTARD, 1.5, 2.5, 4], [CREAM, 0, 0, 0]], { amp: 3.2, wave: 120 });
+  const c = div('content', 'padding: 20px 22px 0 22px', p);
+  div('name', '', c, `${D.foe.name} <small>${D.foe.lv}</small>`);
+  bar(c, 1, '#c8452f', '#8e2c1d', `HP ${D.foe.hp[0]} / ${D.foe.hp[1]}`, 23);
+  div('line', 'margin-top: 8px', c, icon('flame') + words(D.foe.weak));
+  div('line', 'color:#5a3a8a', c, icon('star') + D.foe.trait);
+  div('line', '', c, icon('claw') + `${D.foe.next[0]} <span class="dim">${D.foe.next[1]}</span>`);
+  div('line', 'font-size: 15px', c, icon('bag') + words(D.foe.gear));
+}
+// Board: three hills of paper rising into the scene, like the scenery's foreground.
+{
+  const b = div('box', `left:0; top:${L.board.y - 22}px; width:1280px; height:210px`, S);
+  const svg = layer(b, 1280, 210);
+  const hill = (y0, amp, wave, seed) => {
+    const R = rng(seed), pts = [[-20, 230]], ph = R() * 6;
+    for (let x = -20; x <= 1300; x += 8) pts.push([x, y0 + Math.sin(ph + x / wave * 6.28) * amp + Math.sin(ph * 2 + x / (wave * .37) * 6.28) * amp * .25]);
+    pts.push([1300, 230]);
+    return path(pts);
+  };
+  [[MOSS, 6, 14, 230, 3], [FOREST, 16, 10, 180, 5], [DEEP, 28, 6, 260, 8]].forEach(([color, y0, amp, wave, seed]) => {
+    const d = hill(y0, amp, wave, seed);
+    el('path', { d, fill: 'rgba(10,16,10,.45)', transform: 'translate(0 -4)', filter: 'url(#drop)' }, svg);
+    el('path', { d, fill: color }, svg);
+  });
+}
+// Log: a cream card on a moss layer.
+{
+  const p = box(L.log); p.style.transform = 'rotate(-0.6deg)';
+  stack(p, L.log.w, L.log.h, 14, [[MUSTARD, 2, 4, 5], [CREAM, 0, 0, 0]], { r: 14, amp: 3, wave: 120 });
+  div('content log', 'padding: 18px 26px', p, D.log);
+}
+// Buttons: a card with its color layer peeking out below; a forest-green dot for the key.
+D.buttons.forEach((bt, i) => {
+  const r = L.button(i);
+  const p = box(r, 'box btn' + (bt.main ? ' main' : ''));
+  p.style.transform = `rotate(${[-1, .7, -.4, .5, -.8, .3][i]}deg)`;
+  if (bt.off) p.style.opacity = .55;
+  const face = bt.main ? '#c8452f' : CREAM, back = bt.main ? '#7e2618' : MUSTARD;
+  stack(p, r.w, r.h, 31 + i, [[back, 1.5, 3.5, 3.5], [face, 0, 0, 0]], { r: 14, amp: 2 });
+  const c = div('content', '', p);
+  div('label', '', c, icon(bt.icon, 26) + bt.label);
+  if (bt.sub) div('sub', '', c, bt.sub);
+  div('key', '', p, `<svg viewBox="0 0 26 26"><path d="${wavyRect(1, 1, 24, 24, 41 + i, { r: 12, amp: .6, wave: 20 })}" fill="${FOREST}"/></svg><b>${i + 1}</b>`);
+});
+</script>
+</body>
+</html>

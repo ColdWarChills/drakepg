@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- UI direction "Parchment and ink": an adventurer's desk. Stained parchment sheets with deckled, lightly scorched
+     edges and a ruled ink border; watercolor-wash bars; the log is a small scroll; the buttons are parchment tags
+     with red wax seals for the keys, all lying on a tooled leather band. Drawn by hand in code (mocklib.js); the scene
+     behind is a capture of the game. -->
+<style>
+  @font-face { font-family: Almendra; src: url(../../unity/Assets/Resources/Fonts/Almendra-Bold.ttf); }
+  @font-face { font-family: Kalam; src: url(../../unity/Assets/Resources/Fonts/Kalam-Regular.ttf); }
+  @font-face { font-family: Kalam; font-weight: 700; src: url(../../unity/Assets/Resources/Fonts/Kalam-Bold.ttf); }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 720px; overflow: hidden; background: #111; font-family: Kalam, cursive; color: #2b1a0e; }
+  .box { position: absolute; }
+  .box > .content { position: relative; z-index: 1; height: 100%; }
+  .name { font-family: Almendra; font-size: 27px; line-height: 1; display: flex; align-items: baseline; gap: 10px; }
+  .name small { font-family: Kalam; font-weight: 700; font-size: 18px; color: #7a5a38; }
+  .tag { margin-left: auto; font-size: 15px; font-weight: 700; color: #7a5a38; }
+  .bar { position: relative; height: 26px; margin-top: 10px; }
+  .bar.thin { height: 20px; margin-top: 8px; }
+  .bar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px;
+    color: #fff1d6; text-shadow: 0 1px 0 #2b1a0e, 0 -1px 0 #2b1a0e, 1px 0 0 #2b1a0e, -1px 0 0 #2b1a0e; z-index: 1; }
+  .bar.thin > span { font-size: 14px; }
+  .line { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; height: 30px; white-space: nowrap; }
+  .dim { color: #7a5a38; } .gold { color: #8f6210; } .good { color: #2f7a32; } .ink { color: #2b1a0e; }
+  .btn .content { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .btn .label { font-family: Almendra; font-size: 23px; line-height: 1; display: flex; align-items: center; gap: 8px; }
+  .btn .sub { font-size: 13px; font-weight: 700; line-height: 1.1; margin-top: 2px; opacity: .8; }
+  .btn.main .content { color: #fff1d6; text-shadow: 0 1px 0 #5a160c, 0 -1px 0 #5a160c, 1px 0 0 #5a160c, -1px 0 0 #5a160c; }
+  .key { position: absolute; left: -12px; top: -12px; width: 30px; height: 30px; z-index: 2; display: grid; place-items: center;
+    font-weight: 700; font-size: 15px; color: #f6dcc0; text-shadow: 0 1px 0 #5a0f0a; }
+  .key svg { position: absolute; inset: 0; overflow: visible; }
+  .key b { position: relative; top: 1px; }
+  .log { font-size: 19px; line-height: 1.35; }
+</style>
+<script src="mocklib.js"></script>
+</head>
+<body>
+<script>
+defs(`
+  <filter id="mottle" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="4" seed="2"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 .55  0 0 0 0 .36  0 0 0 0 .14  0 0 0 1.6 -.75"/>
+  </filter>
+  <filter id="pgrain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 .35  0 0 0 0 .22  0 0 0 0 .08  0 0 0 .5 -.2"/>
+  </filter>
+  <filter id="burn" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
+  <filter id="wash" x="-5%" y="-30%" width="110%" height="160%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="11" result="t"/>
+    <feDisplacementMap in="SourceGraphic" in2="t" scale="3" result="d"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="12" result="g"/>
+    <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -.8 1.2" result="ga"/>
+    <feComposite in="d" in2="ga" operator="in" result="gran"/>
+    <feMorphology in="d" operator="erode" radius="1.2" result="er"/>
+    <feComposite in="d" in2="er" operator="out" result="edge"/>
+    <feMerge><feMergeNode in="gran"/><feMergeNode in="edge"/></feMerge>
+  </filter>
+  <filter id="leather" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.38" numOctaves="3" seed="21"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 -.33"/>
+  </filter>
+  <filter id="hide" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.006 0.02" numOctaves="3" seed="23"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 .55  0 0 0 0 .36  0 0 0 0 .2  0 0 0 .9 -.42"/>
+  </filter>
+  <radialGradient id="sealG" cx="38%" cy="32%" r="70%">
+    <stop offset="0" stop-color="#e05a44"/><stop offset=".45" stop-color="#a8261a"/><stop offset="1" stop-color="#6a120c"/>
+  </radialGradient>
+  <linearGradient id="roll" x1="0" x2="1" y1="0" y2="0">
+    <stop offset="0" stop-color="#7a5630"/><stop offset=".3" stop-color="#e9d3a2"/><stop offset=".55" stop-color="#f3e2b8"/>
+    <stop offset=".8" stop-color="#bf9a5e"/><stop offset="1" stop-color="#6e4a26"/>
+  </linearGradient>`);
+const S = stage();
+const PARCH = '#ead7ac', INK = '#2b1a0e';
+let clipN = 0;
+
+function box(r, cls = 'box') { return div(cls, `left:${r.x}px; top:${r.y}px; width:${r.w}px; height:${r.h}px`, S); }
+
+// A ruled border with concave (cut-in) corners and an ink dot in each, like an old certificate.
+function concave(x, y, w, h, r) {
+  return `M${x + r} ${y} H${x + w - r} A${r} ${r} 0 0 0 ${x + w} ${y + r} V${y + h - r} A${r} ${r} 0 0 0 ${x + w - r} ${y + h}`
+    + ` H${x + r} A${r} ${r} 0 0 0 ${x} ${y + h - r} V${y + r} A${r} ${r} 0 0 0 ${x + r} ${y} Z`;
+}
+function ruled(svg, x, y, w, h, r, width = 1.7) {
+  const g = el('g', { filter: 'url(#wobble)', fill: 'none', stroke: INK }, svg);
+  el('path', { d: concave(x, y, w, h, r), 'stroke-width': width }, g);
+  [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy]) => el('circle', { cx, cy, r: 1.8, fill: INK, stroke: 'none' }, g));
+}
+
+// A parchment sheet: deckled edge, soft shadow, stains, grain, a scorched rim; returns the clipped group.
+function sheet(svg, w, h, seed, { burn = .4, shadow = true } = {}) {
+  const shape = deckled(0, 0, w, h, seed, { amp: 1.4, step: 3 });
+  if (shadow) el('path', { d: shape, fill: 'rgba(25,12,4,.5)', transform: 'translate(2 6)', filter: 'url(#soft)' }, svg);
+  el('path', { d: shape, fill: PARCH }, svg);
+  const id = 'pc' + clipN++;
+  el('clipPath', { id }, el('defs', {}, svg)).appendChild(el('path', { d: shape }));
+  const g = el('g', { 'clip-path': `url(#${id})` }, svg);
+  const o = (seed * 137) % 900;   // a different patch of the stain noise for every sheet
+  el('rect', { x: o, y: o / 2, width: w, height: h, transform: `translate(${-o} ${-o / 2})`, filter: 'url(#mottle)' }, g);
+  el('rect', { x: 0, y: 0, width: w, height: h, filter: 'url(#pgrain)' }, g);
+  el('path', { d: shape, fill: 'none', stroke: '#5c2f0e', 'stroke-width': 20, opacity: burn, filter: 'url(#burn)' }, g);
+  el('path', { d: shape, fill: 'none', stroke: '#6b3d17', 'stroke-width': 1.2, opacity: .55 }, svg);
+  return g;
+}
+
+// A bar: a ruled ink frame, the value a watercolor wash.
+function bar(parent, value, color, text, seed, thin = false) {
+  const b = div('bar' + (thin ? ' thin' : ''), '', parent);
+  const w = parent.clientWidth - 44, h = thin ? 20 : 26;
+  b.style.width = w + 'px';
+  const svg = layer(b, w, h);
+  el('rect', { x: 0, y: 0, width: w, height: h, rx: 4, fill: 'rgba(110,70,25,.16)' }, svg);
+  const fw = Math.max(h, (w - 4) * value);
+  el('path', { d: wavyRect(2, 2, fw, h - 4, seed, { r: 3, amp: .8, wave: 40 }), fill: color, opacity: .92, filter: 'url(#wash)' }, svg);
+  const g = el('g', { filter: 'url(#wobble)', fill: 'none', stroke: INK }, svg);
+  el('rect', { x: 0, y: 0, width: w, height: h, rx: 4, 'stroke-width': 1.6 }, g);
+  el('rect', { x: .9, y: -.7, width: w - 1, height: h + .4, rx: 4, 'stroke-width': .7, opacity: .45 }, g);
+  b.insertAdjacentHTML('beforeend', `<span>${text}</span>`);
+}
+
+// A red wax seal for a key number: a lumpy disc with a pressed ring.
+function seal(parent, n, seed) {
+  const R = rng(seed), pts = [];
+  for (let i = 0; i < 30; i++) {
+    const a = (i / 30) * 6.283, rr = 13.4 + (R() - 0.5) * 2.4;
+    pts.push([15 + Math.cos(a) * rr, 15 + Math.sin(a) * rr]);
+  }
+  const k = div('key', '', parent, `<svg viewBox="0 0 30 30"></svg><b>${n}</b>`);
+  const svg = k.querySelector('svg');
+  el('path', { d: path(pts), fill: 'rgba(40,6,2,.55)', transform: 'translate(1 2.5)', filter: 'url(#soft)' }, svg);
+  el('path', { d: path(pts), fill: 'url(#sealG)' }, svg);
+  el('circle', { cx: 15, cy: 15, r: 9.2, fill: 'none', stroke: 'rgba(70,8,4,.6)', 'stroke-width': 1.6 }, svg);
+  el('circle', { cx: 15, cy: 15.6, r: 9.2, fill: 'none', stroke: 'rgba(255,170,140,.35)', 'stroke-width': .8 }, svg);
+}
+
+const L = LAYOUT, D = DATA;
+const words = (list) => list.map(([t, k]) => k.startsWith('#') ? `<span style="color:${k}">${t}</span>` : `<span class="${k}">${t}</span>`).join('');
+
+// Board: a tooled leather band under the scene.
+{
+  const b = div('box', `left:0; top:${L.board.y}px; width:1280px; height:${720 - L.board.y}px`, S);
+  const H = 720 - L.board.y, svg = layer(b, 1280, H);
+  const top = wavyRect(-20, 0, 1320, H + 40, 3, { r: 2, amp: 1.2, wave: 300 });
+  el('path', { d: top, fill: 'rgba(10,6,2,.55)', transform: 'translate(0 -5)', filter: 'url(#soft6)' }, svg);
+  el('path', { d: top, fill: "#3f2615" }, svg);
+  el('rect', { x: 0, y: 0, width: 1280, height: H, filter: 'url(#hide)' }, svg);
+  el('rect', { x: 0, y: 0, width: 1280, height: H, filter: 'url(#leather)', opacity: .5 }, svg);
+  // Two tooled lines: a dark groove with gilt pressed in, and a light edge under it.
+  [9, 15].forEach((y, i) => {
+    el('line', { x1: 0, x2: 1280, y1: y, y2: y, stroke: 'rgba(0,0,0,.5)', 'stroke-width': i ? 1 : 1.6 }, svg);
+    el('line', { x1: 0, x2: 1280, y1: y + 1.4, y2: y + 1.4, stroke: '#c39a52', 'stroke-width': i ? .7 : 1, opacity: .75 }, svg);
+  });
+  el('line', { x1: 0, x2: 1280, y1: 1, y2: 1, stroke: '#7a5232', 'stroke-width': 1.2 }, svg);
+}
+// Hero
+{
+  const p = box(L.hero), svg = layer(p, L.hero.w, L.hero.h);
+  sheet(svg, L.hero.w, L.hero.h, 11); ruled(svg, 8, 8, L.hero.w - 16, L.hero.h - 16, 9);
+  const c = div('content', 'padding: 20px 22px 0 22px', p);
+  div('name', '', c, `${D.hero.name} <small>${D.hero.lv}</small><span class="tag">${D.hero.tag}</span>`);
+  bar(c, D.hero.hp[0] / D.hero.hp[1], '#b8392a', `HP ${D.hero.hp[0]} / ${D.hero.hp[1]}`, 21);
+  bar(c, D.hero.mp[0] / D.hero.mp[1], '#3a68a6', `MP ${D.hero.mp[0]} / ${D.hero.mp[1]}`, 22, true);
+}
+// Foe
+{
+  const p = box(L.foe), svg = layer(p, L.foe.w, L.foe.h);
+  sheet(svg, L.foe.w, L.foe.h, 12); ruled(svg, 8, 8, L.foe.w - 16, L.foe.h - 16, 9);
+  const c = div('content', 'padding: 20px 22px 0 22px', p);
+  div('name', '', c, `${D.foe.name} <small>${D.foe.lv}</small>`);
+  bar(c, 1, '#b8392a', `HP ${D.foe.hp[0]} / ${D.foe.hp[1]}`, 23);
+  div('line', 'margin-top: 8px', c, icon('flame') + words(D.foe.weak));
+  div('line', 'color:#5a3a8a', c, icon('star') + D.foe.trait);
+  div('line', '', c, icon('claw') + `${D.foe.next[0]} <span class="dim">${D.foe.next[1]}</span>`);
+  div('line', 'font-size: 15px', c, icon('bag') + words(D.foe.gear));
+}
+// Log: a small scroll, rolled at both ends.
+{
+  const p = box(L.log); p.style.transform = 'rotate(-0.4deg)';
+  const W = L.log.w, H = L.log.h, svg = layer(p, W, H);
+  const g = el('g', { transform: 'translate(14 6)' }, svg);
+  sheet(g, W - 28, H - 12, 14, { burn: .3 });
+  [0, W - 26].forEach((x) => {
+    el('rect', { x: x + 1, y: 2, width: 26, height: H, rx: 11, fill: 'rgba(25,12,4,.45)', filter: 'url(#soft)' }, svg);
+    el('rect', { x: x, y: -3, width: 26, height: H + 6, rx: 11, fill: 'url(#roll)', stroke: '#5a3a1c', 'stroke-width': 1 }, svg);
+    [-3, H + 3].forEach((y) => {
+      el('rect', { x: x + 8, y: y < 0 ? y - 8 : y, width: 10, height: 8, rx: 3, fill: '#3e2412' }, svg);
+      el('ellipse', { cx: x + 13, cy: y, rx: 12.5, ry: 4, fill: '#6b4422', stroke: '#4a2c14', 'stroke-width': 1 }, svg);
+      el('ellipse', { cx: x + 13, cy: y, rx: 7, ry: 2.2, fill: 'none', stroke: '#d9bd86', 'stroke-width': .9 }, svg);
+      el('ellipse', { cx: x + 13, cy: y, rx: 3, ry: 1, fill: 'none', stroke: '#d9bd86', 'stroke-width': .8 }, svg);
+    });
+  });
+  div('content log', 'padding: 22px 46px', p, D.log);
+}
+// Buttons: parchment tags with a ruled border and a wax seal; Attack soaked in a red wash.
+D.buttons.forEach((bt, i) => {
+  const r = L.button(i);
+  const p = box(r, 'box btn' + (bt.main ? ' main' : ''));
+  p.style.transform = `rotate(${[-1, .7, -.4, .5, -.8, .3][i]}deg)`;
+  if (bt.off) p.style.opacity = .55;
+  const svg = layer(p, r.w, r.h);
+  sheet(svg, r.w, r.h, 31 + i, { burn: .32 });
+  if (bt.main) el('path', { d: wavyRect(4, 4, r.w - 8, r.h - 8, 51, { r: 4, amp: 1.2, wave: 50 }), fill: '#b5321f', opacity: .95, filter: 'url(#wash)' }, svg);
+  ruled(svg, 5, 5, r.w - 10, r.h - 10, 6, 1.4);
+  const c = div('content', '', p);
+  div('label', '', c, icon(bt.icon, 26) + bt.label);
+  if (bt.sub) div('sub', '', c, bt.sub);
+  seal(p, i + 1, 61 + i);
+});
+</script>
+</body>
+</html>
