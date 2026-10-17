@@ -2,7 +2,7 @@
 
 Started 2026-10-17 (designer: "start making a plan to hand off to Unity: what libraries, assets etc. we need"). Builds on the proposal in `docs/PLANS.md` ("Decisions to keep", Engine).
 
-**Status (2026-10-17):** steps 1-7 done and step 8 mostly: the whole game plays in Unity on branch `claude/unity-port` (title, create, the road, towns, rooms, fights, results, every menu, saves), checked in the editor through the Unity MCP. What's left and how it differs: "Port status" below. How to open, test and build: `unity/README.md`.
+**Status (2026-10-17):** steps 1-7 done and step 8 mostly: the whole game plays in Unity (merged into the default branch 2026-10-17) (title, create, the road, towns, rooms, fights, results, every menu, saves), checked in the editor through the Unity MCP. What's left and how it differs: "Port status" below. How to open, test and build: `unity/README.md`.
 
 **Goal:** the same game in Unity 6, built for the browser (WebGL, itch.io) and Windows. Content is written once and shared. Unity becomes the main game once it plays start to finish; until then the Phaser version stays live on GitHub Pages.
 
