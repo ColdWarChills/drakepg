@@ -72,8 +72,6 @@ namespace Drakepg
             public string Icon, ArtIcon;
             /// <summary>The red button (Attack).</summary>
             public bool Main;
-            /// <summary>A paper color of its own (Flee's darker card).</summary>
-            public Color? Paper;
         }
 
         /// <summary>A fighter on screen: position, tilt and squash applied to its figure every frame.</summary>
@@ -120,7 +118,8 @@ namespace Drakepg
         MonsterDef monster;
         Fighter hero, foe;
         PaperBar playerHp, playerMp, enemyHp;
-        Label logText;
+        /// <summary>The log on the scroll: the last lines, newest darkest (or a hover note in their place).</summary>
+        VisualElement logBox;
         readonly List<string> log = new List<string>();
         VisualElement menu;
         List<MenuButton> menuButtons = new List<MenuButton>();
@@ -132,7 +131,13 @@ namespace Drakepg
         /// <summary>Blue bubble while the player defends.</summary>
         Shapes shield;
         VisualElement playerStatusRow, enemyStatusRow;
-        Label affinityRow, shellLine, intentLine, enrageText, escapeLine, weaponTag;
+        Label shellLine, escapeLine;
+        VisualElement affinityRow, weaponTag;
+        float affinityY;
+        /// <summary>The monster's next move on a parchment tag above it (hidden while a turn plays).</summary>
+        VisualElement intentTag, intentSheet, intentMarker;
+        Label intentText;
+        float intentW, intentTop;
         bool shellRegrew;
         Anim.Handle recoil;
         int comboHits;
@@ -234,14 +239,26 @@ namespace Drakepg
             }
         }
 
-        // --- Layout (the cut-paper kit, Ui/Paper.cs) ---
+        // --- Layout (the parchment kit, Ui/Paper.cs) ---
 
-        /// <summary>A line of text on paper: Kalam bold, ink, shrunk to fit `maxWidth`.</summary>
+        /// <summary>A line of text on parchment: Alegreya Sans bold, ink, shrunk to fit `maxWidth`.</summary>
         static Label PaperLine(VisualElement parent, float x, float y, string rich, float size, Color? color = null, float ax = 0, float ay = 0.5f, float maxWidth = 360)
         {
             var l = Ui.Text(parent, x, y, rich, size, color ?? Paper.Ink, false, ax, ay);
             Fonts.Bold(l);
             FitWidth(l, maxWidth, ax);
+            return l;
+        }
+
+        /// <summary>Text that sits in a row (flex), not at a fixed spot.</summary>
+        static Label FlowText(string rich, float size, Color color)
+        {
+            var l = new Label(rich) { pickingMode = PickingMode.Ignore };
+            l.style.fontSize = size;
+            l.style.color = color;
+            l.style.whiteSpace = WhiteSpace.NoWrap;
+            Fonts.Bold(l);
+            NoBox(l);
             return l;
         }
 
@@ -257,7 +274,7 @@ namespace Drakepg
             });
         }
 
-        /// <summary>"Wanderer  Lv 3": the name in Almendra with the level in small Kalam after it.</summary>
+        /// <summary>"Wanderer  Lv 3": the name in Alegreya with the level in small Alegreya Sans after it.</summary>
         VisualElement NameRow(float x, float y, string name, string level, Color color, float maxWidth)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -265,17 +282,17 @@ namespace Drakepg
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.FlexEnd;
             var n = new Label(name) { pickingMode = PickingMode.Ignore };
-            n.style.fontSize = 27;
+            n.style.fontSize = 28;
             n.style.color = color;
             Fonts.Title(n);
             NoBox(n);
             var lv = new Label(level) { pickingMode = PickingMode.Ignore };
-            lv.style.fontSize = 18;
+            lv.style.fontSize = 19;
             lv.style.color = Paper.InkDim;
             Fonts.Bold(lv);
             NoBox(lv);
             lv.style.marginLeft = 10;
-            lv.style.marginBottom = 2;
+            lv.style.marginBottom = 3;
             row.Add(n);
             row.Add(lv);
             Root.Add(row);
@@ -292,7 +309,7 @@ namespace Drakepg
         const float EnemyPanelX = 1280 - 14 - 430, LineX = EnemyPanelX + 48, LineStep = 30;
 
         /// <summary>An info line under the enemy's HP bar: an ink icon, then the text.</summary>
-        Label EnemyLine(ref float y, string icon, string rich, float size = 17, Color? color = null)
+        Label EnemyLine(ref float y, string icon, string rich, float size = 18, Color? color = null)
         {
             if (icon != null) Paper.Icon(Root, EnemyPanelX + 20, y - 12, 24, icon);
             var l = PaperLine(Root, LineX, y, rich, size, color, maxWidth: 358);
@@ -306,21 +323,21 @@ namespace Drakepg
             var m = monster;
 
             // The hero's sheet.
-            Paper.MakeSheet(Root, 14, 16, 420, 122, Paper.Cream, Paper.Kraft, 11, blocksClicks: false);
-            NameRow(36, 44, p.Name, $"Lv {p.Level}", Paper.Ink, 280);
+            Paper.MakeSheet(Root, 14, 16, 420, 122, 11, blocksClicks: false);
+            NameRow(36, 44, p.Name, $"Lv {p.Level}", Paper.Ink, 240);
             RefreshWeaponTag();
             playerHp = new PaperBar(Root, 36, 84, 376, 26, Paper.Red, "HP ", 21);
-            playerMp = new PaperBar(Root, 36, 114, 376, 20, Paper.Blue, "MP ", 22, 14);
+            playerMp = new PaperBar(Root, 36, 114, 376, 21, Paper.Blue, "MP ", 22, 15);
 
             // The enemy's sheet. Elites get a line for their affix, shelled bosses one for the shell, monsters with a
-            // signature move one for that; every monster has the "Next:" line, and most a loot line.
+            // signature move one for that; most have a loot line. The next move hangs on a tag above the monster.
             var affix = m.Elite != null ? Db.Affix(m.Elite.Affix) : null;
             var heroic = m.IsHeroic && m.Heroic != null ? $"Heroic: {m.Heroic.Text}" : "";
-            var affinities = AffinityText();
-            var lines = (affinities != "" ? 1 : 0) + (affix != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (heroic != "" ? 1 : 0)
-                        + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + 1 + (m.Loot != null ? 1 : 0);
+            var hasAffinities = AffinityParts().Count > 0;
+            var lines = (hasAffinities ? 1 : 0) + (affix != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (heroic != "" ? 1 : 0)
+                        + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + (m.Loot != null ? 1 : 0);
             var panelH = 100 + lines * LineStep;
-            Paper.MakeSheet(Root, EnemyPanelX, 16, 430, panelH, Paper.Cream, Paper.Kraft, 12, blocksClicks: false);
+            Paper.MakeSheet(Root, EnemyPanelX, 16, 430, panelH, 12, blocksClicks: false);
             // Status names (the highest text, at GroundY - 280) start under the panel and its status chips.
             enemyTextShift = Mathf.Clamp(16 + panelH + 50 - (GroundY - 280), 0, 90);
             // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
@@ -330,31 +347,32 @@ namespace Drakepg
             enemyHp = new PaperBar(Root, EnemyPanelX + 22, 84, 386, 26, Paper.Red, "HP ", 23);
 
             var y = 124f;
-            if (affinities != "") affinityRow = EnemyLine(ref y, "flame", affinities);
-            if (affix != null) EnemyLine(ref y, "star", $"{affix.Name}: {affix.Description}", 15, Paper.InkGold);
+            if (hasAffinities)
+            {
+                Paper.Icon(Root, EnemyPanelX + 20, y - 12, 24, "flame");
+                affinityY = y;
+                DrawAffinities();
+                y += LineStep;
+            }
+            if (affix != null) EnemyLine(ref y, "star", $"{affix.Name}: {affix.Description}", 16, Paper.InkGold);
             if (m.Shell != null)
             {
-                shellLine = EnemyLine(ref y, "shield", "", 15, Paper.OnPaper(Design.Css("#bfe9ff")));
+                shellLine = EnemyLine(ref y, "shield", "", 16, Paper.InkMagic);
                 RefreshShell();
             }
-            if (m.Trait != null) EnemyLine(ref y, "star", m.Trait, 15, Paper.OnPaper(Design.Css("#e8c8ff")));
-            if (heroic != "") EnemyLine(ref y, "star", heroic, 15, Paper.InkGold);
+            if (m.Trait != null) EnemyLine(ref y, "star", m.Trait, 17, Paper.InkTrait);
+            if (heroic != "") EnemyLine(ref y, "star", heroic, 16, Paper.InkGold);
             if (m.EscapeAfter.HasValue && m.EscapeAfter > 0)
             {
-                escapeLine = EnemyLine(ref y, "boot", "", 15);
+                escapeLine = EnemyLine(ref y, "boot", "", 16);
                 RefreshEscape();
             }
-            Paper.Icon(Root, EnemyPanelX + 20, y - 12, 24, "claw");
-            intentLine = PaperLine(Root, LineX, y, "", 17, maxWidth: 358);
-            intentLine.style.transformOrigin = new TransformOrigin(0, Length.Percent(50));
-            enrageText = PaperLine(Root, EnemyPanelX + 410, y, "", 15, Paper.InkBad, 1, maxWidth: 160);
-            RefreshIntent();
-            y += LineStep;
             if (m.Lucky && m.Loot != null) DrawLuckyLine(LineX, y);
             else if (m.Loot != null) DrawLootLine(LineX, y, m.Loot);
 
             playerStatusRow = StatusRow(18, 16 + 122 + 12);
             enemyStatusRow = StatusRow(EnemyPanelX + 4, 16 + panelH + 12);
+            DrawIntentTag(16 + panelH);
         }
 
         VisualElement StatusRow(float x, float y)
@@ -366,22 +384,83 @@ namespace Drakepg
             return row;
         }
 
-        /// <summary>"Next: Root Crush ~31 dmg · Defend!" plus "Enrages in 3" / "Enraged +40%" on the right.</summary>
+        /// <summary>The tag for the monster's next move: just above its head, never over its sheet or the status chips under it.</summary>
+        void DrawIntentTag(float panelBottom)
+        {
+            var (top, _) = BodyOf("enemy");
+            intentTop = Mathf.Max(top - 38 - 18, panelBottom + 46);
+            intentTag = new VisualElement { pickingMode = PickingMode.Ignore, name = "intent" };
+            Ui.Place(intentTag, EnemyX - 60, intentTop);
+            Ui.Size(intentTag, 120, 38);
+            intentTag.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(100));
+            intentTag.style.rotate = new Rotate(-1.2f);
+            Root.Add(intentTag);
+            intentSheet = new VisualElement { pickingMode = PickingMode.Ignore };
+            intentTag.Add(intentSheet);
+            // A small red-ink marker under the tag, pointing at the monster.
+            intentMarker = new PanelPaint(intentTag, 0, 41, 16, 10).Triangle(0, 0, 16, 0, 8, 9, Paper.InkIntent);
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(row, 0, 0);
+            row.style.width = Length.Percent(100);
+            row.style.height = 38;
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.justifyContent = Justify.Center;
+            row.style.alignItems = Align.Center;
+            intentTag.Add(row);
+            var icon = Paper.Icon(null, 0, 0, 24, "claw");
+            icon.style.position = Position.Relative;
+            icon.style.marginRight = 8;
+            row.Add(icon);
+            intentText = FlowText("", 18, Paper.InkIntent);
+            Fonts.Heavy(intentText);
+            row.Add(intentText);
+            intentText.RegisterCallback<GeometryChangedEvent>(_ => SizeIntentTag());
+            RefreshIntent();
+        }
+
+        /// <summary>Fit the tag to its text (in 16 px steps, so few sizes get baked) and keep it on screen.</summary>
+        void SizeIntentTag()
+        {
+            var w = intentText.layout.width;
+            if (float.IsNaN(w)) return;
+            var need = Mathf.Min(608, Mathf.Ceil((w + 24 + 8 + 40) / 16) * 16);
+            if (need == intentW) return;
+            intentW = need;
+            Ui.Place(intentSheet, -Paper.Pad, -Paper.Pad);
+            Ui.Size(intentSheet, need + Paper.Pad * 2, 38 + Paper.Pad * 2);
+            intentSheet.style.backgroundImage = new StyleBackground(Paper.SheetTexture(need, 38, 91, 0.3f, true, 5, 5, 1.3f));
+            var left = Mathf.Clamp(EnemyX - need / 2, 12, Design.Width - 12 - need);
+            intentTag.style.left = left;
+            intentTag.style.width = need;
+            intentMarker.style.left = EnemyX - left - 8;
+        }
+
+        /// <summary>The tag fades while a turn plays (its move is about to happen) and comes back with the next one.</summary>
+        void FadeIntent(bool show)
+        {
+            if (intentTag == null) return;
+            var from = intentTag.resolvedStyle.opacity;
+            Anim.Float(from, show ? 1 : 0, 0.2f, v => intentTag.style.opacity = v, Ease.Linear);
+        }
+
+        /// <summary>"Next: Root Crush ~31 dmg · Defend!" plus "Enrages in 3" / "Enraged +40%".</summary>
         void RefreshIntent()
         {
-            if (intentLine == null || enrageText == null) return;
+            if (intentText == null) return;
             var b = battle;
             var a = b.Intent;
             if (a == null)
             {
-                intentLine.text = "";
+                intentText.text = "";
+                intentTag.style.display = DisplayStyle.None;
                 return;
             }
+            intentTag.style.display = DisplayStyle.Flex;
             var charging = b.Charging == a;
             var dmg = b.IntentDamage();
             var statuses = (a.Applies ?? new List<Apply>()).Select(x => $"{Db.Status(x.Status).Name}{(x.Chance.HasValue && x.Chance < 1 ? $" {Math.Round(x.Chance.Value * 100)}%" : "")}").ToList();
             string detail;
-            var color = Paper.Ink;
+            var color = Paper.InkIntent;
             if (a.Windup != null && !charging)
             {
                 detail = "winds up a big attack";
@@ -408,14 +487,14 @@ namespace Drakepg
                 }
                 else if (a.Power >= 1.5) color = Paper.OnPaper(ToughText);
             }
-            // The move in ink (or its warning color), the detail a little lighter, like the mock's "Next: Gore ~6 dmg".
-            intentLine.text = $"Next: {a.Name}  {Ui.Colored(detail, color == Paper.Ink ? Paper.InkDim : color)}";
-            intentLine.style.color = color;
+            // The move in red ink (or its warning color), the detail lighter, like the mock's "Next: Gore ~6 dmg".
+            var text = $"Next: {a.Name}  {Ui.Colored(detail, color == Paper.InkIntent ? Paper.InkDim : color)}";
             var left = b.TurnsToEnrage;
-            var warn = Db.B.Enrage.Warn;
-            enrageText.text = b.Enrage > 0 ? $"Enraged +{Math.Round(b.Enrage * 100)}%" : left <= warn ? $"Enrages in {left}" : "";
-            var room = 358 - (enrageText.text != "" ? enrageText.text.Length * 8.5f + 10 : 0);
-            FitOnce(intentLine, room);
+            var enrage = b.Enrage > 0 ? $"Enraged +{Math.Round(b.Enrage * 100)}%" : left <= Db.B.Enrage.Warn ? $"Enrages in {left}" : "";
+            if (enrage != "") text += Ui.Colored($"  ·  {enrage}", Paper.InkBad);
+            intentText.text = text;
+            intentText.style.color = color;
+            FitOnce(intentText, 608 - 72);
         }
 
         /// <summary>Scale a label down to `max` px after its next layout.</summary>
@@ -432,19 +511,32 @@ namespace Drakepg
             l.style.scale = new Scale(Vector3.one);
         }
 
-        /// <summary>"Grit +20%   Water · Weak!": the weapon in hand, how its element lands now, and boss grit.</summary>
+        /// <summary>"Grit +20%  [Water · Weak!]": boss grit, then a chip with the weapon's element and how it lands now.</summary>
         void RefreshWeaponTag()
         {
             var p = battle.Player;
             weaponTag?.RemoveFromHierarchy();
             var element = p.WeaponElement;
             var effect = battle.EffectOn(element);
-            var text = "";
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(row, 412, 44, 1, 0.5f);
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
             var grit = battle.Grit;
-            if (grit > 0) text += Ui.Colored($"Grit +{Math.Round(grit * 100)}%    ", Paper.InkGold);
-            text += Ui.Colored(element != null ? Db.Data.ElementLabels[element] : "Neutral", element != null ? Paper.OnPaper(Palette.ElementText(element)) : Paper.InkDim);
+            if (grit > 0)
+            {
+                var g = FlowText($"Grit +{Math.Round(grit * 100)}%", 15, Paper.InkGold);
+                g.style.marginRight = 8;
+                row.Add(g);
+            }
+            var wash = element != null ? Palette.ElementText(element) : Design.Hex(0x8a7a60);
+            var ink = element != null ? Paper.OnPaper(Palette.ElementText(element)) : Design.Hex(0x5a4a34);
+            var text = element != null ? Db.Data.ElementLabels[element] : "Neutral";
             if (effect != null) text += Ui.Colored($" · {EffectLabels[effect]}", effect == "weak" ? Paper.InkGood : Paper.InkBad);
-            weaponTag = PaperLine(Root, 412, 46, text, 15, ax: 1, maxWidth: 200);
+            row.Add(Paper.Chip(text, wash, ink, 15, 71));
+            Root.Add(row);
+            FitWidth(row, 170, 1);
+            weaponTag = row;
         }
 
         /// <summary>"Frost Shell ◆◆◇: 80% less damage. Fire hits crack it."</summary>
@@ -471,26 +563,62 @@ namespace Drakepg
 
         static string Pct1(double v) => $"{Math.Round(v * 1000) / 10}%";
 
-        /// <summary>A hover-able info line (bag icon): shows `details` in the log note while hovered or pressed.</summary>
+        /// <summary>A hover-able info line (bag icon): shows `details` on the scroll while hovered or pressed.</summary>
         void InfoLine(float x, float y, string rich, string details)
         {
             Paper.Icon(Root, EnemyPanelX + 20, y - 12, 24, "bag");
-            var line = PaperLine(Root, x, y, rich, 15, maxWidth: 358);
+            var line = PaperLine(Root, x, y, rich, 16, maxWidth: 358);
             line.pickingMode = PickingMode.Position;
-            void Show()
-            {
-                logText.style.fontSize = 15;
-                logText.text = details;
-            }
-            line.RegisterCallback<PointerEnterEvent>(_ => Show());
-            line.RegisterCallback<PointerDownEvent>(_ => Show());
+            line.RegisterCallback<PointerEnterEvent>(_ => ShowNote(details, 15));
+            line.RegisterCallback<PointerDownEvent>(_ => ShowNote(details, 15));
             line.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
         }
 
+        /// <summary>One line on the scroll, wrapping at its width.</summary>
+        Label LogLabel(string text, float size)
+        {
+            var l = new Label(text) { pickingMode = PickingMode.Ignore };
+            l.style.fontSize = size;
+            l.style.color = Paper.Ink;
+            l.style.whiteSpace = WhiteSpace.Normal;
+            l.style.width = 498;
+            l.style.flexShrink = 0;
+            NoBox(l);
+            l.style.marginBottom = 3;
+            Fonts.Body(l);
+            logBox.Add(l);
+            return l;
+        }
+
+        /// <summary>A note in the log's place (a button's or a loot line's details) until the pointer leaves.</summary>
+        void ShowNote(string text, float size)
+        {
+            if (logBox == null) return;
+            logBox.Clear();
+            logBox.style.justifyContent = Justify.FlexStart;
+            LogLabel(text, size);
+        }
+
+        /// <summary>The last lines, oldest faintest, the newest in heavy ink.</summary>
         void RestoreLog()
         {
-            logText.style.fontSize = 19;
-            logText.text = string.Join("\n", log);
+            if (logBox == null) return;
+            logBox.Clear();
+            logBox.style.justifyContent = Justify.FlexStart;
+            for (int i = 0; i < log.Count; i++)
+            {
+                var age = log.Count - 1 - i;
+                var l = LogLabel(log[i], 19);
+                if (age == 0) Fonts.Heavy(l);
+                else l.style.opacity = age == 1 ? 0.75f : age == 2 ? 0.6f : 0.5f;
+            }
+            // Long lines wrap: when the newest would be cut off, show the bottom of the log instead.
+            logBox.schedule.Execute(() =>
+            {
+                float sum = 0;
+                foreach (var c in logBox.Children()) sum += c.layout.height + 3;
+                if (sum > logBox.layout.height + 1) logBox.style.justifyContent = Justify.FlexEnd;
+            });
         }
 
         /// <summary>"Loot  ✦ Sigil 10%  ·  Gold x5": a Lucky Impling's payout. Hover or tap for the Sigil odds.</summary>
@@ -537,8 +665,11 @@ namespace Drakepg
             InfoLine(x, y, rich, string.Join("\n", lines));
         }
 
-        /// <summary>"Earth · Weak: Fire Wind Blunt · Resists: Earth Water", each element in its color ("" if none).</summary>
-        string AffinityText()
+        /// <summary>
+        /// "[Earth]  Weak [Fire] [Wind] [Blunt] · Resists [Water]": the monster's element, weak spots, resists and absorbs,
+        /// each a chip washed in its color (empty if it has none).
+        /// </summary>
+        List<VisualElement> AffinityParts()
         {
             var m = monster;
             var resists = m.Resists ?? new Dictionary<string, double>();
@@ -549,35 +680,57 @@ namespace Drakepg
             var weak = elements.Where(e => R(e) + all <= -25).ToList();
             var strong = elements.Where(e => R(e) + all >= 25 && R(e) > 0 && R(e) + all <= 100).ToList();
             var absorbs = elements.Where(e => R(e) + all > 100).ToList();
-            var parts = new List<string>();
-            Color El(string e) => Paper.OnPaper(Palette.ElementText(e));
-            if (m.Element != null) parts.Add(Ui.Colored(Db.Data.ElementLabels[m.Element], El(m.Element)));
+            var parts = new List<VisualElement>();
+            var seed = 80;
+            void Word(string text)
+            {
+                var w = FlowText(text, 17, Paper.InkDim);
+                w.style.marginLeft = parts.Count > 0 ? 8 : 0;
+                w.style.marginRight = 6;
+                parts.Add(w);
+            }
+            void Chip(string text, Color c)
+            {
+                var chip = Paper.Chip(text, c, Paper.OnPaper(c), 15, seed++);
+                chip.style.marginRight = 5;
+                parts.Add(chip);
+            }
+            if (m.Element != null) Chip(Db.Data.ElementLabels[m.Element], Palette.ElementText(m.Element));
             void Group(string label, List<string> list)
             {
                 if (list.Count == 0) return;
-                parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}{label}", Paper.InkDim));
-                foreach (var e in list) parts.Add(Ui.Colored($" {Db.Data.ElementLabels[e]}", El(e)));
+                Word(label);
+                foreach (var e in list) Chip(Db.Data.ElementLabels[e], Palette.ElementText(e));
             }
-            Group("Weak:", weak);
+            Group("Weak", weak);
             // Weak spots besides elements: Blunt skills and Poison.
             var spots = new List<(string label, Color color)>();
-            if (m.WeakTo?.Blunt > 0) spots.Add(("Blunt", Paper.Kraft2));
-            if (m.WeakTo?.Poison > 0) spots.Add(("Poison", Paper.OnPaper(Design.Css("#8fe36b"))));
+            if (m.WeakTo?.Blunt > 0) spots.Add(("Blunt", Design.Hex(0x9a7048)));
+            if (m.WeakTo?.Poison > 0) spots.Add(("Poison", Design.Css("#8fe36b")));
             if (spots.Count > 0)
             {
-                if (weak.Count == 0) parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}Weak:", Paper.InkDim));
-                foreach (var s in spots) parts.Add(Ui.Colored($" {s.label}", s.color));
+                if (weak.Count == 0) Word("Weak");
+                foreach (var s in spots) Chip(s.label, s.color);
             }
-            Group("Resists:", strong);
-            Group("Absorbs:", absorbs);
-            if (all != 0) parts.Add(Ui.Colored($"{(parts.Count > 0 ? "  ·  " : "")}All {(all > 0 ? "+" : "")}{JsMath.Str(all)}", Paper.InkGold));
-            return string.Join("", parts);
+            Group("Resists", strong);
+            Group("Absorbs", absorbs);
+            if (all != 0) Chip($"All {(all > 0 ? "+" : "")}{JsMath.Str(all)}", Design.Hex(0xc9a520));
+            return parts;
         }
 
-        /// <summary>The affinity line after a boss changes form.</summary>
+        /// <summary>The affinity row (again after a boss changes form).</summary>
         void DrawAffinities()
         {
-            if (affinityRow != null) affinityRow.text = AffinityText();
+            if (affinityY <= 0) return;
+            affinityRow?.RemoveFromHierarchy();
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(row, LineX, affinityY, 0, 0.5f);
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            foreach (var part in AffinityParts()) row.Add(part);
+            Root.Add(row);
+            FitWidth(row, 358);
+            affinityRow = row;
         }
 
         /// <summary>Catch the chips up with the battle (after a turn has finished playing).</summary>
@@ -596,7 +749,7 @@ namespace Drakepg
             else list.Add(new KeyValuePair<string, int>(id, turns));
         }
 
-        /// <summary>Chips under each sheet: "Burn 2", "War Cry 3", on rose (harmful) or sage (helpful) paper.</summary>
+        /// <summary>Chips under each sheet: "Burn 2", "War Cry 3", on scraps of parchment washed rose (harmful) or sage (helpful).</summary>
         void RefreshStatuses()
         {
             foreach (var side in new[] { "player", "enemy" })
@@ -604,35 +757,29 @@ namespace Drakepg
                 var row = side == "player" ? playerStatusRow : enemyStatusRow;
                 if (row == null) continue;
                 row.Clear();
+                var seed = side == "player" ? 100 : 120;
                 foreach (var kv in shown[side])
                 {
                     var def = Db.Status(kv.Key);
-                    var chip = new Label($"{def.Name} {kv.Value}") { pickingMode = PickingMode.Ignore };
-                    chip.style.fontSize = 14;
-                    Fonts.Bold(chip);
-                    chip.style.color = def.Harmful ? Paper.InkBad : Paper.InkGood;
-                    chip.style.backgroundColor = def.Harmful ? Design.Hex(0xf0cdbf) : Design.Hex(0xd6e6c0);
-                    chip.style.height = 24;
-                    chip.style.paddingLeft = chip.style.paddingRight = 9;
-                    chip.style.paddingTop = chip.style.paddingBottom = 0;
-                    chip.style.marginLeft = chip.style.marginTop = chip.style.marginBottom = 0;
+                    var chip = Paper.Chip($"{def.Name} {kv.Value}", def.Harmful ? Design.Hex(0xd9604a) : Design.Hex(0x6aa84f),
+                        def.Harmful ? Paper.InkBad : Paper.InkGood, 15, seed++, true);
                     chip.style.marginRight = 6;
-                    chip.style.unityTextAlign = TextAnchor.MiddleCenter;
-                    Ui.Round(chip, 6);
-                    Ui.Border(chip, 2, Paper.Ink);
                     row.Add(chip);
                 }
             }
         }
 
-        /// <summary>The bottom: a strip of kraft card with a torn top edge, the log pinned on it as a note.</summary>
+        /// <summary>The bottom: a tooled leather band, the log on a small scroll lying on it.</summary>
         void DrawBottomPanel()
         {
-            Paper.MakeSheet(Root, -10, 540, Design.Width + 20, 200, Paper.Kraft, Paper.KraftDark, 13, torn: true);
-            var note = Paper.MakeSheet(Root, 22, 562, 590, 140, Paper.Cream, Paper.Kraft2, 14, rotate: -0.6f, blocksClicks: false);
-            logText = Ui.Text(note.Content, 26, 16, "", 19, Paper.Ink, wrap: 540);
-            Fonts.Body(logText);
-            logText.style.unityParagraphSpacing = 2;
+            Paper.Band(Root, 540, Design.Height - 540, 3);
+            var scroll = Paper.Scroll(Root, 22, 562, 590, 140, 14, -0.4f);
+            logBox = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(logBox, 20, 15);
+            Ui.Size(logBox, 498, 110);
+            logBox.style.overflow = Overflow.Hidden;
+            logBox.style.flexDirection = FlexDirection.Column;
+            scroll.Content.Add(logBox);
             menu = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(menu, 0, 0);
             Root.Add(menu);
@@ -730,7 +877,7 @@ namespace Drakepg
                 buttons.Add(new MenuButton
                 {
                     Label = "Flee", Icon = "boot", Sub = battle.CanFlee ? $"{Math.Round(battle.FleeChance * 100)}%" : "Boss", Enabled = battle.CanFlee,
-                    Paper = Paper.Cream2, Run = () => Act(() => battle.Flee()),
+                    Run = () => Act(() => battle.Flee()),
                 });
                 if (Features.On(p, "weapon_swap") || p.Data.Equipment["spare"] != null) buttons.Add(SwapButton());
             }
@@ -776,7 +923,7 @@ namespace Drakepg
                 buttons.Add(new MenuButton { Label = "Back", Icon = "back", Run = () => ShowMenu("main") });
             }
 
-            // 3 x 2 paper buttons on the kraft board, each tilted a little. Number keys 1-6 work too.
+            // 3 x 2 parchment tags on the leather, each tilted a little, a wax seal with its number key (1-6 work too).
             menuButtons = buttons;
             const int cols = 3;
             const float bw = 196, bh = 64;
@@ -786,9 +933,11 @@ namespace Drakepg
                 var b = buttons[i];
                 var x = 640 + i % cols * 210 + bw / 2;
                 var y = 566 + i / cols * 74 + bh / 2;
-                var face = b.Main ? Paper.Red : b.Paper ?? (b.Accent is Color accent ? Color.Lerp(Paper.Cream, accent, 0.32f) : Paper.Cream);
-                var size = b.Label.Length > 12 ? 19 : 23;
-                var btn = new PaperButton(menu, x, y, b.Label, () => b.Run(), bw, bh, b.Sub, b.Icon, face, 31 + i, tilt[i % tilt.Length], $"{i + 1}", size);
+                // Attack is soaked in red; skills and items get a light wash of their own color.
+                var wash = b.Main ? Paper.RedWash : b.Accent;
+                var size = b.Label.Length > 12 ? 20 : 24;
+                var btn = new PaperButton(menu, x, y, b.Label, () => b.Run(), bw, bh, b.Sub, b.Icon, wash, b.Main ? 0.95f : 0.36f, 31 + i,
+                    tilt[i % tilt.Length], $"{i + 1}", size);
                 if (b.ArtIcon != null && Art.Has(b.ArtIcon))
                 {
                     // An item's own picture instead of the generic potion.
@@ -798,12 +947,12 @@ namespace Drakepg
                 if ((b.Sub?.Length ?? 0) > 20)
                 {
                     var texts = btn.Query<Label>().ToList();
-                    if (texts.Count > 1) texts[1].style.fontSize = 12;
+                    if (texts.Count > 1) texts[1].style.fontSize = 13;
                 }
                 if (!b.Enabled) btn.SetEnabled(false);
                 if (b.Hover != null)
                 {
-                    btn.RegisterCallback<PointerEnterEvent>(_ => logText.text = b.Hover);
+                    btn.RegisterCallback<PointerEnterEvent>(_ => ShowNote(b.Hover, 17));
                     btn.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
                 }
                 var enabled = b.Enabled;
@@ -828,6 +977,7 @@ namespace Drakepg
             menuButtons = new List<MenuButton>();
             menu.Clear();
             RestoreLog();
+            FadeIntent(false);
             for (int i = 0; i < events.Count; i++) await Play(events[i], i > 0 ? events[i - 1] : null, i + 1 < events.Count ? events[i + 1] : null);
             RefreshBars();
             SyncStatuses();
@@ -843,6 +993,7 @@ namespace Drakepg
             else
             {
                 busy = false;
+                FadeIntent(true);
                 ShowMenu("main");
             }
         }
