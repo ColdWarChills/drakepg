@@ -2,7 +2,7 @@
 
 Started 2026-10-17 (designer: "start making a plan to hand off to Unity: what libraries, assets etc. we need"). Builds on the proposal in `docs/PLANS.md` ("Decisions to keep", Engine).
 
-**Status:** step 1 done (2026-10-17): the project is in `unity/` (how to open, test and build: `unity/README.md`). Next: step 2, data export.
+**Status (2026-10-17):** steps 1-7 done and step 8 mostly: the whole game plays in Unity on branch `claude/unity-port` (title, create, the road, towns, rooms, fights, results, every menu, saves), checked in the editor through the Unity MCP. What's left and how it differs: "Port status" below. How to open, test and build: `unity/README.md`.
 
 **Goal:** the same game in Unity 6, built for the browser (WebGL, itch.io) and Windows. Content is written once and shared. Unity becomes the main game once it plays start to finish; until then the Phaser version stays live on GitHub Pages.
 
@@ -110,6 +110,38 @@ While both versions exist, a rule changed in TypeScript has to be changed twice.
 
 - **The UI redo is built in Unity, not Phaser** (designer, 2026-10-17). The port goes first; the UI kit is made straight in UI Toolkit.
 - Same repo, `unity/` folder (default, not objected to).
+
+## Port status (2026-10-17)
+
+Built in one PC session (designer: "continue without questions until you have the game on Unity").
+
+| Step | State |
+|---|---|
+| 1 Project | done |
+| 2 Data export | done: `npm run export-data` writes all content to `unity/Assets/Resources/Data/game.json` (one file, not one per table). |
+| 3 Rules | done: `Drakepg.Rules` (src/game in C#). Golden tests (`npm run golden`): 1116 seeded fights, loot, forge and guild boards give the same results as TypeScript, number for number. Saves are the web format (save v15). |
+| 4 Assets | done for art: `python scripts/unity_art.py` turns `src/assets/art` into PNG/JPG under `Resources/Art` (git-ignored, re-run after art changes); `Editor/ArtImport.cs` sets pixels per unit and feet pivots. Particle textures and sounds are generated in code, like the web (no PNG/WAV files). Font: UI Toolkit's default for now. |
+| 5 Battle | done: every event animated (lunges, combos, projectiles, element bursts, statuses, shells, phases, enrage, swap, flee, Lucky escape, defeat), intents, weak spots, loot odds line, status chips, log. |
+| 6 Room | done: walking (keys and click), depth by feet y, exits (side, back, down) and blockers, NPCs and roles, roaming monsters (wander, alert, chase, Lucky runs, Elites), chests and mimics, campfires, notes, first-visit scenes, bosses and guards, quests and tracker, recall, chapter complete. |
+| 7 Menus | done: inventory and shop (drag, compare, stones), character and skills, map, guild board, forge, cheat menu (backtick or tap the room name 5x), dialogue, "New!" popup, menu (save, sound, story text, fullscreen). |
+| 8 Saves and WebGL | saves done (PlayerPrefs, web format); WebGL build: see below. Web save import has the code (`Saves.Import`) but no button yet. |
+| 9 Switch | not started: needs the designer's play-through first. |
+
+**How it's built** (differs from the plan above where noted):
+- One scene (`Boot`) and one MonoBehaviour (`GameRoot`); each Phaser scene is a `GameScreen` class (`Screens/`). World things are sprites in design px (1280x720, y down; 100 px = 1 unit); all UI is UI Toolkit built in code, on top.
+- Tweens are a small runner of our own (`Core/Anim.cs`, owned by the screen, awaitable), not PrimeTween (still installed, unused).
+- Effects are pooled sprites with an unlit shader (`Fx/`), not Particle System prefabs. Sounds are synthesized into AudioClips by a C# port of `sfx.ts` (pre-rendered a few per frame after boot).
+- Props, blockers, chests and exit arrows are still drawn shapes (`World/Shapes.cs`, `Props.cs`), as on the web.
+- Color space is Gamma, so blending matches the browser canvas.
+
+**Known differences and gaps:**
+- No touch-screen hints (desktop controls text only); no hand cursor over clickable things.
+- Text outlines are thinner than Phaser's stroke. Glyphs like ✦ ✔ ✓ may be missing in the browser build (no system font fallback there): check in the web build, add a font asset if so.
+- Item icons get the Sigil pulse, not its particle twinkles; the wardrobe/inventory hero is a still picture.
+- `npm run sim` / `pace` aren't EditMode tests yet (the golden tests cover the rules).
+- All art sits in `Resources` (about 66 MB of source PNG/JPG), so the web build loads it all at start; Addressables per chapter later.
+
+**Testing from a chat:** play mode via the Unity MCP; `Drakepg.EditorTools.Drive` (in `Assets/Editor/Drive.cs`) starts a game at a chapter, presses battle buttons, calls screen methods and saves pictures (`GameRoot.Snapshot`, also F12 in the game). `PlayTicker` keeps play mode running while the editor is in the background.
 
 ## Step 1 notes (2026-10-17)
 

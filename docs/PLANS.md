@@ -219,14 +219,7 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 ## Decisions to keep
 
 - Engine (2026-10-15): stay on Phaser in the browser for now. A Unity port was floated (the designer finds testing easier there) and set aside: it's a full rewrite, and the cloud chats can't run Unity. The game is made for the designer's own enjoyment; selling a few copies (itch.io, or Steam as a wrapped web build) is optional, and disclosing the AI art on a store is fine. Re-asked 2026-10-15: **Unity, but later**: finish the content in Phaser, port once the design stops changing. Make new art large enough (2x masters, rig parts) to carry over.
-- **Decided (2026-10-17, designer): start the Unity handoff, and build the UI redo in Unity, not Phaser.** Plan, packages, assets and order: `docs/UNITY_PORT.md`. Step 1 (the project in `unity/`) is built; next is step 2, the data export.
-- **Proposed (2026-10-17, designer: "think about porting to Unity little by little", WebGL builds for itch.io or wherever):**
-  1. Data first: a script exports `src/data/` to JSON; both versions read the same JSON, so content is written once.
-  2. Rules: port `src/game/` (already Phaser-free) to plain C# classes. A C# copy of `npm run sim` must give the same win rates as the TypeScript one.
-  3. Screens one at a time: Battle, then Room, Map, Inventory and Shop, Guild, Forge, Title and Create. The Phaser game stays live on GitHub Pages until Unity catches up.
-  4. WebGL build to itch.io (GitHub Pages can host it too); desktop builds come almost free.
-  - Costs: while both exist, a new rule is written twice, so once a system is ported, change it only in Unity. Cloud chats can't run Unity, so Unity work happens in PC chats (Unity MCP is set up here). Unity can't import webp: keep PNG masters. Effects (`fx.ts`) and synthesized sounds (`sfx.ts`) are code and get rebuilt in Unity.
-  - Timing: start after the style is locked and the UI kit exists, so the Unity UI is built once, with the new art.
+- **Decided (2026-10-17, designer): start the Unity handoff, and build the UI redo in Unity, not Phaser.** Plan and status: `docs/UNITY_PORT.md`. Ported 2026-10-17 on branch `claude/unity-port` (data, rules with golden tests, every screen and menu, saves): the game plays start to finish in the Unity editor. **Open:** the designer plays it and OKs the merge; then the web build goes up (itch.io private page first) and Unity becomes the main game (from then on, rules change only in Unity). The Phaser game stays live on GitHub Pages until then.
 - Testing tools (2026-10-15): no pause/play/inspector (dropped as bloat). Built instead: Rates x1-x10 in the testing menu, to see drops and level fast.
 - Skills stay simple (Silkroad style): skills just do damage. No interrupts, silences or similar for now.
 - Enrage, not a hard turn limit. Heroic adds no HP. Only specific monsters absorb (resist 150).

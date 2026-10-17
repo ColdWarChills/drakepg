@@ -204,3 +204,13 @@ From the designer ("redo assets while I'm gone, no questions"). The look is roun
 - **What worked for consistency without a LoRA:** backgrounds with the round-15 background as reference ("only as an example of the paper-cut style... none of its trees, hills or layout"); monsters and weapons with one reference, a sheet of four finished monsters; icons with no reference. Single characters as references leaked: the hero's head on golems and a wraith, a wolf body on the Mimic, boars and tusks in icons.
 - `prepare_art.py`: outfits of a transparent base are cropped with the base's own alpha (the colour cut-out gave a different box, so the fists moved). `HAND_EDITED` is empty (its fixes were for the old art).
 - Download: the art is 23 MB now (5.8 MB before), mostly the 2560x1440 backgrounds (~350 KB each).
+
+## Unity port (2026-10-17)
+
+From the designer ("start the port", then "continue without questions until you have the game on Unity"). Branch `claude/unity-port`, project in `unity/`, plan and status in `docs/UNITY_PORT.md`.
+
+- **Data:** `npm run export-data` writes every table plus `BALANCE` to `unity/Assets/Resources/Data/game.json`.
+- **Rules:** `src/game` ported to plain C# (`Drakepg.Rules`). `npm run golden` exports seeded fights, loot rolls, forge and guild boards from TypeScript; the EditMode tests replay them in C# and match exactly. Saves use the web format, so a web save can move over.
+- **Game:** Title, Create, Room, Battle and Result screens and every menu (inventory, shop, character, map, guild, forge, cheats, dialogue), effects and synthesized sounds, ported from the Phaser scenes by four helper agents and this chat. UI is UI Toolkit built in code at the same 1280x720 layout; the hand-made UI redo replaces its look later.
+- **Art:** `python scripts/unity_art.py` converts the game art for Unity (git-ignored output).
+- **Checked** in the editor through the Unity MCP: new game on the road, the carter's greeting, a fight with effects, victory and back to the room, a chapter-2 start in Brindlemoor with the "New!" popup, inventory, map, character, shop, guild board and forge, walking out to the Thornwood, a boss intro (Hedge Troll), save and Continue.
