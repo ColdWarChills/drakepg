@@ -63,7 +63,6 @@ MAGENTA_SPILL = {"icon_stormwatch_amulet", "mon_stormcoil", "mon_rime_acolyte", 
 # Processed files fixed by hand afterwards (key-color spill in steam, glows and glass). A full run skips them, so the
 # fix isn't lost; `--force` reprocesses them anyway (a new raw image for one of these: remove it from this list).
 HAND_EDITED = {
-    "npc_hearthkeeper_moll", "mon_spark_wisp", "mon_sunken_revenant", "mon_rime_acolyte", "mon_ember_salamander",
     "icon_mana_potion", "icon_superior_mana_potion", "icon_essence_light",
 }
 # Transparent sources: alpha below this (0-255) is cleared. Qwen-Image 2.1 leaves values of 1-9 over about a

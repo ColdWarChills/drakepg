@@ -225,6 +225,9 @@ FIXES = {
     "icon_storm_scale": ("A single long slate-blue heron crest feather with small yellow lightning sparks crackling along "
                          "it, shown alone as a game inventory icon."),
     # The one old dragon stays in the story (docs/ART_PLAN.md, dragon clean-up): only a dim shape deep in the ice.
+    "mon_spark_wisp": ("A floating ball of living lightning with no legs and no arms: a crackling bright yellow-white "
+                       "core with a small mischievous face, violet electric tendrils trailing below it like a tail, tiny "
+                       "arcs of lightning around it, hovering in the air."),
     "mon_mossling": ("A small, cute but mischievous moss creature monster: a round blob of green moss and lichen with "
                      "two big round yellow eyes with small dark pupils, tiny mushrooms and leaves growing on top, stubby "
                      "root-like feet."),
