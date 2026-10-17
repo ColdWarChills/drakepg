@@ -2,37 +2,47 @@
 <html>
 <head>
 <meta charset="utf-8">
-<!-- UI direction "Parchment and ink": an adventurer's desk. Stained parchment sheets with deckled, lightly scorched
+<!-- UI direction "Parchment and ink" (v2): an adventurer's desk. Stained parchment sheets with deckled, lightly scorched
      edges and a ruled ink border; watercolor-wash bars; the log is a small scroll; the buttons are parchment tags
-     with red wax seals for the keys, all lying on a tooled leather band. Drawn by hand in code (mocklib.js); the scene
-     behind is a capture of the game. -->
+     with red wax seals for the keys, all lying on a tooled leather band. v2: book serif + matching sans for
+     readability, the monster's next move on a tag above the monster, weak spots as washed chips, a 4-line log.
+     Drawn by hand in code (mocklib.js); the scene behind is a capture of the game. -->
 <style>
-  @font-face { font-family: Almendra; src: url(../../unity/Assets/Resources/Fonts/Almendra-Bold.ttf); }
-  @font-face { font-family: Kalam; src: url(../../unity/Assets/Resources/Fonts/Kalam-Regular.ttf); }
-  @font-face { font-family: Kalam; font-weight: 700; src: url(../../unity/Assets/Resources/Fonts/Kalam-Bold.ttf); }
+  @font-face { font-family: Alegreya; font-weight: 500; src: url(../../unity/Assets/Resources/Fonts/Alegreya-Medium.ttf); }
+  @font-face { font-family: Alegreya; font-weight: 700; src: url(../../unity/Assets/Resources/Fonts/Alegreya-Bold.ttf); }
+  @font-face { font-family: Alegreya; font-weight: 800; src: url(../../unity/Assets/Resources/Fonts/Alegreya-ExtraBold.ttf); }
+  @font-face { font-family: 'Alegreya Sans'; font-weight: 500; src: url(../../unity/Assets/Resources/Fonts/AlegreyaSans-Medium.ttf); }
+  @font-face { font-family: 'Alegreya Sans'; font-weight: 700; src: url(../../unity/Assets/Resources/Fonts/AlegreyaSans-Bold.ttf); }
+  @font-face { font-family: 'Alegreya Sans'; font-weight: 800; src: url(../../unity/Assets/Resources/Fonts/AlegreyaSans-ExtraBold.ttf); }
   * { box-sizing: border-box; margin: 0; }
-  body { width: 1280px; height: 720px; overflow: hidden; background: #111; font-family: Kalam, cursive; color: #2b1a0e; }
+  body { width: 1280px; height: 720px; overflow: hidden; background: #111; font-family: 'Alegreya Sans', sans-serif; color: #2b1a0e; }
   .box { position: absolute; }
   .box > .content { position: relative; z-index: 1; height: 100%; }
-  .name { font-family: Almendra; font-size: 27px; line-height: 1; display: flex; align-items: baseline; gap: 10px; }
-  .name small { font-family: Kalam; font-weight: 700; font-size: 18px; color: #7a5a38; }
-  .tag { margin-left: auto; font-size: 15px; font-weight: 700; color: #7a5a38; }
+  .name { font-family: Alegreya; font-weight: 800; font-size: 28px; line-height: 1; display: flex; align-items: center; gap: 10px; }
+  .name small { font-family: 'Alegreya Sans'; font-weight: 700; font-size: 19px; color: #7a5a38; position: relative; top: 2px; }
+  .name .chip { margin-left: auto; }
   .bar { position: relative; height: 26px; margin-top: 10px; }
-  .bar.thin { height: 20px; margin-top: 8px; }
-  .bar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px;
-    color: #fff1d6; text-shadow: 0 1px 0 #2b1a0e, 0 -1px 0 #2b1a0e, 1px 0 0 #2b1a0e, -1px 0 0 #2b1a0e; z-index: 1; }
-  .bar.thin > span { font-size: 14px; }
-  .line { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; height: 30px; white-space: nowrap; }
-  .dim { color: #7a5a38; } .gold { color: #8f6210; } .good { color: #2f7a32; } .ink { color: #2b1a0e; }
+  .bar.thin { height: 21px; margin-top: 8px; }
+  .bar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px;
+    letter-spacing: .3px; color: #fff3dc; text-shadow: 0 1px 0 #2b1a0e, 0 -1px 0 #2b1a0e, 1px 0 0 #2b1a0e, -1px 0 0 #2b1a0e, 1px 1px 0 #2b1a0e; z-index: 1; }
+  .bar.thin > span { font-size: 15px; }
+  .line { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; height: 30px; white-space: nowrap; }
+  .dim { color: #7a5a38; } .gold { color: #8f6210; } .good { color: #2f7a32; } .ink { color: #2b1a0e; } .bad { color: #a8281c; }
+  .chip { position: relative; display: inline-flex; align-items: center; height: 23px; padding: 0 8px 1px; font-size: 16px; font-weight: 800; }
+  .chip svg { position: absolute; left: 0; top: 0; overflow: visible; z-index: -1; }
+  .chips { display: flex; gap: 6px; isolation: isolate; }
   .btn .content { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .btn .label { font-family: Almendra; font-size: 23px; line-height: 1; display: flex; align-items: center; gap: 8px; }
-  .btn .sub { font-size: 13px; font-weight: 700; line-height: 1.1; margin-top: 2px; opacity: .8; }
-  .btn.main .content { color: #fff1d6; text-shadow: 0 1px 0 #5a160c, 0 -1px 0 #5a160c, 1px 0 0 #5a160c, -1px 0 0 #5a160c; }
+  .btn .label { font-family: Alegreya; font-weight: 800; font-size: 24px; line-height: 1; display: flex; align-items: center; gap: 8px; }
+  .btn .sub { font-size: 15px; font-weight: 700; line-height: 1.1; margin-top: 3px; color: #6b4a2a; }
+  .btn.main .content, .btn.main .sub { color: #fff3dc; text-shadow: 0 1px 0 #5a160c, 0 -1px 0 #5a160c, 1px 0 0 #5a160c, -1px 0 0 #5a160c; }
   .key { position: absolute; left: -12px; top: -12px; width: 30px; height: 30px; z-index: 2; display: grid; place-items: center;
-    font-weight: 700; font-size: 15px; color: #f6dcc0; text-shadow: 0 1px 0 #5a0f0a; }
+    font-weight: 800; font-size: 16px; color: #fbe6cc; text-shadow: 0 1px 0 #5a0f0a; }
   .key svg { position: absolute; inset: 0; overflow: visible; }
-  .key b { position: relative; top: 1px; }
-  .log { font-size: 19px; line-height: 1.35; }
+  .key b { position: relative; }
+  .log { font-size: 19px; line-height: 27px; font-weight: 500; }
+  .log div { white-space: nowrap; }
+  .log .old { opacity: .5; } .log .mid { opacity: .72; } .log .new { font-weight: 800; }
+  .intent .content { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 18px; font-weight: 800; color: #8a2414; white-space: nowrap; }
 </style>
 <script src="mocklib.js"></script>
 </head>
@@ -52,7 +62,7 @@ defs(`
     <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="11" result="t"/>
     <feDisplacementMap in="SourceGraphic" in2="t" scale="3" result="d"/>
     <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="12" result="g"/>
-    <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -.8 1.2" result="ga"/>
+    <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -.35 1.12" result="ga"/>
     <feComposite in="d" in2="ga" operator="in" result="gran"/>
     <feMorphology in="d" operator="erode" radius="1.2" result="er"/>
     <feComposite in="d" in2="er" operator="out" result="edge"/>
@@ -76,6 +86,7 @@ defs(`
 const S = stage();
 const PARCH = '#ead7ac', INK = '#2b1a0e';
 let clipN = 0;
+const later = [];
 
 function box(r, cls = 'box') { return div(cls, `left:${r.x}px; top:${r.y}px; width:${r.w}px; height:${r.h}px`, S); }
 
@@ -90,7 +101,7 @@ function ruled(svg, x, y, w, h, r, width = 1.7) {
   [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy]) => el('circle', { cx, cy, r: 1.8, fill: INK, stroke: 'none' }, g));
 }
 
-// A parchment sheet: deckled edge, soft shadow, stains, grain, a scorched rim; returns the clipped group.
+// A parchment sheet: deckled edge, soft shadow, stains, grain, a scorched rim.
 function sheet(svg, w, h, seed, { burn = .4, shadow = true } = {}) {
   const shape = deckled(0, 0, w, h, seed, { amp: 1.4, step: 3 });
   if (shadow) el('path', { d: shape, fill: 'rgba(25,12,4,.5)', transform: 'translate(2 6)', filter: 'url(#soft)' }, svg);
@@ -103,22 +114,34 @@ function sheet(svg, w, h, seed, { burn = .4, shadow = true } = {}) {
   el('rect', { x: 0, y: 0, width: w, height: h, filter: 'url(#pgrain)' }, g);
   el('path', { d: shape, fill: 'none', stroke: '#5c2f0e', 'stroke-width': 20, opacity: burn, filter: 'url(#burn)' }, g);
   el('path', { d: shape, fill: 'none', stroke: '#6b3d17', 'stroke-width': 1.2, opacity: .55 }, svg);
-  return g;
+  return shape;
 }
 
 // A bar: a ruled ink frame, the value a watercolor wash.
 function bar(parent, value, color, text, seed, thin = false) {
   const b = div('bar' + (thin ? ' thin' : ''), '', parent);
-  const w = parent.clientWidth - 44, h = thin ? 20 : 26;
+  const w = parent.clientWidth - 44, h = thin ? 21 : 26;
   b.style.width = w + 'px';
   const svg = layer(b, w, h);
   el('rect', { x: 0, y: 0, width: w, height: h, rx: 4, fill: 'rgba(110,70,25,.16)' }, svg);
   const fw = Math.max(h, (w - 4) * value);
-  el('path', { d: wavyRect(2, 2, fw, h - 4, seed, { r: 3, amp: .8, wave: 40 }), fill: color, opacity: .92, filter: 'url(#wash)' }, svg);
+  el('path', { d: wavyRect(2, 2, fw, h - 4, seed, { r: 3, amp: .8, wave: 40 }), fill: color, opacity: .95, filter: 'url(#wash)' }, svg);
   const g = el('g', { filter: 'url(#wobble)', fill: 'none', stroke: INK }, svg);
   el('rect', { x: 0, y: 0, width: w, height: h, rx: 4, 'stroke-width': 1.6 }, g);
   el('rect', { x: .9, y: -.7, width: w - 1, height: h + .4, rx: 4, 'stroke-width': .7, opacity: .45 }, g);
   b.insertAdjacentHTML('beforeend', `<span>${text}</span>`);
+}
+
+// A word on a watercolor wash in its own color (elements, the hero's affinity).
+function chip(parent, text, color, ink, seed) {
+  const c = div('chip', `color:${ink}`, parent, text);
+  later.push(() => {   // measured once the fonts are in
+  const w = c.offsetWidth, h = c.offsetHeight, svg = layer(c, w, h);
+  svg.style.zIndex = -1;
+  el('path', { d: wavyRect(0, 0, w, h, seed, { r: 4, amp: .7, wave: 30 }), fill: color, opacity: .3, filter: 'url(#wash)' }, svg);
+  el('path', { d: wavyRect(.5, .5, w - 1, h - 1, seed + 1, { r: 4, amp: .5, wave: 30 }), fill: 'none', stroke: ink, 'stroke-width': 1, opacity: .45, filter: 'url(#wobble)' }, svg);
+  });
+  return c;
 }
 
 // A red wax seal for a key number: a lumpy disc with a pressed ring.
@@ -136,8 +159,15 @@ function seal(parent, n, seed) {
   el('circle', { cx: 15, cy: 15.6, r: 9.2, fill: 'none', stroke: 'rgba(255,170,140,.35)', 'stroke-width': .8 }, svg);
 }
 
+// Mid-fight: the boar has charged, the hero answered with Heavy Strike.
 const L = LAYOUT, D = DATA;
-const words = (list) => list.map(([t, k]) => k.startsWith('#') ? `<span style="color:${k}">${t}</span>` : `<span class="${k}">${t}</span>`).join('');
+const FOE_HP = [31, 46];
+const LOG = [
+  ['old', 'A wild Thornback Boar (Lv 2) appears in the Thornwood!'],
+  ['mid', 'Thornback Boar uses Thorn Charge: <span class="bad">12 damage</span> to you.'],
+  ['new', 'You use Heavy Strike: <span class="gold">15 damage</span>.'],
+];
+const WEAK = [['Wind', '#2f8f7a', '#1f6a5a'], ['Water', '#3d6fa8', '#2a5288'], ['Energy', '#c9a520', '#7a6410']];
 
 // Board: a tooled leather band under the scene.
 {
@@ -145,7 +175,7 @@ const words = (list) => list.map(([t, k]) => k.startsWith('#') ? `<span style="c
   const H = 720 - L.board.y, svg = layer(b, 1280, H);
   const top = wavyRect(-20, 0, 1320, H + 40, 3, { r: 2, amp: 1.2, wave: 300 });
   el('path', { d: top, fill: 'rgba(10,6,2,.55)', transform: 'translate(0 -5)', filter: 'url(#soft6)' }, svg);
-  el('path', { d: top, fill: "#3f2615" }, svg);
+  el('path', { d: top, fill: '#3f2615' }, svg);
   el('rect', { x: 0, y: 0, width: 1280, height: H, filter: 'url(#hide)' }, svg);
   el('rect', { x: 0, y: 0, width: 1280, height: H, filter: 'url(#leather)', opacity: .5 }, svg);
   // Two tooled lines: a dark groove with gilt pressed in, and a light edge under it.
@@ -159,24 +189,38 @@ const words = (list) => list.map(([t, k]) => k.startsWith('#') ? `<span style="c
 {
   const p = box(L.hero), svg = layer(p, L.hero.w, L.hero.h);
   sheet(svg, L.hero.w, L.hero.h, 11); ruled(svg, 8, 8, L.hero.w - 16, L.hero.h - 16, 9);
-  const c = div('content', 'padding: 20px 22px 0 22px', p);
-  div('name', '', c, `${D.hero.name} <small>${D.hero.lv}</small><span class="tag">${D.hero.tag}</span>`);
+  const c = div('content', 'padding: 19px 22px 0 22px', p);
+  const n = div('name', '', c, `${D.hero.name} <small>${D.hero.lv}</small>`);
+  chip(n, D.hero.tag, '#8a7a60', '#5a4a34', 71);
   bar(c, D.hero.hp[0] / D.hero.hp[1], '#b8392a', `HP ${D.hero.hp[0]} / ${D.hero.hp[1]}`, 21);
   bar(c, D.hero.mp[0] / D.hero.mp[1], '#3a68a6', `MP ${D.hero.mp[0]} / ${D.hero.mp[1]}`, 22, true);
 }
-// Foe
+// Foe: name, HP, weak spots as chips, its trait, its loot. The next move hangs above the monster instead.
 {
-  const p = box(L.foe), svg = layer(p, L.foe.w, L.foe.h);
-  sheet(svg, L.foe.w, L.foe.h, 12); ruled(svg, 8, 8, L.foe.w - 16, L.foe.h - 16, 9);
-  const c = div('content', 'padding: 20px 22px 0 22px', p);
+  const r = { ...L.foe, h: 190 };
+  const p = box(r), svg = layer(p, r.w, r.h);
+  sheet(svg, r.w, r.h, 12); ruled(svg, 8, 8, r.w - 16, r.h - 16, 9);
+  const c = div('content', 'padding: 19px 22px 0 22px', p);
   div('name', '', c, `${D.foe.name} <small>${D.foe.lv}</small>`);
-  bar(c, 1, '#b8392a', `HP ${D.foe.hp[0]} / ${D.foe.hp[1]}`, 23);
-  div('line', 'margin-top: 8px', c, icon('flame') + words(D.foe.weak));
+  bar(c, FOE_HP[0] / FOE_HP[1], '#b8392a', `HP ${FOE_HP[0]} / ${FOE_HP[1]}`, 23);
+  const weak = div('line', 'margin-top: 9px', c, icon('flame') + '<span class="dim">Weak</span>');
+  const chips = div('chips', '', weak);
+  WEAK.forEach(([t, col, ink], i) => chip(chips, t, col, ink, 80 + i));
   div('line', 'color:#5a3a8a', c, icon('star') + D.foe.trait);
-  div('line', '', c, icon('claw') + `${D.foe.next[0]} <span class="dim">${D.foe.next[1]}</span>`);
-  div('line', 'font-size: 15px', c, icon('bag') + words(D.foe.gear));
+  div('line', 'font-size: 16px', c, icon('bag') + D.foe.gear.map(([t, k]) => `<span class="${k}">${t}</span>`).join(''));
 }
-// Log: a small scroll, rolled at both ends.
+// The monster's next move: a parchment tag pinned above it, pointing down at it.
+{
+  const w = 238, h = 38, x = 944 - w / 2, y = 236;
+  const p = div('box intent', `left:${x}px; top:${y}px; width:${w}px; height:${h}px; transform: rotate(-1.2deg)`, S);
+  const svg = layer(p, w, h);
+  sheet(svg, w, h, 91, { burn: .3 });
+  ruled(svg, 5, 5, w - 10, h - 10, 5, 1.3);
+  // A small red-ink marker under the tag, pointing at the monster.
+  el('path', { d: `M${w / 2 - 8} ${h + 4} L${w / 2 + 8} ${h + 4} L${w / 2} ${h + 13} Z`, fill: '#8a2414', stroke: '#8a2414', 'stroke-width': 1.5, 'stroke-linejoin': 'round' }, svg);
+  div('content', '', p, icon('claw', 24) + 'Next: Gore <span class="dim" style="font-weight:700">~6 dmg</span>');
+}
+// Log: a small scroll, rolled at both ends; the newest line darkest.
 {
   const p = box(L.log); p.style.transform = 'rotate(-0.4deg)';
   const W = L.log.w, H = L.log.h, svg = layer(p, W, H);
@@ -192,7 +236,7 @@ const words = (list) => list.map(([t, k]) => k.startsWith('#') ? `<span style="c
       el('ellipse', { cx: x + 13, cy: y, rx: 3, ry: 1, fill: 'none', stroke: '#d9bd86', 'stroke-width': .8 }, svg);
     });
   });
-  div('content log', 'padding: 22px 46px', p, D.log);
+  div('content log', 'padding: 24px 46px', p, LOG.map(([k, t]) => `<div class="${k}">${t}</div>`).join(''));
 }
 // Buttons: parchment tags with a ruled border and a wax seal; Attack soaked in a red wash.
 D.buttons.forEach((bt, i) => {
@@ -209,6 +253,7 @@ D.buttons.forEach((bt, i) => {
   if (bt.sub) div('sub', '', c, bt.sub);
   seal(p, i + 1, 61 + i);
 });
+Promise.all([...document.fonts].map((f) => f.load())).then(() => later.forEach((f) => f()));
 </script>
 </body>
 </html>
