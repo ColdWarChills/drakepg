@@ -70,12 +70,15 @@ PLAIN_STYLE = (
     "golden rim light, simple readable shapes and minimal interior detail."
 )
 MONSTER_REFS = "sheet"  # or "none" (--monster-refs)
+ICON_REFS = "sheet"  # or "none" (--icon-refs)
 ITEM_STYLE = (
     "Drawn in exactly the same art style as <image1> and <image2>: clean thin dark outlines, flat colours with "
     "hard-edged cel shadows, matte surfaces with no glossy shine, a warm golden rim light, simple readable shapes and "
     "minimal detail, as if by the same artist for the same game. Use <image1> and <image2> only as examples of the art "
     "style: draw none of the characters or creatures shown in them, only this one item."
 )
+WPN_FRAME = ("The weapon stands perfectly vertical: handle at the bottom, tip pointing straight up, centered, the whole "
+             "weapon visible with empty margin around it. No hands, no character, no stand, no text.")
 ICON_FRAME = ("Centered, seen from the front, the whole item visible and filling most of the square with a small empty "
               "margin. No hands, no character, no stand, no text.")
 
@@ -115,6 +118,27 @@ NEW = {
     "npc_guild_edda": ("3:4", "A sturdy older Adventurers' Guild clerk woman from a mountain village, silver hair in "
                        "two thick braids, red cheeks, a dark green waistcoat with brass buttons over a thick cream "
                        "wool sweater, fur-lined boots, holding a heavy ledger."),
+    # Weapons from the first batch had one shared prompt template; their subjects, from the item text.
+    "wpn_training_sword": ("9:16", "A single plain, slightly blunt short training sword with a simple iron crossguard "
+                           "and a leather-wrapped grip, shown alone as a game item."),
+    "wpn_worn_staff": ("9:16", "A single worn wooden apprentice staff, a simple straight shaft with a knotted top and "
+                       "a small cloth wrap, shown alone as a game item."),
+    "wpn_rusty_dagger": ("9:16", "A single short dagger with a slightly rusty blade, a plain crossguard and a cord-"
+                         "wrapped grip, shown alone as a game item."),
+    "wpn_iron_sword": ("9:16", "A single sturdy iron sword with a straight blade, a squared crossguard and a leather "
+                       "grip, shown alone as a game item."),
+    "wpn_oak_staff": ("9:16", "A single oak staff with a curled top holding a small glowing blue stone, shown alone as a game item."),
+    "wpn_tusk_dagger": ("9:16", "A single dagger whose curved blade is carved from an ivory boar tusk, on a leather-"
+                        "wrapped hilt, shown alone as a game item."),
+    "wpn_hunting_knife": ("9:16", "A single hunting knife with a broad single-edged steel blade and an antler handle, "
+                          "shown alone as a game item."),
+    "wpn_cinder_fang": ("9:16", "A single dagger with a blade of black volcanic glass glowing faintly orange along its "
+                        "edge, on a dark hilt, shown alone as a game item."),
+    "wpn_emberbrand": ("9:16", "A single steel sword whose edge glows ember-orange, small sparks drifting off it, a "
+                       "blackened crossguard, shown alone as a game item."),
+    "wpn_ember_wand": ("9:16", "A single short charred wooden wand with a glowing red-orange coal set in its tip, shown alone as a game item."),
+    "wpn_thornheart_blade": ("9:16", "A single sword carved from dark living wood, thorns along the back of the blade "
+                             "and a small green glowing heartwood gem in the crossguard, shown alone as a game item."),
     "icon_recall_scroll": ("1:1", "A single rolled parchment scroll tied with a red ribbon and a small wax seal shaped like a "
                            "little house, a faint golden glow around it, shown alone as a game inventory icon."),
     "icon_stone_of_might": ("1:1", "A single smooth river stone with a glowing red-orange rune of a sword carved into it, "
@@ -204,6 +228,8 @@ OUTFITS = {
 
 # Old prompts whose subject changes in the redo. key: subject (aspect and pose stay).
 FIXES = {
+    "wpn_sparkfang": "A single curved dagger made from a crackling yellow spur on a copper hilt, tiny sparks at the tip, "
+                     "shown alone as a game item.",
     # Monsters whose first tries drifted toward the boar reference, or stood on a patch of ground.
     "mon_bog_lurker": ("A hulking swamp beast on four legs, part crocodile and part bear: a long flat crocodile snout "
                        "lined with jagged teeth, bumpy scaled back, a bear's heavy shoulders and broad clawed paws, matted "
@@ -285,8 +311,26 @@ def build(key: str, prompts: dict) -> tuple[str, tuple[int, int], list[str]]:
         aspect, old = prompts[key]
         subject, pose = subject_of(key, old)
     a, b = (int(x) for x in aspect.split(":"))
+    if key.startswith("wpn_"):
+        # The monster sheet as reference: the hero holds a sword, and Qwen copies reference objects outright.
+        style = ("Drawn in exactly the same art style as the creatures in <image1>: clean thin dark outlines, flat "
+                 "colours with hard-edged cel shadows, matte surfaces with no glossy shine, a warm golden rim light, "
+                 "simple readable shapes and minimal detail. Use <image1> only as an example of the art style: draw "
+                 "none of the creatures or objects shown in it, only this one weapon.")
+        return f"{RGBA_OPEN} {subject} {style} {WPN_FRAME} {RGBA_CLOSE}", (864, 1536), ["monsters.png"]
     if key.startswith("icon_"):
-        return f"{RGBA_OPEN} {subject} {ITEM_STYLE} {ICON_FRAME} {RGBA_CLOSE}", (1024, 1024), ["hero.png", "boar.png"]
+        # A sheet of four finished icons as the one reference: with the hero and boar, small items came back as boars.
+        style = ("Drawn in exactly the same art style as the items in <image1>: clean thin dark outlines, flat colours "
+                 "with hard-edged cel shadows, matte surfaces with no glossy shine, a warm golden rim light, simple "
+                 "readable shapes and minimal detail. Use <image1> only as an example of the art style: draw none of the "
+                 "objects shown in it, only this one item.")
+        if ICON_REFS == "none":
+            # No reference: any reference object (a tusk, berries, a boar) leaked into a share of the icons.
+            style = ("Drawn in a clean 2D cartoon game-icon style: clean thin dark outlines, flat colours with "
+                     "hard-edged cel shadows, matte surfaces with no glossy shine, a warm golden rim light, simple "
+                     "readable shapes and minimal detail, muted warm colours.")
+            return f"{RGBA_OPEN} {subject} {style} {ICON_FRAME} {RGBA_CLOSE}", (1024, 1024), []
+        return f"{RGBA_OPEN} {subject} {style} {ICON_FRAME} {RGBA_CLOSE}", (1024, 1024), ["icons.png"]
     if key.startswith("bg_"):
         size = (2048, 1152)
         return f"A wide 16:9 background for a 2D side-view fantasy RPG. {subject} {BG_STYLE} {BG_REF}", size, ["bg.png"]
@@ -315,6 +359,7 @@ def keys_of(prefix: str, prompts: dict) -> list[str]:
     data = "".join(f.read_text(encoding="utf-8") for f in (ROOT / "src" / "data").glob("*.ts"))
     used = art | set(re.findall(r"'((?:bg|mon|npc)_[a-z0-9_]+)'", data))
     used |= {f"icon_{i}" for i in re.findall(r"id: '([a-z0-9_]+)'", data)}
+    used |= set(re.findall(r"art: '(wpn_[a-z0-9_]+)'", data))
     keys = sorted(k for k in set(prompts) | set(NEW) if k.startswith(prefix) and (k in used or k in NEW))
     drop = {"mon_volt_eel", "mon_stormscale_drakeling", "mon_vent_wyrmling", "bg_title"}
     return [k for k in keys if k not in drop]
@@ -337,6 +382,8 @@ def generate(keys: list[str], seeds: int, dry: bool) -> None:
     comfy = Comfy("http://127.0.0.1:8188")
     comfy.check()
     uploaded = {name: comfy.upload(f"drakepg_redo_{name}", on_white(STYLE / name)) for name in STYLE_SRC}
+    if (STYLE / "icons.png").exists():
+        uploaded["icons.png"] = comfy.upload("drakepg_redo_icons.png", on_white(STYLE / "icons.png"))
     if (STYLE / "monsters.png").exists():
         uploaded["monsters.png"] = comfy.upload("drakepg_redo_monsters.png", on_white(STYLE / "monsters.png"))
     if HERO_BASE.exists():
@@ -406,6 +453,63 @@ def sheet(keys: list[str], out: Path) -> None:
     print(out)
 
 
+def find_grip(img: Image.Image) -> float:
+    """Where the hand goes on a processed weapon (0 = top, 1 = bottom; `WeaponDef.grip`): the middle of the narrow
+    rows in the bottom 40% (a sword's handle between guard and pommel, a staff's shaft near its foot)."""
+    import numpy as np
+
+    a = np.asarray(img.getchannel("A")) > 128
+    widths = a.sum(axis=1)
+    rows = np.nonzero(widths)[0]
+    top, bottom = rows.min(), rows.max()
+    h = bottom - top + 1
+    lower = np.arange(top + int(h * 0.6), bottom - int(h * 0.03))
+    lw = widths[lower]
+    narrow = lower[lw <= max(1, lw[lw > 0].min()) * 1.5]
+    y = float(np.median(narrow)) if len(narrow) else top + h * 0.85
+    return round((y - top) / h, 2)
+
+
+def art_path(key: str) -> Path:
+    art = ROOT / "src" / "assets" / "art"
+    return next(iter(sorted(art.glob(f"{key}@*x.webp"))), art / f"{key}.webp")
+
+
+def grips(keys: list[str], write: bool, out: Path) -> None:
+    """Measure `grip` for weapons (a sheet with the grip marked goes to `out`); --write puts them in items.ts."""
+    items = ROOT / "src" / "data" / "items.ts"
+    src = items.read_text(encoding="utf-8")
+    keys = keys or sorted(re.findall(r"art: '(wpn_[a-z0-9_]+)'", src))
+    found = {}
+    cell = 220
+    sheet = Image.new("RGB", (len(keys) * (cell // 2 + 10) + 10, cell + 40), (40, 40, 46))
+    draw = ImageDraw.Draw(sheet)
+    for i, key in enumerate(keys):
+        img = Image.open(art_path(key)).convert("RGBA")
+        g = find_grip(img)
+        found[key] = g
+        thumb = img.copy()
+        thumb.thumbnail((cell // 2, cell))
+        x = 10 + i * (cell // 2 + 10)
+        sheet.paste(thumb, (x, 10), thumb)
+        gy = 10 + round(g * thumb.height)
+        draw.line((x, gy, x + cell // 2, gy), fill=(255, 40, 40), width=2)
+        draw.text((x, cell + 18), f"{g:.2f}", fill=(230, 230, 230))
+    sheet.save(out)
+    print(out)
+    for key, g in found.items():
+        print(f"{key}: {g}")
+        current = re.search(rf"art: '{key}',\s*grip: ([0-9.]+)", src)
+        if write and current and float(current.group(1)) < 0.6:
+            print(f"  kept {current.group(1)}: held mid-shaft (staffs, rods), a choice rather than a measurement")
+        elif write:
+            src, n = re.subn(rf"(art: '{key}',\s*grip: )[0-9.]+", rf"\g<1>{g}", src)
+            if n != 1:
+                print(f"  {key}: grip line not found")
+    if write:
+        items.write_text(src, encoding="utf-8")
+
+
 GAME_KEY = {"hero_raised": "char_hero_bare"}
 
 
@@ -434,17 +538,23 @@ def main() -> None:
             del args[i:i + 2]
         sheet(args[1:], out)
         return
+    if args and args[0] == "grips":
+        rest = [x for x in args[1:] if not x.startswith("--")]
+        grips(rest, "--write" in args, REDO / "_grips.png")
+        return
     if args and args[0] == "pick":
         pick(args[1:])
         return
-    global FIRST_SEED, MONSTER_REFS
-    for flag in ("--first-seed", "--monster-refs"):
+    global FIRST_SEED, MONSTER_REFS, ICON_REFS
+    for flag in ("--first-seed", "--monster-refs", "--icon-refs"):
         if flag in args:
             i = args.index(flag)
             if flag == "--first-seed":
                 FIRST_SEED = int(args[i + 1])
-            else:
+            elif flag == "--monster-refs":
                 MONSTER_REFS = args[i + 1]
+            else:
+                ICON_REFS = args[i + 1]
             del args[i:i + 2]
     seeds = 2
     if "--seeds" in args:
@@ -453,7 +563,7 @@ def main() -> None:
         del args[i:i + 2]
     prompts = old_prompts()
     keys = [a for a in args if not a.startswith("--")]
-    for flag, prefix in (("--all-bg", "bg_"), ("--all-mon", "mon_"), ("--all-npc", "npc_"), ("--all-icon", "icon_")):
+    for flag, prefix in (("--all-bg", "bg_"), ("--all-mon", "mon_"), ("--all-npc", "npc_"), ("--all-icon", "icon_"), ("--all-wpn", "wpn_")):
         if flag in args:
             keys += [k for k in keys_of(prefix, prompts) if k not in keys]
     if "--all-outfits" in args:
