@@ -1,0 +1,223 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- Battle mock, round 15: a hand-crafted cut-paper UI in the game's own layout (1280x720, the design size).
+     Every UI piece is drawn here in code: scissor-cut paper edges (seeded jitter), layered sheets, paper grain
+     (SVG noise), ink-drawn icons with a wobble filter. Only the background and the two sprites are generated. -->
+<link href="https://fonts.googleapis.com/css2?family=Almendra:wght@700&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2a1d16; --kraft: #3a2a1f; --kraft2: #5c4330; --cream: #efe2c2; --cream2: #d9c59c;
+    --red: #c8452f; --blue: #3d6fa8; --amber: #e0a93a; --teal: #2f7f78;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 720px; overflow: hidden; background: #3d4a2a; font-family: 'Kalam', cursive; color: var(--ink); }
+  .stage { position: relative; width: 1280px; height: 720px; background: url(../tests/themes/parts/pick_bg.png) 0 -110px / 1280px auto no-repeat; }
+  .sprite { position: absolute; transform: translateX(-50%); }
+  .shadow { position: absolute; height: 22px; border-radius: 50%; background: rgba(30, 22, 14, .32); filter: blur(3px); transform: translateX(-50%); }
+
+  /* A paper piece: its sheets are an SVG drawn behind the content by the script below. */
+  .paper { position: absolute; }
+  .paper > svg.sheets { position: absolute; left: 0; top: 0; overflow: visible; z-index: 0; }
+  .paper > .content { position: relative; z-index: 1; height: 100%; }
+
+  .name { font-family: 'Almendra', serif; font-size: 27px; line-height: 1; display: flex; align-items: baseline; gap: 10px; }
+  .name small { font-family: 'Kalam'; font-weight: 700; font-size: 18px; color: #6b5440; }
+  .tag { margin-left: auto; font-size: 15px; font-weight: 700; color: #6b5440; }
+
+  .bar { position: relative; height: 26px; margin-top: 8px; }
+  .bar > svg { position: absolute; inset: 0; overflow: visible; }
+  .bar > span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 700; font-size: 17px; color: var(--cream); text-shadow: 0 1px 0 var(--ink), 0 -1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink); }
+  .bar.thin { height: 20px; } .bar.thin > span { font-size: 14px; }
+
+  .line { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 7px; margin-top: 6px; }
+  .line em { font-style: normal; font-weight: 400; color: #6b5440; }
+  .line svg { width: 24px; height: 24px; }
+
+  .log { font-size: 19px; line-height: 1.35; }
+  .btn .content { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .btn .label { font-family: 'Almendra', serif; font-size: 23px; line-height: 1; display: flex; align-items: center; gap: 8px; }
+  .btn .label svg { width: 26px; height: 26px; }
+  .btn .sub { font-size: 13px; font-weight: 700; line-height: 1.1; margin-top: 2px; opacity: .8; }
+  .btn .key { position: absolute; left: -6px; top: -8px; width: 24px; height: 24px; display: grid; place-items: center;
+    font-weight: 700; font-size: 14px; color: var(--cream); z-index: 2; }
+  .btn .key svg { position: absolute; inset: 0; overflow: visible; }
+  .btn .key b { position: relative; }
+  .btn.main { color: var(--cream); }
+  .btn.main .sub { opacity: .9; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position: absolute">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="7"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.16  0 0 0 0 0.11  0 0 0 0 0.07  0 0 0 0.55 -0.12"/>
+    </filter>
+    <filter id="fibers" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.4" numOctaves="2" seed="3"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.35 -0.1"/>
+    </filter>
+    <filter id="wobble"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="5"/>
+      <feDisplacementMap in="SourceGraphic" scale="2.4"/></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+</svg>
+
+<div class="stage">
+  <div class="shadow" style="left: 330px; top: 497px; width: 190px"></div>
+  <div class="shadow" style="left: 960px; top: 497px; width: 300px"></div>
+  <img class="sprite" id="hero" src="../tests/themes/parts/pick_hero.png" style="left: 330px; bottom: 214px; height: 270px">
+  <img class="sprite" id="boar" src="../tests/themes/parts/pick_boar.png" style="left: 960px; bottom: 214px; height: 196px">
+
+  <!-- Hero panel -->
+  <div class="paper" data-front="#efe2c2" data-back="#3a2a1f" data-seed="11" style="left: 14px; top: 16px; width: 420px; height: 112px">
+    <div class="content" style="padding: 16px 22px 0 22px">
+      <div class="name">Wanderer <small>Lv 3</small><span class="tag">Neutral</span></div>
+      <div class="bar" data-fill="#c8452f" data-value="0.8" data-seed="21"><span>HP 48 / 60</span></div>
+      <div class="bar thin" data-fill="#3d6fa8" data-value="0.66" data-seed="22"><span>MP 20 / 30</span></div>
+    </div>
+  </div>
+
+  <!-- Enemy panel -->
+  <div class="paper" data-front="#efe2c2" data-back="#3a2a1f" data-seed="12" style="right: 14px; top: 16px; width: 430px; height: 168px">
+    <div class="content" style="padding: 16px 22px 0 22px">
+      <div class="name">Thornback Boar <small>Lv 3</small></div>
+      <div class="bar" data-fill="#c8452f" data-value="0.62" data-seed="23"><span>HP 31 / 50</span></div>
+      <div class="line">
+        <svg viewBox="0 0 32 32" filter="url(#wobble)"><path d="M5 26 C6 15 13 7 26 5 C21 12 20 19 22 26 Z" fill="#efe2c2" stroke="#2a1d16" stroke-width="2.6" stroke-linejoin="round"/></svg>
+        Next: Gore <em>~6 dmg</em></div>
+      <div class="line">
+        <svg viewBox="0 0 32 32" filter="url(#wobble)"><path d="M16 3 C21 10 26 13 26 20 C26 26 21 29 16 29 C11 29 6 26 6 20 C6 16 9 13 11 10 C12 14 14 15 16 15 C15 11 15 7 16 3 Z" fill="#e0a93a" stroke="#2a1d16" stroke-width="2.4" stroke-linejoin="round"/></svg>
+        Weak: Fire <em style="margin-left: 14px">Gear</em> Common 35%</div>
+    </div>
+  </div>
+
+  <!-- Bottom board: a strip of kraft card with a torn top edge -->
+  <div class="paper" data-front="#3a2a1f" data-back="#241911" data-seed="13" data-torn="1" style="left: -10px; top: 540px; width: 1300px; height: 200px"></div>
+
+  <!-- The log, a note pinned on the board -->
+  <div class="paper" data-front="#efe2c2" data-back="#5c4330" data-seed="14" style="left: 22px; top: 562px; width: 590px; height: 140px; transform: rotate(-0.6deg)">
+    <div class="content log" style="padding: 18px 26px">A wild Thornback Boar (Lv 3) appears on the Old Road!</div>
+  </div>
+
+  <!-- Buttons: paper tokens -->
+  <div class="paper btn main" data-front="#c8452f" data-back="#2a1d16" data-seed="31" style="left: 640px; top: 566px; width: 196px; height: 64px; transform: rotate(-1deg)">
+    <div class="key" data-seed="41"><b>1</b></div>
+    <div class="content"><div class="label">
+      <svg viewBox="0 0 32 32" filter="url(#wobble)"><g stroke="#2a1d16" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M24 3 L29 3 L29 8 L13 24 L8 19 Z" fill="#efe2c2"/><path d="M6 17 L15 26" fill="none"/><path d="M9 23 L4 28" fill="none" stroke-width="3.2"/></g></svg>
+      Attack</div></div>
+  </div>
+  <div class="paper btn" data-front="#efe2c2" data-back="#2a1d16" data-seed="32" style="left: 850px; top: 566px; width: 196px; height: 64px; transform: rotate(0.7deg)">
+    <div class="key" data-seed="42"><b>2</b></div>
+    <div class="content"><div class="label">
+      <svg viewBox="0 0 32 32" filter="url(#wobble)"><g stroke="#2a1d16" stroke-width="2.4" stroke-linejoin="round">
+        <path d="M16 8 C12 5 7 5 3 6 L3 26 C7 25 12 25 16 28 Z" fill="#d9c59c"/><path d="M16 8 C20 5 25 5 29 6 L29 26 C25 25 20 25 16 28 Z" fill="#efe2c2"/></g></svg>
+      Skills</div><div class="sub">1 NEW</div></div>
+  </div>
+  <div class="paper btn" data-front="#efe2c2" data-back="#2a1d16" data-seed="33" style="left: 1060px; top: 566px; width: 196px; height: 64px; transform: rotate(-0.4deg)">
+    <div class="key" data-seed="43"><b>3</b></div>
+    <div class="content"><div class="label">
+      <svg viewBox="0 0 32 32" filter="url(#wobble)"><g stroke="#2a1d16" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M8 12 C6 18 6 26 10 28 L22 28 C26 26 26 18 24 12 Z" fill="#c09060"/><path d="M8 12 L24 12 L21 7 L11 7 Z" fill="#a8764a"/><path d="M12 12 L16 16 L20 12" fill="none"/></g></svg>
+      Items</div></div>
+  </div>
+  <div class="paper btn" data-front="#efe2c2" data-back="#2a1d16" data-seed="34" style="left: 640px; top: 640px; width: 196px; height: 64px; transform: rotate(0.5deg)">
+    <div class="key" data-seed="44"><b>4</b></div>
+    <div class="content"><div class="label">
+      <svg viewBox="0 0 32 32" filter="url(#wobble)"><path d="M16 3 L27 7 V15 C27 22 22 27 16 29 C10 27 5 22 5 15 V7 Z" fill="#2f7f78" stroke="#2a1d16" stroke-width="2.4" stroke-linejoin="round"/></svg>
+      Defend</div><div class="sub">-60% dmg, +MP</div></div>
+  </div>
+  <div class="paper btn" data-front="#d9c59c" data-back="#2a1d16" data-seed="35" style="left: 850px; top: 640px; width: 196px; height: 64px; transform: rotate(-0.8deg)">
+    <div class="key" data-seed="45"><b>5</b></div>
+    <div class="content"><div class="label">
+      <svg viewBox="0 0 32 32" filter="url(#wobble)"><g stroke="#2a1d16" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M10 4 L18 4 L18 18 L27 22 L27 28 L8 28 Z" fill="#8a6440"/><path d="M3 12 L8 12 M2 17 L7 17 M4 22 L8 22" fill="none"/></g></svg>
+      Flee</div><div class="sub">59%</div></div>
+  </div>
+</div>
+
+<script>
+// Seeded random, so the cut edges look the same on every render.
+function rng(seed) { let s = seed * 9301 + 49297; return () => ((s = (s * 16807) % 2147483647) / 2147483647); }
+
+// A scissor-cut outline: straight cuts of uneven length, each end a little off the ideal line; corners clipped.
+function cutPath(x, y, w, h, seed, { j = 2.2, cut = 46, corner = 5, torn = false } = {}) {
+  const R = rng(seed), pts = [];
+  const edge = (x0, y0, x1, y1, jit) => {
+    const len = Math.hypot(x1 - x0, y1 - y0), nx = -(y1 - y0) / len, ny = (x1 - x0) / len;
+    for (let t = 0; t < 1; ) {
+      const o = (R() - 0.5) * 2 * jit;
+      pts.push([x0 + (x1 - x0) * t + nx * o, y0 + (y1 - y0) * t + ny * o]);
+      t += (cut * (0.55 + R() * 0.9)) / len;
+    }
+  };
+  const c = corner;
+  edge(x + c, y, x + w - c, y, torn ? 5 : j);
+  edge(x + w, y + c, x + w, y + h - c, j);
+  edge(x + w - c, y + h, x + c, y + h, j);
+  edge(x, y + h - c, x, y + c, j);
+  if (torn) { // a torn top edge: many small ragged steps
+    const top = []; const R2 = rng(seed + 99);
+    for (let px = x; px <= x + w; px += 5 + R2() * 7) top.push([px, y + (R2() - 0.5) * 7]);
+    return 'M' + top.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join(' L') +
+      ` L${x + w} ${y + h} L${x} ${y + h} Z`;
+  }
+  return 'M' + pts.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join(' L') + ' Z';
+}
+
+const NS = 'http://www.w3.org/2000/svg';
+const el = (name, attrs, parent) => { const e = document.createElementNS(NS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); parent?.appendChild(e); return e; };
+let uid = 0;
+
+// Paper pieces: drop shadow, backing sheet, front sheet (inset, cut on its own), grain and fibers clipped to it.
+for (const p of document.querySelectorAll('.paper')) {
+  const w = p.offsetWidth, h = p.offsetHeight, seed = +p.dataset.seed, torn = !!p.dataset.torn;
+  const svg = el('svg', { class: 'sheets', width: w, height: h }, null);
+  p.prepend(svg);
+  const back = cutPath(0, 0, w, h, seed, { torn });
+  el('path', { d: back, fill: 'rgba(25,16,10,.45)', transform: 'translate(2 5)', filter: 'url(#soft)' }, svg);
+  el('path', { d: back, fill: p.dataset.back }, svg);
+  const inset = torn ? 0 : 5;
+  const front = torn ? cutPath(0, 6, w, h - 6, seed + 5, { torn }) : cutPath(inset, inset, w - inset * 2, h - inset * 2, seed + 5, { j: 1.8 });
+  el('path', { d: front, fill: p.dataset.front }, svg);
+  const id = 'clip' + uid++;
+  el('path', { d: front }, el('clipPath', { id }, el('defs', {}, svg)));
+  const g = el('g', { 'clip-path': `url(#${id})` }, svg);
+  el('rect', { width: w, height: h, filter: 'url(#grain)', opacity: 0.9 }, g);
+  el('rect', { width: w, height: h, filter: 'url(#fibers)', opacity: 0.5 }, g);
+  // A soft darker band along the bottom of the front sheet, like a curl in the card.
+  el('rect', { y: h - 14, width: w, height: 14, fill: 'rgba(42,29,22,.08)' }, g);
+}
+
+// Bars: a cut slot, and a hand-painted strip with a ragged brush end and a light streak.
+for (const b of document.querySelectorAll('.bar')) {
+  const w = b.offsetWidth, h = b.offsetHeight, R = rng(+b.dataset.seed);
+  const svg = el('svg', { width: w, height: h }, null);
+  b.prepend(svg);
+  el('path', { d: cutPath(0, 0, w, h, +b.dataset.seed, { j: 1.2, cut: 30, corner: 3 }), fill: '#2a1d16' }, svg);
+  const fw = Math.max(10, (w - 8) * +b.dataset.value), y0 = 4, y1 = h - 4, top = [], bot = [];
+  for (let x = 4; x < fw; x += 14) { top.push([x, y0 + (R() - 0.5) * 1.6]); bot.push([x, y1 + (R() - 0.5) * 1.6]); }
+  const end = [];
+  for (let y = y0; y <= y1; y += 3) end.push([fw + (R() - 0.3) * 6, y]);
+  const pts = [...top, ...end, ...bot.reverse()];
+  el('path', { d: 'M' + pts.map((p) => p.join(' ')).join(' L') + ' Z', fill: b.dataset.fill }, svg);
+  const streak = [];
+  for (let x = 8; x < fw - 8; x += 18) streak.push([x, y0 + 3 + (R() - 0.5)]);
+  el('path', { d: 'M' + streak.map((p) => p.join(' ')).join(' L'), stroke: 'rgba(255,240,215,.45)', 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round' }, svg);
+}
+
+// Key numbers: an ink blot circle cut by hand.
+for (const k of document.querySelectorAll('.key')) {
+  const R = rng(+k.dataset.seed), pts = [];
+  for (let a = 0; a < Math.PI * 2; a += Math.PI / 7) { const r = 11.5 + (R() - 0.5) * 2; pts.push([12 + Math.cos(a) * r, 12 + Math.sin(a) * r]); }
+  const svg = el('svg', { viewBox: '0 0 24 24' }, null);
+  k.prepend(svg);
+  el('path', { d: 'M' + pts.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join(' L') + ' Z', fill: '#2a1d16' }, svg);
+}
+</script>
+</body>
+</html>

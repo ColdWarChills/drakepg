@@ -33,6 +33,9 @@ const GROUND_Y = 500;
 const PLAYER_X = 330;
 const ENEMY_X = 950;
 const LOG_LINES = 4;
+/** Painted backgrounds keep their ground in the bottom 30%, mostly under the bottom panel: lift them so the fighters
+ * stand on it (`addBackground`). */
+const BG_RAISE = 90;
 /** Height above the feet where hits land. */
 const CHEST = 120;
 /** Skills shown per page of the Skills menu (the other slots are More / Back). */
@@ -167,7 +170,7 @@ export class BattleScene extends Phaser.Scene {
     this.weaponTag = null;
     this.shown = { player: new Map(), enemy: new Map() };
 
-    drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40);
+    drawScenery(this, this.zone.background, this.zone.backdrop, GROUND_Y - 40, BG_RAISE);
     this.playerFig = drawFigure(this, -200, GROUND_Y, this.playerLook, 1, session.player.weapon, session.player.weaponSigil);
     if (this.monster.elite || this.monster.lucky) {
       const glow = this.add.image(ENEMY_X, GROUND_Y - 110, 'fx_soft').setTint(this.monster.lucky ? LUCKY_GLOW : ELITE_GLOW).setBlendMode('ADD').setScale(7).setAlpha(0);

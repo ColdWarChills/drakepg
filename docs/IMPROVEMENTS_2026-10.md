@@ -179,3 +179,28 @@ From PLANS.md, Art ("run art direction tests before redoing the graphics"). Test
 - **Rounds 10-11, one base hero:** full-colour poster look; other variants made as Qwen edits of one anchor so style, body and light match (separate generations drifted). Character-creator options: 6 body types, 7 hairstyles, 4 faces.
 - **Layers:** hair and the headband as separate sprites over a shaved base body, cut by difference (every edit lines up pixel for pixel with the base). Headband combos: each hairstyle has a sprite with the hair pressed under the band, drawn instead of hair + band; making the combo first and the plain style from it (band removed) keeps both matching.
 - **Tools:** `scripts/art_tests.py`, `rig_test.py`, `art_compare.py`, `hero_edits.py`, `hair_layers.py`; `qwen_batch.Comfy.generate` takes LoRAs, CFG and a negative prompt, sends numeric node ids with readable titles (the ComfyUI window shows each job's graph), and each image gets a `.txt` with its settings. Research on AI art and sales is in PLANS.md.
+
+## Art plan and whole-screen themes (2026-10-17)
+
+From the designer: redo all graphics in one stylized look, style first. Docs and tests only: nothing in `src/` changed.
+
+- **`docs/ART_PLAN.md`:** every image the game needs, counted from the data (an inventory of art keys vs `src/assets/art/`): UI kit, ~230 icons (38 skills and 20 statuses have none yet), ~35 backgrounds, 30 monsters, 16 NPCs, the base hero and outfits, 40 weapons, the dragon clean-up defaults. About 430 images, in the order the long runs go.
+- **Round 12, themes:** `scripts/theme_tests.py` makes one battle screen per theme (UI, background, base hero as a reference, a boar) at 1664x928; sheet `art/tests/themes.png`.
+- **Unity port:** a step-by-step proposal in PLANS.md ("Decisions to keep", Engine).
+- **Round 12 rejected ("all look heavily AI"); round 13:** a strict flat-vector look asked for at generation time (`scripts/flat_tests.py`) and a hand-made UI (`art/ui/battle_mock.html`: CSS, Fredoka, hand-drawn SVG skill icons; rendered with headless Edge). Screenshot `art/tests/sheets/flat_mock.webp`. A post-filter (fixed palette + merged shapes) on painted images was tried first and dropped.
+- **Round 14 (after "characters were fine, the UI was AI"):** the round-12 scene re-rendered with no UI (`theme_tests.py --bare`) and the hand-made UI on top in warm colours; screenshot `art/tests/sheets/battle_mock_r14.webp`.
+- **Round 15:** the game's distances (scene split into background + sprites, `scripts/scene_parts.py`) and a hand-crafted cut-paper UI drawn in code (`art/ui/battle_craft.html`); screenshot `art/tests/sheets/battle_craft_r15.webp`.
+
+## Art redo in the round-15 look (2026-10-17)
+
+From the designer ("redo assets while I'm gone, no questions"). The look is round 15's: layered paper-cut backgrounds and clean cartoon characters (thin dark outlines, hard cel shadows, warm rim light), which the designer kept ("characters were fine, the UI was AI"). The UI is untouched (later, by hand). Branch `claude/art-direction-tests-02b582`.
+
+- **Done:** every background (34 + title), monster (30), NPC (16), weapon (40) and item icon (92), the base hero and 11 armor outfits: 225 images, every picture in the game except the UI. New art that never existed: the 3 road rooms + an Old Road fallback, Odo, Pell, the 3 Guild clerks, the road pests, the 3 gate guards, the Mimic, 4 roll stones, the Recall Scroll and the 10 hunt items.
+- **One base hero for every class** (decided 2026-10-16), now in code: `char_hero_bare` (the round-15 hero, messy hair + red headband, empty fists); each class holds its weapon in its own fists (`ClassDef.look.bare.hands`). Body armor swaps in `char_hero_<armor id>` (Qwen edits of the base at the same canvas, so the fists stay put); one image per armor instead of one per class. The old per-class art is gone.
+- **Dragon clean-up** (ids kept so saves load): Stormscale Drakeling -> Stormcrest Heron (Spear Beak, Crest Spark, Wing Buffet, Wade Off), Vent Wyrmling -> Vent Tortoise (weak to Blunt 50), Storm Scale -> Storm Feather, Sparkfang's text. The title art is a dusk road to the town; the Frozen Roost keeps one dim shape in the ice (the one old dragon of the story).
+- **Battle backgrounds** are lifted 90 px (`BG_RAISE`) so the fighters stand on the ground the art keeps in its bottom 30% (the bottom panel used to cover it).
+- **Weapon grips** re-measured for the new art (`redo_art.py grips --write`, check sheet), five set by hand.
+- **`scripts/redo_art.py`:** subjects from the old prompts (`art/QUEUE.md`, `art/PROMPTS.md`) with the old style text cut off, `NEW` for art that never had a prompt, `FIXES` for changed subjects; tries in `art/redo/<key>/` (git-ignored, each with a `.txt` of its settings), `sheet` for review sheets, `pick key:seed` copies to `art/raw` and runs `prepare_art.py`. All picks are listed in `art/redo/_picks.txt` (local).
+- **What worked for consistency without a LoRA:** backgrounds with the round-15 background as reference ("only as an example of the paper-cut style... none of its trees, hills or layout"); monsters and weapons with one reference, a sheet of four finished monsters; icons with no reference. Single characters as references leaked: the hero's head on golems and a wraith, a wolf body on the Mimic, boars and tusks in icons.
+- `prepare_art.py`: outfits of a transparent base are cropped with the base's own alpha (the colour cut-out gave a different box, so the fists moved). `HAND_EDITED` is empty (its fixes were for the old art).
+- Download: the art is 23 MB now (5.8 MB before), mostly the 2560x1440 backgrounds (~350 KB each).

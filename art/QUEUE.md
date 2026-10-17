@@ -1,5 +1,7 @@
 # Art queue: 20 images left
 
+> **History (2026-10-17):** all game art was redone in the round-15 look with `scripts/redo_art.py`, which reads the subjects of these prompts (their style text is no longer used). New art goes there, not here.
+
 Everything the game references or can use that has no art yet, in priority order. Each prompt is complete: copy the block as one piece.
 
 **How (local, preferred):** with ComfyUI + Qwen-Image 2.1 running on the designer's PC, `python3 scripts/qwen_batch.py <key> ...` (or `--pending`) rewrites these prompts for Qwen (real transparent background, the game's own art as style references) and writes `art/raw/<key>.png`; `--variants 4` writes options to `art/review/<key>/` instead; `--prepare` also runs `prepare_art.py`.

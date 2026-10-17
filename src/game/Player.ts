@@ -246,15 +246,17 @@ export class Player {
   }
 
   /**
-   * How the hero is drawn: the class look, dressed in the armor's outfit (`char_<class>_<armor id>`) when that art
-   * exists. Missing art falls back to the class's own pictures, so armors without art just keep the default look.
+   * How the hero is drawn: the class look, dressed in the armor's outfit when that art exists. The outfit is named after
+   * the bare art (`char_hero_bare` -> `char_hero_<armor id>`). Missing art falls back to the class's own pictures, so
+   * armors without art just keep the default look.
    */
   get look(): Look {
     const cls = this.classDef.look;
     const armor = this.bodyArmor;
     if (!armor) return cls;
-    const art = `char_${this.data.classId}_${armor.id}`;
     const classBare = cls.bare === undefined ? [] : Array.isArray(cls.bare) ? cls.bare : [cls.bare];
+    const base = classBare[0]?.art.replace(/_bare$/, '') ?? `char_${this.data.classId}`;
+    const art = `${base}_${armor.id}`;
     const hands = armor.hands?.[this.data.classId] ?? classBare[0]?.hands ?? [];
     const classArt = cls.art === undefined ? [] : Array.isArray(cls.art) ? cls.art : [cls.art];
     return { ...cls, art: [art, ...classArt], bare: [{ art, hands }, ...classBare] };

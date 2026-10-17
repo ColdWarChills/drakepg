@@ -1,5 +1,11 @@
 import type { ClassDef } from './types';
 
+/**
+ * One base hero for every class (docs/PLANS.md, Art): classes differ by gear, not by the picture. Each class holds its
+ * weapon in its own fists (`bare.hands`); body armor swaps in `char_hero_<armor id>` (see `Player.look`).
+ */
+const HERO_ART = 'char_hero_bare';
+
 export const CLASSES: ClassDef[] = [
   {
     id: 'warrior',
@@ -29,8 +35,8 @@ export const CLASSES: ClassDef[] = [
       color: 0x2e86de,
       accent: 0x5b3a1e,
       scale: 1,
-      art: ['char_warrior', 'char_player'],
-      bare: { art: 'char_warrior_bare', hands: [{ x: 158, y: 268, angle: 45 }] },
+      art: HERO_ART,
+      bare: { art: HERO_ART, hands: [{ x: 233, y: 135, angle: 40 }] },
     },
   },
   {
@@ -61,8 +67,8 @@ export const CLASSES: ClassDef[] = [
       color: 0x7d3c98,
       accent: 0x2c1a3a,
       scale: 1,
-      art: ['char_mage', 'char_player'],
-      bare: { art: 'char_mage_bare', hands: [{ x: 243, y: 183, angle: 8 }] },
+      art: HERO_ART,
+      bare: { art: HERO_ART, hands: [{ x: 226, y: 136, angle: 6 }] },
     },
   },
   {
@@ -93,12 +99,12 @@ export const CLASSES: ClassDef[] = [
       color: 0x27ae60,
       accent: 0x1b2e1f,
       scale: 1,
-      art: ['char_rogue', 'char_player'],
+      art: HERO_ART,
       bare: {
-        art: 'char_rogue_bare',
+        art: HERO_ART,
         hands: [
-          { x: 178, y: 275, angle: 80 },
-          { x: 42, y: 282, angle: -140 },
+          { x: 233, y: 135, angle: 75 },
+          { x: 49, y: 268, angle: -140 },
         ],
       },
     },

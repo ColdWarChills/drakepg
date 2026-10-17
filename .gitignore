@@ -11,3 +11,5 @@ art/tests/*
 !art/tests/compare/
 !art/tests/hud_2x.png
 !art/tests/sheets/
+# Redo tries (scripts/redo_art.py): picks are copied to art/raw
+art/redo/

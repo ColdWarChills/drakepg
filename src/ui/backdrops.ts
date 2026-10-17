@@ -6,10 +6,10 @@ import { addText } from './text';
 
 /**
  * Draw a full-screen scene: painted art if it exists, otherwise simple procedural scenery.
- * `groundY` is where the ground starts in the procedural version.
+ * `groundY` is where the ground starts in the procedural version; `raise` lifts painted art (see `addBackground`).
  */
-export function drawScenery(scene: Phaser.Scene, art: ArtRef | undefined, backdrop: Backdrop, groundY: number): void {
-  if (!addBackground(scene, art)) {
+export function drawScenery(scene: Phaser.Scene, art: ArtRef | undefined, backdrop: Backdrop, groundY: number, raise = 0): void {
+  if (!addBackground(scene, art, raise)) {
     if (backdrop.kind === 'town') drawTown(scene, groundY);
     else if (backdrop.kind === 'marsh') drawMarsh(scene, groundY);
     else if (backdrop.kind === 'outpost') drawOutpost(scene, groundY);

@@ -62,10 +62,7 @@ SPILL_FADE = 2.5  # ...and how fast green-dominated pixels there fade out
 MAGENTA_SPILL = {"icon_stormwatch_amulet", "mon_stormcoil", "mon_rime_acolyte", "mon_frostbinder"}
 # Processed files fixed by hand afterwards (key-color spill in steam, glows and glass). A full run skips them, so the
 # fix isn't lost; `--force` reprocesses them anyway (a new raw image for one of these: remove it from this list).
-HAND_EDITED = {
-    "npc_hearthkeeper_moll", "mon_spark_wisp", "mon_sunken_revenant", "mon_rime_acolyte", "mon_ember_salamander",
-    "icon_mana_potion", "icon_superior_mana_potion", "icon_essence_light",
-}
+HAND_EDITED: set[str] = set()
 # Transparent sources: alpha below this (0-255) is cleared. Qwen-Image 2.1 leaves values of 1-9 over about a
 # third of the "empty" canvas, which would otherwise stretch the trim box to the whole image.
 ALPHA_FLOOR = 10
@@ -190,8 +187,12 @@ def process_sprite(src: Path, key: str, max_res: int) -> Path:
     base_alpha = base_bg = None
     base = _outfit_base(key)
     if base is not None:
-        base_rgb = np.asarray(Image.open(base).convert("RGB")).astype(np.float32)
-        if base_rgb.shape == rgb.shape:
+        base_src = Image.open(base)
+        base_rgb = np.asarray(base_src.convert("RGB")).astype(np.float32)
+        base_given = _real_alpha(base_src)
+        if base_rgb.shape == rgb.shape and base_given is not None:
+            base_alpha = base_given  # a transparent base (Qwen): its own alpha gives the trim box
+        elif base_rgb.shape == rgb.shape:
             _, base_alpha, _, base_bg = _cutout(base_rgb, base.stem)
         else:
             print(f"  WARNING: {base.stem} is a different size, trimmed on its own (re-measure the hand anchors)")

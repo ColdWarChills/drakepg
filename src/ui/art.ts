@@ -44,12 +44,17 @@ export function pickArt(scene: Phaser.Scene, ref: string | string[] | undefined)
   return keys.find((k) => hasArt(scene, k));
 }
 
-/** Full-screen background, scaled to cover the screen. Returns false if the art is missing. */
-export function addBackground(scene: Phaser.Scene, ref: string | string[] | undefined): boolean {
+/**
+ * Full-screen background, scaled to cover the screen. Returns false if the art is missing.
+ * `raise` lifts it by that many pixels (battle: the ground the art keeps in its bottom 30% shows above the bottom
+ * panel); the strip it leaves at the bottom is filled dark.
+ */
+export function addBackground(scene: Phaser.Scene, ref: string | string[] | undefined, raise = 0): boolean {
   const key = pickArt(scene, ref);
   if (!key) return false;
   const { width, height } = DESIGN;
-  const img = scene.add.image(width / 2, height / 2, key);
+  if (raise > 0) scene.add.rectangle(0, height - raise, width, raise, 0x14101c).setOrigin(0);
+  const img = scene.add.image(width / 2, height / 2 - raise, key);
   img.setScale(Math.max(width / img.width, height / img.height));
   return true;
 }
