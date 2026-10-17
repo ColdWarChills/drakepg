@@ -6,6 +6,7 @@ The hero is the base hero (poster_color) passed as a reference, so only the them
   python scripts/theme_tests.py                      # every theme in THEMES, 1 seed
   python scripts/theme_tests.py tarot paper --seeds 2
   python scripts/theme_tests.py sheet tarot:1201 paper   # sheet from picked seeds (default: the first)
+  python scripts/theme_tests.py paper --bare         # the same scene with no UI (the UI is drawn by hand)
 Writes art/tests/themes/_raw/<theme>_s<seed>.png (+ .txt); the sheet goes to art/tests/themes.png and
 art/tests/sheets/themes.webp.
 """
@@ -65,11 +66,21 @@ def prompt(ui: str, world: str) -> str:
     )
 
 
+def bare_prompt(world: str) -> str:
+    """The same scene with no interface: the UI is drawn by hand on top (round 12's AI UI read as AI)."""
+    scene = prompt("", world).split(" The game's user interface")[0]
+    return (scene.replace("A complete screenshot of a 2D turn-based fantasy RPG battle screen, 16:9.",
+                          "A wide 16:9 battle scene for a 2D turn-based fantasy RPG.")
+            + " The painted scene fills the whole picture edge to edge: open sky across the top, open ground across "
+              "the bottom, the characters in the middle. No user interface, no panels, no buttons, no text, no white "
+              "borders.")
+
+
 def seed_for(theme: str, i: int) -> int:
     return (zlib.crc32(theme.encode()) & 0x7FFFFFFF) + i
 
 
-def generate(themes: list[str], seeds: int) -> None:
+def generate(themes: list[str], seeds: int, bare: bool = False) -> None:
     comfy = Comfy("http://127.0.0.1:8188")
     comfy.check()
     hero = comfy.upload("drakepg_theme_hero.png", on_white(HERO))
@@ -79,11 +90,12 @@ def generate(themes: list[str], seeds: int) -> None:
         _, ui, world = THEMES[theme]
         for i in range(seeds):
             seed = seed_for(theme, i)
-            out = raw_dir / f"{theme}_s{seed}.png"
+            out = raw_dir / f"{theme}{'_bare' if bare else ''}_s{seed}.png"
             if out.exists():
                 continue
-            print(f"{theme} seed {seed}", flush=True)
-            out.write_bytes(comfy.generate(prompt(ui, world), [hero], SIZE, seed, 30))
+            print(f"{out.stem}", flush=True)
+            text = bare_prompt(world) if bare else prompt(ui, world)
+            out.write_bytes(comfy.generate(text, [hero], SIZE, seed, 30))
             write_notes(out.with_suffix(".txt"), comfy.last_graph)
 
 
@@ -124,7 +136,10 @@ def main() -> None:
         i = args.index("--seeds")
         seeds = int(args[i + 1])
         del args[i:i + 2]
-    generate(args or list(THEMES), seeds)
+    bare = "--bare" in args
+    if bare:
+        args.remove("--bare")
+    generate(args or list(THEMES), seeds, bare)
 
 
 if __name__ == "__main__":

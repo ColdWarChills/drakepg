@@ -188,3 +188,4 @@ From the designer: redo all graphics in one stylized look, style first. Docs and
 - **Round 12, themes:** `scripts/theme_tests.py` makes one battle screen per theme (UI, background, base hero as a reference, a boar) at 1664x928; sheet `art/tests/themes.png`.
 - **Unity port:** a step-by-step proposal in PLANS.md ("Decisions to keep", Engine).
 - **Round 12 rejected ("all look heavily AI"); round 13:** a strict flat-vector look asked for at generation time (`scripts/flat_tests.py`) and a hand-made UI (`art/ui/battle_mock.html`: CSS, Fredoka, hand-drawn SVG skill icons; rendered with headless Edge). Screenshot `art/tests/sheets/flat_mock.webp`. A post-filter (fixed palette + merged shapes) on painted images was tried first and dropped.
+- **Round 14 (after "characters were fine, the UI was AI"):** the round-12 scene re-rendered with no UI (`theme_tests.py --bare`) and the hand-made UI on top in warm colours; screenshot `art/tests/sheets/battle_mock_r14.webp`.

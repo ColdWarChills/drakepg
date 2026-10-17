@@ -6,7 +6,7 @@ Counts are from the game data on 2026-10-17. "Missing" = the game draws a placeh
 
 ## Step 1: style (the designer picks)
 
-1. **Whole-screen mock:** one battle screen (UI, background, base hero, a monster) so the look of everything is judged at once. AI-generated whole screens all read as AI (round 12, rejected). Now: hand-made UI over flat-vector art (round 13, `art/ui/battle_mock.html`, `art/tests/sheets/flat_mock.webp`).
+1. **Whole-screen mock:** one battle screen (UI, background, base hero, a monster) so the look of everything is judged at once. In round 12 the characters were fine but the AI-generated UI read as AI. Now: the round-12 characters and background with a hand-made UI on top (round 14, `art/ui/battle_mock.html`).
 2. **Check it holds:** the same look on a room screen and the inventory, plus one proportion rule for heroes and monsters.
 3. **Lock it:** train our own LoRA on the best ~20 images (characters, monsters, backgrounds, item icons), so every later image matches and is sell-safe.
 
@@ -39,7 +39,7 @@ Code: `Button.ts`, `Bar.ts`, `panels.ts`, `Modal.ts` draw these when the art exi
 | Guild rank badges F-S | 7 | drawn |
 | Items | 133 | 118 have art (redo in the new style), 15 missing: 4 roll stones, Recall Scroll, 10 hunt items |
 
-Skills, statuses, elements, stats, map marks and rank badges are hand-made flat SVG (like the 5 in the mock); only the item icons are generated, in the flat-vector style.
+Skills, statuses, elements, stats, map marks and rank badges are hand-made flat SVG (like the 5 in the mock); only the item icons are generated, in the character look.
 Code: skill buttons and status chips need to show `icon_skill_<id>` / `icon_status_<id>`.
 
 ## Step 4: backgrounds (~35, at 2560x1440)

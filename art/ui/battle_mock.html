@@ -2,23 +2,23 @@
 <html>
 <head>
 <meta charset="utf-8">
-<!-- Round 13 battle mock: the UI is hand-made (CSS + hand-drawn SVG icons), only the art images are generated. -->
+<!-- Battle mock (round 14): the UI is hand-made (CSS + hand-drawn SVG icons); only the scene image is generated. -->
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #1b1a24; --ink2: #2e2b3a; --cream: #f3e6c8; --sand: #d9c39a;
+    --ink: #2a1f1a; --ink2: #3b2e26; --line: #5a4636; --cream: #f3e6c8; --sand: #d9c39a;
     --red: #e8483a; --red-d: #a82a2a; --blue: #3f6fb8; --blue-l: #8ab8e8;
     --amber: #f5c542; --amber-d: #c8962a; --teal: #2a8a88; --teal-l: #5cc0b0;
   }
   * { box-sizing: border-box; margin: 0; }
   body { width: 1664px; height: 928px; overflow: hidden; font-family: 'Fredoka', 'Bahnschrift', sans-serif; background: #22402a; }
-  .stage { position: relative; width: 1664px; height: 928px; background: url(../tests/flat/pick_forest.png) center / cover; }
+  .stage { position: relative; width: 1664px; height: 928px; background: url(../tests/themes/pick_bare.png) center / cover; }
   .hero { position: absolute; left: 250px; bottom: 150px; height: 520px; }
   .boar { position: absolute; right: 200px; bottom: 150px; height: 400px; }
   .shadow { position: absolute; bottom: 136px; height: 30px; border-radius: 50%; background: rgba(27, 26, 36, .28); }
 
   .card { position: absolute; top: 24px; display: flex; align-items: center; gap: 16px; padding: 14px 22px 14px 14px;
-    background: var(--ink); border: 4px solid var(--ink); border-radius: 22px; box-shadow: 0 6px 0 rgba(27,26,36,.35); }
+    background: var(--ink); border: 4px solid var(--ink); border-radius: 22px; box-shadow: 0 6px 0 rgba(42,31,26,.4); }
   .card.hero-card { left: 24px; }
   .card.enemy-card { right: 24px; flex-direction: row-reverse; padding: 14px 14px 14px 22px; }
   .portrait { width: 92px; height: 92px; border-radius: 50%; border: 4px solid var(--cream); background-color: var(--teal);
@@ -26,7 +26,7 @@
   .info { width: 330px; }
   .name { display: flex; justify-content: space-between; align-items: baseline; color: var(--cream); font-size: 30px; font-weight: 600; line-height: 1; margin-bottom: 10px; }
   .name small { font-size: 20px; color: var(--sand); font-weight: 500; }
-  .bar { position: relative; height: 26px; border-radius: 13px; background: var(--ink2); border: 3px solid #4a4658; overflow: hidden; margin-top: 7px; }
+  .bar { position: relative; height: 26px; border-radius: 13px; background: var(--ink2); border: 3px solid var(--line); overflow: hidden; margin-top: 7px; }
   .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 10px; }
   .bar i::after { content: ''; position: absolute; left: 6px; right: 6px; top: 3px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.35); }
   .bar.hp i { background: var(--red); }
@@ -38,9 +38,9 @@
   .intent svg { width: 22px; height: 22px; }
 
   .dock { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; gap: 22px; align-items: center;
-    padding: 14px 16px; background: var(--ink); border-radius: 26px; box-shadow: 0 6px 0 rgba(27,26,36,.35); }
+    padding: 14px 16px; background: var(--ink); border-radius: 26px; box-shadow: 0 6px 0 rgba(42,31,26,.4); }
   .skills { display: flex; gap: 12px; }
-  .skill { position: relative; width: 92px; height: 92px; border-radius: 18px; background: var(--ink2); border: 4px solid #4a4658;
+  .skill { position: relative; width: 92px; height: 92px; border-radius: 18px; background: var(--ink2); border: 4px solid var(--line);
     display: grid; place-items: center; }
   .skill svg { width: 78px; height: 78px; }
   .skill .key { position: absolute; right: -6px; bottom: -6px; width: 30px; height: 30px; border-radius: 50%; background: var(--cream);
@@ -56,18 +56,14 @@
     display: grid; place-items: center; box-shadow: inset 0 -5px 0 rgba(27,26,36,.25); }
   .btn.main { height: 50px; font-size: 26px; background: var(--amber); color: var(--ink); }
   .btn.alt { background: var(--teal); color: var(--cream); flex: 1; }
-  .btn.dim { background: #4a4658; color: var(--sand); flex: 1; }
+  .btn.dim { background: var(--line); color: var(--sand); flex: 1; }
 </style>
 </head>
 <body>
 <div class="stage">
-  <div class="shadow" style="left: 270px; width: 230px"></div>
-  <div class="shadow" style="right: 230px; width: 440px"></div>
-  <img class="hero" src="../tests/flat/pick_hero.png">
-  <img class="boar" src="../tests/flat/pick_boar.png">
 
   <div class="card hero-card">
-    <div class="portrait" style="background-image: url(../tests/flat/portrait_hero.png); background-size: cover; background-position: center top"></div>
+    <div class="portrait" style="background-image: url(../tests/themes/portrait_hero.png); background-size: cover; background-position: center top"></div>
     <div class="info">
       <div class="name">Wanderer <small>Lv 3</small></div>
       <div class="bar hp"><i style="width: 80%"></i><b><span>HP</span><span>48 / 60</span></b></div>
@@ -76,7 +72,7 @@
   </div>
 
   <div class="card enemy-card">
-    <div class="portrait" style="background-color: #d9c39a; background-image: url(../tests/flat/portrait_boar.png); background-size: cover"></div>
+    <div class="portrait" style="background-color: #d9c39a; background-image: url(../tests/themes/portrait_boar.png); background-size: cover"></div>
     <div class="info">
       <div class="name">Thornback Boar <small>Lv 3</small></div>
       <div class="bar hp"><i style="width: 62%"></i><b><span>HP</span><span>31 / 50</span></b></div>
