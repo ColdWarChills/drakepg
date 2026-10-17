@@ -281,12 +281,85 @@ namespace Drakepg
         {
             var tex = new Texture2D(W, H, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = name };
             // Rows were built top-down; textures go bottom-up.
-            var flipped = new Color[px.Length];
-            for (int y = 0; y < H; y++) Array.Copy(px, y * W, flipped, (H - 1 - y) * W, W);
-            tex.SetPixels(flipped);
+            var flipped = new Color32[px.Length];
+            for (int y = 0; y < H; y++)
+            {
+                var src = y * W;
+                var dst = (H - 1 - y) * W;
+                for (int x = 0; x < W; x++)
+                {
+                    var c = px[src + x];
+                    flipped[dst + x] = new Color32((byte)(c.r * 255f + 0.5f), (byte)(c.g * 255f + 0.5f), (byte)(c.b * 255f + 0.5f), (byte)(c.a * 255f + 0.5f));
+                }
+            }
+            tex.SetPixels32(flipped);
             tex.Apply(false, true);
             return tex;
         }
+
+        /// <summary>
+        /// Smooth noise sampled on a coarse grid (every `step` design px) and interpolated. Stains and leather patches are
+        /// big and soft, so this looks the same as sampling every texel and is many times faster.
+        /// </summary>
+        sealed class Field
+        {
+            readonly float[] v;
+            readonly int gw, gh;
+            readonly float step;
+
+            public Field(float w, float h, float step, Func<float, float, float> f)
+            {
+                this.step = step;
+                gw = Mathf.CeilToInt(w / step) + 2;
+                gh = Mathf.CeilToInt(h / step) + 2;
+                v = new float[gw * gh];
+                for (int y = 0; y < gh; y++)
+                    for (int x = 0; x < gw; x++)
+                        v[y * gw + x] = f(x * step, y * step);
+            }
+
+            public float At(float x, float y)
+            {
+                var fx = Mathf.Clamp(x / step, 0, gw - 1.001f);
+                var fy = Mathf.Clamp(y / step, 0, gh - 1.001f);
+                int x0 = (int)fx, y0 = (int)fy;
+                float tx = fx - x0, ty = fy - y0;
+                var i = y0 * gw + x0;
+                var a = v[i] + (v[i + 1] - v[i]) * tx;
+                var b = v[i + gw] + (v[i + gw + 1] - v[i + gw]) * tx;
+                return a + (b - a) * ty;
+            }
+        }
+
+        const int TileSize = 256;
+        static readonly Dictionary<string, float[]> tiles = new Dictionary<string, float[]>();
+
+        /// <summary>
+        /// Fine grain (paper tooth, leather pores) baked once per density on a 256-texel tile and repeated: at a pixel or
+        /// two per speck nobody sees the repeat.
+        /// </summary>
+        static float[] Tile(string name, int k, Func<float, float, float> f)
+        {
+            var key = name + k;
+            if (tiles.TryGetValue(key, out var t)) return t;
+            t = new float[TileSize * TileSize];
+            for (int y = 0; y < TileSize; y++)
+                for (int x = 0; x < TileSize; x++)
+                    t[y * TileSize + x] = f(x / (float)k, y / (float)k);
+            tiles[key] = t;
+            return t;
+        }
+
+        static float TileAt(float[] t, int x, int y) => t[(y & (TileSize - 1)) * TileSize + (x & (TileSize - 1))];
+
+        /// <summary>The mock's paper grain: 0.5 n - 0.2 of turbulence at 0.9 per px.</summary>
+        static float[] PaperGrain(int k) => Tile("paper", k, (x, y) => Mathf.Clamp01(0.5f * Contrast(Fractal(x * 0.9f, y * 0.9f, 3, 2)) - 0.2f));
+
+        /// <summary>Watercolor granulation: 0.86-1 of the wash, at 0.55 per px.</summary>
+        static float[] Granulation(int k) => Tile("gran", k, (x, y) => 0.86f + 0.14f * Fractal(x * 0.55f, y * 0.55f, 9, 2));
+
+        /// <summary>Texels per design px for a baked picture this big: big menu sheets bake at 1 (soft parchment hides it).</summary>
+        static int DensityFor(float w, float h) => w * h > 250000 ? 1 : Density;
 
         /// <summary>Straight-alpha "over".</summary>
         static Color Over(Color dst, Color src, float a)
@@ -296,6 +369,13 @@ namespace Drakepg
             if (outA <= 0) return new Color(0, 0, 0, 0);
             var k = dst.a * (1 - a);
             return new Color((src.r * a + dst.r * k) / outA, (src.g * a + dst.g * k) / outA, (src.b * a + dst.b * k) / outA, outA);
+        }
+
+        /// <summary>0 below a, 1 above b, smooth between.</summary>
+        static float Smooth(float a, float b, float v)
+        {
+            var t = Mathf.Clamp01((v - a) / (b - a));
+            return t * t * (3 - 2 * t);
         }
 
         /// <summary>Stroke coverage of a line `width` px wide at distance `d` (design px), anti-aliased at `k` texels per px.</summary>
@@ -363,9 +443,11 @@ namespace Drakepg
         /// </summary>
         static void RuleBorder(Color[] px, int W, int H, int k, Vector2 origin, float x, float y, float w, float h, float r, float width, int seed)
         {
-            var reach = width + 3;
+            // Half the line, the wobble (1.2 px) and a texel of soft edge.
+            var reach = width / 2 + 2.5f;
             int y0 = Mathf.Max(0, Mathf.FloorToInt((origin.y + y - reach) * k)), y1 = Mathf.Min(H, Mathf.CeilToInt((origin.y + y + h + reach) * k));
             int x0 = Mathf.Max(0, Mathf.FloorToInt((origin.x + x - reach) * k)), x1 = Mathf.Min(W, Mathf.CeilToInt((origin.x + x + w + reach) * k));
+            var corners = new[] { new Vector2(x, y), new Vector2(x + w, y), new Vector2(x, y + h), new Vector2(x + w, y + h) };
             for (int py = y0; py < y1; py++)
             {
                 for (int pxi = x0; pxi < x1; pxi++)
@@ -376,8 +458,7 @@ namespace Drakepg
                     if (p.y > y + r + reach && p.y < y + h - r - reach && p.x > x + reach && p.x < x + w - reach) continue;
                     var q = p + Wobble(p, seed);
                     var a = Stroke(ConcaveDist(q, x, y, w, h, r), width, k);
-                    foreach (var c in new[] { new Vector2(x, y), new Vector2(x + w, y), new Vector2(x, y + h), new Vector2(x + w, y + h) })
-                        a = Mathf.Max(a, Mathf.Clamp01((1.8f - Vector2.Distance(q, c)) * k + 0.5f));
+                    foreach (var c in corners) a = Mathf.Max(a, Mathf.Clamp01((1.8f - Vector2.Distance(q, c)) * k + 0.5f));
                     if (a <= 0) continue;
                     var i = py * W + pxi;
                     px[i] = Over(px[i], Ink, a * px[i].a);
@@ -397,7 +478,7 @@ namespace Drakepg
         public static Texture2D SheetTexture(float w, float h, int seed, float burn = 0.4f, bool shadow = true, float rule = 8, float ruleR = 9,
             float ruleWidth = 1.7f, Color? wash = null, float washAlpha = 0.95f)
         {
-            var k = Density;
+            var k = DensityFor(w, h);
             var key = $"sheet|{w}|{h}|{seed}|{burn}|{shadow}|{rule}|{ruleR}|{ruleWidth}|{(wash.HasValue ? Hex(wash.Value) : "-")}|{washAlpha}|{k}";
             return Cached(key, () =>
             {
@@ -405,14 +486,6 @@ namespace Drakepg
                 var origin = new Vector2(Pad, Pad);
                 var poly = Deckled(0, 0, w, h, seed);
                 var cov = Fill(poly, W, H, k, origin);
-                float[] shadowCov = null;
-                if (shadow)
-                {
-                    shadowCov = Fill(poly, W, H, k, origin + new Vector2(2, 6));
-                    Blur(shadowCov, W, H, Mathf.Max(1, Mathf.RoundToInt(3 * k)));
-                }
-                var burnCov = burn > 0 ? Blurred(cov, W, H, Mathf.RoundToInt(7 * k)) : null;
-                var edgeCov = Blurred(cov, W, H, Mathf.Max(1, k / 2));
                 float[] washCov = null, washInner = null;
                 if (wash.HasValue)
                 {
@@ -420,48 +493,95 @@ namespace Drakepg
                     washInner = Fill(WavyRect(5.2f, 5.2f, w - 10.4f, h - 10.4f, seed + 40, 4, 1.2f, 50), W, H, k, origin);
                 }
                 var washEdge = wash.HasValue ? Color.Lerp(wash.Value, Ink, 0.25f) : default;
-                // Every sheet gets its own patch of the stain noise.
+                // Every sheet gets its own patch of the stain noise. Value noise spreads differently from the mock's
+                // turbulence (1.6 n - 0.75 at 0.011 per px): tuned by eye against it.
                 var off = seed * 137 % 900;
+                // Big menu sheets show many stains at once, and on a button one stain covers half of it: fainter there,
+                // or they read as spills.
+                var strength = h < 80 ? 0.45f : Mathf.Lerp(0.8f, 0.3f, Mathf.Clamp01((w * h - 60000) / 300000));
+                var stains = new Field(w + Pad * 2, h + Pad * 2, 4,
+                    (fx, fy) => Mathf.Clamp01(1.6f * Contrast(Fractal((fx - Pad + off) * 0.011f, (fy - Pad + off / 2) * 0.011f, 2, 4), 1.5f) - 0.8f) * strength);
+                var grains = PaperGrain(k);
+                var gran = Granulation(k);
+                float pr = Parch.r, pg = Parch.g, pb = Parch.b, tr = StainColor.r, tg = StainColor.g, tb = StainColor.b;
+                float gr = GrainColor.r, gg = GrainColor.g, gb = GrainColor.b, br = BurnColor.r, bg = BurnColor.g, bb = BurnColor.b;
+                float er = EdgeColor.r, eg = EdgeColor.g, eb = EdgeColor.b, sr = ShadowColor.r, sg = ShadowColor.g, sb = ShadowColor.b;
+                var wc = wash ?? Parch;
+                float wr = wc.r, wg = wc.g, wb = wc.b, wer = washEdge.r, weg = washEdge.g, web = washEdge.b;
                 var px = new Color[W * H];
                 for (int y = 0; y < H; y++)
                 {
+                    var dy = y / (float)k - Pad;
                     for (int x = 0; x < W; x++)
                     {
                         var i = y * W + x;
-                        var c = new Color(0, 0, 0, 0);
-                        if (shadowCov != null) c = Over(c, ShadowColor, shadowCov[i] * 0.5f);
+                        var dx = x / (float)k - Pad;
                         var fc = cov[i];
-                        if (fc > 0)
+                        // The drop shadow (the sheet 2 px right, 6 down, blurred ~4 px) and the scorched rim (the mock's
+                        // blurred 20 px edge stroke) only depend on how far a texel is from the edge: worked out from the
+                        // distance to the sheet's box instead of blurring, which is many times faster and looks the same.
+                        var sa = 0f;
+                        if (shadow && fc < 1) sa = 0.5f * (1 - Smooth(-4, 5, RoundBoxDist(new Vector2(dx - 2, dy - 6), 0, 0, w, h, 3)));
+                        if (fc <= 0)
                         {
-                            float dx = x / (float)k - Pad, dy = y / (float)k - Pad;
-                            // The mock's filters: stains 1.6 n - 0.75 (turbulence 0.011), grain 0.5 n - 0.2 (turbulence 0.9).
-                            // Value noise spreads differently from turbulence: tuned by eye against the mock.
-                            var stain = Mathf.Clamp01(1.6f * Contrast(Fractal((dx + off) * 0.011f, (dy + off / 2) * 0.011f, 2, 4), 1.5f) - 0.8f) * 0.8f;
-                            var grain = Mathf.Clamp01(0.5f * Contrast(Fractal(dx * 0.9f, dy * 0.9f, seed + 3, 2)) - 0.2f);
-                            var f = Color.Lerp(Parch, StainColor, stain);
-                            f = Color.Lerp(f, GrainColor, grain);
-                            if (burnCov != null)
-                            {
-                                var b = Mathf.Clamp01((1 - burnCov[i]) * 1.7f);
-                                f = Color.Lerp(f, BurnColor, b * b * burn);
-                            }
-                            var e = edgeCov[i];
-                            f = Color.Lerp(f, EdgeColor, Mathf.Clamp01(4 * e * (1 - e)) * 0.55f);
-                            if (washCov != null && washCov[i] > 0)
-                            {
-                                // Granulation (the wash pools in the paper's tooth) and a darker rim where it dried.
-                                var gran = 0.86f + 0.14f * Fractal(dx * 0.55f, dy * 0.55f, seed + 9, 2);
-                                f = Color.Lerp(f, wash.Value, washCov[i] * gran * washAlpha);
-                                f = Color.Lerp(f, washEdge, Mathf.Clamp01(washCov[i] - washInner[i]) * washAlpha * 0.8f);
-                            }
-                            c = Over(c, f, fc);
+                            px[i] = new Color(sr, sg, sb, sa);
+                            continue;
                         }
-                        px[i] = c;
+                        // Plain float math: Color.Lerp costs ~40 ns a call under Mono, and this runs for every texel.
+                        var t = stains.At(x / (float)k, y / (float)k);
+                        float r = pr + (tr - pr) * t, g = pg + (tg - pg) * t, b = pb + (tb - pb) * t;
+                        t = TileAt(grains, x + seed * 31, y + seed * 17);
+                        r += (gr - r) * t;
+                        g += (gg - g) * t;
+                        b += (gb - b) * t;
+                        var edge = Mathf.Min(Mathf.Min(dx, w - dx), Mathf.Min(dy, h - dy));
+                        if (burn > 0 && edge < 13)
+                        {
+                            t = 1 - Smooth(-1, 13, edge);
+                            t *= t * burn;
+                            r += (br - r) * t;
+                            g += (bg - g) * t;
+                            b += (bb - b) * t;
+                        }
+                        // A thin darker line right at the torn edge.
+                        t = 4 * fc * (1 - fc) * 0.55f;
+                        r += (er - r) * t;
+                        g += (eg - g) * t;
+                        b += (eb - b) * t;
+                        if (washCov != null && washCov[i] > 0)
+                        {
+                            // Granulation (the wash pools in the paper's tooth) and a darker rim where it dried.
+                            t = washCov[i] * TileAt(gran, x + seed * 13, y) * washAlpha;
+                            r += (wr - r) * t;
+                            g += (wg - g) * t;
+                            b += (wb - b) * t;
+                            t = Mathf.Clamp01(washCov[i] - washInner[i]) * washAlpha * 0.8f;
+                            r += (wer - r) * t;
+                            g += (weg - g) * t;
+                            b += (web - b) * t;
+                        }
+                        if (fc >= 1 || sa <= 0)
+                        {
+                            px[i] = new Color(r, g, b, fc);
+                            continue;
+                        }
+                        // The paper's soft edge over its shadow (straight-alpha "over").
+                        var outA = fc + sa * (1 - fc);
+                        var kk = sa * (1 - fc);
+                        px[i] = new Color((r * fc + sr * kk) / outA, (g * fc + sg * kk) / outA, (b * fc + sb * kk) / outA, outA);
                     }
                 }
                 if (rule > 0) RuleBorder(px, W, H, k, origin, rule, rule, w - rule * 2, h - rule * 2, ruleR, ruleWidth, seed + 77);
                 return ToTexture(px, W, H, "parchment sheet");
             });
+        }
+
+        /// <summary>A parchment sheet as a world sprite, centered on its transform (cards the world's figures stand on).</summary>
+        public static Sprite SheetSprite(float w, float h, int seed, Color? wash = null, float washAlpha = 0.95f)
+        {
+            var tex = SheetTexture(w, h, seed, 0.4f, true, 8, 9, 1.7f, wash, washAlpha);
+            var ppu = Design.PixelsPerUnit * tex.width / (w + Pad * 2);
+            return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), ppu, 0, SpriteMeshType.FullRect);
         }
 
         /// <summary>A sheet on screen. `Root` is the whole picture (shadow room included); put content in `Content`.</summary>
@@ -488,6 +608,25 @@ namespace Drakepg
             return new Sheet { Root = root, Content = content, Width = w, Height = h };
         }
 
+        /// <summary>
+        /// Parchment behind an element that sizes itself (a quest tracker, a prompt): a small sheet with a ruled border,
+        /// 9-sliced to fit, its shadow spilling out by `Pad`. The element's Palette colors are inked (Inking).
+        /// </summary>
+        public static VisualElement CardBehind(VisualElement e, int seed)
+        {
+            var k = Density;
+            var bg = new VisualElement { pickingMode = PickingMode.Ignore, name = "card" };
+            bg.style.position = Position.Absolute;
+            bg.style.left = bg.style.top = bg.style.right = bg.style.bottom = -Pad;
+            bg.style.backgroundImage = new StyleBackground(SheetTexture(160, 80, seed, 0.3f, true, 5, 6, 1.2f));
+            bg.style.unitySliceLeft = bg.style.unitySliceRight = bg.style.unitySliceTop = bg.style.unitySliceBottom = Mathf.RoundToInt((Pad + 16) * k);
+            bg.style.unitySliceScale = 1f / k;
+            e.Insert(0, bg);
+            e.AddToClassList(Inking.Class);
+            e.style.backgroundColor = Color.clear;
+            return bg;
+        }
+
         // --- Washes, chips, seals ---
 
         /// <summary>A watercolor wash, w x h: wavy edges, granulation, a darker dried rim (bar fills).</summary>
@@ -500,14 +639,14 @@ namespace Drakepg
                 var cov = Fill(WavyRect(0, 0, w, h, seed, 3, 0.8f, 40), W, H, k, Vector2.zero);
                 var inner = Fill(WavyRect(1.2f, 1.2f, w - 2.4f, h - 2.4f, seed, 3, 0.8f, 40), W, H, k, Vector2.zero);
                 var rim = Color.Lerp(color, Ink, 0.25f);
+                var gran = Granulation(k);
                 var px = new Color[W * H];
                 for (int y = 0; y < H; y++)
                 {
                     for (int x = 0; x < W; x++)
                     {
                         var i = y * W + x;
-                        var gran = 0.86f + 0.14f * Fractal(x / (float)k * 0.55f, y / (float)k * 0.55f, seed + 9, 2);
-                        var c = new Color(color.r, color.g, color.b, cov[i] * gran * alpha);
+                        var c = new Color(color.r, color.g, color.b, cov[i] * TileAt(gran, x + seed * 13, y) * alpha);
                         px[i] = Over(c, rim, Mathf.Clamp01(cov[i] - inner[i]) * alpha * 0.8f);
                     }
                 }
@@ -524,6 +663,7 @@ namespace Drakepg
                 const float w = 64, h = 24;
                 int W = Mathf.CeilToInt(w * k), H = Mathf.CeilToInt(h * k);
                 var cov = Fill(WavyRect(0.5f, 0.5f, w - 1, h - 1, seed, 4, 0.7f, 30), W, H, k, Vector2.zero);
+                var granTile = Granulation(k);
                 var px = new Color[W * H];
                 for (int y = 0; y < H; y++)
                 {
@@ -531,7 +671,7 @@ namespace Drakepg
                     {
                         var i = y * W + x;
                         var p = new Vector2((x + 0.5f) / k, (y + 0.5f) / k);
-                        var gran = 0.86f + 0.14f * Fractal(p.x * 0.55f, p.y * 0.55f, seed + 9, 2);
+                        var gran = TileAt(granTile, x + seed * 13, y);
                         // On the scene (status chips) the wash sits on a scrap of parchment; on a sheet it's see-through.
                         var c = solid ? new Color(Parch.r, Parch.g, Parch.b, cov[i]) : new Color(0, 0, 0, 0);
                         c = Over(c, wash, cov[i] * gran * (solid ? 0.38f : 0.32f));
@@ -618,6 +758,8 @@ namespace Drakepg
         {
             const float pad = 3;
             var e = new VisualElement { pickingMode = PickingMode.Ignore, name = "seal" };
+            // Its cream number stays cream on a menu's parchment.
+            e.AddToClassList(Inking.Keep);
             Ui.Place(e, x - pad, y - pad);
             Ui.Size(e, size + pad * 2, size + pad * 2);
             e.style.backgroundImage = new StyleBackground(SealTexture(size, seed));
@@ -641,33 +783,57 @@ namespace Drakepg
                 int W = Mathf.CeilToInt(w * k), H = Mathf.CeilToInt((h + top) * k);
                 var shape = WavyRect(-20, 0, w + 40, h + 40, seed, 2, 1.2f, 300);
                 var cov = Fill(shape, W, H, k, new Vector2(0, top));
-                var sh = Fill(shape, W, H, k, new Vector2(0, top - 5));
-                Blur(sh, W, H, Mathf.Max(1, Mathf.RoundToInt(6 * k)));
-                Color hide = new Color(0.55f, 0.36f, 0.2f), groove = new Color(0, 0, 0), rimTop = Design.Hex(0x7a5232);
+                Color hide = new Color(0.55f, 0.36f, 0.2f), rimTop = Design.Hex(0x7a5232);
+                // The mock's "hide" (big soft patches, stretched sideways) and fine leather grain.
+                var patches = new Field(w, h, 8, (fx, fy) => Mathf.Clamp01(0.9f * Contrast(Fractal(fx * 0.006f, fy * 0.02f, seed, 3), 2.2f) - 0.42f));
+                var pores = Tile("leather", k, (fx, fy) => Mathf.Clamp01(0.9f * Contrast(Fractal(fx * 0.38f, fy * 0.38f, 5, 3)) - 0.33f) * 0.5f);
                 var px = new Color[W * H];
                 for (int y = 0; y < H; y++)
                 {
+                    var dy = y / (float)k - top;
+                    // Its shadow on the scene above: soft, about 8 px.
+                    var sa = 0.55f * Smooth(-9, 1, dy);
+                    // Two tooled lines (a dark groove with gilt pressed in under it) and a light rim on top: they only
+                    // depend on the row, as darken/gild/rim amounts applied after the hide and its pores.
+                    var dark1 = Stroke(dy - 9, 1.6f, k) * 0.5f;
+                    var gilt1 = Stroke(dy - 10.4f, 1f, k) * 0.75f;
+                    var dark2 = Stroke(dy - 15, 1f, k) * 0.5f;
+                    var gilt2 = Stroke(dy - 16.4f, 0.7f, k) * 0.75f;
+                    var rim = Stroke(dy - 1, 1.2f, k);
                     for (int x = 0; x < W; x++)
                     {
                         var i = y * W + x;
-                        var c = Over(new Color(0, 0, 0, 0), Design.Hex(0x0a0602), sh[i] * 0.55f);
-                        if (cov[i] > 0)
+                        var fc = cov[i];
+                        if (fc <= 0)
                         {
-                            float dx = x / (float)k, dy = y / (float)k - top;
-                            // The mock's "hide" (big soft patches, stretched sideways) and fine leather grain.
-                            var patch = Mathf.Clamp01(0.9f * Contrast(Fractal(dx * 0.006f, dy * 0.02f, seed, 3), 2.2f) - 0.42f);
-                            var grain = Mathf.Clamp01(0.9f * Contrast(Fractal(dx * 0.38f, dy * 0.38f, seed + 5, 3)) - 0.33f) * 0.5f;
-                            var f = Color.Lerp(Leather, hide, patch);
-                            f = Color.Lerp(f, groove, grain);
-                            // Two tooled lines (a dark groove with gilt pressed in under it) and a light rim on top.
-                            f = Color.Lerp(f, groove, Stroke(dy - 9, 1.6f, k) * 0.5f);
-                            f = Color.Lerp(f, Gilt, Stroke(dy - 10.4f, 1f, k) * 0.75f);
-                            f = Color.Lerp(f, groove, Stroke(dy - 15, 1f, k) * 0.5f);
-                            f = Color.Lerp(f, Gilt, Stroke(dy - 16.4f, 0.7f, k) * 0.75f);
-                            f = Color.Lerp(f, rimTop, Stroke(dy - 1, 1.2f, k));
-                            c = Over(c, f, cov[i]);
+                            px[i] = new Color(0.04f, 0.024f, 0.008f, sa);
+                            continue;
                         }
-                        px[i] = c;
+                        // Plain float math: Color.Lerp costs ~40 ns a call under Mono, and this runs for every texel.
+                        var t = patches.At(x / (float)k, Mathf.Max(0, dy));
+                        float r = Leather.r + (hide.r - Leather.r) * t, g = Leather.g + (hide.g - Leather.g) * t, b = Leather.b + (hide.b - Leather.b) * t;
+                        t = 1 - TileAt(pores, x, y);
+                        t *= (1 - dark1) * (1 - dark2);
+                        r *= t;
+                        g *= t;
+                        b *= t;
+                        r += (Gilt.r - r) * gilt1;
+                        g += (Gilt.g - g) * gilt1;
+                        b += (Gilt.b - b) * gilt1;
+                        r += (Gilt.r - r) * gilt2;
+                        g += (Gilt.g - g) * gilt2;
+                        b += (Gilt.b - b) * gilt2;
+                        r += (rimTop.r - r) * rim;
+                        g += (rimTop.g - g) * rim;
+                        b += (rimTop.b - b) * rim;
+                        if (fc >= 1)
+                        {
+                            px[i] = new Color(r, g, b, 1);
+                            continue;
+                        }
+                        var outA = fc + sa * (1 - fc);
+                        var kk = sa * (1 - fc);
+                        px[i] = new Color((r * fc + 0.04f * kk) / outA, (g * fc + 0.024f * kk) / outA, (b * fc + 0.008f * kk) / outA, outA);
                     }
                 }
                 return ToTexture(px, W, H, "leather");
@@ -711,6 +877,7 @@ namespace Drakepg
                     }
                 Blur(sh, W, H, Mathf.Max(1, Mathf.RoundToInt(3 * k)));
                 Color outline = Design.Hex(0x5a3a1c), knob = Design.Hex(0x3e2412), cap = Design.Hex(0x6b4422), capRim = Design.Hex(0x4a2c14), ring = Design.Hex(0xd9bd86);
+                float[] ends = { 0, length };
                 var px = new Color[W * H];
                 for (int y = 0; y < H; y++)
                 {
@@ -722,7 +889,7 @@ namespace Drakepg
                         var d = RoundBoxDist(p, 0, 0, w, length, 11);
                         c = Over(c, Grad(Mathf.Clamp01(p.x / w)), Mathf.Clamp01(-d * k + 0.5f));
                         c = Over(c, outline, Stroke(d, 1, k));
-                        foreach (var cy in new[] { 0f, length })
+                        foreach (var cy in ends)
                         {
                             var kd = RoundBoxDist(p, 8, cy < 1 ? cy - 8 : cy, 10, 8, 3);
                             c = Over(c, knob, Mathf.Clamp01(-kd * k + 0.5f));

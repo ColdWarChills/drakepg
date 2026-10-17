@@ -42,20 +42,26 @@ namespace Drakepg
             }
             Anim.Float(0, -360, 40, r => { if (rays != null) rays.transform.localRotation = Quaternion.Euler(0, 0, r); }, Ease.Linear, repeat: -1);
 
-            // The panel is drawn in the world so effects (confetti, sparkles) can fly over it; the text sits on top.
-            var panel = Shapes.Create(World, cx, Design.Height / 2, -30000, "panel");
-            panel.RoundRect(Palette.PanelBorder, -363, -263, 726, 526, 19);
-            panel.RoundRect(Palette.Panel, -360, -260, 720, 520, 16);
-            panel.Alpha = 0;
+            // The panel is a parchment sheet drawn in the world so effects (confetti, sparkles) can fly over it; the
+            // text sits on top and is inked like a menu's (Inking).
+            var go = new GameObject("panel");
+            go.transform.SetParent(World, false);
+            go.transform.position = Design.World(cx, Design.Height / 2, 4);
+            var panel = go.AddComponent<SpriteRenderer>();
+            panel.sprite = Paper.SheetSprite(720, 520, 77);
+            panel.sortingOrder = -30000;
+            panel.color = new Color(1, 1, 1, 0);
             Anim.Float(0, 1, 0.3f, t =>
             {
                 if (panel == null) return;
                 var s = Mathf.LerpUnclamped(0.9f, 1, t);
                 panel.transform.localScale = new Vector3(s, s, 1);
-                panel.Alpha = Mathf.Clamp01(t);
+                panel.color = new Color(1, 1, 1, Mathf.Clamp01(t));
             }, Ease.BackOut);
+            Root.AddToClassList(Inking.Class);
 
-            var title = Ui.Text(Root, cx, 170, won ? "Victory!" : "Defeated", 64, won ? Palette.TextGold : Palette.TextBad, true, 0.5f, 0.5f, stroke: true);
+            var title = Ui.Text(Root, cx, 170, won ? "Victory!" : "Defeated", 64, won ? Palette.TextGold : Palette.TextBad, false, 0.5f, 0.5f, stroke: true);
+            Fonts.Title(title);
             title.style.opacity = 0;
             title.style.scale = new Scale(Vector3.one * 2);
             Anim.Float(0, 1, 0.38f, t =>
@@ -278,6 +284,8 @@ namespace Drakepg
             GameRoot.I.Flash(eclipse ? 0.6f : 0.3f, colors.Color);
             if (eclipse) GameRoot.I.Shake(0.4f, 10);
             var banner = Ui.Text(Root, Design.Width / 2, 62, $"{Items.SigilNames[tier].ToUpperInvariant()}!", eclipse ? 46 : 36, colors.TextColor, true, 0.5f, 0.5f, stroke: true);
+            // Above the parchment, on the dark: keeps its bright Sigil color.
+            banner.AddToClassList(Inking.Keep);
             banner.style.scale = new Scale(Vector3.zero);
             void Scale(float s) => banner.style.scale = new Scale(new Vector3(s, s, 1));
             Anim.Float(0, 1.25f, 0.22f, Scale, Ease.BackOut)

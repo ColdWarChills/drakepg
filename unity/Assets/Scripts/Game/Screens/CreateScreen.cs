@@ -26,6 +26,8 @@ namespace Drakepg
             public ClassDef Cls;
             public VisualElement Box;
             public SpriteRenderer Fill;
+            /// <summary>The card's parchment, plain and washed gold (picked).</summary>
+            public Sprite Plain, Picked;
             public Figure Fig;
             public float X, FigY, Scale = 1;
             public Anim.Handle Tween, Hop;
@@ -45,11 +47,11 @@ namespace Drakepg
         public override void Enter()
         {
             const float w = Design.Width, h = Design.Height;
-            // Night sky gradient: two bands are enough under the stars.
-            Backdrop.Rect(World, w / 2, h / 4, w, h / 2, Design.Hex(0x2a2856), -32001);
-            Backdrop.Rect(World, w / 2, h * 3 / 4, w, h / 2, Design.Hex(0x0a0e23), -32001);
-            Backdrop.Rect(World, w / 2, h / 2, w, 120, Design.Hex(0x1a1b3c), -32000);
-            Fx.StarField(World, 60, h);
+            // The title's valley at dusk, darker so the parchment cards and the hero stand out.
+            var bg = Backdrop.Draw(World, new[] { "bg_title" });
+            if (bg != null) Backdrop.Rect(World, w / 2, h / 2, w, h, new Color(0.05f, 0.03f, 0.02f, 0.5f), -31000);
+            else Backdrop.Rect(World, w / 2, h / 2, w, h, Design.Hex(0x1e1610), -32001);
+            Fx.Embers(World);
             // Clicking anywhere else stops typing, so number keys pick classes again.
             Root.RegisterCallback<PointerDownEvent>(e =>
             {
@@ -79,12 +81,24 @@ namespace Drakepg
             Anim.Float(0, 1, 0.2f, a => stepUi.style.opacity = a, Ease.Linear);
         }
 
-        /// <summary>"1 Hero · 2 Class" under the title, the current step in gold.</summary>
+        /// <summary>Lettering over the scene: cream Alegreya with an ink outline, like a map's.</summary>
+        static readonly Color Lettering = Design.Hex(0xf6e7c1), LetteringDim = Design.Hex(0xb3a283);
+
+        Label Heading(string text, float y)
+        {
+            var l = Ui.Text(stepUi, Design.Width / 2, y, text, 46, Lettering, false, 0.5f, 0.5f, stroke: true);
+            Fonts.Title(l);
+            l.style.unityTextOutlineColor = Paper.Ink;
+            return l;
+        }
+
+        /// <summary>"1 Hero · 2 Class" under the title, the current step brighter.</summary>
         void Steps()
         {
-            string Part(int n, string label) => Ui.Colored($"{n}  {label}", n == step ? Palette.TextGold : Palette.TextDim);
-            Ui.Text(stepUi, Design.Width / 2, 96, Part(1, "Hero") + Ui.Colored("     ·     ", Palette.TextDim) + Part(2, "Class"), 18, bold: true,
-                ax: 0.5f, ay: 0.5f);
+            string Part(int n, string label) => Ui.Colored($"{n}  {label}", n == step ? Lettering : LetteringDim);
+            var l = Ui.Text(stepUi, Design.Width / 2, 98, Part(1, "Hero") + Ui.Colored("     ·     ", LetteringDim) + Part(2, "Class"), 19, bold: true,
+                ax: 0.5f, ay: 0.5f, stroke: true);
+            l.style.unityTextOutlineColor = Paper.Ink;
         }
 
         // --- Step 1: the character ---
@@ -92,14 +106,14 @@ namespace Drakepg
         void BuildCharacterStep()
         {
             const float w = Design.Width;
-            Ui.Text(stepUi, w / 2, 50, "Create Your Hero", 44, Palette.TextGold, true, 0.5f, 0.5f, stroke: true);
+            Heading("Create Your Hero", 50);
 
             // The hero on a small lit stage, without a weapon: the class gives that.
             const float heroX = 420, feetY = 610;
-            Props.Glow(stepWorld, heroX, feetY - 170, Design.Hex(0x8ec5ff, 0.12f), 16, 18, -900);
+            Props.Glow(stepWorld, heroX, feetY - 170, Design.Hex(0xffd9a0, 0.1f), 16, 18, -900);
             var floor = Shapes.Create(stepWorld, heroX, feetY, -800, "stage");
-            floor.Ellipse(new Color(0, 0, 0, 0.35f), 0, 6, 300, 54);
-            floor.Ellipse(Design.Hex(0x2f2a4a, 0.9f), 0, 0, 280, 44);
+            floor.Ellipse(new Color(0, 0, 0, 0.3f), 0, 6, 300, 54);
+            floor.Ellipse(Design.Hex(0x2a1d14, 0.75f), 0, 0, 280, 44);
             var look = Db.Data.Classes[0].Look;
             var hero = Figure.Create(stepWorld, heroX, feetY, look, 1);
             hero.SetScale(1.55f);
@@ -111,16 +125,17 @@ namespace Drakepg
 
             // Right side: the name.
             const float panelX = 700, panelW = 480;
-            Ui.Panel(stepUi, panelX, 220, panelW, 220, 0.9f, false);
-            Ui.Text(stepUi, panelX + 40, 252, "Name", 24, Palette.TextGold, true);
-            nameInput = new NameBox(stepUi, panelX + 40, 296, 270, 50, "Hero", MaxName) { Value = heroName };
-            new UiButton(stepUi, panelX + 40 + 270 + 75, 321, "Random", () =>
+            var panel = Ui.Panel(stepUi, panelX, 220, panelW, 220, 0.9f, false);
+            var label = Ui.Text(panel, 40, 30, "Name", 26, Palette.TextGold);
+            Fonts.Title(label);
+            nameInput = new NameBox(panel, 40, 76, 270, 50, "Hero", MaxName) { Value = heroName };
+            new UiButton(panel, 40 + 270 + 75, 101, "Random", () =>
             {
                 nameInput.Value = Names[Random.Range(0, Names.Length)];
                 Sfx.Play("open");
             }, 120, 50, 18);
-            Ui.Text(stepUi, panelX + 40, 370, "Click the box to type. Your class comes next: it decides your weapon, skills and starting gear.",
-                16, Palette.TextDim, wrap: panelW - 80);
+            Ui.Text(panel, 40, 150, "Click the box to type. Your class comes next: it decides your weapon, skills and starting gear.",
+                17, Palette.TextDim, wrap: panelW - 80);
 
             new UiButton(stepUi, 80, 40, "Back", () => GameRoot.I.Go(new TitleScreen()), 120, 44, 18);
             new UiButton(stepUi, w / 2 + 300, 668, "Next: Class", () => ShowStep(2), 280, 60, 24);
@@ -133,9 +148,9 @@ namespace Drakepg
         {
             const float w = Design.Width;
             var title = string.IsNullOrWhiteSpace(heroName) ? "Choose Your Class" : $"Choose {heroName.Trim()}'s Class";
-            Ui.Text(stepUi, w / 2, 50, title, 44, Palette.TextGold, true, 0.5f, 0.5f, stroke: true);
+            Heading(title, 50);
             var classes = Db.Data.Classes;
-            for (int i = 0; i < classes.Count; i++) BuildCard(classes[i], w / 2 + (i - 1) * (CardW + 30));
+            for (int i = 0; i < classes.Count; i++) BuildCard(classes[i], w / 2 + (i - 1) * (CardW + 30), i);
             Select(selected, false);
 
             new UiButton(stepUi, w / 2, 668, "Begin Adventure", Begin, 300, 60, 24);
@@ -143,11 +158,19 @@ namespace Drakepg
             new UiButton(stepUi, 80, 40, "Back", () => ShowStep(1), 120, 44, 18);
         }
 
-        void BuildCard(ClassDef cls, float x)
+        void BuildCard(ClassDef cls, float x, int index)
         {
             var card = new Card { Cls = cls, X = x };
             var cy = CardY + CardH / 2;
-            card.Fill = Backdrop.Rect(stepWorld, x, cy, CardW, CardH, new Color(Palette.Panel.r, Palette.Panel.g, Palette.Panel.b, 0.92f), -1000);
+            // A parchment card in the world, so the hero (a world figure) stands on it; picked, it's washed gold.
+            card.Plain = Paper.SheetSprite(CardW, CardH, 61 + index);
+            card.Picked = Paper.SheetSprite(CardW, CardH, 61 + index, Design.Hex(0xe0b040), 0.28f);
+            var go = new GameObject("card " + cls.Id);
+            go.transform.SetParent(stepWorld, false);
+            card.Fill = go.AddComponent<SpriteRenderer>();
+            card.Fill.sprite = card.Plain;
+            card.Fill.sortingOrder = -1000;
+            go.transform.position = Design.World(x, cy, 4);
             card.FigY = CardY + 215;
             card.Fig = Figure.Create(stepWorld, x, card.FigY, cls.Look, 1, Db.Item(cls.Weapon));
             card.Fig.SetScale(0.72f);
@@ -156,14 +179,13 @@ namespace Drakepg
             var box = new VisualElement { pickingMode = PickingMode.Position };
             Ui.Place(box, x - CardW / 2, CardY);
             Ui.Size(box, CardW, CardH);
-            Ui.Round(box, 14);
-            Ui.Border(box, 3, Palette.PanelBorder);
+            box.AddToClassList(Inking.Class);
             box.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             box.RegisterCallback<PointerUpEvent>(_ => Select(cls.Id));
             stepUi.Add(box);
             card.Box = box;
             const float mid = CardW / 2, top = CardH / 2;
-            Ui.Text(box, mid, top + 30, cls.Name, 30, Palette.TextGold, true, 0.5f, 0.5f);
+            Fonts.Title(Ui.Text(box, mid, top + 30, cls.Name, 32, Palette.TextGold, false, 0.5f, 0.5f));
             Ui.Text(box, mid, top + 66, cls.Tagline, 17, Palette.Text, ax: 0.5f, ay: 0.5f, wrap: CardW - 40, align: TextAnchor.MiddleCenter);
             Ui.Text(box, mid, top + 106, string.Join("   ", Stat.Keys.Select(k => $"{Player.StatLabels[k]} {cls.Stats[k]}")), 16, Palette.TextDim, ax: 0.5f, ay: 0.5f);
             var early = cls.Skills.Where(s => s.Level <= 4).ToList();
@@ -171,6 +193,8 @@ namespace Drakepg
             var parts = early.Select(s => Db.Skill(s.SkillId).Name + (s.Level > 1 ? $" (Lv {s.Level})" : "")).ToList();
             if (later > 0) parts.Add($"+{later} more by Lv {cls.Skills.Max(s => s.Level)}");
             Ui.Text(box, mid, top + 150, string.Join("  ·  ", parts), 15, Palette.TextMagic, ax: 0.5f, ay: 0.5f, wrap: CardW - 40, align: TextAnchor.MiddleCenter);
+            // Its number key on a wax seal, like the battle buttons.
+            Paper.Seal(box, -10, -10, $"{index + 1}", 71 + index);
             cards.Add(card);
         }
 
@@ -188,10 +212,10 @@ namespace Drakepg
             {
                 var on = card.Cls.Id == id;
                 card.Tween?.Stop();
-                Ui.Border(card.Box, on ? 4 : 3, on ? Palette.Gold : Palette.PanelBorder);
+                card.Fill.sprite = on ? card.Picked : card.Plain;
                 var from = card.Scale;
                 var to = on ? 1.04f : 0.96f;
-                var alphaTo = on ? 1f : 0.7f;
+                var alphaTo = on ? 1f : 0.88f;
                 var alphaFrom = card.Box.resolvedStyle.opacity;
                 var c = card;
                 card.Tween = Anim.Float(0, 1, 0.18f, t =>
@@ -201,8 +225,8 @@ namespace Drakepg
                     var a = Mathf.Lerp(alphaFrom, alphaTo, Mathf.Clamp01(t));
                     c.Box.style.scale = new Scale(Vector3.one * c.Scale);
                     c.Box.style.opacity = a;
-                    c.Fill.transform.localScale = new Vector3(CardW * c.Scale, CardH * c.Scale, 1);
-                    c.Fill.color = new Color(Palette.Panel.r, Palette.Panel.g, Palette.Panel.b, 0.92f * a);
+                    c.Fill.transform.localScale = new Vector3(c.Scale, c.Scale, 1);
+                    c.Fill.color = new Color(1, 1, 1, a);
                     c.Fig.SetScale(0.72f * c.Scale);
                     c.Fig.SetAlpha(a);
                     PlaceFigure(c, 0);
@@ -227,7 +251,7 @@ namespace Drakepg
         /// <summary>"Start at: Ch 1 / Ch 2 / Ch 3": skip ahead to test a later chapter with a fitting level and gear.</summary>
         void BuildChapterPicker(float x, float y)
         {
-            Ui.Text(stepUi, x, y, "Start at", 18, Palette.TextDim, ax: 0, ay: 0.5f);
+            Ui.Text(stepUi, x, y, "Start at", 19, LetteringDim, true, 0, 0.5f, stroke: true).style.unityTextOutlineColor = Paper.Ink;
             var starts = Db.Data.ChapterStarts;
             var buttons = new List<UiButton>();
             void Paint()

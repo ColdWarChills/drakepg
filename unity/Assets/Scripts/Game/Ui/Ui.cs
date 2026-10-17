@@ -7,7 +7,8 @@ namespace Drakepg
 {
     /// <summary>
     /// UI building blocks drawn in code with UI Toolkit, positioned in design pixels (src/ui/text.ts, Button.ts, Bar.ts,
-    /// Modal.ts, Hud.ts). The hand-made UI redo replaces their look later; screens only use these helpers.
+    /// Modal.ts, Hud.ts). They wear the parchment kit (Ui/Paper.cs): panels and menus are parchment sheets, buttons
+    /// parchment tags, bars watercolor washes; the colors screens give them are inked on parchment (Inking).
     /// </summary>
     public static class Ui
     {
@@ -79,9 +80,39 @@ namespace Drakepg
             return e;
         }
 
-        /// <summary>The standard panel: dark, gold-rimmed, rounded.</summary>
+        /// <summary>The standard panel: a parchment sheet with a thin ruled border (`alpha` is from the old dark panels, unused).</summary>
         public static VisualElement Panel(VisualElement parent, float x, float y, float w, float h, float alpha = 0.92f, bool blocksClicks = true) =>
-            Rect(parent, x, y, w, h, new Color(Palette.Panel.r, Palette.Panel.g, Palette.Panel.b, alpha), 12, 2, Palette.PanelBorder, blocksClicks);
+            Sheet(parent, x, y, w, h, blocksClicks);
+
+        /// <summary>
+        /// A parchment sheet at (x, y) top-left, w x h: deckled, scorched a little, a ruled ink border inset `rule` px.
+        /// Content goes straight in it; the Palette colors of what's inside are inked (Inking).
+        /// </summary>
+        public static VisualElement Sheet(VisualElement parent, float x, float y, float w, float h, bool blocksClicks = true, float rule = 6, float ruleR = 7,
+            float ruleWidth = 1.3f, float burn = 0.35f, int seed = 0)
+        {
+            var e = new VisualElement { pickingMode = blocksClicks ? PickingMode.Position : PickingMode.Ignore, name = "sheet" };
+            Place(e, x, y);
+            Size(e, w, h);
+            e.AddToClassList(Inking.Class);
+            var bg = new VisualElement { pickingMode = PickingMode.Ignore };
+            Place(bg, -Paper.Pad, -Paper.Pad);
+            Size(bg, w + Paper.Pad * 2, h + Paper.Pad * 2);
+            bg.style.backgroundImage = new StyleBackground(Paper.SheetTexture(w, h, seed != 0 ? seed : Seed(w, h), burn, true, rule, ruleR, ruleWidth));
+            e.Add(bg);
+            parent?.Add(e);
+            return e;
+        }
+
+        /// <summary>A seed from a size or a text, so the same panel or button always tears the same way.</summary>
+        public static int Seed(float w, float h) => 100 + (int)(w * 7 + h * 13) % 900;
+
+        public static int Seed(string text)
+        {
+            var n = 17;
+            foreach (var ch in text ?? "") n = (n * 31 + ch) % 100003;
+            return 300 + n % 600;
+        }
 
         /// <summary>An image from the art (a sprite key), fit inside w x h.</summary>
         public static VisualElement Image(VisualElement parent, float x, float y, float w, float h, string key, float ax = 0, float ay = 0)
@@ -159,31 +190,43 @@ namespace Drakepg
         public static string Colored(string text, Color c) => $"<color={Css(c)}>{text}</color>";
     }
 
-    /// <summary>Rounded button with an optional second line (Button.ts). (x, y) is its center.</summary>
+    /// <summary>
+    /// A button (Button.ts): a parchment tag with a ruled border, an Alegreya label and an optional second line; a color
+    /// of its own (a selected tab) washes the tag in it. Lifts on hover, presses down. (x, y) is its center.
+    /// </summary>
     public class UiButton : VisualElement
     {
         readonly Label label;
         readonly Label sub;
-        Action onClick;
+        readonly VisualElement sheet;
+        readonly float width, height;
+        readonly int seed;
+        readonly Action onClick;
         Color baseColor;
-        bool enabled = true, hover;
+        bool enabled = true, hover, down;
 
         public UiButton(VisualElement parent, float x, float y, string text, Action onClick, float width = 200, float height = 56, float fontSize = 22,
             string sublabel = null, Color? color = null)
         {
             this.onClick = onClick;
+            this.width = width;
+            this.height = height;
+            seed = Ui.Seed(text);
             baseColor = color ?? Palette.Button;
-            Ui.Place(this, x, y, 0.5f, 0.5f);
+            Ui.Place(this, x - width / 2, y - height / 2);
             Ui.Size(this, width, height);
-            Ui.Round(this, 10);
-            Ui.Border(this, 2, Palette.PanelBorder);
-            style.backgroundColor = baseColor;
+            AddToClassList(Inking.Class);
+            style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             style.justifyContent = Justify.Center;
             style.alignItems = Align.Center;
+            sheet = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(sheet, -Paper.Pad, -Paper.Pad);
+            Ui.Size(sheet, width + Paper.Pad * 2, height + Paper.Pad * 2);
+            Add(sheet);
             label = new Label(text) { pickingMode = PickingMode.Ignore };
             label.style.fontSize = fontSize;
-            label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            label.style.color = Palette.Text;
+            label.style.color = Paper.Ink;
+            Fonts.Title(label);
             label.style.unityTextAlign = TextAnchor.MiddleCenter;
             label.style.marginTop = label.style.marginBottom = 0;
             label.style.paddingTop = label.style.paddingBottom = 0;
@@ -192,38 +235,54 @@ namespace Drakepg
             {
                 sub = new Label(sublabel) { pickingMode = PickingMode.Ignore };
                 sub.style.fontSize = 15;
-                sub.style.color = Palette.TextDim;
+                sub.style.color = Paper.InkDim;
+                Fonts.Bold(sub);
                 sub.style.unityTextAlign = TextAnchor.MiddleCenter;
                 sub.style.marginTop = sub.style.marginBottom = 0;
                 sub.style.paddingTop = sub.style.paddingBottom = 0;
                 Add(sub);
             }
             RegisterCallback<PointerEnterEvent>(_ => { hover = true; Paint(); });
-            RegisterCallback<PointerLeaveEvent>(_ => { hover = false; Paint(); });
+            RegisterCallback<PointerLeaveEvent>(_ => { hover = down = false; Paint(); });
             RegisterCallback<PointerDownEvent>(_ =>
             {
                 if (!enabled) return;
-                style.backgroundColor = Palette.ButtonDown;
-                style.scale = new Scale(Vector3.one * 0.96f);
+                down = true;
+                Paint();
             });
             RegisterCallback<PointerUpEvent>(e =>
             {
-                style.scale = new Scale(Vector3.one);
+                var was = down;
+                down = false;
                 Paint();
-                if (!enabled || GameRoot.I.Screen?.InputEnabled == false) return;
+                if (!enabled || !was || GameRoot.I.Screen?.InputEnabled == false) return;
                 Sfx.Play("click");
                 e.StopPropagation();
                 this.onClick?.Invoke();
             });
+            Paint();
             parent?.Add(this);
         }
 
-        void Paint() => style.backgroundColor = !enabled ? Palette.ButtonDisabled : hover ? Palette.ButtonHover : baseColor;
+        /// <summary>The plain button color means plain parchment; any other color washes the tag in it.</summary>
+        Color? Wash()
+        {
+            var b = Palette.Button;
+            if (Mathf.Abs(baseColor.r - b.r) < 0.01f && Mathf.Abs(baseColor.g - b.g) < 0.01f && Mathf.Abs(baseColor.b - b.b) < 0.01f) return null;
+            return baseColor;
+        }
+
+        void Paint()
+        {
+            sheet.style.backgroundImage = new StyleBackground(Paper.SheetTexture(width, height, seed, 0.3f, true, 4, 5, 1.3f, Wash(), 0.5f));
+            style.translate = new Translate(0, !enabled ? 0 : down ? 1 : hover ? -2 : 0);
+            style.scale = new Scale(Vector3.one * (down && enabled ? 0.97f : 1));
+            style.opacity = enabled ? 1 : 0.5f;
+        }
 
         public new UiButton SetEnabled(bool on)
         {
             enabled = on;
-            label.style.color = on ? Palette.Text : Palette.TextDim;
             Paint();
             return this;
         }
@@ -250,54 +309,91 @@ namespace Drakepg
         }
     }
 
-    /// <summary>HP / MP / XP bar with a "cur / max" label and a pale trail when it drops (Bar.ts). (x, y) = left edge, middle.</summary>
+    /// <summary>
+    /// HP / MP / XP bar (Bar.ts): a watercolor wash in a sketchy ink frame, the "cur / max" label in cream, and a pale
+    /// trail of the wash when it drops. (x, y) = left edge, middle. Its own colors stay (it's not inked).
+    /// </summary>
     public class UiBar : VisualElement
     {
         readonly VisualElement fill, chip;
         readonly Label label;
-        readonly float width;
+        readonly float inner;
         readonly string prefix;
-        float shown = -1;
+        float shown = -1, chipShown = -1;
         Anim.Handle fillTween, chipTween;
+
+        static bool Same(Color a, Color b) => Mathf.Abs(a.r - b.r) < 0.01f && Mathf.Abs(a.g - b.g) < 0.01f && Mathf.Abs(a.b - b.b) < 0.01f;
 
         public UiBar(VisualElement parent, float x, float y, float width, float height, Color color, string prefix = "")
         {
-            this.width = width;
             this.prefix = prefix;
+            var wash = Same(color, Palette.Hp) ? Paper.Red : Same(color, Palette.Mp) ? Paper.Blue : Same(color, Palette.Xp) ? Design.Hex(0xc49a22) : color;
             Ui.Place(this, x, y - height / 2);
             Ui.Size(this, width, height);
-            style.backgroundColor = Palette.BarBg;
-            Ui.Border(this, 2, Color.black);
             pickingMode = PickingMode.Ignore;
-            chip = Ui.Rect(this, 0, 0, width - 4, height - 4, new Color(1, 0.956f, 0.84f, 0.85f));
-            fill = Ui.Rect(this, 0, 0, width - 4, height - 4, color);
-            Ui.Rect(this, 0, 0, width - 4, (height - 4) / 3, new Color(1, 1, 1, 0.18f));
-            label = Ui.Text(this, (width - 4) / 2, (height - 4) / 2, "", Mathf.Max(12, height - 8), Palette.Text, true, 0.5f, 0.5f, stroke: true);
+            AddToClassList(Inking.Keep);
+            Ui.Rect(this, 0, 0, width, height, new Color(110 / 255f, 70 / 255f, 25 / 255f, 0.16f), 3);
+            inner = width - 4;
+            var seed = Ui.Seed(prefix) + (int)width;
+            chip = Strip(Paper.WashTexture(inner, height - 4, wash, seed, 0.4f), height);
+            fill = Strip(Paper.WashTexture(inner, height - 4, wash, seed), height);
+            var frame = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(frame, -2, -2);
+            Ui.Size(frame, width + 4, height + 4);
+            frame.style.backgroundImage = new StyleBackground(Paper.BarFrameTexture(width, height, seed + 3));
+            Add(frame);
+            label = Ui.Text(this, width / 2, height / 2, "", Mathf.Max(12, height - 8), Paper.Cream, false, 0.5f, 0.5f);
+            Fonts.Heavy(label);
+            label.style.unityTextOutlineWidth = 0.2f;
+            label.style.unityTextOutlineColor = Paper.Ink;
             parent?.Add(this);
+        }
+
+        /// <summary>A wash strip in its own clip: it slides in from the left, so its painted right end always shows.</summary>
+        VisualElement Strip(Texture2D tex, float height)
+        {
+            var clip = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(clip, 2, 2);
+            Ui.Size(clip, inner, height - 4);
+            clip.style.overflow = Overflow.Hidden;
+            Add(clip);
+            var strip = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(strip, -inner, 0);
+            Ui.Size(strip, inner, height - 4);
+            strip.style.backgroundImage = new StyleBackground(tex);
+            clip.Add(strip);
+            return strip;
+        }
+
+        void ShowFill(float w) => fill.style.left = w - inner;
+
+        void ShowChip(float w)
+        {
+            chipShown = w;
+            chip.style.left = w - inner;
         }
 
         public UiBar SetValue(double current, double max, bool animate = true)
         {
             var ratio = max > 0 ? Mathf.Clamp01((float)(current / max)) : 0;
-            var target = Mathf.Max(0, (width - 4) * ratio);
+            var target = inner * ratio;
             var from = shown < 0 ? target : shown;
             fillTween?.Stop();
             chipTween?.Stop();
             if (!animate || shown < 0)
             {
-                fill.style.width = target;
-                chip.style.width = target;
+                ShowFill(target);
+                ShowChip(target);
             }
             else if (target < from)
             {
-                fillTween = Anim.Float(from, target, 0.12f, v => fill.style.width = v);
-                var chipFrom = chip.resolvedStyle.width;
-                chipTween = Anim.Float(float.IsNaN(chipFrom) ? from : chipFrom, target, 0.45f, v => chip.style.width = v, Ease.CubicIn, 0.35f);
+                fillTween = Anim.Float(from, target, 0.12f, ShowFill);
+                chipTween = Anim.Float(chipShown < 0 ? from : chipShown, target, 0.45f, ShowChip, Ease.CubicIn, 0.35f);
             }
             else
             {
-                chip.style.width = target;
-                fillTween = Anim.Float(from, target, 0.4f, v => fill.style.width = v);
+                ShowChip(target);
+                fillTween = Anim.Float(from, target, 0.4f, ShowFill);
             }
             shown = target;
             label.text = $"{prefix}{Math.Max(0, Math.Round(current))} / {max}";
@@ -306,8 +402,8 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// Dimmed overlay + centered panel with a title; content goes in `Content`, positioned from the panel's top-left
-    /// (Modal.ts). The shade swallows clicks. Modals stack; Esc closes the top one.
+    /// Dimmed overlay + a centered parchment folio with a title; content goes in `Content`, positioned from the panel's
+    /// top-left (Modal.ts). The shade swallows clicks. Modals stack; Esc closes the top one. The X is a wax seal.
     /// </summary>
     public class UiModal
     {
@@ -329,22 +425,44 @@ namespace Drakepg
             Root = new VisualElement { pickingMode = PickingMode.Position };
             Ui.Place(Root, 0, 0);
             Ui.Size(Root, Design.Width, Design.Height);
-            Root.style.backgroundColor = new Color(0, 0, 0, 0.6f);
+            Root.style.backgroundColor = new Color(0.06f, 0.03f, 0.01f, 0.62f);
             parent.Add(Root);
             var left = (Design.Width - width) / 2;
             var top = (Design.Height - height) / 2;
-            Panel = Ui.Rect(Root, left, top, width, height, Palette.Panel, 14, 3, Palette.PanelBorder, true);
-            Ui.Text(Panel, width / 2, 28, title, 28, Palette.TextGold, true, 0.5f, 0.5f);
+            Panel = Ui.Sheet(Root, left, top, width, height, true, 10, 12, 1.8f, 0.45f);
+            var heading = Ui.Text(Panel, width / 2, 30, title, 30, Paper.Ink, false, 0.5f, 0.5f);
+            Fonts.Title(heading);
             Content = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(Content, 0, 0);
             Ui.Size(Content, width, height);
             Panel.Add(Content);
-            if (closeButton && onClose != null) new UiButton(Panel, width - 34, 28, "X", () => Close(onClose), 44, 40, 20);
+            if (closeButton && onClose != null) CloseSeal(Panel, width - 50, 12, () => Close(onClose));
             Sfx.Play("open");
             Root.style.opacity = 0;
             Anim.Float(0, 1, 0.15f, v => Root.style.opacity = v, Ease.Linear);
             Anim.Float(24, 0, 0.2f, v => Panel.style.top = top + v, Ease.BackOut);
             open.Add(this);
+        }
+
+        /// <summary>The close button: a red wax seal with an X, a little bigger on hover.</summary>
+        static void CloseSeal(VisualElement parent, float x, float y, Action run)
+        {
+            var hit = new VisualElement { pickingMode = PickingMode.Position, name = "close" };
+            Ui.Place(hit, x, y);
+            Ui.Size(hit, 38, 38);
+            hit.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+            var seal = Paper.Seal(hit, 4, 4, "X", 211);
+            seal.pickingMode = PickingMode.Ignore;
+            hit.RegisterCallback<PointerEnterEvent>(_ => hit.style.scale = new Scale(Vector3.one * 1.1f));
+            hit.RegisterCallback<PointerLeaveEvent>(_ => hit.style.scale = new Scale(Vector3.one));
+            hit.RegisterCallback<PointerUpEvent>(e =>
+            {
+                if (GameRoot.I.Screen?.InputEnabled == false) return;
+                Sfx.Play("click");
+                e.StopPropagation();
+                run();
+            });
+            parent.Add(hit);
         }
 
         public void Clear() => Content.Clear();
@@ -362,7 +480,7 @@ namespace Drakepg
         public void Escape() => Close(onClose);
     }
 
-    /// <summary>Top-left status block: name, level, HP, MP, XP, gold (Hud.ts).</summary>
+    /// <summary>Top-left status block on a parchment sheet: name, level, HP, MP, XP, gold (Hud.ts).</summary>
     public class Hud
     {
         readonly Label nameText, goldText;
@@ -372,8 +490,10 @@ namespace Drakepg
         public Hud(VisualElement parent, float x, float y)
         {
             Root = Ui.Panel(parent, x, y, 340, 150, 0.85f, false);
-            nameText = Ui.Text(Root, 16, 10, "", 22, bold: true);
-            goldText = Ui.Text(Root, 324, 12, "", 20, Palette.TextGold, true, 1, 0);
+            nameText = Ui.Text(Root, 18, 10, "", 23, Paper.Ink);
+            Fonts.Title(nameText);
+            goldText = Ui.Text(Root, 322, 13, "", 20, Paper.InkGold, false, 1, 0);
+            Fonts.Heavy(goldText);
             hp = new UiBar(Root, 16, 58, 308, 24, Palette.Hp, "HP ");
             mp = new UiBar(Root, 16, 90, 308, 24, Palette.Mp, "MP ");
             xp = new UiBar(Root, 16, 124, 308, 18, Palette.Xp, "XP ");

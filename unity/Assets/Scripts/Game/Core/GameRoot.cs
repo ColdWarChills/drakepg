@@ -110,6 +110,8 @@ namespace Drakepg
             DesignRoot.style.width = Design.Width;
             DesignRoot.style.height = Design.Height;
             DesignRoot.style.overflow = Overflow.Hidden;
+            // Every label inherits Alegreya Sans (bold ones get its Bold cut in UiSmooth's walk).
+            Fonts.Body(DesignRoot);
             root.Add(DesignRoot);
             fade = new VisualElement { name = "fade", pickingMode = PickingMode.Ignore };
             fade.style.position = Position.Absolute;

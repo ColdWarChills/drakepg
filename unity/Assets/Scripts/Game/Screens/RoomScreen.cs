@@ -18,6 +18,8 @@ namespace Drakepg
         /// <summary>Characters are drawn a bit smaller on maps than in battle.</summary>
         const float MapScale = 0.85f;
         const float Edge = 36;
+        /// <summary>Place names over the scene: cream Alegreya with an ink outline, like a map's lettering.</summary>
+        static readonly Color MapLabel = Design.Hex(0xf6e7c1);
         static readonly Vector2 TalkRange = new Vector2(130, 80);
         static readonly Vector2 TouchRange = new Vector2(62, 34);
         /// <summary>Roaming monsters keep at least this far apart (x), unless they are on clearly different rows (y).</summary>
@@ -989,7 +991,9 @@ namespace Drakepg
             Btn(156, "Map", ToggleMap);
             Btn(214, "Menu", OpenMenu);
 
-            var title = Ui.Text(ui, Design.Width / 2, 36, room.Name, 30, Palette.TextGold, true, 0.5f, 0.5f, stroke: true);
+            var title = Ui.Text(ui, Design.Width / 2, 36, room.Name, 32, MapLabel, false, 0.5f, 0.5f, stroke: true);
+            Fonts.Title(title);
+            title.style.unityTextOutlineColor = Paper.Ink;
             title.pickingMode = PickingMode.Position;
             // Hidden testing menu on touch screens: tap the room name 5 times.
             title.RegisterCallback<PointerUpEvent>(_ =>
@@ -1019,7 +1023,8 @@ namespace Drakepg
             ui.Add(tracker);
 
             // "E Talk" bubble shown over the nearest NPC.
-            prompt = Ui.Rect(ui, 0, 0, 110, 34, new Color(Palette.Panel.r, Palette.Panel.g, Palette.Panel.b, 0.92f), 10, 2, Palette.PanelBorder);
+            prompt = Ui.Rect(ui, 0, 0, 110, 34, Color.clear);
+            Paper.CardBehind(prompt, 41);
             prompt.style.translate = new Translate(Length.Percent(-50), Length.Percent(-50));
             promptText = Ui.Text(prompt, 55, 17, "", 17, Palette.TextGold, true, 0.5f, 0.5f);
             prompt.style.display = DisplayStyle.None;
@@ -1029,7 +1034,9 @@ namespace Drakepg
         /// <summary>Big room name that fades in and out on arrival.</summary>
         void TitleCard()
         {
-            var card = Ui.Text(ui, Design.Width / 2, 250, room.Name, 64, Palette.TextGold, true, 0.5f, 0.5f, stroke: true);
+            var card = Ui.Text(ui, Design.Width / 2, 250, room.Name, 64, MapLabel, false, 0.5f, 0.5f, stroke: true);
+            Fonts.Title(card);
+            card.style.unityTextOutlineColor = Paper.Ink;
             card.style.opacity = 0;
             card.style.scale = new Scale(Vector3.one * 0.8f);
             Anim.Float(0, 1, 0.35f, t =>
@@ -2076,9 +2083,7 @@ namespace Drakepg
                 tracker.style.minWidth = 340;
                 tracker.style.paddingLeft = tracker.style.paddingRight = 12;
                 tracker.style.paddingTop = tracker.style.paddingBottom = 8;
-                tracker.style.backgroundColor = new Color(Palette.Panel.r, Palette.Panel.g, Palette.Panel.b, 0.8f);
-                Ui.Round(tracker, 8);
-                Ui.Border(tracker, 2, Palette.PanelBorder);
+                if (tracker.Q("card") == null) Paper.CardBehind(tracker, 42);
                 tracker.Add(text);
             }
 

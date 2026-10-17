@@ -10,7 +10,8 @@ namespace Drakepg
     /// MSAA doesn't reach the UI), so every element with a radius gets its fill and border baked into a small
     /// anti-aliased 9-slice image instead, drawn at the screen's real resolution. Code keeps using
     /// style.backgroundColor / Ui.Border / Ui.Round as usual: GameRoot runs `Pass` every frame and re-bakes an element
-    /// when its colors, border width or radius change (baked images are cached by look).
+    /// when its colors, border width or radius change (baked images are cached by look). The same walk inks menus on
+    /// parchment and sets the UI fonts (Inking).
     /// </summary>
     public static class UiSmooth
     {
@@ -37,19 +38,27 @@ namespace Drakepg
                 foreach (var t in baked.Values) Object.Destroy(t);
                 baked.Clear();
             }
-            Visit(root);
+            Visit(root, false);
         }
 
-        static void Visit(VisualElement e)
+        static void Visit(VisualElement e, bool inked)
         {
             if (e.resolvedStyle.display == DisplayStyle.None) return;
+            if (e.ClassListContains(Inking.Keep)) inked = false;
+            else if (e.ClassListContains(Inking.Class)) inked = true;
+            if (e is Label label)
+            {
+                Inking.Font(label);
+                if (inked) Inking.Label(label);
+            }
             var radius = e.resolvedStyle.borderTopLeftRadius;
-            if (radius >= 1) Apply(e, radius);
+            if (radius >= 1) Apply(e, radius, inked);
+            else if (inked) Inking.Box(e);
             var n = e.hierarchy.childCount;
-            for (int i = 0; i < n; i++) Visit(e.hierarchy[i]);
+            for (int i = 0; i < n; i++) Visit(e.hierarchy[i], inked);
         }
 
-        static void Apply(VisualElement e, float radius)
+        static void Apply(VisualElement e, float radius, bool inked)
         {
             var rs = e.resolvedStyle;
             var mine = looks.TryGetValue(e, out var look);
@@ -61,8 +70,8 @@ namespace Drakepg
                 looks.Add(e, look);
             }
             // After baking, the element's own background and border colors are cleared; anything set since is new.
-            if (rs.backgroundColor.a > 0 || !mine) look.Fill = rs.backgroundColor;
-            if (rs.borderTopColor.a > 0 || !mine) look.Border = rs.borderTopColor;
+            if (rs.backgroundColor.a > 0 || !mine) look.Fill = inked ? Inking.Fill(rs.backgroundColor) : rs.backgroundColor;
+            if (rs.borderTopColor.a > 0 || !mine) look.Border = inked ? Inking.Border(rs.borderTopColor) : rs.borderTopColor;
             look.Width = rs.borderTopWidth;
             look.Radius = radius;
             var key = Key(look);

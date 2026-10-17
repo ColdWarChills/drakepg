@@ -64,8 +64,8 @@ Not needed: Cinemachine (fixed single-screen rooms; shakes and zooms are code), 
 | 10 particle textures (soft, spark, star, leaf, coin, ring, rock, plus, chevron, streak) | drawn at boot | PNGs | save them once from the running game |
 | 39 sounds | synthesized at runtime | WAV files | a small page that runs `sfx.ts` through an OfflineAudioContext and downloads each sound |
 | ~12 props drawn as shapes (campfire, chest, note, sign, marks, bones, 4 blockers, exit arrows) | code shapes | sprites | generate in the round-15 look with `scripts/redo_art.py` |
-| Font | Georgia (a system font; can't be shipped) | a free OFL font as a font asset | pick it with the UI kit (the mocks tried Fredoka, Almendra + Kalam) |
-| UI kit (panels, buttons, bars, slots, skill and status icons) | not made yet | made for Unity directly | the UI redo, see below |
+| Font | Georgia (a system font; can't be shipped) | Alegreya + Alegreya Sans (OFL, `Resources/Fonts`, lining digits) | done (2026-10-18) |
+| UI kit (panels, buttons, bars, slots, skill and status icons) | not made yet | the parchment kit, drawn in code (`Ui/Paper.cs`, `Ui/Inking.cs`) | done (2026-10-18); skill and status icons still to draw |
 | Content | TypeScript data | JSON, one file per table (`unity/Assets/Data/`) | `npm run export-data` |
 
 ## 4. How the code maps
