@@ -218,6 +218,7 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 ## Decisions to keep
 
 - Engine (2026-10-15): stay on Phaser in the browser for now. A Unity port was floated (the designer finds testing easier there) and set aside: it's a full rewrite, and the cloud chats can't run Unity. The game is made for the designer's own enjoyment; selling a few copies (itch.io, or Steam as a wrapped web build) is optional, and disclosing the AI art on a store is fine. Re-asked 2026-10-15: **Unity, but later**: finish the content in Phaser, port once the design stops changing. Make new art large enough (2x masters, rig parts) to carry over.
+- **Decided (2026-10-17, designer): start the Unity handoff.** The plan with packages, assets and order is `docs/UNITY_PORT.md`. Open there: build the UI redo in Unity instead of Phaser (recommended), same repo or a new one.
 - **Proposed (2026-10-17, designer: "think about porting to Unity little by little", WebGL builds for itch.io or wherever):**
   1. Data first: a script exports `src/data/` to JSON; both versions read the same JSON, so content is written once.
   2. Rules: port `src/game/` (already Phaser-free) to plain C# classes. A C# copy of `npm run sim` must give the same win rates as the TypeScript one.
