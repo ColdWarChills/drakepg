@@ -72,23 +72,32 @@ namespace Drakepg
 
         void SetupCamera()
         {
-            // A plain black camera behind everything fills the letterbox bars.
-            var back = new GameObject("Letterbox").AddComponent<Camera>();
-            back.depth = -10;
-            back.clearFlags = CameraClearFlags.SolidColor;
-            back.backgroundColor = Color.black;
-            back.cullingMask = 0;
-            back.transform.SetParent(transform);
-
+            // One camera only: URP draws the UI overlay once, with the last camera, and a second camera for the
+            // letterbox bars stopped the UI from showing. The bars are black quads on this camera instead.
             Camera = Camera.main;
             if (Camera == null) Camera = new GameObject("Main Camera") { tag = "MainCamera" }.AddComponent<Camera>();
             Camera.orthographic = true;
+            Camera.rect = new Rect(0, 0, 1, 1);
             Camera.orthographicSize = Design.Height / 2 / Design.PixelsPerUnit;
             Camera.clearFlags = CameraClearFlags.SolidColor;
-            Camera.backgroundColor = Palette.Bg;
+            Camera.backgroundColor = Color.black;
             Camera.transform.position = cameraHome = new Vector3(0, 0, -10);
             Camera.depth = 0;
+            bars = new SpriteRenderer[4];
+            for (int i = 0; i < bars.Length; i++)
+            {
+                var bar = new GameObject("letterbox").AddComponent<SpriteRenderer>();
+                bar.transform.SetParent(Camera.transform, false);
+                bar.sprite = Art.White;
+                bar.color = Color.black;
+                bar.sortingOrder = short.MaxValue;
+                bars[i] = bar;
+            }
         }
+
+        SpriteRenderer[] bars;
+        /// <summary>Camera zoom (1 = the whole 1280x720 design area).</summary>
+        float zoom = 1;
 
         void SetupUi()
         {
@@ -174,7 +183,17 @@ namespace Drakepg
             return Anim.Float(from, to, duration, v => fade.style.opacity = v, Ease.Linear, owner: this).Task;
         }
 
-        float BaseSize => Design.Height / 2 / Design.PixelsPerUnit;
+        /// <summary>The camera size that fits the 1280x720 design area in the window (bars fill the rest).</summary>
+        float FitSize
+        {
+            get
+            {
+                var aspect = (float)UnityEngine.Screen.width / Mathf.Max(1, UnityEngine.Screen.height);
+                const float target = Design.Width / Design.Height;
+                var half = Design.Height / 2 / Design.PixelsPerUnit;
+                return aspect >= target ? half : half * target / aspect;
+            }
+        }
 
         /// <summary>The camera back at the middle, zoom 1, level.</summary>
         public void ResetView()
@@ -183,7 +202,8 @@ namespace Drakepg
             cameraHome = new Vector3(0, 0, -10);
             Camera.transform.position = cameraHome;
             Camera.transform.rotation = Quaternion.identity;
-            Camera.orthographicSize = BaseSize;
+            zoom = 1;
+            Camera.orthographicSize = FitSize;
         }
 
         Anim.Handle viewTween;
@@ -194,7 +214,7 @@ namespace Drakepg
             viewTween?.Stop();
             var fromPos = cameraHome;
             var toPos = Design.World(x, y, -10);
-            var fromZoom = BaseSize / Camera.orthographicSize;
+            var fromZoom = this.zoom;
             var fromRot = Camera.transform.eulerAngles.z;
             if (fromRot > 180) fromRot -= 360;
             var toRot = -rotateRadians * Mathf.Rad2Deg;
@@ -202,7 +222,8 @@ namespace Drakepg
             {
                 cameraHome = Vector3.LerpUnclamped(fromPos, toPos, t);
                 if (shakeTime <= 0) Camera.transform.position = cameraHome;
-                Camera.orthographicSize = BaseSize / Mathf.LerpUnclamped(fromZoom, zoom, t);
+                this.zoom = Mathf.LerpUnclamped(fromZoom, zoom, t);
+                Camera.orthographicSize = FitSize / this.zoom;
                 Camera.transform.rotation = Quaternion.Euler(0, 0, Mathf.LerpUnclamped(fromRot, toRot, t));
             }, ease, owner: Screen);
             return viewTween;
@@ -265,14 +286,32 @@ namespace Drakepg
             }
         }
 
-        /// <summary>Letterbox the camera to 16:9 and center the UI over it.</summary>
+        /// <summary>Fit the design area in the window (black bars on the sides) and center the UI over it.</summary>
         void Layout()
         {
-            float aspect = (float)UnityEngine.Screen.width / UnityEngine.Screen.height;
-            const float target = Design.Width / Design.Height;
-            Camera.rect = aspect > target
-                ? new Rect((1 - target / aspect) / 2, 0, target / aspect, 1)
-                : new Rect(0, (1 - aspect / target) / 2, 1, aspect / target);
+            Camera.orthographicSize = FitSize / zoom;
+            // Bars cover everything outside the design area (in camera space, so they follow pans, zooms and shakes).
+            var size = Camera.orthographicSize;
+            var halfH = size;
+            var halfW = size * Camera.aspect;
+            var innerW = Design.Width / 2 / Design.PixelsPerUnit / zoom;
+            var innerH = Design.Height / 2 / Design.PixelsPerUnit / zoom;
+            void Bar(SpriteRenderer b, float cx, float cy, float w, float h)
+            {
+                b.enabled = w > 0.001f && h > 0.001f;
+                b.transform.localPosition = new Vector3(cx, cy, 1);
+                // Art.White is 1 design px (0.01 units) across.
+                b.transform.localScale = new Vector3(w * Design.PixelsPerUnit, h * Design.PixelsPerUnit, 1);
+            }
+            var side = Mathf.Max(0, halfW - innerW);
+            var cap = Mathf.Max(0, halfH - innerH);
+            Bar(bars[0], -(innerW + side / 2), 0, side + 0.02f, halfH * 2 + 0.02f);
+            Bar(bars[1], innerW + side / 2, 0, side + 0.02f, halfH * 2 + 0.02f);
+            Bar(bars[2], 0, innerH + cap / 2, halfW * 2 + 0.02f, cap + 0.02f);
+            Bar(bars[3], 0, -(innerH + cap / 2), halfW * 2 + 0.02f, cap + 0.02f);
+            if (side < 0.001f) bars[0].enabled = bars[1].enabled = false;
+            if (cap < 0.001f) bars[2].enabled = bars[3].enabled = false;
+
             var panel = document.rootVisualElement.layout;
             if (float.IsNaN(panel.width) || panel.width <= 0) return;
             var scale = Mathf.Min(panel.width / Design.Width, panel.height / Design.Height);
@@ -292,65 +331,20 @@ namespace Drakepg
             StartCoroutine(TakeSnapshot(path));
         }
 
-        /// <summary>
-        /// Renders the world and the UI into textures at 1280x720 and lays one over the other (the editor's screen grab
-        /// leaves out UI Toolkit).
-        /// </summary>
         IEnumerator TakeSnapshot(string path)
         {
-            const int w = 1280, h = 720;
-            var rtWorld = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
-            var rtUi = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
-            var ps = document.panelSettings;
-            var oldClear = ps.clearColor;
-            var oldClearValue = ps.colorClearValue;
-            ps.targetTexture = rtUi;
-            ps.clearColor = true;
-            ps.colorClearValue = Color.clear;
-            Camera.targetTexture = rtWorld;
-            yield return null;
             yield return new WaitForEndOfFrame();
-            Camera.Render();
-            var world = Read(rtWorld);
-            var ui = Read(rtUi);
-            ps.targetTexture = null;
-            ps.clearColor = oldClear;
-            ps.colorClearValue = oldClearValue;
-            Camera.targetTexture = null;
-            var a = world.GetPixels32();
-            var b = ui.GetPixels32();
-            for (int i = 0; i < a.Length; i++)
-            {
-                // The UI texture holds premultiplied color.
-                var k = 255 - b[i].a;
-                a[i] = new Color32((byte)Mathf.Min(255, b[i].r + a[i].r * k / 255), (byte)Mathf.Min(255, b[i].g + a[i].g * k / 255),
-                    (byte)Mathf.Min(255, b[i].b + a[i].b * k / 255), 255);
-            }
-            world.SetPixels32(a);
+            var tex = ScreenCapture.CaptureScreenshotAsTexture();
             try
             {
-                File.WriteAllBytes(path, world.EncodeToPNG());
+                File.WriteAllBytes(path, tex.EncodeToPNG());
                 Debug.Log("drakepg: snapshot " + path);
             }
             catch (Exception e)
             {
                 Debug.LogWarning("Snapshot failed: " + e.Message);
             }
-            Destroy(world);
-            Destroy(ui);
-            rtWorld.Release();
-            rtUi.Release();
-        }
-
-        static Texture2D Read(RenderTexture rt)
-        {
-            var prev = RenderTexture.active;
-            RenderTexture.active = rt;
-            var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
-            tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
-            tex.Apply();
-            RenderTexture.active = prev;
-            return tex;
+            Destroy(tex);
         }
 
         /// <summary>The pointer in design pixels (null outside the window).</summary>
