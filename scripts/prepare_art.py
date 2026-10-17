@@ -62,9 +62,7 @@ SPILL_FADE = 2.5  # ...and how fast green-dominated pixels there fade out
 MAGENTA_SPILL = {"icon_stormwatch_amulet", "mon_stormcoil", "mon_rime_acolyte", "mon_frostbinder"}
 # Processed files fixed by hand afterwards (key-color spill in steam, glows and glass). A full run skips them, so the
 # fix isn't lost; `--force` reprocesses them anyway (a new raw image for one of these: remove it from this list).
-HAND_EDITED = {
-    "icon_mana_potion", "icon_superior_mana_potion", "icon_essence_light",
-}
+HAND_EDITED: set[str] = set()
 # Transparent sources: alpha below this (0-255) is cleared. Qwen-Image 2.1 leaves values of 1-9 over about a
 # third of the "empty" canvas, which would otherwise stretch the trim box to the whole image.
 ALPHA_FLOOR = 10

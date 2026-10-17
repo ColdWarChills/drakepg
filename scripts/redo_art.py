@@ -228,6 +228,14 @@ OUTFITS = {
 
 # Old prompts whose subject changes in the redo. key: subject (aspect and pose stay).
 FIXES = {
+    # Traveler's Garb is the base hero's own clothes (no outfit art): the icon shows them.
+    "icon_travel_garb": ("A single folded set of plain travel clothes: a cream linen shirt with rolled sleeves on top of "
+                         "dark teal trousers and a brown leather belt, shown alone as a game inventory icon."),
+    "icon_salamander_scale": ("A single large teardrop-shaped reptile scale, ember orange with a darker red rim and a "
+                              "faint glow, no animal, shown alone as a game inventory icon."),
+    # The outfit (char_hero_novice_robe) and the item colour are purple.
+    "icon_novice_robe": ("A single plain dusty-purple cloth robe with a few pale protective stitches along the hem and a "
+                         "rope belt, shown alone as a game inventory icon."),
     "wpn_snowmaw_cleaver": ("A single huge, heavy two-handed cleaver: a very wide, broad curved blade of white ice-hard "
                             "tusk, as wide as a shovel, bound to a thick wooden handle with fur and rope, shown alone as "
                             "a game item."),

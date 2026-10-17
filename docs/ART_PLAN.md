@@ -2,6 +2,8 @@
 
 Goal (designer, 2026-10-17): redo **all** graphics in one stylized, unique look. Pick the style together first, then Claude generates the rest in long runs without check-ins.
 
+**Status (2026-10-17, evening):** steps 3-7 are generated in the round-15 look (`scripts/redo_art.py`, see `docs/IMPROVEMENTS_2026-10.md`, "Art redo"), except the hand-made icons (skills, statuses, elements, map marks, rank badges), which belong with the UI. The dragon clean-up is built. Still to do: step 1's style lock (our own LoRA), step 2 (UI kit), body types and creator layers for the hero.
+
 Counts are from the game data on 2026-10-17. "Missing" = the game draws a placeholder shape today.
 
 ## Step 1: style (the designer picks)

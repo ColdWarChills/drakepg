@@ -6,6 +6,7 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
+- **Review (art redo, 2026-10-17, branch `claude/art-direction-tests-02b582`, not merged):** while the designer was away, Claude redid all game art in the round-15 look (paper-cut backgrounds, clean cartoon characters): backgrounds, title, monsters, NPCs, weapons, item icons, the base hero and armor outfits, plus art that never existed (road rooms, Odo, Pell, clerks, road pests, gate guards, Mimic, stones, hunt items). Also built: one base hero for every class, the dragon clean-up, battle backgrounds lifted 90 px. Details and assumptions: `docs/IMPROVEMENTS_2026-10.md` ("Art redo"). Play it (`npm run dev` on the branch) and say what to change; merge to the default branch on OK. The UI is untouched.
 - **Now (designer, 2026-10-17): redo all graphics in one stylized, unique look.** Style first, judged on whole-screen mocks (UI by hand, art generated in a strict flat style); then Claude generates the rest in long runs (UI kit, skill icons, backgrounds, monsters, dragon clean-up...). The full list and order: `docs/ART_PLAN.md`.
 - **How to work with the designer (2026-10-17):** don't ask at every step; no long option menus. Style is picked from generated pictures with one short question. Everything else: build with sensible defaults and list what was assumed. (Replaces the 2026-10-15 "show options first" rule, which turned into too many questions.)
 - **Discuss later (designer, 2026-10-15):** the Adventurers' Guild was built on Claude's defaults; review it together (ranks, hunt kinds, numbers, clerks, how the board looks) before building more on it.
@@ -65,7 +66,7 @@ Build order (all built, see "Done" at the bottom):
 - **Open:** one clerk in Brindlemoor only, or one per town (built: one per town)?
 - **Open:** Chapter 1 is shorter now (a D-rank Ash Imp hunt gives 3 points, so Rank E can take one trip). Raise F -> E to 4-5 points?
 - **Open:** a paid "new notices" button, so a board you don't like can be rerolled before a turn-in?
-- To do: art for the 3 clerks (`look` shapes now) and icons for the 10 hunt items (drawn icons now). Not in `art/QUEUE.md` yet.
+- ~~To do: art for the 3 clerks and icons for the 10 hunt items~~: made in the art redo (2026-10-17, on the art branch).
 - Playtest: is 50% per kill for gather items right? Are Tough hunts (3 Ash Imps at Rank F) too risky that early?
 
 ## UI
@@ -89,12 +90,12 @@ Build order (all built, see "Done" at the bottom):
 
 - **Decided:** start with the class weapon only, one-way into Brindlemoor (the shop is found on arrival). Claude drafted the story hook.
 - **Built (2026-10-15, designer: "too long to get to the city, uneventful", then "first with 1 monster, second with 2, then the boss before the city"):** 3 rooms instead of 6: Overturned Cart (1 pest), Old Mill Road (2 pests), Brindlemoor Gate (Pell and a gate guard per class), each weak to that class's first skill so it teaches weak spots: Warrior Millstone Crab (Blunt: Heavy Strike), Mage Dusk Wraith (Light: Light Bolt), Rogue Hedge Troll (Poison: Gas Shot). See `docs/IMPROVEMENTS_2026-10.md`.
-- To do: real monsters (names, stats, art) for `burrow_rat`, `dew_slug` and `hedge_pixie`. They are shape stand-ins now.
-- To do: background art for the 3 `road_*` rooms (procedural forest now), and art for Odo and Pell. Not in `art/QUEUE.md` yet. The 3 gate guards are queued (`mon_millstone_crab`, `mon_dusk_wraith`, `mon_hedge_troll`).
+- To do: real monsters (names, stats) for `burrow_rat`, `dew_slug` and `hedge_pixie`. Art made in the art redo (2026-10-17): a plump field rat, a green garden slug, a twig-haired pixie with a thorn spear.
+- ~~To do: background art for the 3 `road_*` rooms, art for Odo and Pell, the 3 gate guards~~: made in the art redo (2026-10-17, on the art branch).
 - To do: final lines for Odo and Pell (redrafted for the gate guard, listed in `docs/ROOM_LINES.md`).
 - **Open:** the designer called the Rogue "ranger" when asking for Gas Shot. Rename the class, or keep Rogue?
 - **Proposed:** more Blunt and Poison weak spots later (skeletons, golems and shelled things weak to Blunt; big beasts weak to Poison; slimes could resist Blunt). Only the gate guards use them now.
-- **Open:** the hero looks armored with no armor on, because the base class art includes armor. Keep it, or get bare art?
+- ~~Open: the hero looks armored with no armor on~~: the art redo's base hero wears plain clothes (cream shirt, teal trousers); armor changes the outfit.
 
 ## Story and theme
 
@@ -112,7 +113,7 @@ Build order (all built, see "Done" at the bottom):
 ## Dragon clean-up
 
 - **Decided:** dragons become rare (see above).
-- **Decided (2026-10-17): go**, as part of the art redo. Defaults in `docs/ART_PLAN.md`: Stormscale Drakeling -> Stormcrest Heron (Energy), Vent Wyrmling -> Vent Tortoise (Fire, weak to Blunt), Storm Scale -> Storm Feather, the drakeling-fang dagger's text changes; the one old dragon in the story stays (it is the rare one); no dragon on the title art.
+- **Built (2026-10-17, art branch)** with the defaults from `docs/ART_PLAN.md`: Stormscale Drakeling -> Stormcrest Heron (Energy), Vent Wyrmling -> Vent Tortoise (Fire, weak to Blunt), Storm Scale -> Storm Feather, the drakeling-fang dagger's text changes; the one old dragon in the story stays (it is the rare one); no dragon on the title art.
 - **Open:** `docs/CHAPTER3_SPEC.md` still asks for the dragon's name ("wakes in Chapter 4?"); revisit with the story spec.
 
 ## Skills, weapons and builds (discussed 2026-10-15)
@@ -176,7 +177,7 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
   - **Decided (2026-10-16):** Nordic-gods theme: not now. Warrior = Wandering blade (the designer had no preference on the cast; their favourite kept as the Warrior). Round 9: 4 Mage and 4 Rogue concepts in the same spirit, each a different silhouette from the Warrior (`art_tests.py` `MAGE_CONCEPTS`, `ROGUE_CONCEPTS`).
   - **Round 9 sheet:** `art/tests/cast_concepts.png`. Mage: Lantern scholar, Star cloak, Rune hermit (re-rolled: the first two came out with blank faces), Hedge witch (faceless silhouette, kept on purpose). Rogue: Fox thief, Masked trickster, Shadow scout, Gambler.
   - **Decided (2026-10-16): one base hero for every class.** "Class is a selectable thing and it's not a character": the hero is one base look, and classes (and armour) differ by clothing and gear. The concept heroes were loved but don't fit (armour and weapons would change them anyway); kept outside the repo in `Documents\Art Ideas\2026-10 poster characters` for other uses. Also: add colour (the poster palette made everything orange).
-    - Code impact later (not now): `ClassDef.look` / per-class bare art (`char_<class>_bare`) and per-class outfits (`char_<class>_<armor>`) become one base hero plus outfit art per armour; the weapon anchors move to the base art. This also settles the paused-outfits question (outfits drawn once, not once per class).
+    - ~~Code impact later~~: built in the art redo (2026-10-17): one base hero (`char_hero_bare`) with per-class fists, outfits `char_hero_<armor>`.
   - **Round 10 (2026-10-16):** four base heroes in a full-colour poster look (`poster_color`), all in the same plain base clothes (cream shirt, teal trousers, brown boots), arms a little away from the body for armour layers and rigs: messy hair + red headband, woman with a short copper braid, cropped black hair, wild white hair + nose bandage. Sheet with the first one in battle on the poster and the Ink forest: `art/tests/base_heroes.png`.
   - **Consistency (2026-10-16):** the designer saw the four drift in style. Fix: one anchor image, the others as Qwen edits that change only the head (`scripts/hero_edits.py`, anchor `poster_color/base_messy` seed 1831856038); body, clothes, pose and light then match exactly. Prompt must say "remove the red headband" or the anchor's headband stays. A skin-tone change only reached the face (arms stayed light): do skin tone as a recolour, not an edit. Sheet: `art/tests/base_heroes_consistent.png`. The same edit route is how armour outfits would go on the base hero.
   - **Proposed (2026-10-16, designer): a character creator.** The hero is customisable: body types (bust, chest, hips and so on, finer sliders later), faces, hair, eyes. For now: a few standard body types, faces and hairstyles. Round 11 tests them as head/body edits of the anchor (`scripts/hero_edits.py`).
@@ -199,10 +200,12 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 - **Was decided:** keep generating with Higgsfield for now; redo the art later with Qwen at home if the polished look reads as AI. Files swap by key, so nothing in code changes. (Superseded by the direction tests above.)
 - **Set up (2026-10-15):** ComfyUI 0.40 portable + Qwen-Image 2.1 int8 on the designer's PC (`C:\Users\Epic\ComfyUI_windows_portable`, start with `run_nvidia_gpu.bat`, UI at http://127.0.0.1:8188). RTX 5070 Ti: ~20-50 s per image (Higgsfield ~8 min). It writes a real alpha channel (no magenta/green keying) and takes up to 10 reference images; with `mon_thornback_boar` + `mon_mossling` as style refs, a test Mire Toad matched the game's look. Generate with `scripts/qwen_batch.py` (in this repo).
 - **Built (2026-10-15):** `scripts/qwen_batch.py` runs `art/QUEUE.md` prompts on the local ComfyUI with the game's art as style references, and `prepare_art.py` takes transparent PNGs. See `docs/IMPROVEMENTS_2026-10.md`.
-- **Open:** what to redo with Qwen (the 13 paused outfits, the road art, anything that reads as AI), and whether new art should only come from it from now on.
-- **Open:** 20 images left in `art/QUEUE.md`: the 3 gate guards (new), 13 armor outfits (paused, see below), 3 waiting for the dragon clean-up (Stormscale Drakeling, Vent Wyrmling, `bg_frozen_roost` with its sleeping dragon) and the dropped Volt Eel. Road art isn't queued yet (see Prologue road).
-- **Open:** armor outfits (paused 2026-10-15 at 17 of 30: Warrior 9, Mage 8, Rogue 0; with one base hero for every class, these get redone once on the base body instead). Each is an edit of the class's bare art, so a new hero look means redoing all of them. Only body armor changes the picture, but each outfit paints its own gloves and boots (the Mage's Ridgeplate has steel gauntlets and boots), so the picture can disagree with the gloves/boots actually worn. Every new body armor costs 3 images. Options: torso-only outfits, layered pieces per slot, or keep the class look and show armor only in the UI.
-- **Open:** look-alike icons: Rimeglass Ring vs Frostward Ring, Tidepearl Ring vs Moonstone Ring. Regenerate one of each (~3 credits)?
+- **Built (2026-10-17, art branch, waiting for review): the art redo** (see "Next up" and `docs/IMPROVEMENTS_2026-10.md`). Generated with `scripts/redo_art.py` on the local Qwen; `art/QUEUE.md` and the Higgsfield prompts are history now.
+  - Assumptions to check: the round-15 look is the style for everything; the base hero is the round-15 hero (messy hair, red headband), not yet the creator's layered hair; outfits are body armor only (the hero keeps his boots, gloves and helms show only as icons); the title is a dusk road to the town (no dragon); the Frozen Roost shows one dim shape in the ice.
+  - Not done: the UI kit and the hand-made skill/status icons (UI comes later, by hand), our own LoRA, animation.
+  - Open: armor outfits for helms, gloves and boots (layers on the base hero?), and outfits per body type once the creator has body types.
+  - Open: the art download grew from 5.8 MB to 23 MB (2x backgrounds). Lower the WebP quality, or load each chapter's backgrounds when it starts?
+- ~~Open: what to redo with Qwen; 20 images left in the queue; the paused armor outfits; look-alike ring icons~~: all redone in the art redo.
 - Dropped: Volt Eel art (the eel was only a sample). Its prompt `mon_volt_eel` is still in the queue.
 
 ## Parked
