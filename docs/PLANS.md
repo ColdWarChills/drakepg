@@ -6,7 +6,9 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
-- **Discuss first (designer, 2026-10-15):** the designer wants more control over style and direction ("I just get what you spit out"). The Adventurers' Guild was built on Claude's defaults; review it together (ranks, hunt kinds, numbers, clerks, how the board looks) before building more. From now on, for new systems and UI: show a few short options or a mockup and let the designer pick, then build.
+- **Now (designer, 2026-10-17): redo all graphics in one stylized, unique look.** Style first, picked together from whole-screen theme mocks; then Claude generates the rest in long runs (UI kit, skill icons, backgrounds, monsters, dragon clean-up...). The full list and order: `docs/ART_PLAN.md`.
+- **How to work with the designer (2026-10-17):** don't ask at every step; no long option menus. Style is picked from generated pictures with one short question. Everything else: build with sensible defaults and list what was assumed. (Replaces the 2026-10-15 "show options first" rule, which turned into too many questions.)
+- **Discuss later (designer, 2026-10-15):** the Adventurers' Guild was built on Claude's defaults; review it together (ranks, hunt kinds, numbers, clerks, how the board looks) before building more on it.
 
 Build order (all built, see "Done" at the bottom):
 1. ~~Recall Scroll~~
@@ -68,7 +70,8 @@ Build order (all built, see "Done" at the bottom):
 
 ## UI
 
-- **Decided (designer, 2026-10-15):** the UI needs an overhaul. Do it after the Qwen (ComfyUI) art setup (set up the same day, see Art). The designer is still deciding on the style: discuss options before building.
+- **Decided (designer, 2026-10-15):** the UI needs an overhaul. Do it after the Qwen (ComfyUI) art setup (set up the same day, see Art).
+- **Decided (designer, 2026-10-17):** part of the art redo. First a couple of whole-screen themes (UI + background + characters in one picture), then the picked theme is cut into separate buttons, panels and bars (`docs/ART_PLAN.md` steps 1-2). Round 1 of the themes: see Art.
 
 ## Map (built 2026-10-14)
 
@@ -109,7 +112,7 @@ Build order (all built, see "Done" at the bottom):
 ## Dragon clean-up
 
 - **Decided:** dragons become rare (see above).
-- **Open:** remove or replace the common dragons: Stormscale Drakeling (Ch2), Vent Wyrmling (Ch3), the dragon story thread, the dragon on the title art. Waiting for go.
+- **Decided (2026-10-17): go**, as part of the art redo. Defaults in `docs/ART_PLAN.md`: Stormscale Drakeling -> Stormcrest Heron (Energy), Vent Wyrmling -> Vent Tortoise (Fire, weak to Blunt), Storm Scale -> Storm Feather, the drakeling-fang dagger's text changes; the one old dragon in the story stays (it is the rare one); no dragon on the title art.
 - **Open:** `docs/CHAPTER3_SPEC.md` still asks for the dragon's name ("wakes in Chapter 4?"); revisit with the story spec.
 
 ## Skills, weapons and builds (discussed 2026-10-15)
@@ -185,6 +188,8 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
     - **Long tied and Top knot reworked** (designer: they needed it): the first edits barely changed and the band's knot sat on the ponytail tie / over the bun. New prompts pull the hair back smoothly and tightly under a snug band, keep the knot and tails clear of the ponytail and bun (seed 040 for both); then the plain styles were worked back from those combos (band removed, seed 040), as with Curly. Rule of thumb: make the combo first, then the plain style from it.
   - **Where it stands (2026-10-16, paused here; "we'll continue the character creator later"):** look = full-colour graphic poster (`poster_color`), one base hero (shaved base body), 7 hairstyles and a headband as separate sprites, a headband combo per hairstyle. Not in the game yet: all of it lives in `art/tests/` and the scripts below; nothing in `src/` changed.
   - **Open, next steps for the creator:** body types with the same layers (hair needs to line up with each body's head: a shared neck point, or hair cut per body type); faces as layers; eye colour and skin tone as recolours; then armour on the base body (as layers or per body type); the background style to pair with it; animation (decide on the final look); then our own LoRA from the best ~20 images, and the code work (one base hero, outfit art per armour, creator screen).
+  - **Decided (2026-10-17): redo all graphics, more stylized and unique**; style first, then long generation runs. List: `docs/ART_PLAN.md` (~430 images).
+  - **Round 12 (2026-10-17): whole-screen themes.** One battle screen per theme with UI, background, the base hero (passed as a reference) and a boar, so everything is judged together (`scripts/theme_tests.py`; sheet `art/tests/themes.png`): Carved wood & parchment, Layered paper, Night & gold line, Bold sticker. Waiting for the designer's pick.
   - **Test round notes (2026-10-15/16, branch `claude/art-direction-tests-02b582`):** test LoRAs (Qwen 2.1, from Civitai, in `ComfyUI\models\loras\art_tests\`; downloads need a Civitai login): Flash = [Soyuzmultfilm](https://civitai.com/models/2817513) (selling images OK), Painterly = [Disco Elysium](https://civitai.com/models/2487755) (OK), Ink = [Sidney Sime](https://civitai.com/models/2986328) (OK); alternates [Cinematic Painterly](https://civitai.com/models/2967890) (OK, credit required) and [Dream Loom](https://civitai.com/models/2605989) (OK) lost to them. No Qwen 2.1 pixel LoRA exists: pixel art is plain Qwen + a snap to a real pixel grid (`art_tests.py`, 4x, 64 colours). Scripts: `scripts/art_tests.py` (directions/looks and subjects, `--variants`, `--pick`, `--flip`), `scripts/rig_test.py` (cut-out rig: base + no-arms edit, then build), `scripts/art_compare.py` (battle mocks, the round-1 page, `grid`, `variations`, `flatmix` sheets), `scripts/hero_edits.py` (edits of one anchor: heads, bodies, hair, faces, headband combos), `scripts/hair_layers.py` (base body, hair and headband sprites, combos, sheets). Every generated image has a `.txt` with its settings next to it, and ComfyUI's window shows each job's graph with readable node names. Full-size images stay local in `art/tests/` (git-ignored); the round-1 comparison page (`art/tests/compare/`) and webp copies of every sheet (`art/tests/sheets/<name>.webp`, the `art/tests/<name>.png` files named above) are committed. LoRAs and prompt for the poster characters are also kept outside the repo: `Documents\Art Ideas\2026-10 poster characters`.
 - **Was decided:** keep generating with Higgsfield for now; redo the art later with Qwen at home if the polished look reads as AI. Files swap by key, so nothing in code changes. (Superseded by the direction tests above.)
 - **Set up (2026-10-15):** ComfyUI 0.40 portable + Qwen-Image 2.1 int8 on the designer's PC (`C:\Users\Epic\ComfyUI_windows_portable`, start with `run_nvidia_gpu.bat`, UI at http://127.0.0.1:8188). RTX 5070 Ti: ~20-50 s per image (Higgsfield ~8 min). It writes a real alpha channel (no magenta/green keying) and takes up to 10 reference images; with `mon_thornback_boar` + `mon_mossling` as style refs, a test Mire Toad matched the game's look. Generate with `scripts/qwen_batch.py` (in this repo).
@@ -205,6 +210,13 @@ Facts from the code at the time: Warrior and Rogue skills take the equipped weap
 ## Decisions to keep
 
 - Engine (2026-10-15): stay on Phaser in the browser for now. A Unity port was floated (the designer finds testing easier there) and set aside: it's a full rewrite, and the cloud chats can't run Unity. The game is made for the designer's own enjoyment; selling a few copies (itch.io, or Steam as a wrapped web build) is optional, and disclosing the AI art on a store is fine. Re-asked 2026-10-15: **Unity, but later**: finish the content in Phaser, port once the design stops changing. Make new art large enough (2x masters, rig parts) to carry over.
+- **Proposed (2026-10-17, designer: "think about porting to Unity little by little", WebGL builds for itch.io or wherever):**
+  1. Data first: a script exports `src/data/` to JSON; both versions read the same JSON, so content is written once.
+  2. Rules: port `src/game/` (already Phaser-free) to plain C# classes. A C# copy of `npm run sim` must give the same win rates as the TypeScript one.
+  3. Screens one at a time: Battle, then Room, Map, Inventory and Shop, Guild, Forge, Title and Create. The Phaser game stays live on GitHub Pages until Unity catches up.
+  4. WebGL build to itch.io (GitHub Pages can host it too); desktop builds come almost free.
+  - Costs: while both exist, a new rule is written twice, so once a system is ported, change it only in Unity. Cloud chats can't run Unity, so Unity work happens in PC chats (Unity MCP is set up here). Unity can't import webp: keep PNG masters. Effects (`fx.ts`) and synthesized sounds (`sfx.ts`) are code and get rebuilt in Unity.
+  - Timing: start after the style is locked and the UI kit exists, so the Unity UI is built once, with the new art.
 - Testing tools (2026-10-15): no pause/play/inspector (dropped as bloat). Built instead: Rates x1-x10 in the testing menu, to see drops and level fast.
 - Skills stay simple (Silkroad style): skills just do damage. No interrupts, silences or similar for now.
 - Enrage, not a hard turn limit. Heroic adds no HP. Only specific monsters absorb (resist 150).
