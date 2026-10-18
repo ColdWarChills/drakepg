@@ -36,8 +36,9 @@ export const CLASSES: ClassDef[] = [
       accent: 0x5b3a1e,
       scale: 1,
       art: HERO_ART,
-      // The raised fist holds a weapon on the line from between thumb and index finger to under the little finger.
-      bare: { art: HERO_ART, hands: [{ x: 233, y: 134, angle: -25 }] },
+      // The raised fist holds a weapon on the line from the crook of the thumb to under the little finger (the bottom
+      // finger, on the knuckle side), so weapons lean back; the blade goes behind the head (Figure.cs).
+      bare: { art: HERO_ART, hands: [{ x: 240, y: 136, angle: -30 }] },
     },
   },
   {
@@ -69,7 +70,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x2c1a3a,
       scale: 1,
       art: HERO_ART,
-      bare: { art: HERO_ART, hands: [{ x: 231, y: 135, angle: -25 }] },
+      bare: { art: HERO_ART, hands: [{ x: 240, y: 136, angle: -30 }] },
     },
   },
   {
@@ -104,7 +105,7 @@ export const CLASSES: ClassDef[] = [
       bare: {
         art: HERO_ART,
         hands: [
-          { x: 233, y: 134, angle: -25 },
+          { x: 240, y: 136, angle: -30 },
           // Reverse grip: the blade out of the back of the lowered fist, down and behind.
           { x: 50, y: 268, angle: -130 },
         ],

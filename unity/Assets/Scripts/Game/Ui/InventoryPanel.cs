@@ -61,14 +61,16 @@ namespace Drakepg
             Shadow(root, x, y, w * 0.7f, 26 * k);
             if (bare != null && weaponArt != null)
             {
-                // The body, the weapon in front of it with its grip in each fist (bare.hands are 1x art pixels from the
-                // top-left), then each fist again over the grip (Figure.Fist).
-                Ui.Image(root, x - w / 2, top, w, h, key);
+                // Like Figure: each weapon whole behind the body (bare.hands are 1x art pixels from the top-left), the
+                // body, the weapon's grip end again in front (clipped from the guard down), then each fist over the grip.
                 var wSize = Art.Size(Art.Get(weaponArt));
                 var wh = (float)(weapon.Size ?? 0.6) * size.y * s * k;
                 var ww = wSize.y > 0 ? wSize.x * wh / wSize.y : 0;
                 var grip = (float)(weapon.Grip ?? 0.85);
-                foreach (var hand in bare.Hands ?? new List<Hand>())
+                // Figure.GuardRoom as a fraction of the weapon: the weapon is Size x 240 design px tall there.
+                var cut = Mathf.Max(0, grip - Figure.GuardRoom / ((float)(weapon.Size ?? 0.6) * Figure.ArtHeight)) * wh;
+                var hands = bare.Hands ?? new List<Hand>();
+                foreach (var hand in hands)
                 {
                     var hx = x + ((float)hand.X - size.x / 2) * s * k;
                     var hy = top + (float)hand.Y * s * k;
@@ -76,8 +78,22 @@ namespace Drakepg
                     img.style.transformOrigin = new TransformOrigin(new Length(ww / 2, LengthUnit.Pixel), new Length(grip * wh, LengthUnit.Pixel));
                     img.style.rotate = new Rotate(Angle.Degrees((float)hand.Angle));
                 }
+                Ui.Image(root, x - w / 2, top, w, h, key);
+                foreach (var hand in hands)
+                {
+                    var hx = x + ((float)hand.X - size.x / 2) * s * k;
+                    var hy = top + (float)hand.Y * s * k;
+                    var clip = new VisualElement { pickingMode = PickingMode.Ignore, name = "grip" };
+                    Ui.Place(clip, hx - ww / 2, hy - grip * wh + cut);
+                    Ui.Size(clip, ww, wh - cut);
+                    clip.style.overflow = Overflow.Hidden;
+                    clip.style.transformOrigin = new TransformOrigin(new Length(ww / 2, LengthUnit.Pixel), new Length(grip * wh - cut, LengthUnit.Pixel));
+                    clip.style.rotate = new Rotate(Angle.Degrees((float)hand.Angle));
+                    Ui.Image(clip, 0, -cut, ww, wh, weaponArt);
+                    root.Add(clip);
+                }
                 var body = Art.Get(key);
-                foreach (var hand in bare.Hands ?? new List<Hand>())
+                foreach (var hand in hands)
                 {
                     var fist = Figure.Fist(body, size, hand, out var at);
                     if (fist == null) continue;

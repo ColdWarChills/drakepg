@@ -62,9 +62,15 @@ namespace Drakepg
                     pivot.localPosition = new Vector3(((float)hand.X - size.x / 2) * s, (size.y - (float)hand.Y) * s, 0) / Design.PixelsPerUnit;
                     pivot.localRotation = Quaternion.Euler(0, 0, -(float)hand.Angle);
                     var ws = (float)(weapon.Size ?? 0.6) * DrawnHeight / wSize.y;
-                    // In front of the body, its grip under the fist (the fist is drawn again on top).
-                    var w = AddSprite(wSprite, pivot, 15, ws);
-                    w.transform.localPosition = new Vector3(0, -(0.5f - grip) * wSize.y * ws, 0) / Design.PixelsPerUnit;
+                    var offset = new Vector3(0, -(0.5f - grip) * wSize.y * ws, 0) / Design.PixelsPerUnit;
+                    // Weapons lean away from the viewer: whole behind the body (the blade goes behind the head)...
+                    var back = AddSprite(wSprite, pivot, 5, ws);
+                    back.transform.localPosition = offset;
+                    // ...and the grip end again in front, from the guard down, its handle under the fist (drawn on top).
+                    var front = AddSprite(wSprite, pivot, 15, ws);
+                    front.name = wSprite.name + " grip";
+                    front.transform.localPosition = offset;
+                    CutAboveGuard(front, wSprite, grip, wSize.y * ws);
                     Weapons.Add(pivot);
                     var fist = Fist(sprite, size, hand, out var at);
                     if (fist == null) continue;
@@ -96,14 +102,18 @@ namespace Drakepg
         public const float FistRadius = 17;
 
         static readonly Dictionary<(int, int, int), Sprite> fists = new Dictionary<(int, int, int), Sprite>();
-        static Material fistMaterial;
+        /// <summary>How far above the hand a weapon's front copy reaches, in design px: past the guard resting on the fist.</summary>
+        public const float GuardRoom = 19;
+
+        static Material heldMaterial;
         static readonly int CircleId = Shader.PropertyToID("_Circle");
+        static readonly int CutId = Shader.PropertyToID("_Cut");
 
         /// <summary>
         /// The fist of `body` around `hand` as its own sprite (the square around the fist circle, the same texture, no
         /// copy), drawn over the weapon so the grip disappears into the fist: the fists in the art are closed and face
         /// the viewer, so a held weapon passes in front of the palm and under the fingers. Drawn through a soft circle
-        /// (Fx/FistSprite.shader; a round clip in the menus), only the fist's own pixels cover the weapon, so the
+        /// (Fx/HeldSprite.shader; a round clip in the menus), only the fist's own pixels cover the weapon, so the
         /// guard above it and the pommel below show, and the cut follows the fist's round outline. `at`: the sprite's
         /// bottom-left in 1x px from the art's bottom-left.
         /// </summary>
@@ -124,22 +134,44 @@ namespace Drakepg
             return fist;
         }
 
+        /// <summary>`r` drawn with Fx/HeldSprite.shader, one setting in its property block. False if the shader is missing.</summary>
+        static bool Held(SpriteRenderer r, int id, Vector4 value)
+        {
+            if (heldMaterial == null)
+            {
+                var shader = Resources.Load<Shader>("Fx/HeldSprite");
+                if (shader == null) return false;
+                heldMaterial = new Material(shader) { name = "Held" };
+            }
+            r.sharedMaterial = heldMaterial;
+            var block = new MaterialPropertyBlock();
+            r.GetPropertyBlock(block);
+            block.SetVector(id, value);
+            r.SetPropertyBlock(block);
+            return true;
+        }
+
         /// <summary>A renderer that draws `fist` through its soft circle.</summary>
         static void RoundFist(SpriteRenderer r, Sprite fist)
         {
-            if (fistMaterial == null)
-            {
-                var shader = Resources.Load<Shader>("Fx/FistSprite");
-                if (shader == null) return;
-                fistMaterial = new Material(shader) { name = "Fist" };
-            }
-            r.sharedMaterial = fistMaterial;
             var tex = fist.texture;
             var rect = fist.rect;
-            var block = new MaterialPropertyBlock();
-            r.GetPropertyBlock(block);
-            block.SetVector(CircleId, new Vector4(rect.center.x / tex.width, rect.center.y / tex.height, rect.width / 2 / tex.width, rect.height / 2 / tex.height));
-            r.SetPropertyBlock(block);
+            Held(r, CircleId, new Vector4(rect.center.x / tex.width, rect.center.y / tex.height, rect.width / 2 / tex.width, rect.height / 2 / tex.height));
+        }
+
+        /// <summary>
+        /// A weapon's front copy keeps only its grip end: from `GuardRoom` above the hand (at `grip`, a fraction from the
+        /// top) down, with a 2 px soft edge. `drawnHeight`: the weapon's height in design px. Without the shader the
+        /// copy goes, and the weapon stays behind the body as before.
+        /// </summary>
+        static void CutAboveGuard(SpriteRenderer r, Sprite weapon, float grip, float drawnHeight)
+        {
+            var tex = weapon.texture;
+            var rect = weapon.rect;
+            var room = GuardRoom / drawnHeight;
+            var line = (rect.y + rect.height * (1 - grip + room)) / tex.height;
+            var soft = rect.height * (2 / drawnHeight) / tex.height;
+            if (!Held(r, CutId, new Vector4(line, soft, 0, 0))) r.enabled = false;
         }
 
         void AddShadow(float width)
