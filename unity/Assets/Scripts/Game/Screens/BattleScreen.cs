@@ -16,12 +16,19 @@ namespace Drakepg
     /// </summary>
     public class BattleScreen : GameScreen
     {
-        const float GroundY = 500, PlayerX = 330, EnemyX = 950;
+        const float GroundY = 500;
+        /// <summary>The stage at its normal size: where the fighters stand, and how high above the feet hits land.</summary>
+        const float PlayerHome = 330, EnemyHome = 950, ChestHome = 120;
+        /// <summary>
+        /// This fight's stage (Stage): where the fighters stand and where hits land. A monster too tall for the room
+        /// under its sheet pulls the camera back: everything shrinks toward the middle of the ground line.
+        /// </summary>
+        static float PlayerX = PlayerHome, EnemyX = EnemyHome, Chest = ChestHome, StageScale = 1;
+        /// <summary>The smallest the stage gets (the biggest bosses).</summary>
+        const float MinStage = 0.66f;
         const int LogLines = 4;
         /// <summary>Painted backgrounds keep their ground low, mostly under the bottom panel: lift them so the fighters stand on it.</summary>
         const float BgRaise = 90;
-        /// <summary>Height above the feet where hits land.</summary>
-        const float Chest = 120;
         /// <summary>Skills shown per page of the Skills menu (the other slots are More / Back).</summary>
         const int SkillsPerPage = 4;
         const long GuardColor = 0x8ec5ff;
@@ -183,7 +190,9 @@ namespace Drakepg
         /// <summary>The monster's next move on a parchment tag above it (hidden while a turn plays).</summary>
         VisualElement intentTag, intentMarker;
         Label intentText;
-        float intentW, intentTop;
+        float intentW, intentTop, intentRight;
+        /// <summary>The tag hangs beside the monster's head (no room above it under the sheet).</summary>
+        bool intentBeside;
         bool shellRegrew;
         /// <summary>Red power rising around a monster winding up a big attack.</summary>
         Fx.Flow chargeFlow;
@@ -222,24 +231,26 @@ namespace Drakepg
             busy = true;
 
             Backdrop.Draw(World, zone.Background, zone.Backdrop, BgRaise);
-            hero = new Fighter { Fig = Figure.Create(World, -200, GroundY, PlayerLook, 1, Session.Player.Weapon, Session.Player.WeaponSigil), X = -200, Base = (float)PlayerLook.Scale };
+            var foeFigure = Figure.Create(World, Design.Width + 200, GroundY, monster.Look, -1);
+            Stage(foeFigure);
+            hero = new Fighter { Fig = Figure.Create(World, -200, GroundY, PlayerLook, 1, Session.Player.Weapon, Session.Player.WeaponSigil), X = -200, Base = (float)PlayerLook.Scale * StageScale };
             hero.Fig.EnableBend();
             hero.ReadWeapons();
             if (Session.Player.WeaponSigil != null) Fx.SigilGlow(hero.Fig, Session.Player.WeaponSigil);
             if (monster.Elite != null || monster.Lucky)
             {
                 var color = monster.Lucky ? LuckyGlow : EliteGlow;
-                var glow = Props.Glow(World, EnemyX, GroundY - 110, Design.Hex(color, 0), 7, 7, Design.Depth(GroundY) - 1);
+                var glow = Props.Glow(World, EnemyX, GroundY - 110 * StageScale, Design.Hex(color, 0), 7, 7, Design.Depth(GroundY) - 1);
                 float alpha = 0;
                 Anim.Float(0, 0.4f, 0.6f, a => alpha = a, Ease.Linear, 0.4f);
                 Anim.Float(7, 8, 1.1f, s =>
                 {
                     if (glow == null) return;
-                    glow.transform.localScale = new Vector3(s / 2, s / 2, 1);
+                    glow.transform.localScale = new Vector3(s / 2 * StageScale, s / 2 * StageScale, 1);
                     glow.color = Design.Hex(color, alpha);
                 }, Ease.SineInOut, repeat: -1, yoyo: true);
             }
-            foe = new Fighter { Fig = Figure.Create(World, Design.Width + 200, GroundY, monster.Look, -1), X = Design.Width + 200, Facing = -1, Base = (float)monster.Look.Scale };
+            foe = new Fighter { Fig = foeFigure, X = Design.Width + 200, Facing = -1, Base = (float)monster.Look.Scale * StageScale };
             foe.Fig.EnableBend();
             foe.ReadWeapons();
             hero.Apply();
@@ -445,9 +456,7 @@ namespace Drakepg
             var affix = m.Elite != null ? Db.Affix(m.Elite.Affix) : null;
             var heroic = m.IsHeroic && m.Heroic != null ? $"Heroic: {m.Heroic.Text}" : "";
             var hasAffinities = AffinityParts().Count > 0;
-            var lines = (hasAffinities ? 1 : 0) + (affix != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (heroic != "" ? 1 : 0)
-                        + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + (m.Loot != null ? 1 : 0);
-            var panelH = 100 + lines * LineStep;
+            var panelH = EnemyPanelHeight();
             Felt.MakePatch(enemyHud, EnemyPanelX, 16, 430, panelH, 12, blocksClicks: false);
             // Status names (the highest text, at GroundY - 280) start under the panel and its status chips.
             enemyTextShift = Mathf.Clamp(16 + panelH + 50 - (GroundY - 280), 0, 90);
@@ -487,6 +496,30 @@ namespace Drakepg
             DrawIntentTag(16 + panelH);
         }
 
+        /// <summary>The enemy's sheet: 100 px plus a line for each of affinities, affix, shell, trait, heroic, escape, loot.</summary>
+        float EnemyPanelHeight()
+        {
+            var m = monster;
+            var lines = (AffinityParts().Count > 0 ? 1 : 0) + (m.Elite != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0)
+                        + (m.IsHeroic && m.Heroic != null ? 1 : 0) + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + (m.Loot != null ? 1 : 0);
+            return 100 + lines * LineStep;
+        }
+
+        /// <summary>
+        /// Size the stage for this monster: if its head would reach into its sheet or the status chips under it, pull
+        /// the camera back (both fighters smaller, standing closer to the middle, hits lower) just enough, down to
+        /// MinStage. The backdrop stays as it is.
+        /// </summary>
+        void Stage(Figure foeFigure)
+        {
+            var room = GroundY - (16 + EnemyPanelHeight() + 44);
+            var height = foeFigure.DrawnHeight * (float)monster.Look.Scale;
+            StageScale = height > room ? Mathf.Max(MinStage, room / height) : 1;
+            PlayerX = Design.Width / 2 + (PlayerHome - Design.Width / 2) * StageScale;
+            EnemyX = Design.Width / 2 + (EnemyHome - Design.Width / 2) * StageScale;
+            Chest = ChestHome * StageScale;
+        }
+
         static VisualElement StatusRow(VisualElement parent, float x, float y)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -499,8 +532,10 @@ namespace Drakepg
         /// <summary>The tag for the monster's next move: just above its head, never over its sheet or the status chips under it.</summary>
         void DrawIntentTag(float panelBottom)
         {
-            var (top, _) = BodyOf("enemy");
-            intentTop = Mathf.Max(top - 38 - 18, panelBottom + 46);
+            var (top, width) = BodyOf("enemy");
+            intentBeside = top - 38 - 18 < panelBottom + 46;
+            intentTop = intentBeside ? Mathf.Max(panelBottom + 46, top + 12) : top - 38 - 18;
+            intentRight = EnemyX - width / 2 - 16;
             intentTag = new VisualElement { pickingMode = PickingMode.Ignore, name = "intent" };
             Ui.Place(intentTag, EnemyX - 60, intentTop);
             Ui.Size(intentTag, 120, 38);
@@ -510,7 +545,9 @@ namespace Drakepg
             Root.Add(intentTag);
             intentTag.Add(new Felt.PatchView(Felt.Patch.Tag(), 91).Fill());
             // A small thread-colored marker under the tag, pointing at the monster.
-            intentMarker = new PanelPaint(intentTag, 0, 41, 16, 10).Triangle(0, 0, 16, 0, 8, 9, Felt.Stitch);
+            intentMarker = intentBeside
+                ? new PanelPaint(intentTag, 0, 11, 10, 16).Triangle(0, 0, 0, 16, 9, 8, Felt.Stitch)
+                : new PanelPaint(intentTag, 0, 41, 16, 10).Triangle(0, 0, 16, 0, 8, 9, Felt.Stitch);
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(row, 0, 0);
             row.style.width = Length.Percent(100);
@@ -538,6 +575,15 @@ namespace Drakepg
             var need = Mathf.Min(608, Mathf.Ceil((w + 24 + 8 + 40) / 16) * 16);
             if (need == intentW) return;
             intentW = need;
+            if (intentBeside)
+            {
+                // Left of the monster's head, its marker pointing right at it.
+                var at = Mathf.Max(12, intentRight - need);
+                intentTag.style.left = at;
+                intentTag.style.width = need;
+                intentMarker.style.left = need + 3;
+                return;
+            }
             var left = Mathf.Clamp(EnemyX - need / 2, 12, Design.Width - 12 - need);
             intentTag.style.left = left;
             intentTag.style.width = need;
@@ -1565,7 +1611,7 @@ namespace Drakepg
                     UnityEngine.Object.Destroy(hero.Fig.gameObject);
                     hero.Fig = Figure.Create(World, PlayerX, GroundY, PlayerLook, 1, p.Weapon, p.WeaponSigil);
                     hero.Fig.EnableBend();
-                    hero.Base = (float)PlayerLook.Scale;
+                    hero.Base = (float)PlayerLook.Scale * StageScale;
                     hero.ReadWeapons();
                     if (p.WeaponSigil != null) Fx.SigilGlow(hero.Fig, p.WeaponSigil);
                     hero.Sx = 0;
@@ -2123,7 +2169,7 @@ namespace Drakepg
             var home = HomeX(source);
             var target = new Vector2(HomeX(Other(source)), GroundY - Chest);
             long trail = style.Element != null ? style.Colors[1] : source == "player" ? 0x9fd3ff : MonsterHitColor;
-            var reach = target.x - 170 * dir;
+            var reach = target.x - 170 * StageScale * dir;
 
             // Combo hits after the first: already in reach, a quick step back and in, then the next blow.
             if (!chain.First && style.Kind != "bolt" && style.Kind != "proc")
@@ -2186,7 +2232,7 @@ namespace Drakepg
                     Sfx.Play("whoosh");
                     Afterimages(source, 340, trail);
                     var startX = f.X;
-                    var endX = target.x - 180 * dir;
+                    var endX = target.x - 180 * StageScale * dir;
                     // Tall and thin on take-off; a true parabola, so it hangs at the top before it comes down.
                     f.Shape(0.86f, 1.16f, 0.12f);
                     f.Pose(-6, 0);
@@ -2264,7 +2310,7 @@ namespace Drakepg
             var f = FighterOf(targetSide);
             var dir = e.Source == "player" ? 1 : -1;
             var x = HomeX(targetSide);
-            const float y = GroundY - Chest;
+            var y = GroundY - Chest;
             var magic = e.DamageType == "magic";
             var maxHp = targetSide == "enemy" ? battle.Enemy.MaxHp : battle.Player.MaxHp;
             var weight = Mathf.Clamp((float)(e.Damage / maxHp), 0.05f, 0.6f);
