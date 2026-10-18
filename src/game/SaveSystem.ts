@@ -56,6 +56,25 @@ export const SaveSystem = {
       // Nothing to clear if storage is blocked.
     }
   },
+
+  /**
+   * The save as a file download (`drakepg-save.json`), to import in the Unity version. Loaded first, so an old save is
+   * upgraded to the current version (Unity reads only that). False if there is none.
+   */
+  download(): boolean {
+    const player = SaveSystem.load();
+    if (!player) return false;
+    const file: SaveFile = { version: SAVE_VERSION, savedAt: Date.now(), player: player.data };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'drakepg-save.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return true;
+  },
 };
 
 /**

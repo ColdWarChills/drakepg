@@ -328,6 +328,9 @@ namespace Drakepg
             DesignRoot.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
         }
 
+        /// <summary>A save file's text from the browser's file picker (SendMessage from Plugins/WebGL/SaveFile.jslib).</summary>
+        public void OnSaveFile(string text) => Saves.Picked(text);
+
         /// <summary>
         /// Save the next finished frame (world and UI) as a PNG. F12 saves one to the persistent data folder; tests and
         /// chats pass a path.

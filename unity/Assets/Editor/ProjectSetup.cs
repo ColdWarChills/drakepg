@@ -40,6 +40,9 @@ namespace Drakepg.EditorTools
             // Gzip with a fallback plays from any static host (itch.io, GitHub Pages, a local server).
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = true;
+            // No "Made with Unity" logo before the title (optional since Unity 6; its texture was 2.7 MB of the download).
+            PlayerSettings.SplashScreen.show = false;
+            PlayerSettings.SplashScreen.showUnityLogo = false;
 
             CreatePanelSettings();
             CreateBootScene();

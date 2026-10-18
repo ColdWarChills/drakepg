@@ -65,5 +65,54 @@ namespace Drakepg
             if (p == null) return false;
             return Save(p);
         }
+
+        // --- Picking a save file (Import on the title) ---
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")]
+        static extern void DrakepgPickerInit();
+
+        [System.Runtime.InteropServices.DllImport("__Internal")]
+        static extern void DrakepgPickSaveFile(string objectName, string methodName);
+#endif
+
+        static System.Action<string> picked;
+
+        /// <summary>The browser starts watching the pointer, so a pick knows whether the button is still held.</summary>
+        public static void PreparePicker()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            DrakepgPickerInit();
+#endif
+        }
+
+        /// <summary>
+        /// Ask for a save file and get its text. In the browser this is called on the press (Plugins/WebGL/SaveFile.jslib
+        /// opens the picker on the release, or at once if the click is already over); the editor shows a file
+        /// dialog; a desktop build reads the clipboard.
+        /// </summary>
+        public static void PickFile(System.Action<string> onText)
+        {
+            picked = onText;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            DrakepgPickSaveFile(GameRoot.I.gameObject.name, nameof(GameRoot.OnSaveFile));
+#elif UNITY_EDITOR
+            var path = UnityEditor.EditorUtility.OpenFilePanel("Import a drakepg save", "", "json,txt");
+            if (!string.IsNullOrEmpty(path)) Picked(System.IO.File.ReadAllText(path));
+#else
+            Picked(GUIUtility.systemCopyBuffer);
+#endif
+        }
+
+        /// <summary>The picked file's text (GameRoot.OnSaveFile passes it on from the browser).</summary>
+        public static void Picked(string text)
+        {
+            var done = picked;
+            picked = null;
+            done?.Invoke(text);
+        }
+
+        /// <summary>The browser opens its picker on a release, the editor and desktop on a click.</summary>
+        public static bool PickOnPress => Application.platform == RuntimePlatform.WebGLPlayer;
     }
 }

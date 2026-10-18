@@ -6,7 +6,7 @@ import { hasArt } from '../ui/art';
 import { Button } from '../ui/Button';
 import * as fx from '../ui/fx';
 import { Modal } from '../ui/Modal';
-import { addText } from '../ui/text';
+import { addText, toast } from '../ui/text';
 import { enterScene, goTo, SceneKeys } from './keys';
 
 export class TitleScene extends Phaser.Scene {
@@ -60,6 +60,14 @@ export class TitleScene extends Phaser.Scene {
       height: 64,
       fontSize: 26,
     }).setEnabled(hasSave);
+
+    // Moving to the Unity version: the save as a file its title screen can import.
+    if (hasSave) {
+      new Button(this, cx, 548, 'Export save', () => {
+        if (SaveSystem.download()) toast(this, 'Saved drakepg-save.json: import it in the Unity version.', COLORS.textGood);
+        else toast(this, 'Could not read the save.', COLORS.textBad);
+      }, { width: 220, height: 44, fontSize: 18 });
+    }
 
     addText(this, cx, height - 30, 'v0.8 · Chapter 3', { size: 16, color: COLORS.textDim }).setOrigin(0.5);
   }

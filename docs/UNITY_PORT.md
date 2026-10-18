@@ -124,7 +124,7 @@ Built in one PC session (designer: "continue without questions until you have th
 | 5 Battle | done: every event animated (lunges, combos, projectiles, element bursts, statuses, shells, phases, enrage, swap, flee, Lucky escape, defeat), intents, weak spots, loot odds line, status chips, log. |
 | 6 Room | done: walking (keys and click), depth by feet y, exits (side, back, down) and blockers, NPCs and roles, roaming monsters (wander, alert, chase, Lucky runs, Elites), chests and mimics, campfires, notes, first-visit scenes, bosses and guards, quests and tracker, recall, chapter complete. |
 | 7 Menus | done: inventory and shop (drag, compare, stones), character and skills, map, guild board, forge, cheat menu (backtick or tap the room name 5x), dialogue, "New!" popup, menu (save, sound, story text, fullscreen). |
-| 8 Saves and WebGL | done except web save import (the code is there, `Saves.Import`, no button yet). Web build: menu Drakepg > Build WebGL (4-8 min) to `unity/Build/WebGL`, 100 MB (88 MB of it art); serve the folder with any static server (`python -m http.server --directory unity/Build/WebGL`, or the `unity-web` entry in `.claude/launch.json`). Checked in the browser: title, create (clicks, typing a name), a new game on the road, dialogue, click-to-walk, a save kept across a reload. |
+| 8 Saves and WebGL | done. Web saves move over with **Export save** on the Phaser title (downloads `drakepg-save.json`, upgraded to the current version) and **Import save** on the Unity title (a file picker in the browser, `Plugins/WebGL/SaveFile.jslib`; a file dialog in the editor). Web build: menu Drakepg > Build WebGL (4-8 min) to `unity/Build/WebGL`, about 45 MB (was 100 MB, see Known differences); serve the folder with any static server (`python -m http.server --directory unity/Build/WebGL`, or the `unity-web` entry in `.claude/launch.json`). Checked in the browser: title, create (clicks, typing a name), a new game on the road, dialogue, click-to-walk, a save kept across a reload. |
 | 9 Switch | not started: needs the designer's play-through first. |
 
 **How it's built** (differs from the plan above where noted):
@@ -137,11 +137,11 @@ Built in one PC session (designer: "continue without questions until you have th
 **Known differences and gaps:**
 - No touch-screen hints (desktop controls text only); no hand cursor over clickable things.
 - In the browser the first click only focuses the game. Capital letters in the name box came through the test browser's automation as nothing: check by hand with a real keyboard.
-- The web build is 100 MB because all art is in it at full 2x size: texture crunch or a 1x size for backgrounds would cut it a lot (a visual trade-off for the designer to judge).
+- Web build size (2026-10-18): 101 MB -> 45 MB. Most sprites were stored as raw RGBA (Unity's web target only compresses a mipmapped texture with power-of-two sides), so `scripts/unity_art.py` pads sprites to power-of-two canvases and `Editor/ArtImport.cs` cuts them back out at their own size; all art is crunch-compressed (quality 80); item icons are capped at 256 px and weapons at 512 (their size on a 1440p screen). Art is 27 MB of the 45 (backgrounds 15 MB), the engine code 14 MB. Further cuts if needed: Brotli instead of gzip, or loading each chapter's backgrounds when it starts.
 - Text outlines are thinner than Phaser's stroke. Glyphs like ✦ ✔ ✓ may be missing in the browser build (no system font fallback there): check in the web build, add a font asset if so.
 - Item icons get the Sigil pulse, not its particle twinkles; the wardrobe/inventory hero is a still picture.
 - `npm run sim` / `pace` aren't EditMode tests yet (the golden tests cover the rules).
-- All art sits in `Resources` (about 66 MB of source PNG/JPG), so the web build loads it all at start; Addressables per chapter later.
+- All art sits in `Resources`, so the web build downloads it all at start (27 MB); Addressables per chapter later if the download should shrink further.
 
 **Testing from a chat:** play mode via the Unity MCP; `Drakepg.EditorTools.Drive` (in `Assets/Editor/Drive.cs`) starts a game at a chapter, presses battle buttons, calls screen methods and saves pictures (`GameRoot.Snapshot`, also F12 in the game). `PlayTicker` keeps play mode running while the editor is in the background.
 
