@@ -12,6 +12,16 @@ const HERO_ART = 'char_hero_bare';
  * the top, where the guard rests, and comes out under the curled fingertips at the bottom.
  */
 const RAISED_FIST: Hand = { x: 235.1, y: 133.5, angle: -10, fingers: { art: 'part_hero_fingers', x: 190, y: 95 } };
+/**
+ * Key poses for the top skills (`SkillDef.epic`; scripts/hero_poses.py, Qwen edits of the base): the weapon fist on each
+ * (`char_hero_bare_<pose>`, 1x px). A circle of the fist covers the grip. charge: the power stance, the sword raised
+ * beside his head; leap: both fists together overhead, the weapon swung back behind his head; land: the deep lunge after the blow, both fists low in front.
+ */
+const HERO_POSES: Record<string, Hand[]> = {
+  charge: [{ x: 157, y: 48, angle: -30 }],
+  leap: [{ x: 110, y: 28, angle: -120 }],
+  land: [{ x: 388, y: 305, angle: 128 }],
+};
 
 export const CLASSES: ClassDef[] = [
   {
@@ -43,7 +53,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x5b3a1e,
       scale: 1,
       art: HERO_ART,
-      bare: { art: HERO_ART, hands: [RAISED_FIST] },
+      bare: { art: HERO_ART, hands: [RAISED_FIST], poses: HERO_POSES },
     },
   },
   {
@@ -75,7 +85,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x2c1a3a,
       scale: 1,
       art: HERO_ART,
-      bare: { art: HERO_ART, hands: [RAISED_FIST] },
+      bare: { art: HERO_ART, hands: [RAISED_FIST], poses: HERO_POSES },
     },
   },
   {
@@ -109,6 +119,7 @@ export const CLASSES: ClassDef[] = [
       art: HERO_ART,
       bare: {
         art: HERO_ART,
+        poses: HERO_POSES,
         hands: [
           RAISED_FIST,
           // Reverse grip: the blade out of the back of the lowered fist, down and behind.

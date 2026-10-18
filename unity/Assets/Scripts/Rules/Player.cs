@@ -157,7 +157,7 @@ namespace Drakepg.Rules
                 var look = cls.Clone();
                 look.Art = new List<string> { art };
                 if (cls.Art != null) look.Art.AddRange(cls.Art);
-                look.Bare = new List<BareLook> { new BareLook { Art = art, Hands = hands } };
+                look.Bare = new List<BareLook> { new BareLook { Art = art, Hands = hands, Poses = classBare.Count > 0 ? classBare[0].Poses : null } };
                 look.Bare.AddRange(classBare);
                 return look;
             }

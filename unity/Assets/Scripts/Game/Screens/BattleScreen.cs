@@ -62,6 +62,8 @@ namespace Drakepg
             public long[] Colors;
             public string Element;
             public bool Big;
+            /// <summary>A top skill (SkillDef.Epic): the hero takes drawn key poses for it.</summary>
+            public bool Epic;
         }
 
         /// <summary>Where a hit sits in a multi-hit move: lunge in on the first, stay in reach, go home after the last.</summary>
@@ -114,6 +116,16 @@ namespace Drakepg
 
             /// <summary>Bend the picture: lean (degrees, + = toward the foe) and crouch (0-1); `hold` > 0 springs back after it.</summary>
             public void Pose(float lean, float crouch, float hold = -1) => Fig?.Bend?.Pose(lean, crouch, hold);
+
+            /// <summary>Swap the picture to a drawn key pose (null: standing); the weapons rest in the pose's hands. False if unchanged.</summary>
+            public bool SetPose(string name)
+            {
+                if (Fig == null || !Fig.SetPose(name)) return false;
+                foreach (var t in WeaponTweens) t.Stop();
+                WeaponTweens.Clear();
+                ReadWeapons();
+                return true;
+            }
 
             /// <summary>Shake with strain (degrees; 0 stops).</summary>
             public void Strain(float degrees)
@@ -1336,7 +1348,7 @@ namespace Drakepg
             if (e.MoveId == "attack") return new Style { Kind = e.DamageType == "magic" ? "bolt" : "slash", Colors = colors, Element = e.Element };
             var skill = Db.Skill(e.MoveId);
             if (e.DamageType == "magic") return new Style { Kind = "bolt", Colors = colors, Element = e.Element, Big = skill.Fx == "heavy" };
-            return new Style { Kind = skill.Fx == "heavy" ? "heavy" : "slash", Colors = colors, Element = e.Element };
+            return new Style { Kind = skill.Fx == "heavy" ? "heavy" : "slash", Colors = colors, Element = e.Element, Epic = skill.Epic };
         }
 
         /// <summary>Player hits of the same skill in a row (multi-hit skills); monster moves and weapon specials stand alone.</summary>
@@ -1404,6 +1416,8 @@ namespace Drakepg
                         if (e.Kind == "hit") Impact(e, style, chain);
                         else Dodge(target);
                     }, chain);
+                    // A drawn key pose never outlasts its move.
+                    if (chain.Last && e.Source == "player") hero.SetPose(null);
                     var who = e.Source == "player" ? "You use" : $"{enemyName} uses";
                     if (e.Kind == "hit" && e.ShellLeft.HasValue && monster.Shell != null)
                     {
@@ -2004,9 +2018,12 @@ namespace Drakepg
             long color = style.Element != null ? style.Colors[1] : 0xffe08a;
             Sfx.Play("charge");
             Dim(0.25f, 0.15f);
-            f.Pose(-7, heavy ? 0.9f : 0.6f);
+            // Top skills: the hero drops into a drawn power stance (the bend only adds the strain on top).
+            var posed = style.Epic && f.SetPose("charge");
+            if (posed) f.Squash(1.1f, 0.9f, 0.24f);
+            f.Pose(posed ? -3 : -7, posed ? 0.15f : heavy ? 0.9f : 0.6f);
             f.Strain(heavy ? 2.2f : 1.4f);
-            Cock(f, 0.2f);
+            Cock(f, 0.2f, posed ? 10 : 40);
             Fx.CastCircle(World, f.X, GroundY, color, heavy ? 520 : 380);
             Fx.Dust(World, f.X - 50, GroundY, 3, Design.Depth(GroundY) + 1);
             Fx.Dust(World, f.X + 50, GroundY, 3, Design.Depth(GroundY) + 1);
@@ -2024,13 +2041,14 @@ namespace Drakepg
         /// <summary>
         /// Anticipation: ease back into a coiled pose (weight back and down, leaning away, the weapon cocked far back;
         /// slow into it), then hold a beat with the muscles straining so the eye reads what's coming. `power` 0-1 is how
-        /// big the coming blow is: deeper, further back, longer.
+        /// big the coming blow is: deeper, further back, longer. `drawn`: the figure is in a drawn key pose that already
+        /// crouches, so the bend only leans it back.
         /// </summary>
-        static async Task Anticipate(Fighter f, int dir, float seconds, float hold, float power)
+        static async Task Anticipate(Fighter f, int dir, float seconds, float hold, float power, bool drawn = false)
         {
             Cock(f, seconds, 40 + 30 * power);
             f.Shape(1.06f + 0.07f * power, 0.94f - 0.07f * power, seconds, Ease.CubicOut);
-            f.Pose(-(7 + 7 * power), 0.45f + 0.5f * power);
+            f.Pose(-(7 + 7 * power), drawn ? 0.1f : 0.45f + 0.5f * power);
             var fromX = f.X;
             var toX = f.X - (20 + 18 * power) * dir;
             var toA = -(6 + 6 * power) * dir;
@@ -2133,6 +2151,7 @@ namespace Drakepg
                 : Figure.Create(World, f.X, f.Y, monster.Look, -1);
             copy.transform.localScale = f.Fig.transform.localScale;
             copy.transform.localRotation = f.Fig.transform.localRotation;
+            copy.SetPose(f.Fig.PoseName);
             if (f.Fig.Bend != null) copy.EnableBend()?.Freeze(f.Fig.Bend);
             copy.Order = f.Fig.Order - 1;
             Fx.FadeGhost(copy, color, alpha, ms);
@@ -2227,34 +2246,46 @@ namespace Drakepg
                         Dim(0.35f, 0.18f);
                         ViewIn((home + target.x) / 2, GroundY - 170, 1.08f, 0.2f);
                     }
-                    await Anticipate(f, dir, 0.18f, 0.08f, 1);
+                    // Top skills keep their drawn poses: the power stance coils a little more, then the leap and the landing.
+                    var posed = style.Epic && f.Fig != null && f.Fig.PoseName == "charge";
+                    await Anticipate(f, dir, 0.18f, 0.08f, posed ? 0.3f : 1, posed);
                     Fx.Dust(World, f.X, GroundY, 6, Design.Depth(GroundY) + 1);
                     Sfx.Play("whoosh");
+                    if (posed) f.SetPose("leap");
                     Afterimages(source, 340, trail);
                     var startX = f.X;
                     var endX = target.x - 180 * StageScale * dir;
-                    // Tall and thin on take-off; a true parabola, so it hangs at the top before it comes down.
-                    f.Shape(0.86f, 1.16f, 0.12f);
+                    // Tall and thin on take-off; a true parabola, so it hangs at the top before it comes down. The drawn
+                    // leap is taller (arms overhead) and already tucked: a lower arc keeps it on screen.
+                    f.Shape(posed ? 0.95f : 0.86f, posed ? 1.05f : 1.16f, 0.12f);
                     f.Pose(-6, 0);
+                    var hop = posed ? 90 : 150;
                     await Tw(f, 0.34f, t =>
                     {
                         f.X = Mathf.Lerp(startX, endX, t);
-                        f.Y = GroundY - 4 * 150 * t * (1 - t);
+                        f.Y = GroundY - 4 * hop * t * (1 - t);
                         f.Angle = Mathf.Lerp(-10, 14, t) * dir;
                         if (t > 0.55f) f.Pose(22, 0);
                     }, Ease.Linear);
                     f.Y = GroundY;
                     Sfx.Play("slash");
-                    Swing(f, true);
+                    // Posed: the landing pose is the blow already struck, the weapon down in the ground in front.
+                    if (!(posed && f.SetPose("land"))) Swing(f, true);
                     // Flattened on landing and held low a moment: the weight of it.
-                    f.Squash(1.22f, 0.8f, 0.3f);
-                    f.Pose(26, 1, 0.3f);
+                    f.Squash(posed ? 1.12f : 1.22f, posed ? 0.9f : 0.8f, 0.3f);
+                    if (posed) f.Pose(6, 0.3f, 0.3f);
+                    else f.Pose(26, 1, 0.3f);
                     onContact();
                     Fx.Dust(World, f.X, GroundY, 12, Design.Depth(GroundY) + 1);
                     GameRoot.I.Shake(0.12f, 6);
                     GameRoot.I.Kick(0, 6);
-                    await Anim.Wait(0.16f);
-                    if (chain.Last) await Recover(f, home, 0.34f, 22);
+                    await Anim.Wait(posed ? 0.3f : 0.16f);
+                    if (chain.Last)
+                    {
+                        // Back to standing as he springs up for the hop home.
+                        if (f.SetPose(null)) f.Squash(0.92f, 1.08f, 0.2f);
+                        await Recover(f, home, 0.34f, 22);
+                    }
                     break;
                 }
                 case "bolt":

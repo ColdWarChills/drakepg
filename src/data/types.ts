@@ -84,6 +84,12 @@ export interface Blood {
 export interface BareLook {
   art: string;
   hands: Hand[];
+  /**
+   * Key poses for the big skills (`SkillDef.epic`; Unity battle): pose name (`charge`, `leap`, `land`) -> the weapon
+   * hands on `<art>_<pose>`. The pose art (scripts/hero_poses.py) is drawn at this art's scale with the feet on its
+   * baseline; an outfit uses `<outfit art>_<pose>` when that exists and otherwise keeps its one picture.
+   */
+  poses?: Record<string, Hand[]>;
 }
 
 /**
@@ -131,6 +137,8 @@ export interface SkillDef {
   applies?: Apply[];
   /** Battle visual. Defaults: melee/pierce -> 'slash', magic -> 'bolt', heal -> 'heal', buff -> 'buff'. */
   fx?: SkillFx;
+  /** A top skill: the hero takes drawn key poses for its charge-up and blow (`BareLook.poses`; Unity battle). */
+  epic?: boolean;
 }
 
 export type SkillFx = 'slash' | 'heavy' | 'bolt' | 'heal' | 'buff';

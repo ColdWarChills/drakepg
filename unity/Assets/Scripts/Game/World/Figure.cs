@@ -59,6 +59,8 @@ namespace Drakepg
                 AddShadow(DrawnWidth * 0.7f);
                 Body = AddSprite(sprite, art, 10, s);
                 hasArt = true;
+                standing = new Picture { Body = Body };
+                shown = standing;
                 var wSprite = Art.Get(weaponArt);
                 var wSize = Art.Size(wSprite);
                 var grip = (float)(weapon.Grip ?? 0.85);
@@ -66,8 +68,9 @@ namespace Drakepg
                 {
                     var pivot = new GameObject("hand").transform;
                     pivot.SetParent(art, false);
-                    pivot.localPosition = new Vector3(((float)hand.X - size.x / 2) * s, (size.y - (float)hand.Y) * s, 0) / Design.PixelsPerUnit;
+                    pivot.localPosition = HandAt(hand, size, s);
                     pivot.localRotation = Quaternion.Euler(0, 0, -(float)hand.Angle);
+                    standing.Hands.Add((pivot.localPosition, pivot.localRotation));
                     var ws = (float)(weapon.Size ?? 0.6) * DrawnHeight / wSize.y;
                     var offset = new Vector3(0, -(0.5f - grip) * wSize.y * ws, 0) / Design.PixelsPerUnit;
                     // The sprites hang on a child of the pivot: screens swing the pivot, Bend tilts the child.
@@ -83,25 +86,25 @@ namespace Drakepg
                     front.transform.localPosition = offset;
                     CutAboveGuard(front, wSprite, grip, wSize.y * ws);
                     Weapons.Add(pivot);
-                    // The fingers that wrap the handle on top (the body is the palm behind it).
-                    var fingers = hand.Fingers != null && Art.Has(hand.Fingers.Art) ? Art.Get(hand.Fingers.Art) : null;
-                    if (fingers != null)
-                    {
-                        var fs = Art.Size(fingers);
-                        var fg = AddSprite(fingers, art, 20, s);
-                        fg.name = "fingers";
-                        // Center-pivot sprite, placed by its top-left on the bare art.
-                        fg.transform.localPosition = new Vector3(((float)hand.Fingers.X + fs.x / 2 - size.x / 2) * s,
-                            (size.y - (float)hand.Fingers.Y - fs.y / 2) * s, 0) / Design.PixelsPerUnit;
-                        continue;
-                    }
-                    var fist = Fist(sprite, size, hand, out var at);
-                    if (fist == null) continue;
-                    var f = AddSprite(fist, art, 20, s);
-                    f.name = "fist";
-                    RoundFist(f, fist, sprite, size, hand);
-                    f.transform.localPosition = new Vector3((at.x - size.x / 2) * s, at.y * s, 0) / Design.PixelsPerUnit;
+                    AddGrip(standing, sprite, size, s, hand);
                 }
+                // Key poses for big skills: drawn at the same scale on the same feet, hidden until SetPose.
+                if (bare.Poses != null)
+                    foreach (var kv in bare.Poses)
+                    {
+                        var key = bare.Art + "_" + kv.Key;
+                        if (!Art.Has(key) || kv.Value == null) continue;
+                        var pose = Art.Get(key);
+                        var poseSize = Art.Size(pose);
+                        var pic = new Picture { Body = AddSprite(pose, art, 10, s) };
+                        foreach (var hand in kv.Value)
+                        {
+                            pic.Hands.Add((HandAt(hand, poseSize, s), Quaternion.Euler(0, 0, -(float)hand.Angle)));
+                            AddGrip(pic, pose, poseSize, s, hand);
+                        }
+                        Show(pic, false);
+                        poses[kv.Key] = pic;
+                    }
             }
             else
             {
@@ -120,6 +123,89 @@ namespace Drakepg
                 else BuildShape(look);
             }
             transform.localScale = new Vector3((float)look.Scale * facing, (float)look.Scale, 1);
+        }
+
+        /// <summary>
+        /// One drawn picture of the body (the bare art, or a key pose), the fists or fingers drawn over its grips, and
+        /// where each weapon hand is on it (art space).
+        /// </summary>
+        class Picture
+        {
+            public SpriteRenderer Body;
+            public readonly List<SpriteRenderer> Parts = new List<SpriteRenderer>();
+            public readonly List<(Vector3 at, Quaternion turn)> Hands = new List<(Vector3, Quaternion)>();
+        }
+
+        /// <summary>The bare art (null for a figure without a held weapon), the one shown, and the key poses by name.</summary>
+        Picture standing, shown;
+        readonly Dictionary<string, Picture> poses = new Dictionary<string, Picture>();
+        /// <summary>The key pose shown (null: standing).</summary>
+        public string PoseName { get; private set; }
+
+        /// <summary>Has a drawn key pose by this name (BareLook.Poses with art).</summary>
+        public bool HasPose(string name) => name != null && poses.ContainsKey(name);
+
+        /// <summary>
+        /// Swap the body to a drawn key pose (null or unknown: back to standing). The weapons move to the pose's hands
+        /// (a weapon whose hand the pose lacks is hidden) and keep bending with the body. False if nothing changed.
+        /// </summary>
+        public bool SetPose(string name)
+        {
+            if (standing == null) return false;
+            var pic = HasPose(name) ? poses[name] : standing;
+            if (pic == shown) return false;
+            Show(shown, false);
+            Show(pic, true);
+            shown = pic;
+            Body = pic.Body;
+            PoseName = pic == standing ? null : name;
+            for (int i = 0; i < held.Count; i++)
+            {
+                var (pivot, inHand) = held[i];
+                var has = i < pic.Hands.Count;
+                inHand.gameObject.SetActive(has);
+                if (!has) continue;
+                pivot.localPosition = pic.Hands[i].at;
+                pivot.localRotation = pic.Hands[i].turn;
+                Bend?.SetRest(pivot, pic.Hands[i].at);
+            }
+            return true;
+        }
+
+        static void Show(Picture pic, bool on)
+        {
+            if (pic == null) return;
+            pic.Body.enabled = on;
+            foreach (var r in pic.Parts) r.enabled = on;
+        }
+
+        /// <summary>A hand's weapon point on a body picture of `size` (1x px) drawn at scale `s`, in art space.</summary>
+        static Vector3 HandAt(Hand hand, Vector2 size, float s) =>
+            new Vector3(((float)hand.X - size.x / 2) * s, (size.y - (float)hand.Y) * s, 0) / Design.PixelsPerUnit;
+
+        /// <summary>What covers a hand's grip on `body`: its fingers sprite on top, or a circle of the fist.</summary>
+        void AddGrip(Picture pic, Sprite body, Vector2 size, float s, Hand hand)
+        {
+            // The fingers that wrap the handle on top (the body is the palm behind it).
+            var fingers = hand.Fingers != null && Art.Has(hand.Fingers.Art) ? Art.Get(hand.Fingers.Art) : null;
+            if (fingers != null)
+            {
+                var fs = Art.Size(fingers);
+                var fg = AddSprite(fingers, art, 20, s);
+                fg.name = "fingers";
+                // Center-pivot sprite, placed by its top-left on the bare art.
+                fg.transform.localPosition = new Vector3(((float)hand.Fingers.X + fs.x / 2 - size.x / 2) * s,
+                    (size.y - (float)hand.Fingers.Y - fs.y / 2) * s, 0) / Design.PixelsPerUnit;
+                pic.Parts.Add(fg);
+                return;
+            }
+            var fist = Fist(body, size, hand, out var at);
+            if (fist == null) return;
+            var f = AddSprite(fist, art, 20, s);
+            f.name = "fist";
+            RoundFist(f, fist, body, size, hand);
+            f.transform.localPosition = new Vector3((at.x - size.x / 2) * s, at.y * s, 0) / Design.PixelsPerUnit;
+            pic.Parts.Add(f);
         }
 
         /// <summary>A hand without a fingers sprite: a circle this many 1x art px around it covers the grip (fists are about 36 px across).</summary>
@@ -316,7 +402,10 @@ namespace Drakepg
             var parts = new List<SpriteRenderer>();
             foreach (var r in Renderers)
                 if (r != null && r.transform.parent == art && r.name != "shadow") parts.Add(r);
-            Bend.Init(art, DrawnHeight, DrawnWidth, Body, parts, held);
+            var bodies = new HashSet<SpriteRenderer> { Body };
+            if (standing != null) bodies.Add(standing.Body);
+            foreach (var p in poses.Values) bodies.Add(p.Body);
+            Bend.Init(art, DrawnHeight, DrawnWidth, bodies, parts, held);
             return Bend;
         }
 

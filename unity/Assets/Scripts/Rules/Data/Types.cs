@@ -90,6 +90,8 @@ namespace Drakepg.Rules
     {
         public string Art;
         public List<Hand> Hands = new List<Hand>();
+        /// <summary>Key poses for the big skills: pose name -> the weapon hands on `{Art}_{pose}` (drawn at Art's scale, feet on its baseline).</summary>
+        public Dictionary<string, List<Hand>> Poses;
     }
 
     public class Look
@@ -132,6 +134,8 @@ namespace Drakepg.Rules
         public bool Blunt;
         public List<Apply> Applies;
         public string Fx;
+        /// <summary>A top skill: the hero takes drawn key poses for its charge-up and blow (BareLook.Poses).</summary>
+        public bool Epic;
     }
 
     public class ClassSkill

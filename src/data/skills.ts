@@ -110,6 +110,7 @@ export const SKILLS: SkillDef[] = [
     power: 2,
     applies: [{ status: 'weaken', turns: 2 }],
     fx: 'heavy',
+    epic: true,
   },
   {
     id: 'rallying_roar',
@@ -130,6 +131,7 @@ export const SKILLS: SkillDef[] = [
     kind: 'damage',
     power: 4,
     fx: 'heavy',
+    epic: true,
   },
 
   // --- Mage (magic; Staff Bolt uses the staff's element, the other spells carry their own) ---

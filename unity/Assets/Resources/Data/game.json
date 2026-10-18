@@ -501,7 +501,30 @@
         "y": 95
        }
       }
-     ]
+     ],
+     "poses": {
+      "charge": [
+       {
+        "x": 157,
+        "y": 48,
+        "angle": -30
+       }
+      ],
+      "leap": [
+       {
+        "x": 110,
+        "y": 28,
+        "angle": -120
+       }
+      ],
+      "land": [
+       {
+        "x": 388,
+        "y": 305,
+        "angle": 128
+       }
+      ]
+     }
     }
    }
   },
@@ -594,7 +617,30 @@
         "y": 95
        }
       }
-     ]
+     ],
+     "poses": {
+      "charge": [
+       {
+        "x": 157,
+        "y": 48,
+        "angle": -30
+       }
+      ],
+      "leap": [
+       {
+        "x": 110,
+        "y": 28,
+        "angle": -120
+       }
+      ],
+      "land": [
+       {
+        "x": 388,
+        "y": 305,
+        "angle": 128
+       }
+      ]
+     }
     }
    }
   },
@@ -676,6 +722,29 @@
     "art": "char_hero_bare",
     "bare": {
      "art": "char_hero_bare",
+     "poses": {
+      "charge": [
+       {
+        "x": 157,
+        "y": 48,
+        "angle": -30
+       }
+      ],
+      "leap": [
+       {
+        "x": 110,
+        "y": 28,
+        "angle": -120
+       }
+      ],
+      "land": [
+       {
+        "x": 388,
+        "y": 305,
+        "angle": 128
+       }
+      ]
+     },
      "hands": [
       {
        "x": 235.1,
@@ -3046,7 +3115,8 @@
      "turns": 2
     }
    ],
-   "fx": "heavy"
+   "fx": "heavy",
+   "epic": true
   },
   {
    "id": "rallying_roar",
@@ -3072,7 +3142,8 @@
    "cooldown": 7,
    "kind": "damage",
    "power": 4,
-   "fx": "heavy"
+   "fx": "heavy",
+   "epic": true
   },
   {
    "id": "light_bolt",

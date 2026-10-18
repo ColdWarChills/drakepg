@@ -173,7 +173,16 @@ def _outfit_base(key: str) -> Path | None:
     """Armor outfits (`char_<class>_<armor>`) are edits of the class's bare art in the same framing. Cropping them
     with the bare art's box keeps the fists at the same pixels, so the class's hand anchors stay valid."""
     parts = key.split("_", 2)
-    if len(parts) < 3 or parts[0] != "char" or parts[2] == "bare":
+    if len(parts) < 3 or parts[0] != "char" or parts[2].startswith("bare"):
+        return None
+    return next((p for p in RAW.glob(f"char_{parts[1]}_bare.*") if p.suffix.lower() in EXTS), None)
+
+
+def _pose_base(key: str) -> Path | None:
+    """Key poses (`char_<class>_bare_<pose>`, scripts/hero_poses.py) come already cut to their canvas (feet on the
+    bare art's baseline, centered on it) in the bare art's pixels: they are scaled like the bare art, not trimmed."""
+    parts = key.split("_", 3)
+    if len(parts) < 4 or parts[0] != "char" or parts[2] != "bare":
         return None
     return next((p for p in RAW.glob(f"char_{parts[1]}_bare.*") if p.suffix.lower() in EXTS), None)
 
@@ -206,7 +215,18 @@ def process_sprite(src: Path, key: str, max_res: int) -> Path:
     img = Image.fromarray(rgba, "RGBA")
 
     box = _trim_box(alpha)
-    if base_alpha is not None:
+    pose_base = _pose_base(key)
+    pose_height = None
+    if pose_base is not None:
+        # The bare art's own trim box sets the scale (its height becomes the standard height).
+        bare_alpha = _real_alpha(Image.open(pose_base))
+        if bare_alpha is None:
+            sys.exit(f"{key}: the bare art {pose_base.name} needs a transparent background")
+        bx0, by0, bx1, by1 = _trim_box(bare_alpha)
+        pose_height = by1 - by0
+        box = (0, 0, img.width, img.height)
+        print(f"  a pose: kept its canvas, scaled like {pose_base.stem}")
+    elif base_alpha is not None:
         box = _trim_box(base_alpha)
         x0, y0, x1, y1 = box
         outside = alpha.copy()
@@ -223,6 +243,10 @@ def process_sprite(src: Path, key: str, max_res: int) -> Path:
         scale = min(1.0, ICON_SIZE * res / max(img.width, img.height))
         if scale < 1:
             img = img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
+    elif pose_height is not None:
+        res = RES if max_res >= RES else 1
+        scale = SPRITE_HEIGHT * res / pose_height
+        img = img.resize((round(img.width * scale), round(img.height * scale)), Image.LANCZOS)
     else:
         # Exactly the standard height (hand anchors are pixels on it), scaled up a little if need be.
         max_h = WEAPON_HEIGHT if key.startswith("wpn_") else SPRITE_HEIGHT

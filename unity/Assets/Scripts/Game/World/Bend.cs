@@ -67,9 +67,9 @@ namespace Drakepg
         Vector4 a0, a1, a2, t01, t2, wave;
         float th0, th1, th2;
 
-        /// <summary>Set up on a figure's art root. `parts`: the sprites to bend (the body among them); `held`: each weapon's
-        /// hand pivot and the child under it that tilts with the body.</summary>
-        public void Init(Transform artRoot, float drawnHeight, float drawnWidth, SpriteRenderer body, IEnumerable<SpriteRenderer> parts,
+        /// <summary>Set up on a figure's art root. `parts`: the sprites to bend (the body pictures among them: the bare art
+        /// and any key poses); `held`: each weapon's hand pivot and the child under it that tilts with the body.</summary>
+        public void Init(Transform artRoot, float drawnHeight, float drawnWidth, ICollection<SpriteRenderer> bodies, IEnumerable<SpriteRenderer> parts,
             IEnumerable<(Transform pivot, Transform held)> held)
         {
             art = artRoot;
@@ -81,7 +81,7 @@ namespace Drakepg
             {
                 if (r == null || r.sprite == null) continue;
                 // Small parts (fingers, fists) are near-rigid and keep their quad.
-                if (r == body) r.sprite = Grid(r.sprite);
+                if (bodies.Contains(r)) r.sprite = Grid(r.sprite);
                 // The default sprite material can't bend; FxSprite (alpha) and HeldSprite can.
                 if (r.sharedMaterial == null || r.sharedMaterial.shader == null || !r.sharedMaterial.shader.name.StartsWith("Drakepg/")) r.sharedMaterial = Fx.AlphaMaterial;
                 bent.Add(r);
@@ -89,6 +89,14 @@ namespace Drakepg
             foreach (var (pivot, h) in held) hands.Add(new Hand { Pivot = pivot, Held = h, Rest = pivot.localPosition });
             Solve();
             Push();
+        }
+
+        /// <summary>A weapon hand moved to `rest` (art space, unbent): a drawn key pose swapped in (Figure.SetPose).</summary>
+        public void SetRest(Transform pivot, Vector3 rest)
+        {
+            for (int i = 0; i < hands.Count; i++)
+                if (hands[i].Pivot == pivot) hands[i] = new Hand { Pivot = pivot, Held = hands[i].Held, Rest = rest };
+            if (!frozen) Push();
         }
 
         /// <summary>Lean (degrees, + = forward) and crouch (0-1). `hold` > 0: back to standing after that many seconds.</summary>

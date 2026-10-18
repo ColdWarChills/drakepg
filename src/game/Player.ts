@@ -259,7 +259,8 @@ export class Player {
     const art = `${base}_${armor.id}`;
     const hands = armor.hands?.[this.data.classId] ?? classBare[0]?.hands ?? [];
     const classArt = cls.art === undefined ? [] : Array.isArray(cls.art) ? cls.art : [cls.art];
-    return { ...cls, art: [art, ...classArt], bare: [{ art, hands }, ...classBare] };
+    const poses = classBare[0]?.poses;
+    return { ...cls, art: [art, ...classArt], bare: [{ art, hands, ...(poses ? { poses } : {}) }, ...classBare] };
   }
 
   private traitsOf(slot: EquipSlot): GearTraits {
