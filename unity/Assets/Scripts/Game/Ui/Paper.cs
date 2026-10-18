@@ -352,8 +352,11 @@ namespace Drakepg
 
         static float TileAt(float[] t, int x, int y) => t[(y & (TileSize - 1)) * TileSize + (x & (TileSize - 1))];
 
-        /// <summary>The mock's paper grain: 0.5 n - 0.2 of turbulence at 0.9 per px.</summary>
-        static float[] PaperGrain(int k) => Tile("paper", k, (x, y) => Mathf.Clamp01(0.5f * Contrast(Fractal(x * 0.9f, y * 0.9f, 3, 2)) - 0.2f));
+        /// <summary>
+        /// The mock's paper grain (0.5 n - 0.2 of turbulence at 0.9 per px), kept faint: the mock's parchment is nearly
+        /// smooth, and stronger grain read as noise and dirt in the game (designer, 2026-10-18).
+        /// </summary>
+        static float[] PaperGrain(int k) => Tile("paper", k, (x, y) => Mathf.Clamp01(0.5f * Fractal(x * 0.9f, y * 0.9f, 3, 2) - 0.2f) * 0.3f);
 
         /// <summary>Watercolor granulation: 0.86-1 of the wash, at 0.55 per px.</summary>
         static float[] Granulation(int k) => Tile("gran", k, (x, y) => 0.86f + 0.14f * Fractal(x * 0.55f, y * 0.55f, 9, 2));
@@ -493,14 +496,13 @@ namespace Drakepg
                     washInner = Fill(WavyRect(5.2f, 5.2f, w - 10.4f, h - 10.4f, seed + 40, 4, 1.2f, 50), W, H, k, origin);
                 }
                 var washEdge = wash.HasValue ? Color.Lerp(wash.Value, Ink, 0.25f) : default;
-                // Every sheet gets its own patch of the stain noise. Value noise spreads differently from the mock's
-                // turbulence (1.6 n - 0.75 at 0.011 per px): tuned by eye against it.
+                // Soft cloudy stains, every sheet its own patch: the mock's 1.6 n - 0.75 of turbulence at 0.011 per px,
+                // at 0.6 (matched side by side with the mock). Big menu sheets show many at once, and on a button one
+                // covers half of it: fainter there, or they read as spills.
                 var off = seed * 137 % 900;
-                // Big menu sheets show many stains at once, and on a button one stain covers half of it: fainter there,
-                // or they read as spills.
-                var strength = h < 80 ? 0.45f : Mathf.Lerp(0.8f, 0.3f, Mathf.Clamp01((w * h - 60000) / 300000));
+                var strength = h < 80 ? 0.4f : Mathf.Lerp(0.6f, 0.35f, Mathf.Clamp01((w * h - 60000) / 300000));
                 var stains = new Field(w + Pad * 2, h + Pad * 2, 4,
-                    (fx, fy) => Mathf.Clamp01(1.6f * Contrast(Fractal((fx - Pad + off) * 0.011f, (fy - Pad + off / 2) * 0.011f, 2, 4), 1.5f) - 0.8f) * strength);
+                    (fx, fy) => Mathf.Clamp01(1.6f * Fractal((fx - Pad + off) * 0.011f, (fy - Pad + off / 2) * 0.011f, 2, 4) - 0.75f) * strength);
                 var grains = PaperGrain(k);
                 var gran = Granulation(k);
                 float pr = Parch.r, pg = Parch.g, pb = Parch.b, tr = StainColor.r, tg = StainColor.g, tb = StainColor.b;
@@ -785,8 +787,9 @@ namespace Drakepg
                 var cov = Fill(shape, W, H, k, new Vector2(0, top));
                 Color hide = new Color(0.55f, 0.36f, 0.2f), rimTop = Design.Hex(0x7a5232);
                 // The mock's "hide" (big soft patches, stretched sideways) and fine leather grain.
-                var patches = new Field(w, h, 8, (fx, fy) => Mathf.Clamp01(0.9f * Contrast(Fractal(fx * 0.006f, fy * 0.02f, seed, 3), 2.2f) - 0.42f));
-                var pores = Tile("leather", k, (fx, fy) => Mathf.Clamp01(0.9f * Contrast(Fractal(fx * 0.38f, fy * 0.38f, 5, 3)) - 0.33f) * 0.5f);
+                // Kept smooth like the mock's: soft patches, barely any pores.
+                var patches = new Field(w, h, 8, (fx, fy) => Mathf.Clamp01(0.9f * Contrast(Fractal(fx * 0.006f, fy * 0.02f, seed, 3), 1.4f) - 0.42f));
+                var pores = Tile("leather", k, (fx, fy) => Mathf.Clamp01(0.9f * Fractal(fx * 0.38f, fy * 0.38f, 5, 3) - 0.33f) * 0.3f);
                 var px = new Color[W * H];
                 for (int y = 0; y < H; y++)
                 {
