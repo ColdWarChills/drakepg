@@ -31,6 +31,7 @@ namespace Drakepg
         static readonly Color LuckyText = Design.Css("#8dffbe");
         static readonly Color ToughText = Design.Css("#ff9a4d");
         static readonly Color SetText = Design.Css("#7fe0c0");
+        static readonly Color MpFelt = Design.Hex(0x3f6fb0), HeartInk = Design.Hex(0x3a0f08), DropInk = Design.Hex(0x0f1f3a);
 
         static readonly Dictionary<string, string> EffectLabels = new Dictionary<string, string>
         {
@@ -118,6 +119,8 @@ namespace Drakepg
         MonsterDef monster;
         Fighter hero, foe;
         FeltBar playerHp, playerMp, enemyHp;
+        /// <summary>HP and MP as big numbers on felt shapes (a heart, a drop), like Hearthstone's.</summary>
+        Felt.TokenView playerHeart, playerDrop, enemyHeart;
         /// <summary>The log on the scroll: the last lines, newest darkest (or a hover note in their place).</summary>
         VisualElement logBox;
         readonly List<string> log = new List<string>();
@@ -322,12 +325,14 @@ namespace Drakepg
             var p = battle.Player;
             var m = monster;
 
-            // The hero's sheet.
-            Felt.MakePatch(Root, 14, 16, 420, 122, 11, blocksClicks: false);
-            NameRow(36, 44, p.Name, $"Lv {p.Level}", Felt.Text, 240);
+            // The hero's piece: HP and MP as big numbers on a felt heart and drop, the bars between them.
+            Felt.MakePatch(Root, 14, 16, 460, 126, 11, blocksClicks: false);
+            playerHeart = Felt.Token(Root, 64, 76, 88, Felt.Heart, Felt.RedFelt, 32, HeartInk);
+            playerDrop = Felt.Token(Root, 432, 100, 60, Felt.Drop, MpFelt, 21, DropInk);
+            NameRow(118, 44, p.Name, $"Lv {p.Level}", Felt.Text, 190);
             RefreshWeaponTag();
-            playerHp = new FeltBar(Root, 36, 84, 376, 26, Felt.Hp, "HP ", 21);
-            playerMp = new FeltBar(Root, 36, 114, 376, 21, Felt.Mp, "MP ", 22, 15);
+            playerHp = new FeltBar(Root, 118, 84, 274, 24, Felt.Hp, "", 21, 16);
+            playerMp = new FeltBar(Root, 118, 115, 274, 19, Felt.Mp, "", 22, 14);
 
             // The enemy's sheet. Elites get a line for their affix, shelled bosses one for the shell, monsters with a
             // signature move one for that; most have a loot line. The next move hangs on a tag above the monster.
@@ -338,13 +343,15 @@ namespace Drakepg
                         + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + (m.Loot != null ? 1 : 0);
             var panelH = 100 + lines * LineStep;
             Felt.MakePatch(Root, EnemyPanelX, 16, 430, panelH, 12, blocksClicks: false);
+            // Its HP on a heart over the patch's corner.
+            enemyHeart = Felt.Token(Root, EnemyPanelX + 4, 58, 84, Felt.Heart, Felt.RedFelt, 30, HeartInk);
             // Status names (the highest text, at GroundY - 280) start under the panel and its status chips.
             enemyTextShift = Mathf.Clamp(16 + panelH + 50 - (GroundY - 280), 0, 90);
             // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
             var tag = m.IsHeroic ? "Heroic" : m.Boss ? "Boss" : affix != null ? "Elite" : m.Lucky ? "Lucky" : m.Tough ? "Tough" : "";
             var headColor = m.Boss ? Felt.Bad : affix != null ? Felt.Gold : m.Lucky ? Felt.OnFelt(LuckyText) : m.Tough ? Felt.OnFelt(ToughText) : Felt.Text;
-            NameRow(EnemyPanelX + 22, 44, m.Name, string.Join("  ·  ", new[] { $"Lv {m.Level}", tag }.Where(s => s != "")), headColor, 386);
-            enemyHp = new FeltBar(Root, EnemyPanelX + 22, 84, 386, 26, Felt.Hp, "HP ", 23);
+            NameRow(EnemyPanelX + 56, 44, m.Name, string.Join("  ·  ", new[] { $"Lv {m.Level}", tag }.Where(s => s != "")), headColor, 352);
+            enemyHp = new FeltBar(Root, EnemyPanelX + 56, 84, 352, 24, Felt.Hp, "", 23, 16);
 
             var y = 124f;
             if (hasAffinities)
@@ -515,7 +522,7 @@ namespace Drakepg
             var element = p.WeaponElement;
             var effect = battle.EffectOn(element);
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(row, 412, 44, 1, 0.5f);
+            Ui.Place(row, 460, 44, 1, 0.5f);
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.Center;
             var grit = battle.Grit;
@@ -530,7 +537,7 @@ namespace Drakepg
             if (effect != null) text += Ui.Colored($" · {EffectLabels[effect]}", effect == "weak" ? Felt.Good : Felt.Bad);
             row.Add(Felt.Chip(text, color, 15, 71));
             Root.Add(row);
-            FitWidth(row, 170, 1);
+            FitWidth(row, 150, 1);
             weaponTag = row;
         }
 
@@ -576,7 +583,7 @@ namespace Drakepg
             l.style.fontSize = size;
             l.style.color = Felt.Ink;
             l.style.whiteSpace = WhiteSpace.Normal;
-            l.style.width = 536;
+            l.style.width = 462;
             l.style.flexShrink = 0;
             NoBox(l);
             l.style.marginBottom = 3;
@@ -767,10 +774,10 @@ namespace Drakepg
         void DrawBottomPanel()
         {
             Felt.Runner(Root, 540, 3);
-            var note = Felt.MakePatch(Root, 22, 562, 590, 140, 14, Felt.Patch.LinenLog(), -0.6f, false);
+            var note = Felt.MakePatch(Root, 22, 562, 520, 140, 14, Felt.Patch.LinenLog(), -0.6f, false);
             logBox = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(logBox, 26, 17);
-            Ui.Size(logBox, 540, 108);
+            Ui.Size(logBox, 466, 108);
             logBox.style.overflow = Overflow.Hidden;
             logBox.style.flexDirection = FlexDirection.Column;
             note.Content.Add(logBox);
@@ -784,6 +791,9 @@ namespace Drakepg
             var p = battle.Player;
             var e = battle.Enemy;
             playerHp.SetValue(p.Hp, p.MaxHp, animate);
+            playerHeart.Set(JsMath.Str(Math.Max(0, Math.Round(p.Hp))), animate);
+            playerDrop.Set(JsMath.Str(Math.Max(0, Math.Round(p.Mp))), animate);
+            enemyHeart.Set(JsMath.Str(Math.Max(0, Math.Round(e.Hp))), animate);
             playerMp.SetValue(p.Mp, p.MaxMp, animate);
             enemyHp.SetValue(e.Hp, e.MaxHp, animate);
         }
@@ -919,19 +929,34 @@ namespace Drakepg
 
             // 3 x 2 felt patches sewn on the runner, each tilted a little, a sewing button with its number key (1-6 work too).
             menuButtons = buttons;
-            const int cols = 3;
-            const float bw = 196, bh = 64;
             float[] tilt = { -1f, 0.7f, -0.4f, 0.5f, -0.8f, 0.3f };
+            // The main menu leads with one big Attack, the rest smaller beside it (Persona 5's hierarchy); skill and item
+            // lists are an even 3 x 2 grid.
+            var lead = which == "main";
             for (int i = 0; i < buttons.Count; i++)
             {
                 var b = buttons[i];
-                var x = 640 + i % cols * 210 + bw / 2;
-                var y = 566 + i / cols * 74 + bh / 2;
+                float x, y, w, h, size, iconSize, subSize, angle;
+                if (lead && i == 0)
+                {
+                    (w, h, size, iconSize, subSize, angle) = (220f, 132f, 36f, 40f, 15f, -2.5f);
+                    (x, y) = (560 + w / 2, 566 + h / 2);
+                }
+                else if (lead)
+                {
+                    var j = i - 1;
+                    (w, h, size, iconSize, subSize, angle) = (150f, 60f, 21f, 22f, 13f, tilt[j % tilt.Length]);
+                    (x, y) = (798 + j % 3 * 158 + w / 2, 568 + j / 3 * 70 + h / 2);
+                }
+                else
+                {
+                    (w, h, size, iconSize, subSize, angle) = (228f, 64f, b.Label.Length > 12 ? 20f : 23f, 26f, 15f, tilt[i % tilt.Length]);
+                    (x, y) = (560 + i % 3 * 239 + w / 2, 566 + i / 3 * 74 + h / 2);
+                }
                 // Attack is red felt with cream thread; skills and items are sand felt dyed toward their own color.
                 Color? cloth = b.Main ? Felt.RedFelt : b.Accent is Color accent ? Color.Lerp(Felt.Sand, accent, 0.38f) : (Color?)null;
-                var size = b.Label.Length > 12 ? 20 : 24;
-                var btn = new FeltButton(menu, x, y, b.Label, () => b.Run(), bw, bh, b.Sub, b.Icon, cloth, b.Main ? Felt.RedStitch : (Color?)null, 31 + i,
-                    tilt[i % tilt.Length], $"{i + 1}", size);
+                var btn = new FeltButton(menu, x, y, b.Label, () => b.Run(), w, h, b.Sub, b.Icon, cloth, b.Main ? Felt.RedStitch : (Color?)null, 31 + i,
+                    angle, $"{i + 1}", size, iconSize, subSize);
                 if (b.ArtIcon != null && Art.Has(b.ArtIcon))
                 {
                     // An item's own picture instead of the generic potion.

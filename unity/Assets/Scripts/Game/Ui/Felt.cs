@@ -105,9 +105,11 @@ namespace Drakepg
             public float Fuzz = 1.3f;
             /// <summary>The darker band just inside the edge that makes the patch look padded (its opacity).</summary>
             public float Rim = 0.13f;
+            /// <summary>Thick felt (buttons): its cut edge shows this many px below it, in a darker shade.</summary>
+            public float Thick;
 
             public string Key =>
-                $"{Hex(Cloth)}|{(Thread.HasValue ? Hex(Thread.Value) : "-")}|{Inset}|{Radius}|{Dash}|{Gap}|{ThreadWidth}|{Shadow}|{Fuzz}|{Rim}";
+                $"{Hex(Cloth)}|{(Thread.HasValue ? Hex(Thread.Value) : "-")}|{Inset}|{Radius}|{Dash}|{Gap}|{ThreadWidth}|{Shadow}|{Fuzz}|{Rim}|{Thick}";
 
             /// <summary>A navy panel with cream stitches (the battle sheets, the HUD).</summary>
             public static Patch Panel() => new Patch();
@@ -120,7 +122,7 @@ namespace Drakepg
 
             /// <summary>A sand button with brown stitches; any cloth (red Attack, a skill's color) with its own thread.</summary>
             public static Patch Button(Color? cloth = null, Color? thread = null) =>
-                new Patch { Cloth = cloth ?? Sand, Thread = thread ?? SandStitch, Inset = 5, Radius = 12, Dash = 5, Gap = 4, Rim = 0.1f };
+                new Patch { Cloth = cloth ?? Sand, Thread = thread ?? SandStitch, Inset = 5, Radius = 12, Dash = 5, Gap = 4, Rim = 0.1f, Thick = 4 };
 
             /// <summary>The runner along the bottom of the battle screen.</summary>
             public static Patch Runner() => new Patch { Cloth = NavyDark, Thread = Hem, Inset = 9, Radius = 22, Dash = 9, Gap = 6 };
@@ -270,17 +272,20 @@ namespace Drakepg
                 {
                     var g = i * 1.6f;
                     p.fillColor = new Color(ShadowColor.r, ShadowColor.g, ShadowColor.b, 0.1f);
-                    RoundRect(p, x0 + 2 - g, y0 + 5 - g, w + 2 * g, h + 2 * g, r + g);
+                    RoundRect(p, x0 + 2 - g, y0 + 5 + look.Thick - g, w + 2 * g, h + 2 * g, r + g);
                     p.Fill();
                 }
             }
             // The cloth. Felt's edge isn't a clean cut: the outline wanders in and out a little, every 1.5 px.
-            p.fillColor = look.Cloth;
-            if (look.Fuzz <= 0) RoundRect(p, x0, y0, w, h, r);
-            else
+            void Cloth(float dy, int s)
             {
-                var o = new Outline(x0, y0, w, h, r);
-                var rnd = new Rand(seed);
+                if (look.Fuzz <= 0)
+                {
+                    RoundRect(p, x0, y0 + dy, w, h, r);
+                    return;
+                }
+                var o = new Outline(x0, y0 + dy, w, h, r);
+                var rnd = new Rand(s);
                 var n = Mathf.Max(8, Mathf.RoundToInt(o.Length / 1.5f));
                 p.BeginPath();
                 for (int i = 0; i < n; i++)
@@ -292,6 +297,15 @@ namespace Drakepg
                 }
                 p.ClosePath();
             }
+            if (look.Thick > 0)
+            {
+                // Thick felt: its cut edge, a darker shade, shows below it.
+                p.fillColor = Color.Lerp(look.Cloth, Color.black, 0.4f);
+                Cloth(look.Thick, seed + 5);
+                p.Fill();
+            }
+            p.fillColor = look.Cloth;
+            Cloth(0, seed);
             p.Fill();
             // A darker band just inside the edge: the patch looks padded, not printed.
             if (look.Rim > 0 && w > 12 && h > 12)
@@ -405,6 +419,157 @@ namespace Drakepg
                     p.Stroke();
                 };
             }
+        }
+
+        // --- Tokens: big numbers on felt shapes (Hearthstone-style HP and MP) ---
+
+        /// <summary>Points along cubic curves: `start`, then (control, control, end) triples, in a 100 x 100 box.</summary>
+        static Vector2[] Curve(Vector2 start, params Vector2[] segs)
+        {
+            var pts = new List<Vector2>();
+            var p0 = start;
+            for (int i = 0; i + 2 < segs.Length; i += 3)
+            {
+                Vector2 c1 = segs[i], c2 = segs[i + 1], p3 = segs[i + 2];
+                for (int k = 0; k < 24; k++)
+                {
+                    var t = k / 24f;
+                    var u = 1 - t;
+                    pts.Add(u * u * u * p0 + 3 * u * u * t * c1 + 3 * u * t * t * c2 + t * t * t * p3);
+                }
+                p0 = p3;
+            }
+            return pts.ToArray();
+        }
+
+        static Vector2 V(float x, float y) => new Vector2(x, y);
+
+        /// <summary>A heart (HP), drawn in a 100 x 100 box.</summary>
+        public static readonly Vector2[] Heart = Curve(V(50, 92), V(22, 72), V(4, 54), V(4, 32), V(4, 15), V(16, 4), V(30, 4), V(40, 4), V(47, 10), V(50, 18),
+            V(53, 10), V(60, 4), V(70, 4), V(84, 4), V(96, 15), V(96, 32), V(96, 54), V(78, 72), V(50, 92));
+
+        /// <summary>A drop (MP), drawn in a 100 x 100 box.</summary>
+        public static readonly Vector2[] Drop = Curve(V(50, 4), V(58, 18), V(88, 46), V(88, 66), V(88, 84), V(71, 96), V(50, 96), V(29, 96), V(12, 84),
+            V(12, 66), V(12, 46), V(42, 18), V(50, 4));
+
+        /// <summary>
+        /// A felt token: a shape (Heart, Drop) cut from thick felt with stitches just inside its edge and a big number on
+        /// it. The number pops when it changes. Placed by its top-left; `size` px square.
+        /// </summary>
+        public class TokenView : VisualElement
+        {
+            readonly Label number;
+            readonly float baseFont;
+            Anim.Handle pop;
+
+            public TokenView(Vector2[] shape, Color cloth, float size, float fontSize, Color outline)
+            {
+                baseFont = fontSize;
+                pickingMode = PickingMode.Ignore;
+                name = "token";
+                AddToClassList(FeltPass.Keep);
+                Ui.Size(this, size, size);
+                var k = size / 100f;
+                Vector2 At(Vector2 q, float scale, Vector2 shift) => (new Vector2(50, 50) + (q - new Vector2(50, 50)) * scale) * k + shift;
+                void Shape(Painter2D p, float scale, Vector2 shift)
+                {
+                    p.BeginPath();
+                    for (int i = 0; i < shape.Length; i++)
+                    {
+                        if (i == 0) p.MoveTo(At(shape[i], scale, shift));
+                        else p.LineTo(At(shape[i], scale, shift));
+                    }
+                    p.ClosePath();
+                }
+                generateVisualContent += ctx =>
+                {
+                    var p = ctx.painter2D;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        p.fillColor = new Color(0.04f, 0.03f, 0.02f, 0.14f);
+                        Shape(p, 1 + i * 0.03f, new Vector2(2, 6));
+                        p.Fill();
+                    }
+                    p.fillColor = Color.Lerp(cloth, Color.black, 0.42f);
+                    Shape(p, 1, new Vector2(0, 4));
+                    p.Fill();
+                    p.fillColor = cloth;
+                    Shape(p, 1, Vector2.zero);
+                    p.Fill();
+                    // Stitches along the shape, 80% of its size: dashes laid by length along the outline.
+                    var seam = new Vector2[shape.Length];
+                    for (int i = 0; i < shape.Length; i++) seam[i] = At(shape[i], 0.8f, Vector2.zero);
+                    var lengths = new float[seam.Length + 1];
+                    for (int i = 0; i < seam.Length; i++) lengths[i + 1] = lengths[i] + Vector2.Distance(seam[i], seam[(i + 1) % seam.Length]);
+                    var total = lengths[seam.Length];
+                    Vector2 Along(float s)
+                    {
+                        s = Mathf.Repeat(s, total);
+                        var j = Array.BinarySearch(lengths, s);
+                        if (j < 0) j = ~j - 1;
+                        j = Mathf.Clamp(j, 0, seam.Length - 1);
+                        var seg = lengths[j + 1] - lengths[j];
+                        return Vector2.Lerp(seam[j], seam[(j + 1) % seam.Length], seg > 0 ? (s - lengths[j]) / seg : 0);
+                    }
+                    var count = Mathf.Max(3, Mathf.RoundToInt(total / 10.5f));
+                    var step = total / count;
+                    var dash = step * 0.57f;
+                    p.lineCap = LineCap.Round;
+                    for (int pass = 0; pass < 2; pass++)
+                    {
+                        var shift = pass == 0 ? new Vector2(0.8f, 1.2f) : Vector2.zero;
+                        p.lineWidth = pass == 0 ? 2.2f : 2f;
+                        p.strokeColor = pass == 0 ? new Color(0, 0, 0, 0.35f) : RedStitch;
+                        p.BeginPath();
+                        for (int i = 0; i < count; i++)
+                            for (int j = 0; j <= 3; j++)
+                            {
+                                var pt = Along(i * step + dash * j / 3) + shift;
+                                if (j == 0) p.MoveTo(pt);
+                                else p.LineTo(pt);
+                            }
+                        p.Stroke();
+                    }
+                };
+                number = new Label { pickingMode = PickingMode.Ignore };
+                number.style.position = Position.Absolute;
+                number.style.left = number.style.right = 0;
+                number.style.top = 0;
+                number.style.bottom = shape == Heart ? size * 0.1f : -size * 0.08f;
+                number.style.fontSize = fontSize;
+                number.style.color = Cream;
+                number.style.unityTextAlign = TextAnchor.MiddleCenter;
+                number.style.marginLeft = number.style.marginRight = number.style.marginTop = number.style.marginBottom = 0;
+                number.style.paddingLeft = number.style.paddingRight = number.style.paddingTop = number.style.paddingBottom = 0;
+                number.style.unityTextOutlineWidth = 0.25f;
+                number.style.unityTextOutlineColor = outline;
+                Fonts.Title(number);
+                number.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+                Add(number);
+            }
+
+            /// <summary>Show a number; `animate`: a little pop when it changed.</summary>
+            public void Set(string text, bool animate = true)
+            {
+                if (number.text == text) return;
+                var had = !string.IsNullOrEmpty(number.text);
+                number.text = text;
+                // Long numbers (a boss's HP) shrink to fit the shape.
+                number.style.fontSize = text.Length > 3 ? baseFont * 3 / text.Length : baseFont;
+                number.style.scale = new Scale(Vector3.one);
+                if (!animate || !had) return;
+                pop?.Stop();
+                pop = Anim.Float(1.3f, 1, 0.3f, v => number.style.scale = new Scale(new Vector3(v, v, 1)), Ease.BackOut);
+            }
+        }
+
+        /// <summary>A token centered at (cx, cy).</summary>
+        public static TokenView Token(VisualElement parent, float cx, float cy, float size, Vector2[] shape, Color cloth, float fontSize, Color outline)
+        {
+            var t = new TokenView(shape, cloth, size, fontSize, outline);
+            Ui.Place(t, cx - size / 2, cy - size / 2);
+            parent?.Add(t);
+            return t;
         }
 
         // --- Baked pictures: world sprites and sewing buttons ---
@@ -712,7 +877,7 @@ namespace Drakepg
 
         public FeltButton(VisualElement parent, float x, float y, string text, Action onClick, float width = 196, float height = 64,
             string sublabel = null, string icon = null, Color? cloth = null, Color? thread = null, int seed = 1, float rotate = 0, string key = null,
-            float fontSize = 24)
+            float fontSize = 24, float iconSize = 26, float subSize = 15)
         {
             this.onClick = onClick;
             var face = cloth ?? Felt.Sand;
@@ -741,7 +906,7 @@ namespace Drakepg
             column.Add(row);
             if (icon != null)
             {
-                var ic = Felt.Icon(null, 0, 0, 26, icon, dark);
+                var ic = Felt.Icon(null, 0, 0, iconSize, icon, dark);
                 ic.style.position = Position.Relative;
                 ic.style.marginRight = 8;
                 row.Add(ic);
@@ -751,7 +916,7 @@ namespace Drakepg
             row.Add(label);
             if (sublabel != null)
             {
-                var sub = Flow(sublabel, 15, dark ? Felt.Cream : Felt.BrownDim);
+                var sub = Flow(sublabel, subSize, dark ? Felt.Cream : Felt.BrownDim);
                 Fonts.Bold(sub);
                 sub.style.marginTop = 2;
                 sub.style.opacity = dark ? 0.9f : 1;
@@ -791,10 +956,10 @@ namespace Drakepg
             return l;
         }
 
-        /// <summary>Lift on hover, press down, fade when disabled.</summary>
+        /// <summary>Lift on hover, press down onto its thick edge, fade when disabled.</summary>
         void Paint()
         {
-            var lift = !enabled ? 0 : down ? 1 : hover ? -3 : 0;
+            var lift = !enabled ? 0 : down ? 3 : hover ? -3 : 0;
             style.translate = new Translate(0, lift);
             style.scale = new Scale(Vector3.one * (down && enabled ? 0.97f : 1));
             style.opacity = enabled ? 1 : 0.55f;
