@@ -814,10 +814,15 @@ namespace Drakepg
         }
     }
 
-    /// <summary>A health or mana bar: a felt strip with a row of light stitches in a dark felt groove. (x, y) = left edge, middle.</summary>
+    /// <summary>
+    /// A health or mana bar: a felt strip with a row of light stitches in a dark felt groove. (x, y) = left edge, middle.
+    /// It can preview a coming hit as a pale chunk at the end of the strip (Preview).
+    /// </summary>
     public class FeltBar : VisualElement
     {
-        readonly VisualElement strip;
+        readonly VisualElement strip, clip;
+        VisualElement preview;
+        Anim.Handle previewPulse;
         readonly Label label;
         readonly float inner;
         readonly string prefix;
@@ -834,7 +839,7 @@ namespace Drakepg
             Ui.Rect(this, 0, 0, width, height, Felt.Groove, height / 2);
             // The strip slides in from the left, so its rounded right end always shows; the clip rounds its left end.
             inner = width - 6;
-            var clip = new VisualElement { pickingMode = PickingMode.Ignore };
+            clip = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(clip, 3, 3);
             Ui.Size(clip, inner, height - 6);
             clip.style.overflow = Overflow.Hidden;
@@ -850,6 +855,32 @@ namespace Drakepg
         }
 
         void Show(float w) => strip.style.left = w - inner;
+
+        /// <summary>
+        /// The coming hit as a pale chunk at the end of the strip, from (current - damage) to current, pulsing; all that's
+        /// left when the hit would kill (pulsing faster). No damage: hidden.
+        /// </summary>
+        public void Preview(double current, double max, double? damage)
+        {
+            if (preview == null)
+            {
+                preview = Ui.Rect(clip, 0, 0, 0, inner > 0 ? clip.style.height.value.value : 0, new Color(1, 0.96f, 0.86f), clip.style.height.value.value / 2);
+                preview.name = "preview";
+            }
+            previewPulse?.Stop();
+            if (damage == null || damage <= 0 || max <= 0 || current <= 0)
+            {
+                preview.style.display = DisplayStyle.None;
+                return;
+            }
+            var hi = Mathf.Clamp01((float)(current / max));
+            var lo = Mathf.Clamp01((float)((current - damage.Value) / max));
+            preview.style.left = inner * lo;
+            preview.style.width = Mathf.Max(6, inner * (hi - lo));
+            preview.style.display = DisplayStyle.Flex;
+            var lethal = damage.Value >= current;
+            previewPulse = Anim.Float(0.25f, lethal ? 0.8f : 0.6f, lethal ? 0.35f : 0.7f, a => preview.style.opacity = a, Ease.SineInOut, repeat: -1, yoyo: true);
+        }
 
         public FeltBar SetValue(double current, double max, bool animate = true)
         {

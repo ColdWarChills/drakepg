@@ -221,6 +221,7 @@ namespace Drakepg
             Idle(hero);
             Idle(foe);
             busy = false;
+            RefreshPreview();
             ShowMenu("main");
         }
 
@@ -438,9 +439,24 @@ namespace Drakepg
         /// <summary>The tag fades while a turn plays (its move is about to happen) and comes back with the next one.</summary>
         void FadeIntent(bool show)
         {
+            RefreshPreview();
             if (intentTag == null) return;
             var from = intentTag.resolvedStyle.opacity;
             Anim.Float(from, show ? 1 : 0, 0.2f, v => intentTag.style.opacity = v, Ease.Linear);
+        }
+
+        /// <summary>
+        /// The monster's telegraphed hit as a pale chunk at the end of the hero's HP bar, so "will I survive?" is one
+        /// glance (Into the Breach's damage preview). Not while a turn plays, not for a wind-up (it hits a turn later).
+        /// </summary>
+        void RefreshPreview()
+        {
+            if (playerHp == null) return;
+            var b = battle;
+            var a = b.Intent;
+            double? dmg = null;
+            if (!busy && !b.IsOver && a != null && (a.Windup == null || b.Charging == a)) dmg = b.IntentDamage();
+            playerHp.Preview(b.Player.Hp, b.Player.MaxHp, dmg);
         }
 
         /// <summary>"Next: Root Crush ~31 dmg · Defend!" plus "Enrages in 3" / "Enraged +40%".</summary>
@@ -494,6 +510,7 @@ namespace Drakepg
             if (enrage != "") text += Ui.Colored($"  ·  {enrage}", Felt.Bad);
             intentText.text = text;
             intentText.style.color = color;
+            RefreshPreview();
             FitOnce(intentText, 608 - 72);
         }
 
