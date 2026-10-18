@@ -18,7 +18,7 @@ namespace Drakepg
         /// <summary>What an element should look like, and what was last baked for it.</summary>
         class Look
         {
-            public Color Fill, Border;
+            public Color Fill, Border, Thread;
             public float Width, Radius;
             public string Key;
         }
@@ -67,7 +67,14 @@ namespace Drakepg
             }
             // After baking, the element's own background and border colors are cleared; anything set since is new.
             if (rs.backgroundColor.a > 0 || !mine) look.Fill = inked ? FeltPass.Fill(rs.backgroundColor) : rs.backgroundColor;
-            if (rs.borderTopColor.a > 0 || !mine) look.Border = inked ? FeltPass.Border(rs.borderTopColor) : rs.borderTopColor;
+            if (inked && rs.borderTopWidth > 0)
+            {
+                // On felt a rim is sewn on (FeltPass.Seam): only the fill is baked, inside where the rim was.
+                if (rs.borderTopColor.a > 0 || !mine) look.Thread = FeltPass.Border(rs.borderTopColor);
+                look.Border = Color.clear;
+                if (look.Thread.a > 0) FeltPass.Seam(e, look.Thread, rs.borderTopWidth, radius);
+            }
+            else if (rs.borderTopColor.a > 0 || !mine) look.Border = rs.borderTopColor;
             look.Width = rs.borderTopWidth;
             look.Radius = radius;
             var key = Key(look);

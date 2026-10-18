@@ -6,11 +6,13 @@ using UnityEngine.UIElements;
 namespace Drakepg
 {
     /// <summary>
-    /// The felt UI kit (the mock art/ui/battle_felt.html, picked by the designer 2026-10-18): patches of felt with
-    /// fuzzy edges, a soft nap and running stitches; sand-felt buttons with brown stitches (Attack in red felt), sewing
-    /// buttons for key numbers, a felt runner along the bottom and a linen patch for the log. Everything is drawn in code
-    /// (designed by hand, never generated: docs/PLANS.md, Art) and baked into textures at the screen's resolution,
-    /// cached by size, colors and seed.
+    /// The felt UI kit (the mock art/ui/battle_felt.html, picked by the designer 2026-10-18): patches of felt with a
+    /// slightly hairy edge, a padded rim and running stitches; sand-felt buttons with brown stitches (Attack in red
+    /// felt), sewing buttons for key numbers, a felt runner along the bottom and a linen patch for the log.
+    /// Patches are drawn as vector shapes (UI Toolkit's painter): crisp at any size and resolution, no textures to bake
+    /// or stretch. The first version baked noisy cloth textures, and big menus (baked small, shown 2x) read as grain
+    /// (designer: "still too grainy"). Only world sprites (class cards, the result panel) and sewing buttons are baked.
+    /// Everything is drawn in code, designed by hand, never generated (docs/PLANS.md, Art).
     /// </summary>
     public static class Felt
     {
@@ -46,7 +48,6 @@ namespace Drakepg
         public static readonly Color Cream = Design.Hex(0xfff4dc);
 
         static readonly Color ShadowColor = Design.Hex(0x0a0806);
-        static readonly Color WeaveColor = new Color(0.35f, 0.27f, 0.18f);
 
         /// <summary>A color made light enough to read as text on navy felt.</summary>
         public static Color OnFelt(Color c)
@@ -56,7 +57,7 @@ namespace Drakepg
             return Color.HSVToRGB(h, Mathf.Min(s, 0.55f), Mathf.Max(v, 0.88f));
         }
 
-        /// <summary>Texels per design px for baked felt: the UI's screen scale, at least 1.</summary>
+        /// <summary>Texels per design px for baked pictures: the UI's screen scale, at least 1.</summary>
         public static int Density
         {
             get
@@ -65,9 +66,6 @@ namespace Drakepg
                 return Mathf.Clamp(Mathf.CeilToInt(s), 1, 3);
             }
         }
-
-        /// <summary>Texels per design px for a baked picture this big: big menu patches bake at 1 (soft felt hides it).</summary>
-        static int DensityFor(float w, float h) => w * h > 250000 ? 1 : Density;
 
         static readonly Dictionary<string, Texture2D> cache = new Dictionary<string, Texture2D>();
 
@@ -81,10 +79,8 @@ namespace Drakepg
 
         static string Hex(Color c) => ColorUtility.ToHtmlStringRGBA(c);
 
-        // --- Shapes (ports of the mock's mocklib.js) ---
-
-        /// <summary>The mock's seeded random (a Lehmer generator), so a seed always cuts the same edge.</summary>
-        sealed class Rand
+        /// <summary>The mock's seeded random (a Lehmer generator), so a seed always gives the same edge.</summary>
+        internal sealed class Rand
         {
             long s;
             public Rand(int seed) => s = (long)seed * 9301 + 49297;
@@ -95,162 +91,349 @@ namespace Drakepg
             }
         }
 
-        /// <summary>A rounded rectangle whose edges wave gently (wavyRect()): `amp` px, `wave` px per bump.</summary>
-        public static List<Vector2> WavyRect(float x, float y, float w, float h, int seed, float r = 14, float amp = 2.2f, float wave = 70, float step = 6)
+        // --- How a patch looks ---
+
+        /// <summary>How a felt patch is made: its cloth, its thread and where the stitches run.</summary>
+        public class Patch
         {
-            r = Mathf.Min(r, w / 2, h / 2);
-            var R = new Rand(seed);
-            var pts = new List<Vector2>();
-            var phase = new[] { R.Next() * 6.28f, R.Next() * 6.28f, R.Next() * 6.28f, R.Next() * 6.28f };
-            void Side(float x0, float y0, float x1, float y1, float ph)
-            {
-                var len = Mathf.Sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
-                if (len < 0.01f) return;
-                var nx = -(y1 - y0) / len;
-                var ny = (x1 - x0) / len;
-                for (float d = 0; d < len; d += step)
-                {
-                    var t = d / len;
-                    var o = Mathf.Sin(ph + d / wave * 6.28f) * amp * Mathf.Sin(t * Mathf.PI);
-                    pts.Add(new Vector2(x0 + (x1 - x0) * t + nx * o, y0 + (y1 - y0) * t + ny * o));
-                }
-            }
-            void Arc(float cx, float cy, float a0)
-            {
-                for (int i = 0; i <= 6; i++)
-                {
-                    var a = a0 + i / 6f * Mathf.PI / 2;
-                    pts.Add(new Vector2(cx + Mathf.Cos(a) * r, cy + Mathf.Sin(a) * r));
-                }
-            }
-            Side(x + r, y, x + w - r, y, phase[0]);
-            Arc(x + w - r, y + r, -Mathf.PI / 2);
-            Side(x + w, y + r, x + w, y + h - r, phase[1]);
-            Arc(x + w - r, y + h - r, 0);
-            Side(x + w - r, y + h, x + r, y + h, phase[2]);
-            Arc(x + r, y + h - r, Mathf.PI / 2);
-            Side(x, y + h - r, x, y + r, phase[3]);
-            Arc(x + r, y + r, Mathf.PI);
-            return pts;
+            public Color Cloth = Navy;
+            public Color? Thread = Felt.Stitch;
+            public float Inset = 7, Radius = 16, Dash = 7, Gap = 5, ThreadWidth = 2.2f;
+            /// <summary>A soft drop shadow (2 px right, 5 down).</summary>
+            public bool Shadow = true;
+            /// <summary>How hairy the edge is: px the outline wanders in and out (0: a clean cut, like linen).</summary>
+            public float Fuzz = 1.3f;
+            /// <summary>The darker band just inside the edge that makes the patch look padded (its opacity).</summary>
+            public float Rim = 0.13f;
+
+            public string Key =>
+                $"{Hex(Cloth)}|{(Thread.HasValue ? Hex(Thread.Value) : "-")}|{Inset}|{Radius}|{Dash}|{Gap}|{ThreadWidth}|{Shadow}|{Fuzz}|{Rim}";
+
+            /// <summary>A navy panel with cream stitches (the battle sheets, the HUD).</summary>
+            public static Patch Panel() => new Patch();
+
+            /// <summary>A big navy menu with a wider hem.</summary>
+            public static Patch Menu() => new Patch { Inset = 10, Radius = 18, Dash = 9, Gap = 6, ThreadWidth = 2.4f };
+
+            /// <summary>A small navy tag (the next move, the quest tracker, prompts).</summary>
+            public static Patch Tag() => new Patch { Inset = 5, Radius = 10, Dash = 5, Gap = 4, ThreadWidth = 1.8f };
+
+            /// <summary>A sand button with brown stitches; any cloth (red Attack, a skill's color) with its own thread.</summary>
+            public static Patch Button(Color? cloth = null, Color? thread = null) =>
+                new Patch { Cloth = cloth ?? Sand, Thread = thread ?? SandStitch, Inset = 5, Radius = 12, Dash = 5, Gap = 4, Rim = 0.1f };
+
+            /// <summary>The runner along the bottom of the battle screen.</summary>
+            public static Patch Runner() => new Patch { Cloth = NavyDark, Thread = Hem, Inset = 9, Radius = 22, Dash = 9, Gap = 6 };
+
+            /// <summary>The linen patch the battle log is written on: a clean cut edge, brown stitches.</summary>
+            public static Patch LinenLog() =>
+                new Patch { Cloth = Linen, Thread = LinenStitch, Inset = 7, Radius = 10, Dash = 6, Gap = 5, ThreadWidth = 2, Fuzz = 0, Rim = 0.06f };
         }
 
-        // --- Rasterizing ---
+        // --- Vector drawing ---
 
-        /// <summary>Coverage (0-1) of a polygon on a W x H grid, anti-aliased: 4 sub-rows per row, exact spans in x.</summary>
-        static float[] Fill(List<Vector2> poly, int W, int H, float scale, Vector2 offset)
+        /// <summary>Walks a rounded rectangle's outline clockwise from the top edge's start: the point and its outward normal at length s.</summary>
+        internal readonly struct Outline
         {
-            var cov = new float[W * H];
-            const int sub = 4;
-            var n = poly.Count;
-            var p = new Vector2[n];
-            for (int i = 0; i < n; i++) p[i] = (poly[i] + offset) * scale;
-            var xs = new List<float>(16);
-            for (int row = 0; row < H; row++)
+            readonly float x, y, w, h, r, l1, l2, a;
+            public readonly float Length;
+
+            public Outline(float x, float y, float w, float h, float r)
             {
-                for (int s = 0; s < sub; s++)
+                r = Mathf.Max(0, Mathf.Min(r, w / 2, h / 2));
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.r = r;
+                l1 = Mathf.Max(0, w - 2 * r);
+                l2 = Mathf.Max(0, h - 2 * r);
+                a = Mathf.PI * r / 2;
+                Length = 2 * l1 + 2 * l2 + 4 * a;
+            }
+
+            Vector2 Arc(float cx, float cy, float deg, out Vector2 n)
+            {
+                var rad = deg * Mathf.Deg2Rad;
+                n = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+                return new Vector2(cx + n.x * r, cy + n.y * r);
+            }
+
+            public Vector2 At(float s, out Vector2 n)
+            {
+                if (Length <= 0)
                 {
-                    var yy = row + (s + 0.5f) / sub;
-                    xs.Clear();
-                    for (int i = 0; i < n; i++)
+                    n = Vector2.up;
+                    return new Vector2(x, y);
+                }
+                s %= Length;
+                if (s < 0) s += Length;
+                if (s < l1)
+                {
+                    n = Vector2.down;
+                    return new Vector2(x + r + s, y);
+                }
+                s -= l1;
+                if (s < a) return Arc(x + w - r, y + r, -90 + s / a * 90, out n);
+                s -= a;
+                if (s < l2)
+                {
+                    n = Vector2.right;
+                    return new Vector2(x + w, y + r + s);
+                }
+                s -= l2;
+                if (s < a) return Arc(x + w - r, y + h - r, s / a * 90, out n);
+                s -= a;
+                if (s < l1)
+                {
+                    n = Vector2.up;
+                    return new Vector2(x + w - r - s, y + h);
+                }
+                s -= l1;
+                if (s < a) return Arc(x + r, y + h - r, 90 + s / a * 90, out n);
+                s -= a;
+                if (s < l2)
+                {
+                    n = Vector2.left;
+                    return new Vector2(x, y + h - r - s);
+                }
+                s -= l2;
+                return Arc(x + r, y + r, 180 + s / Mathf.Max(a, 1e-4f) * 90, out n);
+            }
+        }
+
+        /// <summary>A closed rounded rectangle path.</summary>
+        internal static void RoundRect(Painter2D p, float x, float y, float w, float h, float r)
+        {
+            r = Mathf.Max(0, Mathf.Min(r, w / 2, h / 2));
+            p.BeginPath();
+            p.MoveTo(new Vector2(x + r, y));
+            p.LineTo(new Vector2(x + w - r, y));
+            if (r > 0) p.Arc(new Vector2(x + w - r, y + r), r, Angle.Degrees(-90), Angle.Degrees(0));
+            p.LineTo(new Vector2(x + w, y + h - r));
+            if (r > 0) p.Arc(new Vector2(x + w - r, y + h - r), r, Angle.Degrees(0), Angle.Degrees(90));
+            p.LineTo(new Vector2(x + r, y + h));
+            if (r > 0) p.Arc(new Vector2(x + r, y + h - r), r, Angle.Degrees(90), Angle.Degrees(180));
+            p.LineTo(new Vector2(x, y + r));
+            if (r > 0) p.Arc(new Vector2(x + r, y + r), r, Angle.Degrees(180), Angle.Degrees(270));
+            p.ClosePath();
+        }
+
+        /// <summary>
+        /// Running stitches along a rounded rectangle: a whole number of dashes (so the seam closes evenly), round ends,
+        /// a thread shadow down-right first (like thread pulled through cloth), then the thread.
+        /// </summary>
+        internal static void Stitches(Painter2D p, float x, float y, float w, float h, float r, float dash, float gap, float width, Color color)
+        {
+            var o = new Outline(x, y, w, h, r);
+            if (o.Length <= 0) return;
+            var period = dash + gap;
+            var count = Mathf.Max(1, Mathf.RoundToInt(o.Length / period));
+            var step = o.Length / count;
+            var len = dash * step / period;
+            var parts = Mathf.Max(1, Mathf.CeilToInt(len / 2));
+            p.lineCap = LineCap.Round;
+            p.lineJoin = LineJoin.Round;
+            for (int pass = 0; pass < 2; pass++)
+            {
+                var shift = pass == 0 ? new Vector2(0.8f, 1.2f) : Vector2.zero;
+                p.lineWidth = pass == 0 ? width * 1.1f : width;
+                p.strokeColor = pass == 0 ? new Color(0, 0, 0, 0.35f * color.a) : color;
+                p.BeginPath();
+                for (int i = 0; i < count; i++)
+                {
+                    var s0 = i * step;
+                    for (int j = 0; j <= parts; j++)
                     {
-                        var a = p[i];
-                        var b = p[(i + 1) % n];
-                        if ((a.y <= yy && b.y > yy) || (b.y <= yy && a.y > yy)) xs.Add(a.x + (yy - a.y) / (b.y - a.y) * (b.x - a.x));
+                        var pt = o.At(s0 + len * j / parts, out _) + shift;
+                        if (j == 0) p.MoveTo(pt);
+                        else p.LineTo(pt);
                     }
-                    xs.Sort();
-                    for (int k = 0; k + 1 < xs.Count; k += 2) Span(cov, row, W, xs[k], xs[k + 1], 1f / sub);
+                }
+                p.Stroke();
+            }
+        }
+
+        /// <summary>
+        /// Draws a patch filling `rect`: a soft shadow, the cloth with a slightly hairy edge, a darker padded rim and
+        /// running stitches.
+        /// </summary>
+        internal static void DrawPatch(Painter2D p, Rect rect, Patch look, int seed)
+        {
+            float w = rect.width, h = rect.height, x0 = rect.x, y0 = rect.y;
+            if (w < 2 || h < 2) return;
+            var r = Mathf.Min(look.Radius, w / 2, h / 2);
+            if (look.Shadow)
+            {
+                // A soft shadow: a few faint layers, each a little bigger.
+                for (int i = 0; i < 4; i++)
+                {
+                    var g = i * 1.6f;
+                    p.fillColor = new Color(ShadowColor.r, ShadowColor.g, ShadowColor.b, 0.1f);
+                    RoundRect(p, x0 + 2 - g, y0 + 5 - g, w + 2 * g, h + 2 * g, r + g);
+                    p.Fill();
                 }
             }
-            for (int i = 0; i < cov.Length; i++) cov[i] = Mathf.Clamp01(cov[i]);
-            return cov;
-        }
-
-        static void Span(float[] cov, int row, int W, float x0, float x1, float weight)
-        {
-            x0 = Mathf.Clamp(x0, 0, W);
-            x1 = Mathf.Clamp(x1, 0, W);
-            if (x1 <= x0) return;
-            int i0 = (int)x0, i1 = (int)x1;
-            var o = row * W;
-            if (i0 == i1)
+            // The cloth. Felt's edge isn't a clean cut: the outline wanders in and out a little, every 1.5 px.
+            p.fillColor = look.Cloth;
+            if (look.Fuzz <= 0) RoundRect(p, x0, y0, w, h, r);
+            else
             {
-                if (i0 < W) cov[o + i0] += (x1 - x0) * weight;
-                return;
+                var o = new Outline(x0, y0, w, h, r);
+                var rnd = new Rand(seed);
+                var n = Mathf.Max(8, Mathf.RoundToInt(o.Length / 1.5f));
+                p.BeginPath();
+                for (int i = 0; i < n; i++)
+                {
+                    var pt = o.At(i * o.Length / n, out var normal);
+                    pt += normal * ((rnd.Next() - 0.5f) * look.Fuzz);
+                    if (i == 0) p.MoveTo(pt);
+                    else p.LineTo(pt);
+                }
+                p.ClosePath();
             }
-            cov[o + i0] += (i0 + 1 - x0) * weight;
-            for (int i = i0 + 1; i < i1; i++) cov[o + i] += weight;
-            if (i1 < W) cov[o + i1] += (x1 - i1) * weight;
-        }
-
-        static float Hash(int x, int y, int seed)
-        {
-            unchecked
+            p.Fill();
+            // A darker band just inside the edge: the patch looks padded, not printed.
+            if (look.Rim > 0 && w > 12 && h > 12)
             {
-                var h = (uint)(x * 374761393 + y * 668265263 + seed * 2147483647);
-                h = (h ^ (h >> 13)) * 1274126177;
-                h ^= h >> 16;
-                return (h & 0xffffff) / 16777215f;
+                p.strokeColor = new Color(0, 0, 0, look.Rim);
+                p.lineWidth = 5;
+                p.lineJoin = LineJoin.Round;
+                RoundRect(p, x0 + 3, y0 + 3, w - 6, h - 6, Mathf.Max(0, r - 3));
+                p.Stroke();
             }
+            if (look.Thread.HasValue && w > look.Inset * 2 + 4 && h > look.Inset * 2 + 4)
+                Stitches(p, x0 + look.Inset, y0 + look.Inset, w - look.Inset * 2, h - look.Inset * 2, Mathf.Max(3, r - look.Inset),
+                    look.Dash, look.Gap, look.ThreadWidth, look.Thread.Value);
         }
 
-        /// <summary>Smooth value noise, 0-1.</summary>
-        static float Noise(float x, float y, int seed)
+        /// <summary>A felt patch as an element: drawn to fill its own box (it may be sized by layout), repainted when that changes.</summary>
+        public class PatchView : VisualElement
         {
-            int x0 = Mathf.FloorToInt(x), y0 = Mathf.FloorToInt(y);
-            float fx = x - x0, fy = y - y0;
-            fx = fx * fx * (3 - 2 * fx);
-            fy = fy * fy * (3 - 2 * fy);
-            var a = Mathf.Lerp(Hash(x0, y0, seed), Hash(x0 + 1, y0, seed), fx);
-            var b = Mathf.Lerp(Hash(x0, y0 + 1, seed), Hash(x0 + 1, y0 + 1, seed), fx);
-            return Mathf.Lerp(a, b, fy);
-        }
+            Patch look;
+            readonly int seed;
 
-        static float Fractal(float x, float y, int seed, int octaves)
-        {
-            float sum = 0, amp = 0.5f, total = 0;
-            for (int i = 0; i < octaves; i++)
+            public PatchView(Patch look, int seed)
             {
-                sum += Noise(x, y, seed + i * 31) * amp;
-                total += amp;
-                x *= 2;
-                y *= 2;
-                amp *= 0.5f;
+                this.look = look;
+                this.seed = seed;
+                pickingMode = PickingMode.Ignore;
+                name = "felt patch";
+                generateVisualContent += ctx => DrawPatch(ctx.painter2D, contentRect, this.look, this.seed);
+                RegisterCallback<GeometryChangedEvent>(_ => MarkDirtyRepaint());
             }
-            return sum / total;
+
+            public Patch Look
+            {
+                get => look;
+                set
+                {
+                    if (value.Key == look.Key) return;
+                    look = value;
+                    MarkDirtyRepaint();
+                }
+            }
+
+            /// <summary>Stretch over the whole parent.</summary>
+            public PatchView Fill()
+            {
+                style.position = Position.Absolute;
+                style.left = style.top = style.right = style.bottom = 0;
+                return this;
+            }
         }
 
-        const int TileSize = 256;
-        static readonly Dictionary<string, float[]> tiles = new Dictionary<string, float[]>();
-
-        /// <summary>Fine texture (felt nap, linen weave, edge fuzz) baked once per density on a 256-texel tile and repeated.</summary>
-        static float[] Tile(string name, int k, Func<float, float, float> f)
+        /// <summary>A patch on screen. `Root` is the patch; put content in `Content`.</summary>
+        public class Sheet
         {
-            var key = name + k;
-            if (tiles.TryGetValue(key, out var t)) return t;
-            t = new float[TileSize * TileSize];
-            for (int y = 0; y < TileSize; y++)
-                for (int x = 0; x < TileSize; x++)
-                    t[y * TileSize + x] = f(x / (float)k, y / (float)k);
-            tiles[key] = t;
-            return t;
+            public VisualElement Root, Content;
+            public float Width, Height;
         }
 
-        static float TileAt(float[] t, int x, int y) => t[(y & (TileSize - 1)) * TileSize + (x & (TileSize - 1))];
+        /// <summary>A felt patch at (x, y) top-left, w x h design px, tilted by `rotate` degrees.</summary>
+        public static Sheet MakePatch(VisualElement parent, float x, float y, float w, float h, int seed, Patch patch = null, float rotate = 0,
+            bool blocksClicks = true)
+        {
+            var root = new VisualElement { pickingMode = PickingMode.Ignore, name = "felt" };
+            Ui.Place(root, x, y);
+            Ui.Size(root, w, h);
+            root.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+            if (rotate != 0) root.style.rotate = new Rotate(rotate);
+            root.Add(new PatchView(patch ?? Patch.Panel(), seed).Fill());
+            var content = new VisualElement { pickingMode = blocksClicks ? PickingMode.Position : PickingMode.Ignore };
+            Ui.Place(content, 0, 0);
+            Ui.Size(content, w, h);
+            root.Add(content);
+            parent?.Add(root);
+            return new Sheet { Root = root, Content = content, Width = w, Height = h };
+        }
 
         /// <summary>
-        /// The felt's nap: light fibers in white. The mock's (0.5 n - 0.18 of turbulence at 0.9 per px) read as pepper
-        /// noise in the game (designer: "super noisy"), so it is softer (0.45 per px) and about a third as strong.
+        /// Felt behind an element that sizes itself (a quest tracker, a prompt): a tag patch stretched over it. The
+        /// element's colors are themed for felt (FeltPass).
         /// </summary>
-        static float[] NapTile(int k) => Tile("nap2", k, (x, y) => Mathf.Clamp01(0.5f * Fractal(x * 0.45f, y * 0.45f, 31, 2) - 0.18f) * 0.35f);
+        public static VisualElement CardBehind(VisualElement e, int seed, Patch patch = null)
+        {
+            var bg = new PatchView(patch ?? Patch.Tag(), seed).Fill();
+            bg.name = "card";
+            e.Insert(0, bg);
+            e.AddToClassList(FeltPass.Class);
+            e.style.backgroundColor = Color.clear;
+            return bg;
+        }
 
-        /// <summary>
-        /// The mock's linen: turbulence stretched along x (0.02 x 0.9 per px), 0.45 n - 0.12 in brown, at half strength.
-        /// Worked out per texel, not tiled: its long streaks would show the tile's seams.
-        /// </summary>
-        static float Weave(float x, float y) => Mathf.Clamp01(0.45f * Fractal(x * 0.02f, y * 0.9f, 41, 2) - 0.12f) * 0.45f;
+        /// <summary>A row of light stitches from x0 to x1 at y inside an element (along a bar's strip).</summary>
+        public class StitchRow : VisualElement
+        {
+            public StitchRow(float x0, float x1, float y, Color color, float dash = 5, float gap = 4, float width = 1.4f)
+            {
+                pickingMode = PickingMode.Ignore;
+                style.position = Position.Absolute;
+                style.left = style.top = style.right = style.bottom = 0;
+                generateVisualContent += ctx =>
+                {
+                    var p = ctx.painter2D;
+                    p.lineCap = LineCap.Round;
+                    p.lineWidth = width;
+                    p.strokeColor = color;
+                    p.BeginPath();
+                    for (var s = x0; s + dash <= x1; s += dash + gap)
+                    {
+                        p.MoveTo(new Vector2(s, y));
+                        p.LineTo(new Vector2(s + dash, y));
+                    }
+                    p.Stroke();
+                };
+            }
+        }
 
-        /// <summary>The mock's fuzzy edge: a displacement of up to 1.1 px from turbulence at 0.7 per px (two tiles, x and y).</summary>
-        static float[] FuzzTile(int k, int axis) => Tile("fuzz" + axis, k, (x, y) => Noise(x * 0.7f, y * 0.7f, 51 + axis));
+        // --- Baked pictures: world sprites and sewing buttons ---
+
+        static float Smooth(float a, float b, float v)
+        {
+            var t = Mathf.Clamp01((v - a) / (b - a));
+            return t * t * (3 - 2 * t);
+        }
+
+        static float RoundBoxDist(Vector2 p, float x, float y, float w, float h, float r)
+        {
+            var qx = Mathf.Abs(p.x - (x + w / 2)) - (w / 2 - r);
+            var qy = Mathf.Abs(p.y - (y + h / 2)) - (h / 2 - r);
+            var ox = Mathf.Max(qx, 0);
+            var oy = Mathf.Max(qy, 0);
+            return Mathf.Sqrt(ox * ox + oy * oy) + Mathf.Min(Mathf.Max(qx, qy), 0) - r;
+        }
+
+        static float Stroke(float d, float width, int k) => Mathf.Clamp01((width / 2 - Mathf.Abs(d)) * k + 0.5f);
+
+        static Color Over(Color dst, Color src, float a)
+        {
+            if (a <= 0) return dst;
+            var outA = a + dst.a * (1 - a);
+            if (outA <= 0) return new Color(0, 0, 0, 0);
+            var k = dst.a * (1 - a);
+            return new Color((src.r * a + dst.r * k) / outA, (src.g * a + dst.g * k) / outA, (src.b * a + dst.b * k) / outA, outA);
+        }
 
         static Texture2D ToTexture(Color[] px, int W, int H, string name)
         {
@@ -272,334 +455,96 @@ namespace Drakepg
             return tex;
         }
 
-        /// <summary>Straight-alpha "over".</summary>
-        static Color Over(Color dst, Color src, float a)
-        {
-            if (a <= 0) return dst;
-            var outA = a + dst.a * (1 - a);
-            if (outA <= 0) return new Color(0, 0, 0, 0);
-            var k = dst.a * (1 - a);
-            return new Color((src.r * a + dst.r * k) / outA, (src.g * a + dst.g * k) / outA, (src.b * a + dst.b * k) / outA, outA);
-        }
-
-        /// <summary>0 below a, 1 above b, smooth between.</summary>
-        static float Smooth(float a, float b, float v)
-        {
-            var t = Mathf.Clamp01((v - a) / (b - a));
-            return t * t * (3 - 2 * t);
-        }
-
-        /// <summary>Stroke coverage of a line `width` px wide at distance `d` (design px), anti-aliased at `k` texels per px.</summary>
-        static float Stroke(float d, float width, int k) => Mathf.Clamp01((width / 2 - Mathf.Abs(d)) * k + 0.5f);
-
-        /// <summary>Signed distance to a rounded box (negative inside).</summary>
-        static float RoundBoxDist(Vector2 p, float x, float y, float w, float h, float r)
-        {
-            var qx = Mathf.Abs(p.x - (x + w / 2)) - (w / 2 - r);
-            var qy = Mathf.Abs(p.y - (y + h / 2)) - (h / 2 - r);
-            var ox = Mathf.Max(qx, 0);
-            var oy = Mathf.Max(qy, 0);
-            return Mathf.Sqrt(ox * ox + oy * oy) + Mathf.Min(Mathf.Max(qx, qy), 0) - r;
-        }
-
-        /// <summary>A gentle hand wobble for thread lines (the mock's 0.06 per px displacement, smaller).</summary>
-        static Vector2 Wobble(Vector2 p, int seed) =>
-            new Vector2((Noise(p.x * 0.06f, p.y * 0.06f, seed) - 0.5f) * 0.8f, (Noise(p.x * 0.06f, p.y * 0.06f, seed + 1) - 0.5f) * 0.8f);
-
-        // --- Stitches ---
-
         /// <summary>
-        /// The nearest point on a rounded rectangle's outline: its distance `dn` and how far along the outline it is
-        /// (`s`, clockwise from the top edge's start), so dashes can be laid along it.
+        /// A patch baked into a picture, for the world, where the painter can't draw: the same look as PatchView (a clean
+        /// edge), worked out per texel, with 10 px of room for the shadow.
         /// </summary>
-        static void Nearest(Vector2 q, float x, float y, float w, float h, float r, out float dn, out float s)
+        static Texture2D PatchTexture(float w, float h, int seed, Patch p)
         {
-            float l1 = w - 2 * r, l2 = h - 2 * r, a = Mathf.PI * r / 2;
-            var best = float.MaxValue;
-            var bestS = 0f;
-            void Seg(float ax, float ay, float bx, float by, float s0, float len)
-            {
-                var vx = bx - ax;
-                var vy = by - ay;
-                var len2 = vx * vx + vy * vy;
-                var t = len2 > 0 ? Mathf.Clamp01(((q.x - ax) * vx + (q.y - ay) * vy) / len2) : 0;
-                var dx = q.x - (ax + vx * t);
-                var dy = q.y - (ay + vy * t);
-                var d = Mathf.Sqrt(dx * dx + dy * dy);
-                if (d < best)
-                {
-                    best = d;
-                    bestS = s0 + t * len;
-                }
-            }
-            void Arc(float cx, float cy, float a0, float s0)
-            {
-                if (r <= 0) return;
-                var ang = Mathf.Atan2(q.y - cy, q.x - cx) * Mathf.Rad2Deg - a0;
-                while (ang > 180) ang -= 360;
-                while (ang <= -180) ang += 360;
-                ang = Mathf.Clamp(ang, 0, 90);
-                var rad = (a0 + ang) * Mathf.Deg2Rad;
-                var dx = q.x - (cx + Mathf.Cos(rad) * r);
-                var dy = q.y - (cy + Mathf.Sin(rad) * r);
-                var d = Mathf.Sqrt(dx * dx + dy * dy);
-                if (d < best)
-                {
-                    best = d;
-                    bestS = s0 + ang * Mathf.Deg2Rad * r;
-                }
-            }
-            Seg(x + r, y, x + w - r, y, 0, l1);
-            Arc(x + w - r, y + r, -90, l1);
-            Seg(x + w, y + r, x + w, y + h - r, l1 + a, l2);
-            Arc(x + w - r, y + h - r, 0, l1 + a + l2);
-            Seg(x + w - r, y + h, x + r, y + h, l1 + 2 * a + l2, l1);
-            Arc(x + r, y + h - r, 90, 2 * l1 + 2 * a + l2);
-            Seg(x, y + h - r, x, y + r, 2 * l1 + 3 * a + l2, l2);
-            Arc(x + r, y + r, 180, 2 * l1 + 3 * a + 2 * l2);
-            dn = best;
-            s = bestS;
-        }
-
-        /// <summary>Distance to the nearest dash of a dashed line with round ends: `along` is how far outside a dash a point lies.</summary>
-        static float DashDist(float dn, float s, float dash, float gap)
-        {
-            var period = dash + gap;
-            var phase = s % period;
-            if (phase < 0) phase += period;
-            var along = phase <= dash ? 0 : Mathf.Min(phase - dash, period - phase);
-            return Mathf.Sqrt(dn * dn + along * along);
-        }
-
-        /// <summary>
-        /// Running stitches around a rounded rectangle (x, y, w, h in design px from the texture's `origin`): a thread
-        /// shadow (0.8, 1.2 px down-right, like thread pulled through) then the thread, dashes `dash` long, `gap` apart.
-        /// </summary>
-        static void Stitches(Color[] px, int W, int H, int k, Vector2 origin, float x, float y, float w, float h, float r, float dash, float gap,
-            float width, Color color, int seed)
-        {
-            r = Mathf.Min(r, w / 2, h / 2);
-            var reach = width / 2 + 2.5f;
-            int y0 = Mathf.Max(0, Mathf.FloorToInt((origin.y + y - reach) * k)), y1 = Mathf.Min(H, Mathf.CeilToInt((origin.y + y + h + reach) * k));
-            int x0 = Mathf.Max(0, Mathf.FloorToInt((origin.x + x - reach) * k)), x1 = Mathf.Min(W, Mathf.CeilToInt((origin.x + x + w + reach) * k));
-            var shade = new Vector2(0.8f, 1.2f);
-            for (int py = y0; py < y1; py++)
-            {
-                for (int pxi = x0; pxi < x1; pxi++)
-                {
-                    var p = new Vector2((pxi + 0.5f) / k - origin.x, (py + 0.5f) / k - origin.y);
-                    if (Mathf.Abs(RoundBoxDist(p, x, y, w, h, r)) > reach) continue;
-                    var q = p + Wobble(p, seed);
-                    var i = py * W + pxi;
-                    if (px[i].a <= 0) continue;
-                    Nearest(q - shade, x, y, w, h, r, out var dn, out var s);
-                    var a = Stroke(DashDist(dn, s, dash, gap), width * 1.1f, k) * 0.35f;
-                    var c = px[i];
-                    if (a > 0) c = Over(c, Color.black, a * c.a);
-                    Nearest(q, x, y, w, h, r, out dn, out s);
-                    a = Stroke(DashDist(dn, s, dash, gap), width, k) * color.a;
-                    if (a > 0) c = Over(c, color, a * px[i].a);
-                    px[i] = c;
-                }
-            }
-        }
-
-        /// <summary>A straight row of stitches from x0 to x1 at y (the stitch along a bar's felt strip).</summary>
-        static void StitchLine(Color[] px, int W, int H, int k, float x0, float x1, float y, float dash, float gap, float width, Color color)
-        {
-            int ya = Mathf.Max(0, Mathf.FloorToInt((y - width) * k)), yb = Mathf.Min(H, Mathf.CeilToInt((y + width) * k));
-            for (int py = ya; py < yb; py++)
-            {
-                for (int pxi = 0; pxi < W; pxi++)
-                {
-                    var p = new Vector2((pxi + 0.5f) / k, (py + 0.5f) / k);
-                    float dn = Mathf.Abs(p.y - y), along;
-                    if (p.x < x0) along = x0 - p.x;
-                    else if (p.x > x1) along = p.x - x1;
-                    else
-                    {
-                        var period = dash + gap;
-                        var phase = (p.x - x0) % period;
-                        along = phase <= dash ? 0 : Mathf.Min(phase - dash, period - phase);
-                    }
-                    var a = Stroke(Mathf.Sqrt(dn * dn + along * along), width, k) * color.a;
-                    var i = py * W + pxi;
-                    if (a > 0 && px[i].a > 0) px[i] = Over(px[i], color, a * px[i].a);
-                }
-            }
-        }
-
-        // --- Patches ---
-
-        /// <summary>How a felt patch is made: its felt, its thread and where the stitches run.</summary>
-        public class Patch
-        {
-            public Color Cloth = Navy;
-            public Color? Thread = Felt.Stitch;
-            public float Inset = 7, Radius = 16, Dash = 7, Gap = 5, ThreadWidth = 2.2f;
-            /// <summary>Room around the picture for the drop shadow (design px); 0-2 for pieces without one.</summary>
-            public float Pad = 10;
-            public bool Shadow = true, Woven, Fuzzy = true;
-            public float Nap = 1, Amp = 1.3f;
-            /// <summary>A row of light stitches along the top (a bar's felt strip).</summary>
-            public bool TopStitch;
-
-            public string Key =>
-                $"{Hex(Cloth)}|{(Thread.HasValue ? Hex(Thread.Value) : "-")}|{Inset}|{Radius}|{Dash}|{Gap}|{ThreadWidth}|{Pad}|{Shadow}|{Woven}|{Fuzzy}|{Nap}|{Amp}|{TopStitch}";
-
-            /// <summary>A navy panel with cream stitches (the battle sheets, the HUD).</summary>
-            public static Patch Panel() => new Patch();
-
-            /// <summary>A big navy menu with a wider hem.</summary>
-            public static Patch Menu() => new Patch { Inset = 10, Radius = 18, Dash = 9, Gap = 6, ThreadWidth = 2.4f };
-
-            /// <summary>A small navy tag (the next move, the quest tracker, prompts).</summary>
-            public static Patch Tag() => new Patch { Inset = 5, Radius = 10, Dash = 5, Gap = 4, ThreadWidth = 1.8f };
-
-            /// <summary>A sand button with brown stitches; any cloth (red Attack, a skill's color) with its own thread.</summary>
-            public static Patch Button(Color? cloth = null, Color? thread = null) =>
-                new Patch { Cloth = cloth ?? Sand, Thread = thread ?? SandStitch, Inset = 5, Radius = 12, Dash = 5, Gap = 4 };
-
-            /// <summary>The runner along the bottom of the battle screen.</summary>
-            public static Patch Runner() => new Patch { Cloth = NavyDark, Thread = Hem, Inset = 9, Radius = 22, Dash = 9, Gap = 6 };
-
-            /// <summary>The linen patch the battle log is written on.</summary>
-            public static Patch LinenLog() =>
-                new Patch { Cloth = Linen, Thread = LinenStitch, Inset = 7, Radius = 10, Dash = 6, Gap = 5, ThreadWidth = 2, Woven = true, Fuzzy = false, Nap = 0, Amp = 1.2f };
-        }
-
-        /// <summary>
-        /// A felt patch's picture: drop shadow, fuzzy edge (the cloth's outline displaced by noise, like the mock's
-        /// filter), soft nap, then running stitches inset `Inset` px. `Pad` px of room around it for the shadow.
-        /// </summary>
-        public static Texture2D PatchTexture(float w, float h, int seed, Patch p)
-        {
-            var k = DensityFor(w, h);
+            var k = Density;
             return Cached($"patch|{w}|{h}|{seed}|{p.Key}|{k}", () =>
             {
-                var pad = p.Pad;
+                const float pad = 10;
                 int W = Mathf.CeilToInt((w + pad * 2) * k), H = Mathf.CeilToInt((h + pad * 2) * k);
-                var origin = new Vector2(pad, pad);
-                var cov = Fill(WavyRect(0, 0, w, h, seed, p.Radius, p.Amp, 80), W, H, k, origin);
-                var fuzzX = FuzzTile(k, 0);
-                var fuzzY = FuzzTile(k, 1);
-                var nap = NapTile(k);
-                var maxShift = p.Fuzzy ? Mathf.RoundToInt(1.1f * k) : 0;
-                float cr = p.Cloth.r, cg = p.Cloth.g, cb = p.Cloth.b, sr = ShadowColor.r, sg = ShadowColor.g, sb = ShadowColor.b;
+                var r = Mathf.Min(p.Radius, w / 2, h / 2);
                 var px = new Color[W * H];
                 for (int y = 0; y < H; y++)
                 {
-                    var dy = y / (float)k - pad;
                     for (int x = 0; x < W; x++)
                     {
-                        var i = y * W + x;
-                        var dx = x / (float)k - pad;
-                        // Fuzzy edge: read the cloth's coverage a little off to the side, by noise.
-                        var ox = Mathf.Clamp(x + Mathf.RoundToInt((TileAt(fuzzX, x + seed * 7, y) - 0.5f) * 2 * maxShift), 0, W - 1);
-                        var oy = Mathf.Clamp(y + Mathf.RoundToInt((TileAt(fuzzY, x, y + seed * 5) - 0.5f) * 2 * maxShift), 0, H - 1);
-                        var fc = cov[oy * W + ox];
-                        // Its drop shadow (2 px right, 6 down, soft ~4 px), worked out from the distance to its box.
-                        var sa = p.Shadow && fc < 1 ? 0.5f * (1 - Smooth(-4, 5, RoundBoxDist(new Vector2(dx - 2, dy - 6), 0, 0, w, h, p.Radius))) : 0;
-                        if (fc <= 0)
+                        var q = new Vector2((x + 0.5f) / k - pad, (y + 0.5f) / k - pad);
+                        var d = RoundBoxDist(q, 0, 0, w, h, r);
+                        var c = p.Shadow
+                            ? new Color(ShadowColor.r, ShadowColor.g, ShadowColor.b, 0.4f * (1 - Smooth(-3, 5, RoundBoxDist(q - new Vector2(2, 5), 0, 0, w, h, r))))
+                            : new Color(0, 0, 0, 0);
+                        var cover = Mathf.Clamp01(-d * k + 0.5f);
+                        if (cover > 0)
                         {
-                            px[i] = new Color(sr, sg, sb, sa);
-                            continue;
+                            var f = p.Cloth;
+                            if (p.Rim > 0) f = Color.Lerp(f, Color.black, p.Rim * Stroke(d + 3, 5, k));
+                            c = Over(c, f, cover);
                         }
-                        float r = cr, g = cg, b = cb;
-                        if (p.Woven)
-                        {
-                            var t = Weave(dx + seed * 37, dy);
-                            r += (WeaveColor.r - r) * t;
-                            g += (WeaveColor.g - g) * t;
-                            b += (WeaveColor.b - b) * t;
-                        }
-                        if (p.Nap > 0)
-                        {
-                            // The nap: light fibers catching the light.
-                            var t = TileAt(nap, x + seed * 31, y + seed * 17) * p.Nap;
-                            r += (1 - r) * t;
-                            g += (1 - g) * t;
-                            b += (1 - b) * t;
-                        }
-                        if (fc >= 1 || sa <= 0)
-                        {
-                            px[i] = new Color(r, g, b, fc);
-                            continue;
-                        }
-                        var outA = fc + sa * (1 - fc);
-                        var kk = sa * (1 - fc);
-                        px[i] = new Color((r * fc + sr * kk) / outA, (g * fc + sg * kk) / outA, (b * fc + sb * kk) / outA, outA);
+                        px[y * W + x] = c;
                     }
                 }
                 if (p.Thread.HasValue)
-                    Stitches(px, W, H, k, origin, p.Inset, p.Inset, w - p.Inset * 2, h - p.Inset * 2, Mathf.Max(4, p.Radius - p.Inset), p.Dash, p.Gap,
-                        p.ThreadWidth, p.Thread.Value, seed + 77);
-                if (p.TopStitch) StitchLine(px, W, H, k, pad + 7, pad + w - 8, pad + 3, 5, 4, 1.4f, new Color(1, 240 / 255f, 215 / 255f, 0.45f));
+                {
+                    // The stitches: points every half px along the seam; each dash covers the texels near its points.
+                    var o = new Outline(p.Inset, p.Inset, w - p.Inset * 2, h - p.Inset * 2, Mathf.Max(3, r - p.Inset));
+                    var period = p.Dash + p.Gap;
+                    var count = Mathf.Max(1, Mathf.RoundToInt(o.Length / period));
+                    var step = o.Length / count;
+                    var len = p.Dash * step / period;
+                    for (int pass = 0; pass < 2; pass++)
+                    {
+                        var shift = pass == 0 ? new Vector2(0.8f, 1.2f) : Vector2.zero;
+                        var width = pass == 0 ? p.ThreadWidth * 1.1f : p.ThreadWidth;
+                        var col = pass == 0 ? new Color(0, 0, 0, 0.35f) : p.Thread.Value;
+                        var pts = new List<Vector2>();
+                        for (int i = 0; i < count; i++)
+                        {
+                            pts.Clear();
+                            for (float s = 0; s <= len; s += 0.5f) pts.Add(o.At(i * step + s, out _) + shift);
+                            float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+                            foreach (var pt in pts)
+                            {
+                                minX = Mathf.Min(minX, pt.x);
+                                maxX = Mathf.Max(maxX, pt.x);
+                                minY = Mathf.Min(minY, pt.y);
+                                maxY = Mathf.Max(maxY, pt.y);
+                            }
+                            int x0 = Mathf.Max(0, Mathf.FloorToInt((minX + pad - width) * k)), x1 = Mathf.Min(W, Mathf.CeilToInt((maxX + pad + width) * k));
+                            int y0 = Mathf.Max(0, Mathf.FloorToInt((minY + pad - width) * k)), y1 = Mathf.Min(H, Mathf.CeilToInt((maxY + pad + width) * k));
+                            for (int y = y0; y < y1; y++)
+                            {
+                                for (int x = x0; x < x1; x++)
+                                {
+                                    var q = new Vector2((x + 0.5f) / k - pad, (y + 0.5f) / k - pad);
+                                    var best = float.MaxValue;
+                                    foreach (var pt in pts) best = Mathf.Min(best, (pt - q).sqrMagnitude);
+                                    var i2 = y * W + x;
+                                    var cov = Stroke(Mathf.Sqrt(best), width, k) * col.a;
+                                    if (cov > 0) px[i2] = Over(px[i2], col, cov * px[i2].a);
+                                }
+                            }
+                        }
+                    }
+                }
                 return ToTexture(px, W, H, "felt patch");
             });
-        }
-
-        /// <summary>A patch on screen. `Root` is the whole picture (shadow room included); put content in `Content`.</summary>
-        public class Sheet
-        {
-            public VisualElement Root, Content;
-            public float Width, Height;
-        }
-
-        /// <summary>A felt patch at (x, y) top-left, w x h design px, tilted by `rotate` degrees.</summary>
-        public static Sheet MakePatch(VisualElement parent, float x, float y, float w, float h, int seed, Patch patch = null, float rotate = 0,
-            bool blocksClicks = true)
-        {
-            patch ??= Patch.Panel();
-            var root = new VisualElement { pickingMode = PickingMode.Ignore, name = "felt" };
-            Ui.Place(root, x - patch.Pad, y - patch.Pad);
-            Ui.Size(root, w + patch.Pad * 2, h + patch.Pad * 2);
-            root.style.backgroundImage = new StyleBackground(PatchTexture(w, h, seed, patch));
-            if (rotate != 0) root.style.rotate = new Rotate(rotate);
-            var content = new VisualElement { pickingMode = blocksClicks ? PickingMode.Position : PickingMode.Ignore };
-            Ui.Place(content, patch.Pad, patch.Pad);
-            Ui.Size(content, w, h);
-            root.Add(content);
-            parent?.Add(root);
-            return new Sheet { Root = root, Content = content, Width = w, Height = h };
         }
 
         /// <summary>A felt patch as a world sprite, centered on its transform (cards the world's figures stand on).</summary>
         public static Sprite PatchSprite(float w, float h, int seed, Patch patch = null)
         {
             var tex = PatchTexture(w, h, seed, patch ?? Patch.Panel());
-            var ppu = Design.PixelsPerUnit * tex.width / (w + (patch?.Pad ?? 10) * 2);
+            var ppu = Design.PixelsPerUnit * tex.width / (w + 20);
             return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), ppu, 0, SpriteMeshType.FullRect);
-        }
-
-        /// <summary>
-        /// Felt behind an element that sizes itself (a quest tracker, a prompt): a small stitched patch, 9-sliced to
-        /// fit, its shadow spilling out by its pad. The element's colors are themed for felt (FeltPass).
-        /// </summary>
-        public static VisualElement CardBehind(VisualElement e, int seed, Patch patch = null)
-        {
-            patch ??= Patch.Tag();
-            var k = Density;
-            var bg = new VisualElement { pickingMode = PickingMode.Ignore, name = "card" };
-            bg.style.position = Position.Absolute;
-            bg.style.left = bg.style.top = bg.style.right = bg.style.bottom = -patch.Pad;
-            bg.style.backgroundImage = new StyleBackground(PatchTexture(160, 80, seed, patch));
-            bg.style.unitySliceLeft = bg.style.unitySliceRight = bg.style.unitySliceTop = bg.style.unitySliceBottom =
-                Mathf.RoundToInt((patch.Pad + patch.Inset + patch.Radius) * k);
-            bg.style.unitySliceScale = 1f / k;
-            e.Insert(0, bg);
-            e.AddToClassList(FeltPass.Class);
-            e.style.backgroundColor = Color.clear;
-            return bg;
         }
 
         // --- Chips and sewing buttons ---
 
-        /// <summary>A small felt chip in a color, 64 x 24 (2 px room), drawn as a 9-slice behind a word ("Water", "Burn 2").</summary>
-        public static Texture2D ChipTexture(Color color, int seed) =>
-            PatchTexture(64, 24, seed, new Patch { Cloth = Color.Lerp(NavyDark, color, 0.45f), Thread = null, Radius = 7, Pad = 2, Shadow = false, Nap = 0.6f, Amp = 0.4f });
-
-        /// <summary>A word on a small felt chip of its color, light text in that color (elements, statuses, the hero's weapon).</summary>
+        /// <summary>A word on a small rounded chip of felt in its color, light text in that color (elements, statuses, the hero's weapon).</summary>
         public static Label Chip(string rich, Color color, float fontSize = 15, int seed = 1)
         {
             var l = new Label(rich) { pickingMode = PickingMode.Ignore };
@@ -613,10 +558,8 @@ namespace Drakepg
             l.style.height = Mathf.Round(fontSize + 9);
             l.style.unityTextAlign = TextAnchor.MiddleCenter;
             l.style.whiteSpace = WhiteSpace.NoWrap;
-            var k = Density;
-            l.style.backgroundImage = new StyleBackground(ChipTexture(color, seed));
-            l.style.unitySliceLeft = l.style.unitySliceRight = l.style.unitySliceTop = l.style.unitySliceBottom = 10 * k;
-            l.style.unitySliceScale = 1f / k;
+            l.style.backgroundColor = Color.Lerp(NavyDark, color, 0.45f);
+            Ui.Round(l, 7);
             l.AddToClassList(FeltPass.Keep);
             return l;
         }
@@ -667,21 +610,9 @@ namespace Drakepg
             return e;
         }
 
-        // --- The battle board ---
-
         /// <summary>The felt runner across the bottom of the screen, its top edge at y (it runs off the sides and bottom).</summary>
         public static Sheet Runner(VisualElement parent, float y, int seed) =>
             MakePatch(parent, -12, y, Design.Width + 24, 200, seed, Patch.Runner());
-
-        // --- Bars ---
-
-        /// <summary>A bar's groove: a dark felt slot, rounded, 2 px room.</summary>
-        public static Texture2D GrooveTexture(float w, float h, int seed) =>
-            PatchTexture(w, h, seed, new Patch { Cloth = Groove, Thread = null, Radius = h / 2, Pad = 2, Shadow = false, Nap = 0.4f, Amp = 0.3f });
-
-        /// <summary>A bar's felt strip, w x h, with a row of light stitches along its top.</summary>
-        public static Texture2D StripTexture(float w, float h, Color color, int seed) =>
-            PatchTexture(w, h, seed, new Patch { Cloth = color, Thread = null, Radius = h / 2, Pad = 0, Shadow = false, Amp = 0.3f, TopStitch = true });
 
         /// <summary>An icon from Resources/UiIcons (hand-drawn, scripts/ui_icons.py); `light`: the cream-ink set for dark felt.</summary>
         public static VisualElement Icon(VisualElement parent, float x, float y, float size, string name, bool light = false)
@@ -718,7 +649,7 @@ namespace Drakepg
         }
     }
 
-    /// <summary>A health or mana bar: a felt strip in a dark felt groove (the mock's bars). (x, y) = left edge, middle.</summary>
+    /// <summary>A health or mana bar: a felt strip with a row of light stitches in a dark felt groove. (x, y) = left edge, middle.</summary>
     public class FeltBar : VisualElement
     {
         readonly VisualElement strip;
@@ -735,12 +666,8 @@ namespace Drakepg
             AddToClassList(FeltPass.Keep);
             Ui.Place(this, x, y - height / 2);
             Ui.Size(this, width, height);
-            var groove = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(groove, -2, -2);
-            Ui.Size(groove, width + 4, height + 4);
-            groove.style.backgroundImage = new StyleBackground(Felt.GrooveTexture(width, height, seed));
-            Add(groove);
-            // The strip slides in from the left, so its rounded right end always shows.
+            Ui.Rect(this, 0, 0, width, height, Felt.Groove, height / 2);
+            // The strip slides in from the left, so its rounded right end always shows; the clip rounds its left end.
             inner = width - 6;
             var clip = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(clip, 3, 3);
@@ -748,11 +675,8 @@ namespace Drakepg
             clip.style.overflow = Overflow.Hidden;
             Ui.Round(clip, (height - 6) / 2);
             Add(clip);
-            strip = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(strip, 0, 0);
-            Ui.Size(strip, inner, height - 6);
-            strip.style.backgroundImage = new StyleBackground(Felt.StripTexture(inner, height - 6, color, seed + 1));
-            clip.Add(strip);
+            strip = Ui.Rect(clip, 0, 0, inner, height - 6, color, (height - 6) / 2);
+            strip.Add(new Felt.StitchRow(7, inner - 8, 3, new Color(1, 240 / 255f, 215 / 255f, 0.45f)));
             label = Ui.Text(this, width / 2, height / 2, "", fontSize, Felt.Cream, false, 0.5f, 0.5f);
             Fonts.Heavy(label);
             label.style.unityTextOutlineWidth = 0.2f;
@@ -802,7 +726,7 @@ namespace Drakepg
             AddToClassList(FeltPass.Keep);
             style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             if (rotate != 0) style.rotate = new Rotate(rotate);
-            Felt.MakePatch(this, 0, 0, width, height, seed, Felt.Patch.Button(face, thread), blocksClicks: false);
+            Add(new Felt.PatchView(Felt.Patch.Button(face, thread), seed).Fill());
 
             var column = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(column, 0, 0);
@@ -867,7 +791,7 @@ namespace Drakepg
             return l;
         }
 
-        /// <summary>Lift on hover, press down, fade when disabled (the patch's shadow stays put, like cloth lifting).</summary>
+        /// <summary>Lift on hover, press down, fade when disabled.</summary>
         void Paint()
         {
             var lift = !enabled ? 0 : down ? 1 : hover ? -3 : 0;

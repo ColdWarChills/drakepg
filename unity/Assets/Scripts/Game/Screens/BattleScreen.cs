@@ -135,7 +135,7 @@ namespace Drakepg
         VisualElement affinityRow, weaponTag;
         float affinityY;
         /// <summary>The monster's next move on a parchment tag above it (hidden while a turn plays).</summary>
-        VisualElement intentTag, intentSheet, intentMarker;
+        VisualElement intentTag, intentMarker;
         Label intentText;
         float intentW, intentTop;
         bool shellRegrew;
@@ -395,8 +395,7 @@ namespace Drakepg
             intentTag.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(100));
             intentTag.style.rotate = new Rotate(-1.2f);
             Root.Add(intentTag);
-            intentSheet = new VisualElement { pickingMode = PickingMode.Ignore };
-            intentTag.Add(intentSheet);
+            intentTag.Add(new Felt.PatchView(Felt.Patch.Tag(), 91).Fill());
             // A small thread-colored marker under the tag, pointing at the monster.
             intentMarker = new PanelPaint(intentTag, 0, 41, 16, 10).Triangle(0, 0, 16, 0, 8, 9, Felt.Stitch);
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -426,10 +425,6 @@ namespace Drakepg
             var need = Mathf.Min(608, Mathf.Ceil((w + 24 + 8 + 40) / 16) * 16);
             if (need == intentW) return;
             intentW = need;
-            var tag = Felt.Patch.Tag();
-            Ui.Place(intentSheet, -tag.Pad, -tag.Pad);
-            Ui.Size(intentSheet, need + tag.Pad * 2, 38 + tag.Pad * 2);
-            intentSheet.style.backgroundImage = new StyleBackground(Felt.PatchTexture(need, 38, 91, tag));
             var left = Mathf.Clamp(EnemyX - need / 2, 12, Design.Width - 12 - need);
             intentTag.style.left = left;
             intentTag.style.width = need;

@@ -96,11 +96,7 @@ namespace Drakepg
             Place(e, x, y);
             Size(e, w, h);
             e.AddToClassList(FeltPass.Class);
-            var bg = new VisualElement { pickingMode = PickingMode.Ignore };
-            Place(bg, -patch.Pad, -patch.Pad);
-            Size(bg, w + patch.Pad * 2, h + patch.Pad * 2);
-            bg.style.backgroundImage = new StyleBackground(Felt.PatchTexture(w, h, seed != 0 ? seed : Seed(w, h), patch));
-            e.Add(bg);
+            e.Add(new Felt.PatchView(patch, seed != 0 ? seed : Seed(w, h)).Fill());
             parent?.Add(e);
             return e;
         }
@@ -199,7 +195,7 @@ namespace Drakepg
     {
         readonly Label label;
         readonly Label sub;
-        readonly VisualElement sheet;
+        readonly Felt.PatchView sheet;
         readonly float width, height;
         readonly int seed;
         readonly Action onClick;
@@ -220,9 +216,7 @@ namespace Drakepg
             style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             style.justifyContent = Justify.Center;
             style.alignItems = Align.Center;
-            sheet = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(sheet, -10, -10);
-            Ui.Size(sheet, width + 20, height + 20);
+            sheet = new Felt.PatchView(Felt.Patch.Button(), seed).Fill();
             Add(sheet);
             label = new Label(text) { pickingMode = PickingMode.Ignore };
             label.style.fontSize = fontSize;
@@ -275,7 +269,7 @@ namespace Drakepg
 
         void Paint()
         {
-            sheet.style.backgroundImage = new StyleBackground(Felt.PatchTexture(width, height, seed, Felt.Patch.Button(Cloth())));
+            sheet.Look = Felt.Patch.Button(Cloth());
             style.translate = new Translate(0, !enabled ? 0 : down ? 1 : hover ? -2 : 0);
             style.scale = new Scale(Vector3.one * (down && enabled ? 0.97f : 1));
             style.opacity = enabled ? 1 : 0.5f;
@@ -334,14 +328,11 @@ namespace Drakepg
             pickingMode = PickingMode.Ignore;
             AddToClassList(FeltPass.Keep);
             var seed = Ui.Seed(prefix) + (int)width;
-            var groove = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(groove, -2, -2);
-            Ui.Size(groove, width + 4, height + 4);
-            groove.style.backgroundImage = new StyleBackground(Felt.GrooveTexture(width, height, seed));
-            Add(groove);
+            Ui.Rect(this, 0, 0, width, height, Felt.Groove, height / 2);
             inner = width - 6;
-            chip = Strip(Felt.StripTexture(inner, height - 6, Color.Lerp(cloth, Felt.Groove, 0.55f), seed + 1), height);
-            fill = Strip(Felt.StripTexture(inner, height - 6, cloth, seed + 2), height);
+            chip = Strip(Color.Lerp(cloth, Felt.Groove, 0.55f), height);
+            fill = Strip(cloth, height);
+            if (height >= 16) fill.Add(new Felt.StitchRow(7, inner - 8, 3, new Color(1, 240 / 255f, 215 / 255f, 0.45f)));
             label = Ui.Text(this, width / 2, height / 2, "", Mathf.Max(12, height - 8), Felt.Cream, false, 0.5f, 0.5f);
             Fonts.Heavy(label);
             label.style.unityTextOutlineWidth = 0.2f;
@@ -350,7 +341,7 @@ namespace Drakepg
         }
 
         /// <summary>A felt strip in its own clip: it slides in from the left, so its rounded right end always shows.</summary>
-        VisualElement Strip(Texture2D tex, float height)
+        VisualElement Strip(Color color, float height)
         {
             var clip = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(clip, 3, 3);
@@ -358,12 +349,7 @@ namespace Drakepg
             clip.style.overflow = Overflow.Hidden;
             Ui.Round(clip, (height - 6) / 2);
             Add(clip);
-            var strip = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(strip, -inner, 0);
-            Ui.Size(strip, inner, height - 6);
-            strip.style.backgroundImage = new StyleBackground(tex);
-            clip.Add(strip);
-            return strip;
+            return Ui.Rect(clip, -inner, 0, inner, height - 6, color, (height - 6) / 2);
         }
 
         void ShowFill(float w) => fill.style.left = w - inner;
