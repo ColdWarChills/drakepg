@@ -993,7 +993,7 @@ namespace Drakepg
 
             var title = Ui.Text(ui, Design.Width / 2, 36, room.Name, 32, MapLabel, false, 0.5f, 0.5f, stroke: true);
             Fonts.Title(title);
-            title.style.unityTextOutlineColor = Paper.Ink;
+            title.style.unityTextOutlineColor = Felt.Ink;
             title.pickingMode = PickingMode.Position;
             // Hidden testing menu on touch screens: tap the room name 5 times.
             title.RegisterCallback<PointerUpEvent>(_ =>
@@ -1024,7 +1024,7 @@ namespace Drakepg
 
             // "E Talk" bubble shown over the nearest NPC.
             prompt = Ui.Rect(ui, 0, 0, 110, 34, Color.clear);
-            Paper.CardBehind(prompt, 41);
+            Felt.CardBehind(prompt, 41);
             prompt.style.translate = new Translate(Length.Percent(-50), Length.Percent(-50));
             promptText = Ui.Text(prompt, 55, 17, "", 17, Palette.TextGold, true, 0.5f, 0.5f);
             prompt.style.display = DisplayStyle.None;
@@ -1036,7 +1036,7 @@ namespace Drakepg
         {
             var card = Ui.Text(ui, Design.Width / 2, 250, room.Name, 64, MapLabel, false, 0.5f, 0.5f, stroke: true);
             Fonts.Title(card);
-            card.style.unityTextOutlineColor = Paper.Ink;
+            card.style.unityTextOutlineColor = Felt.Ink;
             card.style.opacity = 0;
             card.style.scale = new Scale(Vector3.one * 0.8f);
             Anim.Float(0, 1, 0.35f, t =>
@@ -2083,7 +2083,7 @@ namespace Drakepg
                 tracker.style.minWidth = 340;
                 tracker.style.paddingLeft = tracker.style.paddingRight = 12;
                 tracker.style.paddingTop = tracker.style.paddingBottom = 8;
-                if (tracker.Q("card") == null) Paper.CardBehind(tracker, 42);
+                if (tracker.Q("card") == null) Felt.CardBehind(tracker, 42);
                 tracker.Add(text);
             }
 

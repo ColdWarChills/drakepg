@@ -7,8 +7,8 @@ namespace Drakepg
 {
     /// <summary>
     /// UI building blocks drawn in code with UI Toolkit, positioned in design pixels (src/ui/text.ts, Button.ts, Bar.ts,
-    /// Modal.ts, Hud.ts). They wear the parchment kit (Ui/Paper.cs): panels and menus are parchment sheets, buttons
-    /// parchment tags, bars watercolor washes; the colors screens give them are inked on parchment (Inking).
+    /// Modal.ts, Hud.ts). They wear the felt kit (Ui/Felt.cs): panels and menus are stitched navy felt, buttons sand
+    /// felt, bars felt strips in a groove; the colors screens give them are themed for felt (FeltPass).
     /// </summary>
     public static class Ui
     {
@@ -80,25 +80,26 @@ namespace Drakepg
             return e;
         }
 
-        /// <summary>The standard panel: a parchment sheet with a thin ruled border (`alpha` is from the old dark panels, unused).</summary>
+        /// <summary>The standard panel: a stitched navy felt patch (`alpha` is from the old dark panels, unused).</summary>
         public static VisualElement Panel(VisualElement parent, float x, float y, float w, float h, float alpha = 0.92f, bool blocksClicks = true) =>
             Sheet(parent, x, y, w, h, blocksClicks);
 
         /// <summary>
-        /// A parchment sheet at (x, y) top-left, w x h: deckled, scorched a little, a ruled ink border inset `rule` px.
-        /// Content goes straight in it; the Palette colors of what's inside are inked (Inking).
+        /// A felt patch at (x, y) top-left, w x h: fuzzy edged, running stitches inside (`patch`: the panel look by default).
+        /// Content goes straight in it; the Palette colors of what's inside are themed for felt (FeltPass).
         /// </summary>
-        public static VisualElement Sheet(VisualElement parent, float x, float y, float w, float h, bool blocksClicks = true, float rule = 6, float ruleR = 7,
-            float ruleWidth = 1.3f, float burn = 0.35f, int seed = 0)
+        public static VisualElement Sheet(VisualElement parent, float x, float y, float w, float h, bool blocksClicks = true, Felt.Patch patch = null,
+            int seed = 0)
         {
+            patch ??= Felt.Patch.Panel();
             var e = new VisualElement { pickingMode = blocksClicks ? PickingMode.Position : PickingMode.Ignore, name = "sheet" };
             Place(e, x, y);
             Size(e, w, h);
-            e.AddToClassList(Inking.Class);
+            e.AddToClassList(FeltPass.Class);
             var bg = new VisualElement { pickingMode = PickingMode.Ignore };
-            Place(bg, -Paper.Pad, -Paper.Pad);
-            Size(bg, w + Paper.Pad * 2, h + Paper.Pad * 2);
-            bg.style.backgroundImage = new StyleBackground(Paper.SheetTexture(w, h, seed != 0 ? seed : Seed(w, h), burn, true, rule, ruleR, ruleWidth));
+            Place(bg, -patch.Pad, -patch.Pad);
+            Size(bg, w + patch.Pad * 2, h + patch.Pad * 2);
+            bg.style.backgroundImage = new StyleBackground(Felt.PatchTexture(w, h, seed != 0 ? seed : Seed(w, h), patch));
             e.Add(bg);
             parent?.Add(e);
             return e;
@@ -191,8 +192,8 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// A button (Button.ts): a parchment tag with a ruled border, an Alegreya label and an optional second line; a color
-    /// of its own (a selected tab) washes the tag in it. Lifts on hover, presses down. (x, y) is its center.
+    /// A button (Button.ts): a sand felt patch with brown running stitches, an Alegreya label and an optional second
+    /// line; a color of its own (a selected tab) dyes the felt toward it. Lifts on hover, presses down. (x, y) is its center.
     /// </summary>
     public class UiButton : VisualElement
     {
@@ -215,17 +216,17 @@ namespace Drakepg
             baseColor = color ?? Palette.Button;
             Ui.Place(this, x - width / 2, y - height / 2);
             Ui.Size(this, width, height);
-            AddToClassList(Inking.Class);
+            AddToClassList(FeltPass.Keep);
             style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             style.justifyContent = Justify.Center;
             style.alignItems = Align.Center;
             sheet = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(sheet, -Paper.Pad, -Paper.Pad);
-            Ui.Size(sheet, width + Paper.Pad * 2, height + Paper.Pad * 2);
+            Ui.Place(sheet, -10, -10);
+            Ui.Size(sheet, width + 20, height + 20);
             Add(sheet);
             label = new Label(text) { pickingMode = PickingMode.Ignore };
             label.style.fontSize = fontSize;
-            label.style.color = Paper.Ink;
+            label.style.color = Felt.Brown;
             Fonts.Title(label);
             label.style.unityTextAlign = TextAnchor.MiddleCenter;
             label.style.marginTop = label.style.marginBottom = 0;
@@ -235,7 +236,7 @@ namespace Drakepg
             {
                 sub = new Label(sublabel) { pickingMode = PickingMode.Ignore };
                 sub.style.fontSize = 15;
-                sub.style.color = Paper.InkDim;
+                sub.style.color = Felt.BrownDim;
                 Fonts.Bold(sub);
                 sub.style.unityTextAlign = TextAnchor.MiddleCenter;
                 sub.style.marginTop = sub.style.marginBottom = 0;
@@ -264,17 +265,17 @@ namespace Drakepg
             parent?.Add(this);
         }
 
-        /// <summary>The plain button color means plain parchment; any other color washes the tag in it.</summary>
-        Color? Wash()
+        /// <summary>The plain button color means sand felt; any other color (a selected tab) dyes the felt toward it.</summary>
+        Color Cloth()
         {
             var b = Palette.Button;
-            if (Mathf.Abs(baseColor.r - b.r) < 0.01f && Mathf.Abs(baseColor.g - b.g) < 0.01f && Mathf.Abs(baseColor.b - b.b) < 0.01f) return null;
-            return baseColor;
+            if (Mathf.Abs(baseColor.r - b.r) < 0.01f && Mathf.Abs(baseColor.g - b.g) < 0.01f && Mathf.Abs(baseColor.b - b.b) < 0.01f) return Felt.Sand;
+            return Color.Lerp(Felt.Sand, baseColor, 0.45f);
         }
 
         void Paint()
         {
-            sheet.style.backgroundImage = new StyleBackground(Paper.SheetTexture(width, height, seed, 0.3f, true, 4, 5, 1.3f, Wash(), 0.5f));
+            sheet.style.backgroundImage = new StyleBackground(Felt.PatchTexture(width, height, seed, Felt.Patch.Button(Cloth())));
             style.translate = new Translate(0, !enabled ? 0 : down ? 1 : hover ? -2 : 0);
             style.scale = new Scale(Vector3.one * (down && enabled ? 0.97f : 1));
             style.opacity = enabled ? 1 : 0.5f;
@@ -310,8 +311,8 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// HP / MP / XP bar (Bar.ts): a watercolor wash in a sketchy ink frame, the "cur / max" label in cream, and a pale
-    /// trail of the wash when it drops. (x, y) = left edge, middle. Its own colors stay (it's not inked).
+    /// HP / MP / XP bar (Bar.ts): a felt strip in a dark felt groove, the "cur / max" label in cream, and a pale trail
+    /// of the strip when it drops. (x, y) = left edge, middle. Its own colors stay (FeltPass leaves it alone).
     /// </summary>
     public class UiBar : VisualElement
     {
@@ -327,39 +328,39 @@ namespace Drakepg
         public UiBar(VisualElement parent, float x, float y, float width, float height, Color color, string prefix = "")
         {
             this.prefix = prefix;
-            var wash = Same(color, Palette.Hp) ? Paper.Red : Same(color, Palette.Mp) ? Paper.Blue : Same(color, Palette.Xp) ? Design.Hex(0xc49a22) : color;
+            var cloth = Same(color, Palette.Hp) ? Felt.Hp : Same(color, Palette.Mp) ? Felt.Mp : Same(color, Palette.Xp) ? Design.Hex(0xc9a227) : color;
             Ui.Place(this, x, y - height / 2);
             Ui.Size(this, width, height);
             pickingMode = PickingMode.Ignore;
-            AddToClassList(Inking.Keep);
-            Ui.Rect(this, 0, 0, width, height, new Color(110 / 255f, 70 / 255f, 25 / 255f, 0.16f), 3);
-            inner = width - 4;
+            AddToClassList(FeltPass.Keep);
             var seed = Ui.Seed(prefix) + (int)width;
-            chip = Strip(Paper.WashTexture(inner, height - 4, wash, seed, 0.4f), height);
-            fill = Strip(Paper.WashTexture(inner, height - 4, wash, seed), height);
-            var frame = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(frame, -2, -2);
-            Ui.Size(frame, width + 4, height + 4);
-            frame.style.backgroundImage = new StyleBackground(Paper.BarFrameTexture(width, height, seed + 3));
-            Add(frame);
-            label = Ui.Text(this, width / 2, height / 2, "", Mathf.Max(12, height - 8), Paper.Cream, false, 0.5f, 0.5f);
+            var groove = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(groove, -2, -2);
+            Ui.Size(groove, width + 4, height + 4);
+            groove.style.backgroundImage = new StyleBackground(Felt.GrooveTexture(width, height, seed));
+            Add(groove);
+            inner = width - 6;
+            chip = Strip(Felt.StripTexture(inner, height - 6, Color.Lerp(cloth, Felt.Groove, 0.55f), seed + 1), height);
+            fill = Strip(Felt.StripTexture(inner, height - 6, cloth, seed + 2), height);
+            label = Ui.Text(this, width / 2, height / 2, "", Mathf.Max(12, height - 8), Felt.Cream, false, 0.5f, 0.5f);
             Fonts.Heavy(label);
             label.style.unityTextOutlineWidth = 0.2f;
-            label.style.unityTextOutlineColor = Paper.Ink;
+            label.style.unityTextOutlineColor = Design.Hex(0x1a1410);
             parent?.Add(this);
         }
 
-        /// <summary>A wash strip in its own clip: it slides in from the left, so its painted right end always shows.</summary>
+        /// <summary>A felt strip in its own clip: it slides in from the left, so its rounded right end always shows.</summary>
         VisualElement Strip(Texture2D tex, float height)
         {
             var clip = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(clip, 2, 2);
-            Ui.Size(clip, inner, height - 4);
+            Ui.Place(clip, 3, 3);
+            Ui.Size(clip, inner, height - 6);
             clip.style.overflow = Overflow.Hidden;
+            Ui.Round(clip, (height - 6) / 2);
             Add(clip);
             var strip = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(strip, -inner, 0);
-            Ui.Size(strip, inner, height - 4);
+            Ui.Size(strip, inner, height - 6);
             strip.style.backgroundImage = new StyleBackground(tex);
             clip.Add(strip);
             return strip;
@@ -402,8 +403,8 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// Dimmed overlay + a centered parchment folio with a title; content goes in `Content`, positioned from the panel's
-    /// top-left (Modal.ts). The shade swallows clicks. Modals stack; Esc closes the top one. The X is a wax seal.
+    /// Dimmed overlay + a centered navy felt patch with a title; content goes in `Content`, positioned from the panel's
+    /// top-left (Modal.ts). The shade swallows clicks. Modals stack; Esc closes the top one. The X is a sewing button.
     /// </summary>
     public class UiModal
     {
@@ -425,12 +426,12 @@ namespace Drakepg
             Root = new VisualElement { pickingMode = PickingMode.Position };
             Ui.Place(Root, 0, 0);
             Ui.Size(Root, Design.Width, Design.Height);
-            Root.style.backgroundColor = new Color(0.06f, 0.03f, 0.01f, 0.62f);
+            Root.style.backgroundColor = new Color(0.02f, 0.03f, 0.06f, 0.6f);
             parent.Add(Root);
             var left = (Design.Width - width) / 2;
             var top = (Design.Height - height) / 2;
-            Panel = Ui.Sheet(Root, left, top, width, height, true, 10, 12, 1.8f, 0.45f);
-            var heading = Ui.Text(Panel, width / 2, 30, title, 30, Paper.Ink, false, 0.5f, 0.5f);
+            Panel = Ui.Sheet(Root, left, top, width, height, true, Felt.Patch.Menu());
+            var heading = Ui.Text(Panel, width / 2, 32, title, 30, Felt.Text, false, 0.5f, 0.5f);
             Fonts.Title(heading);
             Content = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(Content, 0, 0);
@@ -444,15 +445,14 @@ namespace Drakepg
             open.Add(this);
         }
 
-        /// <summary>The close button: a red wax seal with an X, a little bigger on hover.</summary>
+        /// <summary>The close button: a sewing button with an X, a little bigger on hover.</summary>
         static void CloseSeal(VisualElement parent, float x, float y, Action run)
         {
             var hit = new VisualElement { pickingMode = PickingMode.Position, name = "close" };
             Ui.Place(hit, x, y);
             Ui.Size(hit, 38, 38);
             hit.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
-            var seal = Paper.Seal(hit, 4, 4, "X", 211);
-            seal.pickingMode = PickingMode.Ignore;
+            Felt.SewnButton(hit, 4, 4, "X", 30, 16);
             hit.RegisterCallback<PointerEnterEvent>(_ => hit.style.scale = new Scale(Vector3.one * 1.1f));
             hit.RegisterCallback<PointerLeaveEvent>(_ => hit.style.scale = new Scale(Vector3.one));
             hit.RegisterCallback<PointerUpEvent>(e =>
@@ -480,7 +480,7 @@ namespace Drakepg
         public void Escape() => Close(onClose);
     }
 
-    /// <summary>Top-left status block on a parchment sheet: name, level, HP, MP, XP, gold (Hud.ts).</summary>
+    /// <summary>Top-left status block on a felt patch: name, level, HP, MP, XP, gold (Hud.ts).</summary>
     public class Hud
     {
         readonly Label nameText, goldText;
@@ -490,9 +490,9 @@ namespace Drakepg
         public Hud(VisualElement parent, float x, float y)
         {
             Root = Ui.Panel(parent, x, y, 340, 150, 0.85f, false);
-            nameText = Ui.Text(Root, 18, 10, "", 23, Paper.Ink);
+            nameText = Ui.Text(Root, 18, 10, "", 23, Felt.Text);
             Fonts.Title(nameText);
-            goldText = Ui.Text(Root, 322, 13, "", 20, Paper.InkGold, false, 1, 0);
+            goldText = Ui.Text(Root, 322, 13, "", 20, Felt.Gold, false, 1, 0);
             Fonts.Heavy(goldText);
             hp = new UiBar(Root, 16, 58, 308, 24, Palette.Hp, "HP ");
             mp = new UiBar(Root, 16, 90, 308, 24, Palette.Mp, "MP ");

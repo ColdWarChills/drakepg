@@ -18,7 +18,7 @@ namespace Drakepg
             // The name in Alegreya, cream with an ink outline like a map's lettering.
             var logo = Ui.Text(Root, cx, 170, "DRAKEPG", 104, Design.Hex(0xf6e2b0), false, 0.5f, 0.5f, stroke: true);
             Fonts.Title(logo);
-            logo.style.unityTextOutlineColor = Paper.Ink;
+            logo.style.unityTextOutlineColor = Felt.Ink;
             logo.style.unityTextOutlineWidth = 0.14f;
             logo.style.opacity = 0;
             Anim.Float(0.6f, 1, 0.6f, v =>
@@ -28,7 +28,7 @@ namespace Drakepg
             }, Ease.BackOut).OnComplete(() => Anim.Float(170, 178, 2.2f, v => logo.style.top = v, Ease.SineInOut, repeat: -1, yoyo: true));
             var tagline = Ui.Text(Root, cx, 252, "a turn-based adventure", 26, Design.Hex(0xd9c7a0), false, 0.5f, 0.5f, stroke: true);
             Fonts.Title(tagline);
-            tagline.style.unityTextOutlineColor = Paper.Ink;
+            tagline.style.unityTextOutlineColor = Felt.Ink;
 
             var hasSave = Saves.HasSave;
             new UiButton(Root, cx, 380, "New Game", () =>

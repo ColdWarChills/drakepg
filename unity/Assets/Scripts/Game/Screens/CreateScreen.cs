@@ -26,7 +26,7 @@ namespace Drakepg
             public ClassDef Cls;
             public VisualElement Box;
             public SpriteRenderer Fill;
-            /// <summary>The card's parchment, plain and washed gold (picked).</summary>
+            /// <summary>The card's felt, plain and picked (lighter, gold thread).</summary>
             public Sprite Plain, Picked;
             public Figure Fig;
             public float X, FigY, Scale = 1;
@@ -88,7 +88,7 @@ namespace Drakepg
         {
             var l = Ui.Text(stepUi, Design.Width / 2, y, text, 46, Lettering, false, 0.5f, 0.5f, stroke: true);
             Fonts.Title(l);
-            l.style.unityTextOutlineColor = Paper.Ink;
+            l.style.unityTextOutlineColor = Felt.Ink;
             return l;
         }
 
@@ -98,7 +98,7 @@ namespace Drakepg
             string Part(int n, string label) => Ui.Colored($"{n}  {label}", n == step ? Lettering : LetteringDim);
             var l = Ui.Text(stepUi, Design.Width / 2, 98, Part(1, "Hero") + Ui.Colored("     ·     ", LetteringDim) + Part(2, "Class"), 19, bold: true,
                 ax: 0.5f, ay: 0.5f, stroke: true);
-            l.style.unityTextOutlineColor = Paper.Ink;
+            l.style.unityTextOutlineColor = Felt.Ink;
         }
 
         // --- Step 1: the character ---
@@ -162,9 +162,9 @@ namespace Drakepg
         {
             var card = new Card { Cls = cls, X = x };
             var cy = CardY + CardH / 2;
-            // A parchment card in the world, so the hero (a world figure) stands on it; picked, it's washed gold.
-            card.Plain = Paper.SheetSprite(CardW, CardH, 61 + index);
-            card.Picked = Paper.SheetSprite(CardW, CardH, 61 + index, Design.Hex(0xe0b040), 0.28f);
+            // A felt card in the world, so the hero (a world figure) stands on it; picked, lighter felt with gold thread.
+            card.Plain = Felt.PatchSprite(CardW, CardH, 61 + index);
+            card.Picked = Felt.PatchSprite(CardW, CardH, 61 + index, new Felt.Patch { Cloth = Design.Hex(0x34426a), Thread = Felt.Gold });
             var go = new GameObject("card " + cls.Id);
             go.transform.SetParent(stepWorld, false);
             card.Fill = go.AddComponent<SpriteRenderer>();
@@ -179,7 +179,7 @@ namespace Drakepg
             var box = new VisualElement { pickingMode = PickingMode.Position };
             Ui.Place(box, x - CardW / 2, CardY);
             Ui.Size(box, CardW, CardH);
-            box.AddToClassList(Inking.Class);
+            box.AddToClassList(FeltPass.Class);
             box.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             box.RegisterCallback<PointerUpEvent>(_ => Select(cls.Id));
             stepUi.Add(box);
@@ -193,8 +193,8 @@ namespace Drakepg
             var parts = early.Select(s => Db.Skill(s.SkillId).Name + (s.Level > 1 ? $" (Lv {s.Level})" : "")).ToList();
             if (later > 0) parts.Add($"+{later} more by Lv {cls.Skills.Max(s => s.Level)}");
             Ui.Text(box, mid, top + 150, string.Join("  ·  ", parts), 15, Palette.TextMagic, ax: 0.5f, ay: 0.5f, wrap: CardW - 40, align: TextAnchor.MiddleCenter);
-            // Its number key on a wax seal, like the battle buttons.
-            Paper.Seal(box, -10, -10, $"{index + 1}", 71 + index);
+            // Its number key on a sewing button, like the battle buttons.
+            Felt.SewnButton(box, -8, -10, $"{index + 1}");
             cards.Add(card);
         }
 
@@ -251,7 +251,7 @@ namespace Drakepg
         /// <summary>"Start at: Ch 1 / Ch 2 / Ch 3": skip ahead to test a later chapter with a fitting level and gear.</summary>
         void BuildChapterPicker(float x, float y)
         {
-            Ui.Text(stepUi, x, y, "Start at", 19, LetteringDim, true, 0, 0.5f, stroke: true).style.unityTextOutlineColor = Paper.Ink;
+            Ui.Text(stepUi, x, y, "Start at", 19, LetteringDim, true, 0, 0.5f, stroke: true).style.unityTextOutlineColor = Felt.Ink;
             var starts = Db.Data.ChapterStarts;
             var buttons = new List<UiButton>();
             void Paint()

@@ -1,10 +1,12 @@
 """Hand-drawn ink icons for the UI (never AI-generated: docs/PLANS.md, Art). Each icon is a small SVG in the
 round-15 mock's style (art/ui/battle_craft.html: 32x32 viewBox, ink #2a1d16 outlines 2.4 wide, flat fills from the
 paper palette, a slight wobble filter). Rendered with headless Edge to transparent PNGs for Unity:
-unity/Assets/Resources/UiIcons/<name>.png (128 px).
+unity/Assets/Resources/UiIcons/<name>.png (128 px). `--light`: the same drawings in cream ink with navy fills for
+dark felt (the felt mock's icons), to UiIconsLight/.
 
     python scripts/ui_icons.py            # render all
     python scripts/ui_icons.py sword book # render some
+    python scripts/ui_icons.py --light    # the set for dark felt
 """
 import subprocess
 import sys
@@ -20,6 +22,9 @@ SIZE = 128
 
 INK = "#2a1d16"
 CREAM = "#efe2c2"
+# The felt mock's icon colors on navy felt: cream outlines, navy where the ink set has cream.
+LIGHT_INK = "#f1e6cc"
+LIGHT_FILL = "#3a4a66"
 G = f'stroke="{INK}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"'
 
 # name -> SVG body (inside a 32x32 viewBox). The first seven are the mock's own.
@@ -77,7 +82,7 @@ svg {{ display: block; }}
 </body></html>"""
 
 
-def render(name: str, body: str, tmp: Path) -> None:
+def render(name: str, body: str, tmp: Path, out: Path = OUT) -> None:
     html = tmp / f"{name}.html"
     html.write_text(PAGE.format(size=SIZE, body=body), encoding="utf-8")
     shot = tmp / f"{name}.png"
@@ -85,16 +90,21 @@ def render(name: str, body: str, tmp: Path) -> None:
                     f"--window-size={SIZE},{SIZE}", f"--screenshot={shot}", html.as_uri()],
                    check=True, capture_output=True, timeout=60)
     img = Image.open(shot).convert("RGBA").crop((0, 0, SIZE, SIZE))
-    OUT.mkdir(parents=True, exist_ok=True)
-    img.save(OUT / f"{name}.png")
+    out.mkdir(parents=True, exist_ok=True)
+    img.save(out / f"{name}.png")
     print(f"  {name}.png")
 
 
 def main() -> None:
-    names = sys.argv[1:] or list(ICONS)
+    light = "--light" in sys.argv
+    names = [a for a in sys.argv[1:] if not a.startswith("--")] or list(ICONS)
+    out = OUT.parent / "UiIconsLight" if light else OUT
     with tempfile.TemporaryDirectory() as t:
         for n in names:
-            render(n, ICONS[n], Path(t))
+            body = ICONS[n]
+            if light:
+                body = body.replace(INK, LIGHT_INK).replace(CREAM, LIGHT_FILL)
+            render(n, body, Path(t), out)
 
 
 if __name__ == "__main__":

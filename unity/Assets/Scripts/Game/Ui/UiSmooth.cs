@@ -10,8 +10,8 @@ namespace Drakepg
     /// MSAA doesn't reach the UI), so every element with a radius gets its fill and border baked into a small
     /// anti-aliased 9-slice image instead, drawn at the screen's real resolution. Code keeps using
     /// style.backgroundColor / Ui.Border / Ui.Round as usual: GameRoot runs `Pass` every frame and re-bakes an element
-    /// when its colors, border width or radius change (baked images are cached by look). The same walk inks menus on
-    /// parchment and sets the UI fonts (Inking).
+    /// when its colors, border width or radius change (baked images are cached by look). The same walk themes menus for
+    /// felt and sets the UI fonts (FeltPass).
     /// </summary>
     public static class UiSmooth
     {
@@ -44,16 +44,12 @@ namespace Drakepg
         static void Visit(VisualElement e, bool inked)
         {
             if (e.resolvedStyle.display == DisplayStyle.None) return;
-            if (e.ClassListContains(Inking.Keep)) inked = false;
-            else if (e.ClassListContains(Inking.Class)) inked = true;
-            if (e is Label label)
-            {
-                Inking.Font(label);
-                if (inked) Inking.Label(label);
-            }
+            if (e.ClassListContains(FeltPass.Keep)) inked = false;
+            else if (e.ClassListContains(FeltPass.Class)) inked = true;
+            if (e is Label label) FeltPass.Font(label);
             var radius = e.resolvedStyle.borderTopLeftRadius;
             if (radius >= 1) Apply(e, radius, inked);
-            else if (inked) Inking.Box(e);
+            else if (inked) FeltPass.Box(e);
             var n = e.hierarchy.childCount;
             for (int i = 0; i < n; i++) Visit(e.hierarchy[i], inked);
         }
@@ -70,8 +66,8 @@ namespace Drakepg
                 looks.Add(e, look);
             }
             // After baking, the element's own background and border colors are cleared; anything set since is new.
-            if (rs.backgroundColor.a > 0 || !mine) look.Fill = inked ? Inking.Fill(rs.backgroundColor) : rs.backgroundColor;
-            if (rs.borderTopColor.a > 0 || !mine) look.Border = inked ? Inking.Border(rs.borderTopColor) : rs.borderTopColor;
+            if (rs.backgroundColor.a > 0 || !mine) look.Fill = inked ? FeltPass.Fill(rs.backgroundColor) : rs.backgroundColor;
+            if (rs.borderTopColor.a > 0 || !mine) look.Border = inked ? FeltPass.Border(rs.borderTopColor) : rs.borderTopColor;
             look.Width = rs.borderTopWidth;
             look.Radius = radius;
             var key = Key(look);
