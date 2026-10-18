@@ -61,7 +61,9 @@ namespace Drakepg
             Shadow(root, x, y, w * 0.7f, 26 * k);
             if (bare != null && weaponArt != null)
             {
-                // The weapon behind the body, its grip in each fist (bare.hands are 1x art pixels from the top-left).
+                // The body, the weapon in front of it with its grip in each fist (bare.hands are 1x art pixels from the
+                // top-left), then each fist again over the grip (Figure.Fist).
+                Ui.Image(root, x - w / 2, top, w, h, key);
                 var wSize = Art.Size(Art.Get(weaponArt));
                 var wh = (float)(weapon.Size ?? 0.6) * size.y * s * k;
                 var ww = wSize.y > 0 ? wSize.x * wh / wSize.y : 0;
@@ -74,6 +76,20 @@ namespace Drakepg
                     img.style.transformOrigin = new TransformOrigin(new Length(ww / 2, LengthUnit.Pixel), new Length(grip * wh, LengthUnit.Pixel));
                     img.style.rotate = new Rotate(Angle.Degrees((float)hand.Angle));
                 }
+                var body = Art.Get(key);
+                foreach (var hand in bare.Hands ?? new List<Hand>())
+                {
+                    var fist = Figure.Fist(body, size, hand, out var at);
+                    if (fist == null) continue;
+                    float fw = fist.rect.width / body.rect.width * size.x, fh = fist.rect.height / body.rect.height * size.y;
+                    var f = new VisualElement { pickingMode = PickingMode.Ignore, name = "fist" };
+                    Ui.Place(f, x + (at.x - size.x / 2) * s * k, top + (size.y - at.y - fh) * s * k);
+                    Ui.Size(f, fw * s * k, fh * s * k);
+                    f.style.backgroundImage = new StyleBackground(fist);
+                    f.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
+                    root.Add(f);
+                }
+                return root;
             }
             Ui.Image(root, x - w / 2, top, w, h, key);
             return root;

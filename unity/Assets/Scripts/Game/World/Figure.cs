@@ -62,9 +62,15 @@ namespace Drakepg
                     pivot.localPosition = new Vector3(((float)hand.X - size.x / 2) * s, (size.y - (float)hand.Y) * s, 0) / Design.PixelsPerUnit;
                     pivot.localRotation = Quaternion.Euler(0, 0, -(float)hand.Angle);
                     var ws = (float)(weapon.Size ?? 0.6) * DrawnHeight / wSize.y;
-                    var w = AddSprite(wSprite, pivot, 5, ws);
+                    // In front of the body, its grip under the fist (the fist is drawn again on top).
+                    var w = AddSprite(wSprite, pivot, 15, ws);
                     w.transform.localPosition = new Vector3(0, -(0.5f - grip) * wSize.y * ws, 0) / Design.PixelsPerUnit;
                     Weapons.Add(pivot);
+                    var fist = Fist(sprite, size, hand, out var at);
+                    if (fist == null) continue;
+                    var f = AddSprite(fist, art, 20, s);
+                    f.name = "fist";
+                    f.transform.localPosition = new Vector3((at.x - size.x / 2) * s, at.y * s, 0) / Design.PixelsPerUnit;
                 }
             }
             else
@@ -83,6 +89,35 @@ namespace Drakepg
                 else BuildShape(look);
             }
             transform.localScale = new Vector3((float)look.Scale * facing, (float)look.Scale, 1);
+        }
+
+        /// <summary>The fist around a hand anchor, in 1x art px from the anchor: wide enough for the knuckles, down to the wrist.</summary>
+        const float FistHalfWidth = 20, FistAbove = 22, FistBelow = 13;
+
+        static readonly Dictionary<(int, int, int), Sprite> fists = new Dictionary<(int, int, int), Sprite>();
+
+        /// <summary>
+        /// The fist of `body` around `hand` as its own sprite (the same texture, no copy), drawn over the weapon so the
+        /// grip disappears into the fist: the fists in the art are closed and face the viewer, so a held weapon passes
+        /// in front of the palm and under the fingers. Only the fist's own pixels cover the weapon (the rest of the
+        /// rectangle is transparent), so the guard above it and the pommel below show. `at`: the sprite's bottom-left
+        /// in 1x px from the art's bottom-left.
+        /// </summary>
+        public static Sprite Fist(Sprite body, Vector2 size, Hand hand, out Vector2 at)
+        {
+            float x0 = Mathf.Max(0, (float)hand.X - FistHalfWidth), x1 = Mathf.Min(size.x, (float)hand.X + FistHalfWidth);
+            float y0 = Mathf.Max(0, (float)hand.Y - FistAbove), y1 = Mathf.Min(size.y, (float)hand.Y + FistBelow);
+            at = new Vector2(x0, size.y - y1);
+            if (body == null || x1 <= x0 || y1 <= y0) return null;
+            var key = (body.GetInstanceID(), Mathf.RoundToInt((float)hand.X), Mathf.RoundToInt((float)hand.Y));
+            if (fists.TryGetValue(key, out var cached) && cached != null) return cached;
+            // Texture px per 1x px (2 for @2x art).
+            var k = body.rect.width / size.x;
+            var rect = new Rect(body.rect.x + x0 * k, body.rect.y + (size.y - y1) * k, (x1 - x0) * k, (y1 - y0) * k);
+            var fist = Sprite.Create(body.texture, rect, Vector2.zero, body.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+            fist.name = body.name + "_fist";
+            fists[key] = fist;
+            return fist;
         }
 
         void AddShadow(float width)
