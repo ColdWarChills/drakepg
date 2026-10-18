@@ -76,7 +76,7 @@ namespace Drakepg
                     if (fist == null) continue;
                     var f = AddSprite(fist, art, 20, s);
                     f.name = "fist";
-                    RoundFist(f, fist);
+                    RoundFist(f, fist, sprite, size, hand);
                     f.transform.localPosition = new Vector3((at.x - size.x / 2) * s, at.y * s, 0) / Design.PixelsPerUnit;
                 }
             }
@@ -98,7 +98,7 @@ namespace Drakepg
             transform.localScale = new Vector3((float)look.Scale * facing, (float)look.Scale, 1);
         }
 
-        /// <summary>The fist: a circle this many 1x art px around the hand anchor (the art's fists are about 36 px across).</summary>
+        /// <summary>A hand without its own fist shape: a circle this many 1x art px around it (the fists are about 36 px across).</summary>
         public const float FistRadius = 17;
 
         static readonly Dictionary<(int, int, int), Sprite> fists = new Dictionary<(int, int, int), Sprite>();
@@ -109,21 +109,26 @@ namespace Drakepg
         static readonly int CircleId = Shader.PropertyToID("_Circle");
         static readonly int CutId = Shader.PropertyToID("_Cut");
 
+        /// <summary>The part of `hand` drawn over the grip: its own shape, or a plain circle around it.</summary>
+        public static FistShape ShapeOf(Hand hand) => hand.Fist ?? new FistShape { X = hand.X, Y = hand.Y, R = FistRadius };
+
         /// <summary>
-        /// The fist of `body` around `hand` as its own sprite (the square around the fist circle, the same texture, no
-        /// copy), drawn over the weapon so the grip disappears into the fist: the fists in the art are closed and face
-        /// the viewer, so a held weapon passes in front of the palm and under the fingers. Drawn through a soft circle
-        /// (Fx/HeldSprite.shader; a round clip in the menus), only the fist's own pixels cover the weapon, so the
-        /// guard above it and the pommel below show, and the cut follows the fist's round outline. `at`: the sprite's
-        /// bottom-left in 1x px from the art's bottom-left.
+        /// The fist of `body` for `hand` as its own sprite (the square around the fist's circle, the same texture, no
+        /// copy), drawn over the weapon so the grip disappears into the hand: the fists in the art are closed and face
+        /// the viewer, so a held weapon passes in front of the palm and under the fingers. Drawn through the soft
+        /// circle, cut off under the little finger (`FistShape.Bottom`; Fx/HeldSprite.shader, a clip in the menus), so
+        /// only the fingers and thumb cover the weapon and the handle shows again under the little finger. `at`: the
+        /// sprite's bottom-left in 1x px from the art's bottom-left.
         /// </summary>
         public static Sprite Fist(Sprite body, Vector2 size, Hand hand, out Vector2 at)
         {
-            float x0 = Mathf.Max(0, (float)hand.X - FistRadius), x1 = Mathf.Min(size.x, (float)hand.X + FistRadius);
-            float y0 = Mathf.Max(0, (float)hand.Y - FistRadius), y1 = Mathf.Min(size.y, (float)hand.Y + FistRadius);
+            var shape = ShapeOf(hand);
+            float cx = (float)shape.X, cy = (float)shape.Y, r = (float)shape.R;
+            float x0 = Mathf.Max(0, cx - r), x1 = Mathf.Min(size.x, cx + r);
+            float y0 = Mathf.Max(0, cy - r), y1 = Mathf.Min(size.y, cy + r);
             at = new Vector2(x0, size.y - y1);
             if (body == null || x1 <= x0 || y1 <= y0) return null;
-            var key = (body.GetInstanceID(), Mathf.RoundToInt((float)hand.X), Mathf.RoundToInt((float)hand.Y));
+            var key = (body.GetInstanceID(), Mathf.RoundToInt(cx * 10), Mathf.RoundToInt(cy * 10));
             if (fists.TryGetValue(key, out var cached) && cached != null) return cached;
             // Texture px per 1x px (2 for @2x art).
             var k = body.rect.width / size.x;
@@ -134,8 +139,8 @@ namespace Drakepg
             return fist;
         }
 
-        /// <summary>`r` drawn with Fx/HeldSprite.shader, one setting in its property block. False if the shader is missing.</summary>
-        static bool Held(SpriteRenderer r, int id, Vector4 value)
+        /// <summary>`r` drawn with Fx/HeldSprite.shader: a circle and a cut in its property block. False if the shader is missing.</summary>
+        static bool Held(SpriteRenderer r, Vector4 circle, Vector4 cut)
         {
             if (heldMaterial == null)
             {
@@ -146,17 +151,25 @@ namespace Drakepg
             r.sharedMaterial = heldMaterial;
             var block = new MaterialPropertyBlock();
             r.GetPropertyBlock(block);
-            block.SetVector(id, value);
+            block.SetVector(CircleId, circle);
+            block.SetVector(CutId, cut);
             r.SetPropertyBlock(block);
             return true;
         }
 
-        /// <summary>A renderer that draws `fist` through its soft circle.</summary>
-        static void RoundFist(SpriteRenderer r, Sprite fist)
+        /// <summary>A renderer that draws `fist` (from `body`) through its soft circle, cut off under the little finger.</summary>
+        static void RoundFist(SpriteRenderer r, Sprite fist, Sprite body, Vector2 size, Hand hand)
         {
+            var shape = ShapeOf(hand);
             var tex = fist.texture;
-            var rect = fist.rect;
-            Held(r, CircleId, new Vector4(rect.center.x / tex.width, rect.center.y / tex.height, rect.width / 2 / tex.width, rect.height / 2 / tex.height));
+            var k = body.rect.width / size.x;
+            var center = new Vector2(body.rect.x + (float)shape.X * k, body.rect.y + (size.y - (float)shape.Y) * k);
+            var radius = (float)shape.R * k;
+            var circle = new Vector4(center.x / tex.width, center.y / tex.height, radius / tex.width, radius / tex.height);
+            // Keep what lies above the little finger's edge: a negative soft edge keeps texels above the line.
+            var cut = Vector4.zero;
+            if (shape.Bottom.HasValue) cut = new Vector4((body.rect.y + (size.y - (float)shape.Bottom.Value) * k) / tex.height, -k / tex.height, 0, 0);
+            Held(r, circle, cut);
         }
 
         /// <summary>
@@ -171,7 +184,7 @@ namespace Drakepg
             var room = GuardRoom / drawnHeight;
             var line = (rect.y + rect.height * (1 - grip + room)) / tex.height;
             var soft = rect.height * (2 / drawnHeight) / tex.height;
-            if (!Held(r, CutId, new Vector4(line, soft, 0, 0))) r.enabled = false;
+            if (!Held(r, Vector4.zero, new Vector4(line, soft, 0, 0))) r.enabled = false;
         }
 
         void AddShadow(float width)

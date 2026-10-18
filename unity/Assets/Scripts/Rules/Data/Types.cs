@@ -75,6 +75,15 @@ namespace Drakepg.Rules
     public class Hand
     {
         public double X, Y, Angle;
+        /// <summary>The part of the hand drawn over the grip; null: a circle of 17 around (X, Y).</summary>
+        public FistShape Fist;
+    }
+
+    /// <summary>A circle (center, radius, 1x art px) cut off below `Bottom` (the little finger's lower edge), if set.</summary>
+    public class FistShape
+    {
+        public double X, Y, R;
+        public double? Bottom;
     }
 
     public class BareLook

@@ -75,13 +75,21 @@ export interface BareLook {
   hands: Hand[];
 }
 
-/** A fist on the bare art that holds the weapon. Weapons are drawn behind the body, so the fist covers the grip. */
+/**
+ * A fist on the bare art that holds the weapon. Phaser draws weapons behind the body, so the fist covers the grip;
+ * Unity draws the grip end in front and the fist again over it (`fist`).
+ */
 export interface Hand {
-  /** Fist center in the bare art's 1x pixels (480px tall as written by prepare_art.py; halve what you measure on a `@2x` file). */
+  /** Where the weapon's grip point goes, in the bare art's 1x pixels (480px tall as written by prepare_art.py; halve what you measure on a `@2x` file). */
   x: number;
   y: number;
   /** Weapon angle in degrees: 0 = pointing up, 90 = pointing forward. */
   angle: number;
+  /**
+   * The part of the hand drawn over the grip (Unity): a circle (center, radius, 1x px) cut off below `bottom`, the
+   * little finger's lower edge, so the handle shows again under it. Default: a circle of 17 around (x, y).
+   */
+  fist?: { x: number; y: number; r: number; bottom?: number };
 }
 
 export interface SkillDef {

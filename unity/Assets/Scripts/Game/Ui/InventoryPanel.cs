@@ -98,14 +98,21 @@ namespace Drakepg
                     var fist = Figure.Fist(body, size, hand, out var at);
                     if (fist == null) continue;
                     float fw = fist.rect.width / body.rect.width * size.x, fh = fist.rect.height / body.rect.height * size.y;
-                    var f = new VisualElement { pickingMode = PickingMode.Ignore, name = "fist" };
-                    Ui.Place(f, x + (at.x - size.x / 2) * s * k, top + (size.y - at.y - fh) * s * k);
+                    // The fist's circle, cut off under the little finger like in the world: a round element in a clip.
+                    var y0 = size.y - at.y - fh;
+                    var bottom = (float)(Figure.ShapeOf(hand).Bottom ?? y0 + fh);
+                    var clip = new VisualElement { pickingMode = PickingMode.Ignore, name = "fist" };
+                    Ui.Place(clip, x + (at.x - size.x / 2) * s * k, top + y0 * s * k);
+                    Ui.Size(clip, fw * s * k, Mathf.Clamp(bottom - y0, 0, fh) * s * k);
+                    clip.style.overflow = Overflow.Hidden;
+                    var f = new VisualElement { pickingMode = PickingMode.Ignore };
+                    Ui.Place(f, 0, 0);
                     Ui.Size(f, fw * s * k, fh * s * k);
                     f.style.backgroundImage = new StyleBackground(fist);
                     f.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
-                    // The fist's circle (Figure.FistRadius), like the soft circle in the world.
                     Ui.Round(f, Mathf.Min(fw, fh) * s * k / 2);
-                    root.Add(f);
+                    clip.Add(f);
+                    root.Add(clip);
                 }
                 return root;
             }

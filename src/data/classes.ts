@@ -1,10 +1,16 @@
-import type { ClassDef } from './types';
+import type { ClassDef, Hand } from './types';
 
 /**
  * One base hero for every class (docs/PLANS.md, Art): classes differ by gear, not by the picture. Each class holds its
  * weapon in its own fists (`bare.hands`); body armor swaps in `char_hero_<armor id>` (see `Player.look`).
  */
 const HERO_ART = 'char_hero_bare';
+/**
+ * The base hero's raised fist (front hand): the grip runs from the thumb, where the guard rests, to just under the
+ * little finger's lower edge (y 145), where the handle comes out in front of the heel of the hand; so weapons lean
+ * back (the blade goes behind the head in Unity's Figure.cs).
+ */
+const RAISED_FIST: Hand = { x: 227, y: 134, angle: -35, fist: { x: 234, y: 130, r: 18, bottom: 145 } };
 
 export const CLASSES: ClassDef[] = [
   {
@@ -36,9 +42,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x5b3a1e,
       scale: 1,
       art: HERO_ART,
-      // The raised fist holds a weapon on the line from the crook of the thumb to under the little finger (the bottom
-      // finger, on the knuckle side), so weapons lean back; the blade goes behind the head (Figure.cs).
-      bare: { art: HERO_ART, hands: [{ x: 240, y: 136, angle: -30 }] },
+      bare: { art: HERO_ART, hands: [RAISED_FIST] },
     },
   },
   {
@@ -70,7 +74,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x2c1a3a,
       scale: 1,
       art: HERO_ART,
-      bare: { art: HERO_ART, hands: [{ x: 240, y: 136, angle: -30 }] },
+      bare: { art: HERO_ART, hands: [RAISED_FIST] },
     },
   },
   {
@@ -105,7 +109,7 @@ export const CLASSES: ClassDef[] = [
       bare: {
         art: HERO_ART,
         hands: [
-          { x: 240, y: 136, angle: -30 },
+          RAISED_FIST,
           // Reverse grip: the blade out of the back of the lowered fist, down and behind.
           { x: 50, y: 268, angle: -130 },
         ],

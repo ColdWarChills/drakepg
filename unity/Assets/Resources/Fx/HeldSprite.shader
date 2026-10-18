@@ -1,8 +1,9 @@
 // A held weapon and the fist around it (Figure.cs). Weapons lean away from the viewer, so each is drawn twice: whole
 // behind the body (its blade goes behind the head), and its grip end again in front: `_Cut` keeps texels below a line
-// across the weapon (x: the line in texture V, y: a soft edge in V; y <= 0 keeps everything). Then the fist is drawn
-// again over the grip through a soft circle: `_Circle` is the circle in texture UVs (center xy, radii zw; zw <= 0 keeps
-// everything). Both are set per renderer. Unlit and premultiplied like FxSprite; lives in Resources so builds include it.
+// across the weapon (x: the line in texture V, y: a soft edge in V; a negative y keeps texels above the line instead, 0
+// keeps everything). Then the fist is drawn again over the grip through a soft circle cut off under the little finger:
+// `_Circle` is the circle in texture UVs (center xy, radii zw; zw <= 0 keeps everything). Both are set per renderer.
+// Unlit and premultiplied like FxSprite; lives in Resources so builds include it.
 Shader "Drakepg/HeldSprite"
 {
     Properties
@@ -55,7 +56,7 @@ Shader "Drakepg/HeldSprite"
                     float d = length((IN.texcoord - _Circle.xy) / _Circle.zw);
                     a *= saturate((1 - d) / _Feather);
                 }
-                if (_Cut.y > 0) a *= saturate((_Cut.x - IN.texcoord.y) / _Cut.y);
+                if (_Cut.y != 0) a *= saturate((_Cut.x - IN.texcoord.y) / _Cut.y);
                 return fixed4(tex.rgb * IN.color.rgb * a, a);
             }
         ENDCG
