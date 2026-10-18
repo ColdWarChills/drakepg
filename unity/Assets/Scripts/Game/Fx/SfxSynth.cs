@@ -270,6 +270,15 @@ namespace Drakepg
                 case "page":
                     m.Hiss(0, 0.18, 0.12, Pass.Bandpass, 2500, 1200, 1.2);
                     return true;
+                case "turn":
+                    // Your turn: a soft felt thump and a bright pop as Attack springs up.
+                    m.Tone(0, Wave.Sine, 180, 90, 0.12, 0.35);
+                    m.Tone(0.03, Wave.Triangle, 620, 940, 0.12, 0.14);
+                    return true;
+                case "swish":
+                    // Felt pieces sliding into place.
+                    m.Hiss(0, 0.22, 0.1, Pass.Bandpass, 600 * v, 1800, 1.2);
+                    return true;
                 case "whoosh":
                     // A quick lunge through the air.
                     m.Hiss(0, 0.14, 0.22, Pass.Bandpass, 900 * v, 2600, 1.5);

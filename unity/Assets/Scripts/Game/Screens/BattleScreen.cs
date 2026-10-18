@@ -28,6 +28,8 @@ namespace Drakepg
         /// <summary>Claw rakes and lunge trails of monster attacks without an element.</summary>
         const long MonsterHitColor = 0xff6b5a;
         const long EliteGlow = 0xffc23d, LuckyGlow = 0x7dffb0;
+        /// <summary>How far off screen the HUD pieces start and leave to (the side sheets sideways, the runner down).</summary>
+        static readonly Vector2 HudOff = new Vector2(470, 200);
         static readonly Color LuckyText = Design.Css("#8dffbe");
         static readonly Color ToughText = Design.Css("#ff9a4d");
         static readonly Color SetText = Design.Css("#7fe0c0");
@@ -111,6 +113,29 @@ namespace Drakepg
             {
                 WeaponAngles = Fig.Weapons.Select(w => w.localEulerAngles.z).ToArray();
             }
+
+            Anim.Handle shaping;
+
+            /// <summary>Ease the body's squash/stretch to (sx, sy) and hold it (feet stay planted: the pivot is at the feet).</summary>
+            public void Shape(float sx, float sy, float seconds, Ease ease = Ease.QuadOut)
+            {
+                shaping?.Stop();
+                float fromX = Sx, fromY = Sy;
+                shaping = Track(Anim.Float(0, 1, seconds, t =>
+                {
+                    Sx = Mathf.LerpUnclamped(fromX, sx, t);
+                    Sy = Mathf.LerpUnclamped(fromY, sy, t);
+                }, ease));
+            }
+
+            /// <summary>Snap to (sx, sy), then spring back to normal: landings, impacts, getting hit.</summary>
+            public void Squash(float sx, float sy, float seconds = 0.22f)
+            {
+                shaping?.Stop();
+                Sx = sx;
+                Sy = sy;
+                Shape(1, 1, seconds, Ease.BackOut);
+            }
         }
 
         readonly BattleSetup back;
@@ -119,11 +144,20 @@ namespace Drakepg
         MonsterDef monster;
         Fighter hero, foe;
         FeltBar playerHp, playerMp, enemyHp;
+        /// <summary>The HUD in three pieces that slide on and off together: the hero's patch, the enemy's sheet, the bottom runner.</summary>
+        VisualElement heroHud, enemyHud, bottomHud;
         /// <summary>The log on the scroll: the last lines, newest darkest (or a hover note in their place).</summary>
         VisualElement logBox;
         readonly List<string> log = new List<string>();
         VisualElement menu;
         List<MenuButton> menuButtons = new List<MenuButton>();
+        /// <summary>The holder of the button just used (it punches out while the others drop away).</summary>
+        VisualElement pressedHolder;
+        /// <summary>Status chips already on screen (side -> ids), so only new ones pop in.</summary>
+        readonly Dictionary<string, HashSet<string>> chipsShown = new Dictionary<string, HashSet<string>>
+        {
+            ["player"] = new HashSet<string>(), ["enemy"] = new HashSet<string>(),
+        };
         int skillPage;
         bool busy;
         bool twinFlip;
@@ -187,6 +221,13 @@ namespace Drakepg
             hero.Apply();
             foe.Apply();
 
+            heroHud = UiMotion.Layer(Root, "hero-hud");
+            enemyHud = UiMotion.Layer(Root, "enemy-hud");
+            bottomHud = UiMotion.Layer(Root, "bottom-hud");
+            // Off screen until the intro slides them in.
+            heroHud.style.translate = new Translate(HudOff.x * -1, 0);
+            enemyHud.style.translate = new Translate(HudOff.x, 0);
+            bottomHud.style.translate = new Translate(0, HudOff.y);
             DrawStatus();
             DrawBottomPanel();
             RefreshBars(false);
@@ -205,24 +246,58 @@ namespace Drakepg
 
         async void Intro()
         {
+            // The fighters run in while the HUD pieces slide on: the runner first (the ground under the background is bare
+            // without it), then the enemy's sheet, then the hero's.
+            Sfx.Play("swish");
+            UiMotion.SlideIn(bottomHud, new Vector2(0, HudOff.y), 0.34f, 0, Ease.CubicOut);
+            UiMotion.SlideIn(enemyHud, new Vector2(HudOff.x, 0), 0.42f, 0.1f);
+            UiMotion.SlideIn(heroHud, new Vector2(-HudOff.x, 0), 0.42f, 0.18f);
             await Task.WhenAll(
                 hero.Track(Anim.Float(-200, PlayerX, 0.52f, v => hero.X = v, Ease.BackOut)).Task,
                 foe.Track(Anim.Float(Design.Width + 200, EnemyX, 0.52f, v => foe.X = v, Ease.BackOut)).Task);
             Fx.Dust(World, PlayerX, GroundY, 6, Design.Depth(GroundY) + 1);
             Fx.Dust(World, EnemyX, GroundY, 6, Design.Depth(GroundY) + 1);
+            hero.Squash(1.1f, 0.9f);
+            foe.Squash(1.1f, 0.9f);
             if (monster.Boss)
             {
                 Sfx.Play("warning");
                 GameRoot.I.Shake(0.4f, 15);
                 GameRoot.I.Flash(0.25f, new Color(120 / 255f, 0, 0));
                 Fx.Shockwave(World, EnemyX, GroundY, 0xff4d4d, 4, 0.3f);
-                await Anim.Wait(0.5f);
+                await BossBanner();
             }
             Idle(hero);
             Idle(foe);
             busy = false;
-            RefreshPreview();
-            ShowMenu("main");
+            FadeIntent(true);
+            ShowMenu("main", true);
+        }
+
+        /// <summary>A boss's name on a red felt band that sweeps across the screen, holds, and sweeps off.</summary>
+        async Task BossBanner()
+        {
+            const float w = 1500, h = 110, y = 250;
+            var band = Felt.MakePatch(Root, (Design.Width - w) / 2, y, w, h, 61,
+                new Felt.Patch { Cloth = Felt.RedFelt, Thread = Felt.RedStitch, Inset = 9, Radius = 14, Dash = 9, Gap = 6, ThreadWidth = 2.6f }, -3, false);
+            var kind = Ui.Text(band.Content, w / 2, 26, monster.IsHeroic ? "HEROIC BOSS" : "BOSS", 20, Felt.Cream, false, 0.5f, 0.5f);
+            Fonts.Heavy(kind);
+            kind.style.letterSpacing = 6;
+            kind.style.opacity = 0.85f;
+            var name = Ui.Text(band.Content, w / 2, 66, monster.Name, 54, Felt.Cream, false, 0.5f, 0.5f);
+            Fonts.Title(name);
+            var holder = band.Root;
+            holder.style.opacity = 0;
+            UiMotion.FadeIn(holder, 0.1f);
+            Sfx.Play("swish");
+            await UiMotion.SlideIn(holder, new Vector2(-Design.Width - 200, 0), 0.26f, 0, Ease.CubicOut).Task;
+            GameRoot.I.Shake(0.2f, 8);
+            Sfx.Play("hit");
+            // The name drifts a little while it holds, so the band doesn't freeze.
+            await UiMotion.Move(holder, new Vector2(24, 0), 0.75f, Ease.Linear).Task;
+            Sfx.Play("swish");
+            await UiMotion.SlideOut(holder, new Vector2(Design.Width + 300, 0), 0.22f).Task;
+            holder.RemoveFromHierarchy();
         }
 
         static void Idle(Fighter f) => f.Track(Anim.Float(1, 1.03f, 0.9f, v => f.Breath = v, Ease.SineInOut, repeat: -1, yoyo: true));
@@ -277,7 +352,7 @@ namespace Drakepg
         }
 
         /// <summary>"Wanderer  Lv 3": the name in Alegreya with the level in small Alegreya Sans after it.</summary>
-        VisualElement NameRow(float x, float y, string name, string level, Color color, float maxWidth)
+        VisualElement NameRow(VisualElement parent, float x, float y, string name, string level, Color color, float maxWidth)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(row, x, y, 0, 0.5f);
@@ -297,7 +372,7 @@ namespace Drakepg
             lv.style.marginBottom = 3;
             row.Add(n);
             row.Add(lv);
-            Root.Add(row);
+            parent.Add(row);
             FitWidth(row, maxWidth);
             return row;
         }
@@ -313,8 +388,8 @@ namespace Drakepg
         /// <summary>An info line under the enemy's HP bar: an ink icon, then the text.</summary>
         Label EnemyLine(ref float y, string icon, string rich, float size = 18, Color? color = null)
         {
-            if (icon != null) Felt.Icon(Root, EnemyPanelX + 20, y - 12, 24, icon, true);
-            var l = PaperLine(Root, LineX, y, rich, size, color, maxWidth: 358);
+            if (icon != null) Felt.Icon(enemyHud, EnemyPanelX + 20, y - 12, 24, icon, true);
+            var l = PaperLine(enemyHud, LineX, y, rich, size, color, maxWidth: 358);
             y += LineStep;
             return l;
         }
@@ -326,13 +401,13 @@ namespace Drakepg
 
             // The hero's piece. HP and MP are shown once, as bars with the numbers on them (a bar answers both "do I
             // survive the next hit?" and "how far along is this fight?"); a small felt heart and drop label them.
-            Felt.MakePatch(Root, 14, 16, 420, 122, 11, blocksClicks: false);
-            NameRow(36, 44, p.Name, $"Lv {p.Level}", Felt.Text, 240);
+            Felt.MakePatch(heroHud, 14, 16, 420, 122, 11, blocksClicks: false);
+            NameRow(heroHud, 36, 44, p.Name, $"Lv {p.Level}", Felt.Text, 240);
             RefreshWeaponTag();
-            playerHp = new FeltBar(Root, 52, 82, 360, 26, Felt.Hp, "", 21, 17);
-            playerMp = new FeltBar(Root, 52, 112, 360, 21, Felt.Mp, "", 22, 15);
-            Felt.Token(Root, 46, 82, 38, Felt.Heart, Felt.RedFelt, 1, HeartInk);
-            Felt.Token(Root, 46, 111, 29, Felt.Drop, MpFelt, 1, DropInk);
+            playerHp = new FeltBar(heroHud, 52, 82, 360, 26, Felt.Hp, "", 21, 17);
+            playerMp = new FeltBar(heroHud, 52, 112, 360, 21, Felt.Mp, "", 22, 15);
+            Felt.Token(heroHud, 46, 82, 38, Felt.Heart, Felt.RedFelt, 1, HeartInk);
+            Felt.Token(heroHud, 46, 111, 29, Felt.Drop, MpFelt, 1, DropInk);
 
             // The enemy's sheet. Elites get a line for their affix, shelled bosses one for the shell, monsters with a
             // signature move one for that; most have a loot line. The next move hangs on a tag above the monster.
@@ -342,20 +417,20 @@ namespace Drakepg
             var lines = (hasAffinities ? 1 : 0) + (affix != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (heroic != "" ? 1 : 0)
                         + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + (m.Loot != null ? 1 : 0);
             var panelH = 100 + lines * LineStep;
-            Felt.MakePatch(Root, EnemyPanelX, 16, 430, panelH, 12, blocksClicks: false);
+            Felt.MakePatch(enemyHud, EnemyPanelX, 16, 430, panelH, 12, blocksClicks: false);
             // Status names (the highest text, at GroundY - 280) start under the panel and its status chips.
             enemyTextShift = Mathf.Clamp(16 + panelH + 50 - (GroundY - 280), 0, 90);
             // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
             var tag = m.IsHeroic ? "Heroic" : m.Boss ? "Boss" : affix != null ? "Elite" : m.Lucky ? "Lucky" : m.Tough ? "Tough" : "";
             var headColor = m.Boss ? Felt.Bad : affix != null ? Felt.Gold : m.Lucky ? Felt.OnFelt(LuckyText) : m.Tough ? Felt.OnFelt(ToughText) : Felt.Text;
-            NameRow(EnemyPanelX + 22, 44, m.Name, string.Join("  ·  ", new[] { $"Lv {m.Level}", tag }.Where(s => s != "")), headColor, 386);
-            enemyHp = new FeltBar(Root, EnemyPanelX + 38, 84, 370, 26, Felt.Hp, "", 23, 17);
-            Felt.Token(Root, EnemyPanelX + 32, 84, 38, Felt.Heart, Felt.RedFelt, 1, HeartInk);
+            NameRow(enemyHud, EnemyPanelX + 22, 44, m.Name, string.Join("  ·  ", new[] { $"Lv {m.Level}", tag }.Where(s => s != "")), headColor, 386);
+            enemyHp = new FeltBar(enemyHud, EnemyPanelX + 38, 84, 370, 26, Felt.Hp, "", 23, 17);
+            Felt.Token(enemyHud, EnemyPanelX + 32, 84, 38, Felt.Heart, Felt.RedFelt, 1, HeartInk);
 
             var y = 124f;
             if (hasAffinities)
             {
-                Felt.Icon(Root, EnemyPanelX + 20, y - 12, 24, "flame", true);
+                Felt.Icon(enemyHud, EnemyPanelX + 20, y - 12, 24, "flame", true);
                 affinityY = y;
                 DrawAffinities();
                 y += LineStep;
@@ -376,17 +451,17 @@ namespace Drakepg
             if (m.Lucky && m.Loot != null) DrawLuckyLine(LineX, y);
             else if (m.Loot != null) DrawLootLine(LineX, y, m.Loot);
 
-            playerStatusRow = StatusRow(18, 16 + 122 + 12);
-            enemyStatusRow = StatusRow(EnemyPanelX + 4, 16 + panelH + 12);
+            playerStatusRow = StatusRow(heroHud, 18, 16 + 122 + 12);
+            enemyStatusRow = StatusRow(enemyHud, EnemyPanelX + 4, 16 + panelH + 12);
             DrawIntentTag(16 + panelH);
         }
 
-        VisualElement StatusRow(float x, float y)
+        static VisualElement StatusRow(VisualElement parent, float x, float y)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(row, x, y);
             row.style.flexDirection = FlexDirection.Row;
-            Root.Add(row);
+            parent.Add(row);
             return row;
         }
 
@@ -399,6 +474,8 @@ namespace Drakepg
             Ui.Place(intentTag, EnemyX - 60, intentTop);
             Ui.Size(intentTag, 120, 38);
             intentTag.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(100));
+            // Hidden until the intro is over; it drops in with the hero's first turn.
+            intentTag.style.opacity = 0;
             Root.Add(intentTag);
             intentTag.Add(new Felt.PatchView(Felt.Patch.Tag(), 91).Fill());
             // A small thread-colored marker under the tag, pointing at the monster.
@@ -436,13 +513,30 @@ namespace Drakepg
             intentMarker.style.left = EnemyX - left - 8;
         }
 
-        /// <summary>The tag fades while a turn plays (its move is about to happen) and comes back with the next one.</summary>
+        Anim.Handle intentFade;
+
+        /// <summary>
+        /// The tag lifts away while a turn plays (its move is about to happen) and drops back in, swinging on its marker,
+        /// with the next one.
+        /// </summary>
         void FadeIntent(bool show)
         {
             RefreshPreview();
             if (intentTag == null) return;
+            intentFade?.Stop();
             var from = intentTag.resolvedStyle.opacity;
-            Anim.Float(from, show ? 1 : 0, 0.2f, v => intentTag.style.opacity = v, Ease.Linear);
+            if (!show)
+            {
+                intentFade = Anim.Float(from, 0, 0.16f, v => intentTag.style.opacity = v, Ease.Linear);
+                UiMotion.Move(intentTag, new Vector2(0, -14), 0.16f, Ease.QuadIn);
+                return;
+            }
+            intentTag.style.rotate = new Rotate(0);
+            intentFade = Anim.Float(from, 1, 0.12f, v => intentTag.style.opacity = v, Ease.Linear);
+            UiMotion.SlideIn(intentTag, new Vector2(0, -30), 0.32f, 0, Ease.BackOut);
+            UiMotion.Pop(intentTag, 0.75f, 0.32f);
+            // A small swing as it lands.
+            Anim.Float(0, 1, 0.5f, t => intentTag.style.rotate = new Rotate(Mathf.Sin(t * Mathf.PI * 3) * 4 * (1 - t)), Ease.Linear, 0.12f);
         }
 
         /// <summary>
@@ -550,7 +644,7 @@ namespace Drakepg
             var text = element != null ? Db.Data.ElementLabels[element] : "Neutral";
             if (effect != null) text += Ui.Colored($" · {EffectLabels[effect]}", effect == "weak" ? Felt.Good : Felt.Bad);
             row.Add(Felt.Chip(text, color, 15, 71));
-            Root.Add(row);
+            heroHud.Add(row);
             FitWidth(row, 150, 1);
             weaponTag = row;
         }
@@ -582,8 +676,8 @@ namespace Drakepg
         /// <summary>A hover-able info line (bag icon): shows `details` on the scroll while hovered or pressed.</summary>
         void InfoLine(float x, float y, string rich, string details)
         {
-            Felt.Icon(Root, EnemyPanelX + 20, y - 12, 24, "bag", true);
-            var line = PaperLine(Root, x, y, rich, 16, maxWidth: 358);
+            Felt.Icon(enemyHud, EnemyPanelX + 20, y - 12, 24, "bag", true);
+            var line = PaperLine(enemyHud, x, y, rich, 16, maxWidth: 358);
             line.pickingMode = PickingMode.Position;
             line.RegisterCallback<PointerEnterEvent>(_ => ShowNote(details, 15));
             line.RegisterCallback<PointerDownEvent>(_ => ShowNote(details, 15));
@@ -744,7 +838,7 @@ namespace Drakepg
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.Center;
             foreach (var part in AffinityParts()) row.Add(part);
-            Root.Add(row);
+            enemyHud.Add(row);
             FitWidth(row, 358);
             affinityRow = row;
         }
@@ -774,21 +868,27 @@ namespace Drakepg
                 if (row == null) continue;
                 row.Clear();
                 var seed = side == "player" ? 100 : 120;
+                var before = chipsShown[side];
                 foreach (var kv in shown[side])
                 {
                     var def = Db.Status(kv.Key);
                     var chip = Felt.Chip($"{def.Name} {kv.Value}", def.Harmful ? Design.Hex(0xd9604a) : Design.Hex(0x6aa84f), 15, seed++);
                     chip.style.marginRight = 6;
                     row.Add(chip);
+                    // A new status is sewn on with a pop; the ones already there just change their number.
+                    if (before.Contains(kv.Key)) continue;
+                    chip.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+                    UiMotion.Pop(chip, 0.2f, 0.28f);
                 }
+                chipsShown[side] = new HashSet<string>(shown[side].Select(k => k.Key));
             }
         }
 
         /// <summary>The bottom: a felt runner with a stitched hem, the log on a linen patch sewn onto it.</summary>
         void DrawBottomPanel()
         {
-            Felt.Runner(Root, 540, 3);
-            var note = Felt.MakePatch(Root, 22, 562, 520, 140, 14, Felt.Patch.LinenLog(), 0, false);
+            Felt.Runner(bottomHud, 540, 3);
+            var note = Felt.MakePatch(bottomHud, 22, 562, 520, 140, 14, Felt.Patch.LinenLog(), 0, false);
             logBox = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(logBox, 26, 17);
             Ui.Size(logBox, 466, 108);
@@ -797,17 +897,37 @@ namespace Drakepg
             note.Content.Add(logBox);
             menu = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(menu, 0, 0);
-            Root.Add(menu);
+            bottomHud.Add(menu);
         }
 
+        /// <summary>All bars caught up with the battle (the start, the end of a turn).</summary>
         void RefreshBars(bool animate = true)
         {
             var p = battle.Player;
             var e = battle.Enemy;
+            hpShown["player"] = p.Hp;
+            hpShown["enemy"] = e.Hp;
             playerHp.SetValue(p.Hp, p.MaxHp, animate);
             playerMp.SetValue(p.Mp, p.MaxMp, animate);
             enemyHp.SetValue(e.Hp, e.MaxHp, animate);
         }
+
+        /// <summary>
+        /// HP as shown while a turn plays back. The battle is already at the end of the turn, so each hit, heal and tick
+        /// moves its side's bar by its own number (the hero's bar doesn't drop when the hero's blow lands).
+        /// </summary>
+        readonly Dictionary<string, double> hpShown = new Dictionary<string, double>();
+
+        void ShowHp(string side, double delta)
+        {
+            var max = side == "player" ? battle.Player.MaxHp : battle.Enemy.MaxHp;
+            var hp = Math.Max(0, Math.Min(max, (hpShown.TryGetValue(side, out var v) ? v : max) + delta));
+            hpShown[side] = hp;
+            (side == "player" ? playerHp : enemyHp).SetValue(hp, max);
+        }
+
+        /// <summary>MP changes come from the hero's own moves, so the battle's value is the one to show.</summary>
+        void ShowMp() => playerMp.SetValue(battle.Player.Mp, battle.Player.MaxMp);
 
         void PushLog(string line)
         {
@@ -876,9 +996,11 @@ namespace Drakepg
             };
         }
 
-        void ShowMenu(string which)
+        /// <summary>`turnStart`: the hero's turn begins (Attack pops up with a ring and a sound, the rest slide up after it).</summary>
+        void ShowMenu(string which, bool turnStart = false)
         {
             menu.Clear();
+            pressedHolder = null;
             var p = battle.Player;
             var buttons = new List<MenuButton>();
 
@@ -965,7 +1087,18 @@ namespace Drakepg
                 }
                 // Attack is red felt with cream thread; skills and items are sand felt dyed toward their own color.
                 Color? cloth = b.Main ? Felt.RedFelt : b.Accent is Color accent ? Color.Lerp(Felt.Sand, accent, 0.38f) : (Color?)null;
-                var btn = new FeltButton(menu, x, y, b.Label, () => b.Run(), w, h, b.Sub, b.Icon, cloth, b.Main ? Felt.RedStitch : (Color?)null, 31 + i,
+                // Each button sits in a holder that does the moving (the button's own translate is its hover lift).
+                var holder = new VisualElement { pickingMode = PickingMode.Ignore, name = "slot" };
+                Ui.Place(holder, 0, 0);
+                holder.style.transformOrigin = new TransformOrigin(new Length(x, LengthUnit.Pixel), new Length(y, LengthUnit.Pixel));
+                menu.Add(holder);
+                var run = b.Run;
+                b.Run = () =>
+                {
+                    pressedHolder = holder;
+                    run();
+                };
+                var btn = new FeltButton(holder, x, y, b.Label, () => b.Run(), w, h, b.Sub, b.Icon, cloth, b.Main ? Felt.RedStitch : (Color?)null, 31 + i,
                     angle, $"{i + 1}", size, iconSize, subSize);
                 if (b.ArtIcon != null && Art.Has(b.ArtIcon))
                 {
@@ -984,15 +1117,61 @@ namespace Drakepg
                     btn.RegisterCallback<PointerEnterEvent>(_ => ShowNote(b.Hover, 17));
                     btn.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
                 }
-                var enabled = b.Enabled;
-                btn.style.opacity = 0;
-                Anim.Float(0, 1, 0.18f, t =>
+                if (turnStart && lead && i == 0)
                 {
-                    var s = Mathf.LerpUnclamped(0.85f, 1, t);
-                    btn.style.scale = new Scale(new Vector3(s, s, 1));
-                    btn.style.opacity = Mathf.Clamp01(t) * (enabled ? 1 : 0.55f);
-                }, Ease.BackOut, i * 0.03f);
+                    // Your turn: Attack springs up out of the runner, a ring of thread bursts from it.
+                    UiMotion.FadeIn(holder, 0.08f);
+                    UiMotion.Pop(holder, 0.35f, 0.38f, 0, Ease.ElasticOut);
+                    UiMotion.Ring(menu, x, y, 120, Felt.RedStitch, 5, 0.5f, 0.05f);
+                    Sfx.Play("turn");
+                }
+                else if (turnStart)
+                {
+                    UiMotion.FadeIn(holder, 0.14f, 0.1f + i * 0.045f);
+                    UiMotion.SlideIn(holder, new Vector2(0, 46), 0.3f, 0.1f + i * 0.045f);
+                }
+                else
+                {
+                    // Into a submenu or back: the new buttons slide in from the right, one after another.
+                    UiMotion.FadeIn(holder, 0.12f, i * 0.035f);
+                    UiMotion.SlideIn(holder, new Vector2(54, 0), 0.26f, i * 0.035f);
+                }
             }
+        }
+
+        /// <summary>The buttons leave as a turn plays: the one used punches out, the others drop into the runner.</summary>
+        void DropMenu()
+        {
+            var holders = menu.Children().ToList();
+            for (int i = 0; i < holders.Count; i++)
+            {
+                var hd = holders[i];
+                // No more clicks on the way out (Skills or Back would rebuild the menu mid-turn).
+                foreach (var el in hd.Query<VisualElement>().ToList()) el.pickingMode = PickingMode.Ignore;
+                var from = hd.resolvedStyle.opacity;
+                if (hd == pressedHolder)
+                {
+                    Anim.Float(0, 1, 0.22f, t =>
+                    {
+                        var s = 1 + 0.1f * Mathf.Sin(Mathf.Min(1, t * 1.6f) * Mathf.PI) - 0.15f * Mathf.Max(0, t - 0.5f);
+                        hd.style.scale = new Scale(new Vector3(s, s, 1));
+                        hd.style.opacity = from * (t < 0.45f ? 1 : 1 - (t - 0.45f) / 0.55f);
+                    }, Ease.Linear).OnComplete(hd.RemoveFromHierarchy);
+                    continue;
+                }
+                Anim.Float(from, 0, 0.16f, v => hd.style.opacity = v, Ease.Linear, i * 0.02f);
+                UiMotion.SlideOut(hd, new Vector2(0, 60), 0.16f, i * 0.02f, Ease.QuadIn).OnComplete(hd.RemoveFromHierarchy);
+            }
+        }
+
+        /// <summary>The HUD pieces slide off at the end of the fight (before the results).</summary>
+        void HudOut()
+        {
+            FadeIntent(false);
+            Sfx.Play("swish");
+            UiMotion.SlideOut(heroHud, new Vector2(-HudOff.x, 0), 0.32f, 0.05f);
+            UiMotion.SlideOut(enemyHud, new Vector2(HudOff.x, 0), 0.32f);
+            UiMotion.SlideOut(bottomHud, new Vector2(0, HudOff.y), 0.3f, 0.1f);
         }
 
         // --- Turn playback ---
@@ -1004,7 +1183,7 @@ namespace Drakepg
             if (events.Count == 0) return;
             busy = true;
             menuButtons = new List<MenuButton>();
-            menu.Clear();
+            DropMenu();
             RestoreLog();
             FadeIntent(false);
             for (int i = 0; i < events.Count; i++) await Play(events[i], i > 0 ? events[i - 1] : null, i + 1 < events.Count ? events[i + 1] : null);
@@ -1016,14 +1195,16 @@ namespace Drakepg
 
             if (battle.IsOver)
             {
-                await Anim.Wait(0.6f);
+                await Anim.Wait(0.25f);
+                HudOut();
+                await Anim.Wait(0.45f);
                 Finish();
             }
             else
             {
                 busy = false;
                 FadeIntent(true);
-                ShowMenu("main");
+                ShowMenu("main", true);
             }
         }
 
@@ -1183,7 +1364,8 @@ namespace Drakepg
                     Fx.WhiteFlash(f.Fig, 140, color);
                     var restore = RestoreText(e.Hp, e.Mp);
                     Float(x, TextY(e.Source, GroundY - 220), restore, Palette.TextGood, 30);
-                    RefreshBars();
+                    ShowHp(e.Source, e.Hp);
+                    ShowMp();
                     var user = e.Source == "player" ? "You use" : $"{enemyName} uses";
                     PushLog(afterHit ? $"{e.Move} restores {restore}." : $"{user} {e.Move}: {restore}.");
                     await Anim.Wait(afterHit ? 0.35f : 0.6f);
@@ -1259,6 +1441,8 @@ namespace Drakepg
                         Sfx.Play("hit");
                         var tilt = e.Target == "player" ? -4 : 4;
                         f.Track(Anim.Float(0, tilt, 0.06f, v => f.Angle = v, Ease.CubicOut, yoyo: true)).OnComplete(() => f.Angle = 0);
+                        f.Squash(0.95f, 1.04f, 0.2f);
+                        UiMotion.Jolt(e.Target == "player" ? heroHud : enemyHud, 3);
                         Float(x, TextY(e.Target, GroundY - 220), JsMath.Str(e.Damage), color, 28, e.Effect != null ? EffectTags[e.Effect] : def.Name);
                         PushLog($"{def.Name}: {JsMath.Str(e.Damage)} damage to {(e.Target == "player" ? "you" : enemyName)}.{(e.Effect == "weak" ? " Weak spot!" : "")}");
                     }
@@ -1269,7 +1453,7 @@ namespace Drakepg
                         Float(x, TextY(e.Target, GroundY - 220), $"+{JsMath.Str(e.Heal)}", Palette.TextGood, 28, def.Name);
                         PushLog($"{def.Name}: {(e.Target == "player" ? "you heal" : $"{enemyName} heals")} {JsMath.Str(e.Heal)} HP.");
                     }
-                    RefreshBars();
+                    ShowHp(e.Target, e.Damage > 0 || e.Heal == 0 ? -e.Damage : e.Heal);
                     await Anim.Wait(0.38f);
                     break;
                 }
@@ -1308,7 +1492,7 @@ namespace Drakepg
                     Fx.Aura(World, PlayerX, GroundY, GuardColor);
                     Float(PlayerX, GroundY - 290, e.Mp > 0 ? $"Defend  +{JsMath.Str(e.Mp)} MP" : "Defend", Palette.TextMagic, 28);
                     PushLog("You brace yourself.");
-                    RefreshBars();
+                    ShowMp();
                     await Anim.Wait(0.35f);
                     break;
                 }
@@ -1380,7 +1564,7 @@ namespace Drakepg
                 case "rage":
                 {
                     Float(PlayerX + 70, GroundY - 170, $"Rage +{JsMath.Str(e.Mp)} MP", Palette.TextMagic, 22);
-                    RefreshBars();
+                    ShowMp();
                     break;
                 }
                 case "phase":
@@ -1551,6 +1735,7 @@ namespace Drakepg
         static Task WindUp(Fighter f, int dir, float seconds, bool big = false)
         {
             Cock(f, seconds);
+            f.Shape(big ? 1.1f : 1.06f, big ? 0.88f : 0.94f, seconds);
             var fromX = f.X;
             var toX = f.X - (big ? 30 : 20) * dir;
             var toA = -(big ? 9 : 6) * dir;
@@ -1615,6 +1800,7 @@ namespace Drakepg
                 await Tw(f, 0.06f, t => f.X = Mathf.LerpUnclamped(fromX, reach - 26 * dir, t), Ease.QuadOut, true);
                 Sfx.Play("slash");
                 Swing(f);
+                f.Squash(0.95f, 1.04f, 0.16f);
                 onContact();
                 if (chain.Last) await MoveX(f, home, 0.24f, Ease.QuadOut, 0);
                 return;
@@ -1629,10 +1815,13 @@ namespace Drakepg
                     Sfx.Play("whoosh");
                     Afterimages(source, 150, trail);
                     Fx.SpeedLines(World, f.X, GroundY, dir, trail);
+                    // Stretched long through the lunge, squashed as the blow lands.
+                    f.Shape(1.12f, 0.93f, 0.1f);
                     await MoveX(f, reach, 0.15f, Ease.QuadIn, 4 * dir);
                     Fx.Dust(World, reach, GroundY, 3, Design.Depth(GroundY) + 1);
                     Sfx.Play("slash");
                     Swing(f);
+                    f.Squash(0.92f, 1.06f);
                     onContact();
                     if (chain.Last) await MoveX(f, home, 0.24f, Ease.QuadOut, 0);
                     break;
@@ -1646,6 +1835,8 @@ namespace Drakepg
                     Afterimages(source, 300, trail);
                     var startX = f.X;
                     var endX = target.x - 180 * dir;
+                    // Tall and thin in the air, flattened on landing.
+                    f.Shape(0.9f, 1.12f, 0.14f);
                     await Tw(f, 0.3f, t =>
                     {
                         f.X = Mathf.Lerp(startX, endX, t);
@@ -1655,6 +1846,7 @@ namespace Drakepg
                     f.Y = GroundY;
                     Sfx.Play("slash");
                     Swing(f, true);
+                    f.Squash(1.16f, 0.84f, 0.28f);
                     onContact();
                     Fx.Dust(World, f.X, GroundY, 10, Design.Depth(GroundY) + 1);
                     GameRoot.I.Shake(0.18f, 13);
@@ -1667,6 +1859,8 @@ namespace Drakepg
                     var spit = style.Kind == "enemy-spit";
                     if (chain.First)
                     {
+                        // Gathering the spell: drawn up tall.
+                        f.Shape(0.95f, 1.06f, 0.12f);
                         await MoveX(f, home - 20 * dir, 0.12f, Ease.CubicOut);
                         var charge = spit ? 180 : style.Big ? 520 : 300;
                         Sfx.Play("charge");
@@ -1678,6 +1872,7 @@ namespace Drakepg
                     // Combo bolts fly faster, without a new wind-up.
                     var flight = !chain.First ? 260 : spit ? 360 : style.Big ? 520 : 420;
                     var flying = Fx.Projectile(World, hand, target, style.Colors, flight, style.Element);
+                    f.Squash(1.08f, 0.94f, 0.2f);
                     if (chain.First) await Task.WhenAll(MoveX(f, home + 20 * dir, 0.12f, Ease.BackOut), flying);
                     else await flying;
                     Sfx.Play("explode");
@@ -1719,7 +1914,8 @@ namespace Drakepg
                 Fx.WhiteFlash(f.Fig, 160, 0x7dff9a);
                 Sfx.Play("heal");
                 Float(x, TextY(targetSide, GroundY - 230), $"+{JsMath.Str(e.Damage)}", Palette.TextGood, 40, EffectTags["absorb"]);
-                RefreshBars();
+                ShowHp(targetSide, e.Damage);
+                ShowMp();
                 return;
             }
             var dull = e.Effect == "resisted" || e.Effect == "immune";
@@ -1781,11 +1977,16 @@ namespace Drakepg
                 f.Angle = tilt * t;
             }, Ease.QuadOut, yoyo: true)).OnComplete(() => f.Angle = 0);
 
+            // The body gives under the blow, and the target's HUD piece shakes with it (ties the bar to the hit).
+            f.Squash(guarded ? 0.97f : 0.9f - weight * 0.1f, guarded ? 1.02f : 1.06f + weight * 0.06f, 0.24f);
+            UiMotion.Jolt(targetSide == "player" ? heroHud : enemyHud, (guarded || dull ? 3 : 5) + weight * 22 + (e.Crit ? 5 : 0));
+
             var color2 = e.Element != null ? Palette.ElementText(e.Element) : magic ? Palette.TextMagic : e.Source == "enemy" ? Palette.TextBad : Color.white;
             var tags = string.Join(" ", new[] { e.Crit ? "CRIT!" : "", e.Effect != null ? EffectTags[e.Effect] : "", guarded ? "Guarded" : "" }.Where(s => s != ""));
             var spot = NumberSpot();
             Float(x + spot[0], TextY(targetSide, GroundY - 230) + spot[1], JsMath.Str(e.Damage), color2, e.Crit || e.Effect == "weak" ? 50 : 36, tags != "" ? tags : null);
-            RefreshBars();
+            ShowHp(targetSide, -e.Damage);
+            ShowMp();
         }
 
         void Dodge(string side)

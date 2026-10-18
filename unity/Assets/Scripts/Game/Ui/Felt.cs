@@ -820,14 +820,16 @@ namespace Drakepg
     /// </summary>
     public class FeltBar : VisualElement
     {
-        readonly VisualElement strip, clip;
+        readonly VisualElement strip, clip, trail;
         VisualElement preview;
         Anim.Handle previewPulse;
         readonly Label label;
         readonly float inner;
         readonly string prefix;
-        float shown = -1;
-        Anim.Handle tween;
+        float shown = -1, trailShown = -1;
+        Anim.Handle tween, trailTween;
+        /// <summary>The pale felt left where a hit took HP away: it lingers a moment, then drains after the strip.</summary>
+        static readonly Color TrailColor = Design.Hex(0xf3d6a4);
 
         public FeltBar(VisualElement parent, float x, float y, float width, float height, Color color, string prefix, int seed, float fontSize = 18)
         {
@@ -845,6 +847,7 @@ namespace Drakepg
             clip.style.overflow = Overflow.Hidden;
             Ui.Round(clip, (height - 6) / 2);
             Add(clip);
+            trail = Ui.Rect(clip, 0, 0, inner, height - 6, TrailColor, (height - 6) / 2);
             strip = Ui.Rect(clip, 0, 0, inner, height - 6, color, (height - 6) / 2);
             strip.Add(new Felt.StitchRow(7, inner - 8, 3, new Color(1, 240 / 255f, 215 / 255f, 0.45f)));
             label = Ui.Text(this, width / 2, height / 2, "", fontSize, Felt.Cream, false, 0.5f, 0.5f);
@@ -855,6 +858,12 @@ namespace Drakepg
         }
 
         void Show(float w) => strip.style.left = w - inner;
+
+        void ShowTrail(float w)
+        {
+            trail.style.left = w - inner;
+            trailShown = w;
+        }
 
         /// <summary>
         /// The coming hit as a pale chunk at the end of the strip, from (current - damage) to current, pulsing; all that's
@@ -888,8 +897,30 @@ namespace Drakepg
             var target = inner * ratio;
             var from = shown < 0 ? target : shown;
             tween?.Stop();
-            if (!animate || shown < 0) Show(target);
-            else tween = Anim.Float(from, target, target < from ? 0.25f : 0.4f, Show);
+            if (!animate || shown < 0)
+            {
+                Show(target);
+                trailTween?.Stop();
+                ShowTrail(target);
+            }
+            else if (target < from)
+            {
+                // A hit: the strip snaps down, the lost part stays pale for a beat and then drains away.
+                tween = Anim.Float(from, target, 0.12f, Show, Ease.CubicOut);
+                var trailFrom = Mathf.Max(trailShown, from);
+                trailTween?.Stop();
+                ShowTrail(trailFrom);
+                trailTween = Anim.Float(trailFrom, target, 0.4f, ShowTrail, Ease.QuadIn, 0.35f);
+            }
+            else if (target > from)
+            {
+                // Healing: the pale felt jumps ahead and the strip fills up to it.
+                trailTween?.Stop();
+                ShowTrail(target);
+                tween = Anim.Float(from, target, 0.4f, Show);
+            }
+            // The same value again (the screen refreshes bars after every event): settle the strip, let a trail drain on.
+            else Show(target);
             shown = target;
             label.text = $"{prefix}{Math.Max(0, Math.Round(current))} / {max}";
             return this;

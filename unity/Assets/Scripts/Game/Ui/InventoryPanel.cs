@@ -227,6 +227,12 @@ namespace Drakepg
             float lastDragEnd = -10;
             string lastClickKey = "";
             float lastClickTime = -10;
+            /// <summary>Where each item sits in this render (grid cells by key, the hero's slots by slot), for things flying between them.</summary>
+            readonly Dictionary<string, (Vector2 at, VisualElement view)> cells = new Dictionary<string, (Vector2, VisualElement)>();
+            readonly Dictionary<string, VisualElement> slotViews = new Dictionary<string, VisualElement>();
+            VisualElement heroView;
+            /// <summary>The hero's stat lines before an equip, so the render after it can light up the ones that changed.</summary>
+            List<string> statsBefore;
 
             static float Now => Time.realtimeSinceStartup;
             static bool InputBlocked => GameRoot.I != null && GameRoot.I.Screen?.InputEnabled == false;
@@ -329,6 +335,9 @@ namespace Drakepg
                 var c = Modal.Content;
                 c.Clear();
                 equipSlots.Clear();
+                cells.Clear();
+                slotViews.Clear();
+                heroView = null;
                 entries = Shown();
                 if (selected != null && Find(selected) == null) selected = null;
 
@@ -402,28 +411,13 @@ namespace Drakepg
             void RenderHero()
             {
                 var c = Modal.Content;
-                HeroFigure(c, 150, 352, player.Look, player.Weapon, 0.8f);
+                heroView = HeroFigure(c, 150, 352, player.Look, player.Weapon, 0.8f);
 
                 foreach (var slot in HeroSlots) Slot(c, EqPos[slot].x, EqPos[slot].y, EquippedEntry(slot), slot, EqSize);
                 // A filled spare slot looks like any weapon: name it.
                 if (Worn("spare") != null) Ui.Text(c, EqPos["spare"].x, EqPos["spare"].y - EqSize / 2 - 3, "Spare", 12, Palette.TextDim, ax: 0.5f, ay: 1);
 
-                var range = player.AttackRange;
-                var element = player.WeaponElement;
-                var spare = player.SpareWeapon;
-                var spareRange = player.SpareAttackRange;
-                var lines = new List<string>
-                {
-                    $"Attack {N(range[0])}-{N(range[1])} {ItemUi.DamageTypeLabel(player.WeaponDamageType)} · {(element != null ? ItemUi.ElementLabel(element) : "Neutral")}",
-                };
-                if (spare != null && spareRange != null)
-                    lines.Add($"Spare {N(spareRange[0])}-{N(spareRange[1])} {ItemUi.DamageTypeLabel(spare.DamageType)} · {(spare.Element != null ? ItemUi.ElementLabel(spare.Element) : "Neutral")}");
-                var damage = player.DamageBonus != 0 ? $" · Damage +{N(JsMath.Round(player.DamageBonus * 100))}%" : "";
-                lines.Add($"Crit {(player.CritChance * 100).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}%{damage}");
-                lines.Add(ItemUi.DefenseText(player.DefenseFor("melee"), player.DefenseFor("pierce"), player.DefenseFor("magic")));
-                lines.Add($"Max HP {N(player.MaxHp)} · Max MP {N(player.MaxMp)}");
-                lines.Add($"Gold {N(player.Gold)}");
-
+                var lines = StatLines();
                 var col = Flow(c);
                 Ui.Place(col, 20, 378);
                 col.style.width = 284;
@@ -431,7 +425,11 @@ namespace Drakepg
                 {
                     var l = FlowText(col, lines[i], 15, null, false, 284);
                     if (i > 0) l.style.marginTop = 5;
+                    // A line an equip just changed glows gold and fades back.
+                    if (statsBefore == null || (i < statsBefore.Count && statsBefore[i] == lines[i])) continue;
+                    Anim.Float(0, 1, 1.4f, t => l.style.color = Color.Lerp(Palette.TextGold, Palette.Text, t), Ease.QuadIn, 0.25f);
                 }
+                statsBefore = null;
                 // Sets being worn, and what they switch on.
                 var active = Sets.ActiveSetBonuses(player.Data.Equipment);
                 var first = true;
@@ -450,6 +448,27 @@ namespace Drakepg
                         bt.style.marginBottom = 2;
                     }
                 }
+            }
+
+            /// <summary>The hero's stat lines under the figure: attack, spare, crit, defense, HP/MP, gold.</summary>
+            List<string> StatLines()
+            {
+                var range = player.AttackRange;
+                var element = player.WeaponElement;
+                var spare = player.SpareWeapon;
+                var spareRange = player.SpareAttackRange;
+                var lines = new List<string>
+                {
+                    $"Attack {N(range[0])}-{N(range[1])} {ItemUi.DamageTypeLabel(player.WeaponDamageType)} · {(element != null ? ItemUi.ElementLabel(element) : "Neutral")}",
+                };
+                if (spare != null && spareRange != null)
+                    lines.Add($"Spare {N(spareRange[0])}-{N(spareRange[1])} {ItemUi.DamageTypeLabel(spare.DamageType)} · {(spare.Element != null ? ItemUi.ElementLabel(spare.Element) : "Neutral")}");
+                var damage = player.DamageBonus != 0 ? $" · Damage +{N(JsMath.Round(player.DamageBonus * 100))}%" : "";
+                lines.Add($"Crit {(player.CritChance * 100).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}%{damage}");
+                lines.Add(ItemUi.DefenseText(player.DefenseFor("melee"), player.DefenseFor("pierce"), player.DefenseFor("magic")));
+                lines.Add($"Max HP {N(player.MaxHp)} · Max MP {N(player.MaxMp)}");
+                lines.Add($"Gold {N(player.Gold)}");
+                return lines;
             }
 
             void RenderShopSide()
@@ -499,7 +518,13 @@ namespace Drakepg
                 parent.Add(s);
                 var info = entry != null ? ItemUi.GradeInfo(entry.Def, entry.IsGear ? entry.Gear : null) : null;
                 var bg = Ui.Rect(s, 0, 0, size, size, SlotBg, 8, entry != null ? 3 : 2, info != null ? info.Frame : EmptyBorder, true);
-                if (equipSlot != null) equipSlots.Add((equipSlot, bg));
+                s.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+                if (equipSlot != null)
+                {
+                    equipSlots.Add((equipSlot, bg));
+                    slotViews[equipSlot] = s;
+                }
+                else if (entry != null) cells[entry.Key] = (new Vector2(x, y), s);
                 if (entry == null)
                 {
                     if (equipSlot != null && Items.SlotLabels.TryGetValue(equipSlot, out var label))
@@ -638,7 +663,7 @@ namespace Drakepg
                     break;
                 }
                 var swap = (entry.Slot == "weapon" && target == "spare") || (entry.Slot == "spare" && target == "weapon");
-                if (entry.Slot == null && heroSide) Equip(entry, target);
+                if (entry.Slot == null && heroSide) Equip(entry, target, Local(panelPos));
                 else if (swap) SwapWeapons();
                 else if (entry.Slot != null && gridZone != null && gridZone.worldBound.Contains(panelPos)) Unequip(entry.Slot);
                 else Render();
@@ -680,40 +705,151 @@ namespace Drakepg
                 Render();
             }
 
-            void Equip(Entry entry, string slot = null)
+            /// <summary>`from`: where the item was let go (a drag), else its grid cell.</summary>
+            void Equip(Entry entry, string slot = null, Vector2? from = null)
             {
+                var start = from ?? (cells.TryGetValue(entry.Key, out var cell) ? cell.at : (Vector2?)null);
+                var before = Numbers();
+                statsBefore = StatLines();
                 if (!player.Equip(entry.Gear.Uid, slot))
                 {
+                    statsBefore = null;
                     Render();
                     return;
                 }
                 Sfx.Play("equip");
                 selected = entry.Gear.Uid;
                 Changed();
+                var landed = HeroSlots.FirstOrDefault(sl => Worn(sl)?.Uid == entry.Gear.Uid);
+                if (landed != null && slotViews.TryGetValue(landed, out var view))
+                {
+                    Fly(entry.Def, start, EqPos[landed], view, EqSize);
+                    HeroHop();
+                }
+                StatFloats(before);
             }
 
             /// <summary>The spare weapon into the hand and the old one to the spare slot (either may be empty).</summary>
             void SwapWeapons()
             {
+                var before = Numbers();
+                statsBefore = StatLines();
                 if (!player.SwapWeapons())
                 {
+                    statsBefore = null;
                     Render();
                     return;
                 }
                 Sfx.Play("equip");
                 Changed();
+                foreach (var sl in new[] { "weapon", "spare" })
+                    if (slotViews.TryGetValue(sl, out var view)) Land(view, EqPos[sl], EqSize);
+                HeroHop();
+                StatFloats(before);
             }
 
             void Unequip(string slot)
             {
+                var gear = Worn(slot);
+                var before = Numbers();
+                statsBefore = StatLines();
                 if (!player.Unequip(slot))
                 {
+                    statsBefore = null;
                     Sfx.Play("denied");
                     Ui.Toast("Your bag is full", Palette.TextBad);
                     return;
                 }
                 Sfx.Play("equip");
                 Changed();
+                // Back into the bag: it flies from the slot to its cell (when that cell is on this page).
+                if (gear != null && cells.TryGetValue(gear.Uid, out var cell)) Fly(Items.GearDef(gear), EqPos[slot], cell.at, cell.view, Cell);
+                StatFloats(before);
+            }
+
+            // --- Equip feedback ---
+
+            /// <summary>An item's icon flies from `from` to `to` in an arc; the place it lands in stays empty until then.</summary>
+            void Fly(ItemDef def, Vector2? from, Vector2 to, VisualElement landing, float landSize)
+            {
+                if (from == null || (from.Value - to).sqrMagnitude < 4)
+                {
+                    Land(landing, to, landSize);
+                    return;
+                }
+                var a = from.Value;
+                landing.style.opacity = 0;
+                const float size = 64;
+                var flyer = ItemUi.DrawItemIcon(Modal.Content, a.x, a.y, size, def);
+                flyer.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
+                var lift = Mathf.Min(90, 30 + Vector2.Distance(a, to) * 0.18f);
+                var end = landSize * 0.75f / size;
+                Sfx.Play("whoosh");
+                Anim.Float(0, 1, 0.3f, t =>
+                {
+                    var p = Vector2.LerpUnclamped(a, to, t) + Vector2.down * Mathf.Sin(t * Mathf.PI) * lift;
+                    flyer.style.left = p.x - size / 2;
+                    flyer.style.top = p.y - size / 2;
+                    var s = Mathf.Lerp(1.1f, end, t);
+                    flyer.style.scale = new Scale(new Vector3(s, s, 1));
+                    flyer.style.rotate = new Rotate(Mathf.Sin(t * Mathf.PI) * -14);
+                }, Ease.CubicInOut).OnComplete(() =>
+                {
+                    flyer.RemoveFromHierarchy();
+                    Land(landing, to, landSize);
+                });
+            }
+
+            /// <summary>An item arriving in its place: the slot pops and a gold ring bursts from it.</summary>
+            void Land(VisualElement view, Vector2 at, float size)
+            {
+                view.style.opacity = 1;
+                Anim.Float(1.3f, 1, 0.32f, s => view.style.scale = new Scale(new Vector3(s, s, 1)), Ease.BackOut);
+                UiMotion.Ring(Modal.Content, at.x, at.y, size * 0.75f, Palette.TextGold, 3, 0.4f);
+            }
+
+            /// <summary>The hero in the panel hops a little in the new gear.</summary>
+            void HeroHop()
+            {
+                var hero = heroView;
+                if (hero == null) return;
+                Anim.Float(0, 1, 0.34f, t => hero.style.translate = new Translate(0, -16 * Mathf.Sin(t * Mathf.PI)), Ease.Linear, 0.18f);
+                UiMotion.Ring(Modal.Content, 150, 340, 70, Palette.TextGold, 3, 0.45f, 0.3f);
+            }
+
+            /// <summary>What an equip changes, in the numbers a player compares.</summary>
+            Dictionary<string, double> Numbers()
+            {
+                var r = player.AttackRange;
+                return new Dictionary<string, double>
+                {
+                    ["Attack"] = r != null && r.Length > 1 ? Math.Round((r[0] + r[1]) / 2) : 0,
+                    ["Defense"] = Math.Round(player.DefenseFor("melee") + player.DefenseFor("pierce") + player.DefenseFor("magic")),
+                    ["Max HP"] = player.MaxHp,
+                    ["Max MP"] = player.MaxMp,
+                    ["Crit %"] = Math.Round(player.CritChance * 1000) / 10,
+                };
+            }
+
+            /// <summary>"+4 Attack", "-2 Defense": the changes float up from the hero, green up, red down.</summary>
+            void StatFloats(Dictionary<string, double> before)
+            {
+                var after = Numbers();
+                var changes = after.Where(kv => Math.Abs(kv.Value - before[kv.Key]) > 0.001).Take(4).ToList();
+                for (int i = 0; i < changes.Count; i++)
+                {
+                    var d = changes[i].Value - before[changes[i].Key];
+                    var text = $"{(d > 0 ? "+" : "")}{N(Math.Round(d * 10) / 10)} {changes[i].Key}";
+                    // From the hero's chest, under the spare-weapon slot.
+                    var y = 200 + i * 26f;
+                    var l = Ui.Text(Modal.Content, 150, y, text, 20, d > 0 ? Palette.TextGood : Palette.TextBad, true, 0.5f, 0.5f, stroke: true);
+                    l.style.opacity = 0;
+                    Anim.Float(0, 1, 1.3f, t =>
+                    {
+                        l.style.top = y - 40 * t;
+                        l.style.opacity = t < 0.15f ? t / 0.15f : t > 0.7f ? (1 - t) / 0.3f : 1;
+                    }, Ease.QuadOut, 0.25f + i * 0.12f).OnComplete(l.RemoveFromHierarchy);
+                }
             }
 
             void Use(ItemDef def)
