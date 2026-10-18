@@ -68,6 +68,17 @@ export interface Look {
    * Several: the first whose art exists wins (the hero in their armor's outfit, then the default outfit).
    */
   bare?: BareLook | BareLook[];
+  /** What spills when it's hit (Unity battle effects). Default: red liquid blood. */
+  blood?: Blood;
+}
+
+/**
+ * A monster's blood: `liquid` (drops that splat and pool on the ground), `chips` (bits of stone, bark, shell or wood)
+ * or `wisps` (a spirit's essence leaking up).
+ */
+export interface Blood {
+  kind: 'liquid' | 'chips' | 'wisps';
+  color: number;
 }
 
 export interface BareLook {

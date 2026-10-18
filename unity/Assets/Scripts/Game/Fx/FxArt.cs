@@ -12,7 +12,7 @@ namespace Drakepg
     public static partial class Fx
     {
         /// <summary>The particle textures (fx_soft, fx_spark, ... in fx.ts).</summary>
-        public enum Tex { Soft, Spark, Star, Leaf, Coin, Ring, Rock, Plus, Chevron, Streak }
+        public enum Tex { Soft, Spark, Star, Leaf, Coin, Ring, Rock, Plus, Chevron, Streak, Drop, Splat }
 
         const float Density = 2;
         static Sprite[] sprites;
@@ -29,7 +29,7 @@ namespace Drakepg
                 foreach (var s in sprites) ok &= s != null;
                 if (ok) return;
             }
-            sprites = new Sprite[10];
+            sprites = new Sprite[Enum.GetValues(typeof(Tex)).Length];
 
             // Soft glowing dot.
             var c = new Canvas(0, 0, 32, 32);
@@ -89,6 +89,17 @@ namespace Drakepg
             c = new Canvas(0, 0, 96, 6);
             for (int i = 0; i < 4; i++) c.Fill(Inside(c.D, Ellipse(48, 3, (96 - i * 20) / 2f, (6 - i) / 2f)), 0xffffff, 0.25f + i * 0.25f);
             sprites[(int)Tex.Streak] = c.ToSprite("fx_streak");
+
+            // A drop of blood in flight: a solid oval, long side up (turned along its flight).
+            c = new Canvas(0, 0, 10, 18);
+            c.Fill(Inside(c.D, Ellipse(5, 9, 5, 9)), 0xffffff, 1);
+            sprites[(int)Tex.Drop] = c.ToSprite("fx_drop");
+
+            // A splat on the ground: a blob with lobes and a few flecks around it (squashed flat when drawn).
+            c = new Canvas(0, 0, 48, 48);
+            float[] blobs = { 24, 24, 13, 13, 20, 6.5f, 35, 27, 7, 26, 37, 5.5f, 20, 12, 5, 37, 15, 4.5f, 7, 31, 2.5f, 43, 39, 2.5f, 31, 5, 2, 9, 43, 2 };
+            for (int i = 0; i < blobs.Length; i += 3) c.Fill(Disc(blobs[i], blobs[i + 1], blobs[i + 2], c.D), 0xffffff, 1);
+            sprites[(int)Tex.Splat] = c.ToSprite("fx_splat");
         }
 
         /// <summary>A particle texture as a sprite: scale 1 draws it at its design size (fx_soft is 32 px).</summary>

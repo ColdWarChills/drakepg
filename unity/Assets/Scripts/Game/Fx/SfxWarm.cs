@@ -9,7 +9,7 @@ namespace Drakepg
         {
             "click", "open", "slash", "hit", "crit", "miss", "charge", "fireball", "explode", "heal", "coin", "levelup", "step", "alert", "encounter",
             "victory", "defeat", "quest", "warning", "denied", "equip", "rare", "sigil", "eclipse", "recall", "omen", "page", "whoosh", "block",
-            "debuff", "stun", "burn", "freeze", "splash", "gust", "quake", "zap", "holy", "void", "turn", "swish",
+            "debuff", "stun", "burn", "freeze", "splash", "gust", "quake", "zap", "holy", "void", "turn", "swish", "glint", "splat", "thud",
         };
 
         static int warmName, warmClip;

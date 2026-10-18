@@ -60,6 +60,26 @@ namespace Drakepg.EditorTools
             return true;
         }
 
+        /// <summary>
+        /// Battle: press buttons at game times from now, e.g. "1@0.5 0@0.9 0@4" (Skills, its first skill, then the
+        /// first button again 4 s in). Pairs with Record for clips of whole turns.
+        /// </summary>
+        public static void Presses(string steps) => GameRoot.I.StartCoroutine(PressLoop(steps));
+
+        static IEnumerator PressLoop(string steps)
+        {
+            float now = 0;
+            foreach (var step in steps.Split(' '))
+            {
+                var parts = step.Split('@');
+                if (parts.Length != 2) continue;
+                var at = float.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
+                if (at > now) yield return new WaitForSeconds(at - now);
+                now = Mathf.Max(now, at);
+                Press(int.Parse(parts[0]));
+            }
+        }
+
         /// <summary>Battle: keep attacking until the fight is over (then the result screen shows).</summary>
         public static void AutoFight() => GameRoot.I.StartCoroutine(AutoFightLoop());
 

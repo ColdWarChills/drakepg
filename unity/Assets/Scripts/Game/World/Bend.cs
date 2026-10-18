@@ -31,6 +31,10 @@ namespace Drakepg
         public float Crouch;
         /// <summary>Breathing and the slow weight shift.</summary>
         public bool Idle = true;
+        /// <summary>Degrees of shaking with strain (charging up a big move).</summary>
+        public float Tremble;
+        /// <summary>0-1: badly hurt (hunched, breathing hard and fast).</summary>
+        public float Hurt;
 
         struct Spring
         {
@@ -127,17 +131,21 @@ namespace Drakepg
             Push();
         }
 
-        float breath, shift;
+        float breath, shift, breathPhase, hurt, tremble;
 
         void Step(float dt, Vector3 vel)
         {
             time += dt;
-            // Breathing (2.6 s) and a slow weight shift from foot to foot (4.3 s); the knees soften as it breathes out.
-            breath = Idle ? 0.5f - 0.5f * Mathf.Cos(time * 2 * Mathf.PI / 2.6f) : 0;
-            shift = Idle ? Mathf.Sin(time * 2 * Mathf.PI / 4.3f) : 0;
-            var settle = Idle ? 0.04f + 0.06f * (1 - breath) : 0;
+            hurt = Mathf.MoveTowards(hurt, Hurt, dt * 1.5f);
+            tremble = Mathf.MoveTowards(tremble, Tremble, dt * 30);
+            // Breathing (2.6 s, 1.4 s and deeper when badly hurt) and a slow weight shift from foot to foot (4.3 s); the
+            // knees soften as it breathes out.
+            breathPhase += dt * 2 * Mathf.PI / Mathf.Lerp(2.6f, 1.4f, hurt);
+            breath = Idle ? (0.5f - 0.5f * Mathf.Cos(breathPhase)) * (1 + 0.7f * hurt) : 0;
+            shift = Idle ? Mathf.Sin(time * 2 * Mathf.PI / 4.3f) * (1 - 0.4f * hurt) : 0;
+            var settle = Idle ? 0.04f + 0.06f * (1 - breath) + 0.15f * hurt : 0;
             crouch.Step(Crouch + settle, 22, 0.7f, dt);
-            lean.Step(Lean, 17, 0.5f, dt);
+            lean.Step(Lean + (Idle ? 6 * hurt : 0), 17, 0.5f, dt);
             // Hair and cloth trail behind the motion and swing past when it stops.
             var limit = height * 0.07f;
             dragX.Step(Mathf.Clamp(-vel.x * 0.022f, -limit, limit), 12, 0.32f, dt);
@@ -166,6 +174,13 @@ namespace Drakepg
             // The hips sway over the feet and the body leans back over them; leans tip a little from the ankles.
             th0 = shift * 1.8f + lean.X * 0.35f;
             th1 = BodyTilt(shift, lean.X) - th0;
+            if (tremble > 0)
+            {
+                // Two fast wobbles that never line up read as straining, not as a loop.
+                var shake = tremble * (0.6f * Mathf.Sin(time * 2 * Mathf.PI * 13) + 0.4f * Mathf.Sin(time * 2 * Mathf.PI * 19.7f));
+                th0 += shake * 0.4f;
+                th1 += shake;
+            }
             th2 = head.X - (th0 + th1);
             Vector2 j1 = new Vector2(0, height * HipAt), j2 = new Vector2(0, height * ShoulderAt);
             // Legs: tip from the ankles, squat shorter and a little wider. Feet stay put.

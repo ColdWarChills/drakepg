@@ -99,6 +99,8 @@ namespace Drakepg.Rules
         public double Scale = 1;
         [JsonConverter(typeof(OneOrManyConverter<string>))] public List<string> Art;
         [JsonConverter(typeof(OneOrManyConverter<BareLook>))] public List<BareLook> Bare;
+        /// <summary>What spills when it's hit (null: red liquid blood).</summary>
+        public Blood Blood;
 
         public Look Clone()
         {
@@ -107,6 +109,13 @@ namespace Drakepg.Rules
             if (Bare != null) c.Bare = new List<BareLook>(Bare);
             return c;
         }
+    }
+
+    /// <summary>A monster's blood: "liquid" (drops, splats, pools), "chips" (stone, bark, shell, wood) or "wisps" (a spirit's essence).</summary>
+    public class Blood
+    {
+        public string Kind = "liquid";
+        public long Color;
     }
 
     public class SkillDef

@@ -15,6 +15,8 @@ namespace Drakepg
         static FxRunner instance;
         static readonly List<FxSystem> systems = new List<FxSystem>();
         static float stopUntil;
+        /// <summary>Slow motion: game time runs at `slowScale` until `slowUntil` (real time), between hit-stops.</summary>
+        static float slowUntil, slowScale = 1;
 
         /// <summary>Clears the statics when play starts (they survive between plays when domain reload is off).</summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -23,6 +25,8 @@ namespace Drakepg
             instance = null;
             systems.Clear();
             stopUntil = 0;
+            slowUntil = 0;
+            slowScale = 1;
             Fx.ResetStatics();
         }
 
@@ -37,6 +41,14 @@ namespace Drakepg
         {
             Ensure();
             stopUntil = Mathf.Max(stopUntil, Time.unscaledTime + seconds);
+        }
+
+        /// <summary>Run game time at `scale` for `seconds` of real time (Fx.SlowMo).</summary>
+        internal static void SlowFor(float scale, float seconds)
+        {
+            Ensure();
+            slowScale = scale;
+            slowUntil = Mathf.Max(slowUntil, Time.unscaledTime + seconds);
         }
 
         static void Ensure()
@@ -59,7 +71,12 @@ namespace Drakepg
             if (stopUntil > 0 && Time.unscaledTime >= stopUntil)
             {
                 stopUntil = 0;
-                Anim.TimeScale = 1;
+                Anim.TimeScale = slowUntil > Time.unscaledTime ? slowScale : 1;
+            }
+            if (slowUntil > 0 && Time.unscaledTime >= slowUntil)
+            {
+                slowUntil = 0;
+                if (stopUntil <= 0) Anim.TimeScale = 1;
             }
             float dt = Time.deltaTime * (Fx.ParticlesFollowHitStop ? Anim.TimeScale : 1);
             for (int i = systems.Count - 1; i >= 0; i--)

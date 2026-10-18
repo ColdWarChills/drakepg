@@ -61,6 +61,8 @@ namespace Drakepg
         struct Chain
         {
             public bool First, Last;
+            /// <summary>The blow that ends the fight (slow motion, the camera closes in, a gush).</summary>
+            public bool Finisher;
             public static readonly Chain Single = new Chain { First = true, Last = true };
         }
 
@@ -105,6 +107,12 @@ namespace Drakepg
 
             /// <summary>Bend the picture: lean (degrees, + = toward the foe) and crouch (0-1); `hold` > 0 springs back after it.</summary>
             public void Pose(float lean, float crouch, float hold = -1) => Fig?.Bend?.Pose(lean, crouch, hold);
+
+            /// <summary>Shake with strain (degrees; 0 stops).</summary>
+            public void Strain(float degrees)
+            {
+                if (Fig != null && Fig.Bend != null) Fig.Bend.Tremble = degrees;
+            }
 
             public void Kill()
             {
@@ -177,6 +185,10 @@ namespace Drakepg
         Label intentText;
         float intentW, intentTop;
         bool shellRegrew;
+        /// <summary>Red power rising around a monster winding up a big attack.</summary>
+        Fx.Flow chargeFlow;
+        /// <summary>This turn's killing blows (the last hit before each "defeated").</summary>
+        readonly HashSet<BattleEvent> finishers = new HashSet<BattleEvent>();
         Anim.Handle recoil;
         int comboHits;
         float enemyTextShift;
@@ -188,6 +200,10 @@ namespace Drakepg
 
         static IRng Rng => Dice.Rng;
         Look PlayerLook => battle.Player.Look;
+        /// <summary>What spills from the monster (null: red blood).</summary>
+        Blood MonsterBlood => monster.Look.Blood;
+        /// <summary>Sorting order of things lying on the ground (splats, pools): under the fighters.</summary>
+        static int GroundOrder => Design.Depth(GroundY) - 60;
 
         public BattleScreen(BattleSetup setup) => back = setup;
 
@@ -936,6 +952,9 @@ namespace Drakepg
             var hp = Math.Max(0, Math.Min(max, (hpShown.TryGetValue(side, out var v) ? v : max) + delta));
             hpShown[side] = hp;
             (side == "player" ? playerHp : enemyHp).SetValue(hp, max);
+            // Badly hurt fighters hunch and breathe hard.
+            var bend = FighterOf(side)?.Fig?.Bend;
+            if (bend != null) bend.Hurt = hp > 0 && hp < max * 0.3 ? 1 : 0;
         }
 
         /// <summary>MP changes come from the hero's own moves, so the battle's value is the one to show.</summary>
@@ -1198,6 +1217,17 @@ namespace Drakepg
             DropMenu();
             RestoreLog();
             FadeIntent(false);
+            finishers.Clear();
+            for (int i = 0; i < events.Count; i++)
+            {
+                if (events[i].Kind != "defeated") continue;
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (events[j].Kind != "hit" || Other(events[j].Source) != events[i].Side) continue;
+                    finishers.Add(events[j]);
+                    break;
+                }
+            }
             for (int i = 0; i < events.Count; i++) await Play(events[i], i > 0 ? events[i - 1] : null, i + 1 < events.Count ? events[i + 1] : null);
             RefreshBars();
             SyncStatuses();
@@ -1269,7 +1299,7 @@ namespace Drakepg
 
         async Task Play(BattleEvent e, BattleEvent prev, BattleEvent next)
         {
-            await PlayEvent(e, new Chain { First = !SameMove(prev, e), Last = next == null || !SameMove(e, next) });
+            await PlayEvent(e, new Chain { First = !SameMove(prev, e), Last = next == null || !SameMove(e, next), Finisher = finishers.Contains(e) });
             // An enemy action resolves the player's guard and the boss's wind-up.
             var enemyActed = e.Kind == "windup" || ((e.Kind == "hit" || e.Kind == "miss" || e.Kind == "buff") && e.Source == "enemy");
             if (!enemyActed) return;
@@ -1277,6 +1307,9 @@ namespace Drakepg
             {
                 UnityEngine.Object.Destroy(chargeAura.gameObject);
                 chargeAura = null;
+                chargeFlow?.Stop();
+                chargeFlow = null;
+                foe.Strain(0);
             }
             if (shield != null)
             {
@@ -1313,6 +1346,9 @@ namespace Drakepg
                     comboHits = chain.First ? 0 : comboHits + 1;
                     var style = StyleOf(e);
                     var target = Other(e.Source);
+                    // Skills gather power first (spells do it in their own cast); plain attacks stay quick.
+                    if (e.Source == "player" && chain.First && e.MoveId != "attack" && e.MoveId != "proc" && (style.Kind == "slash" || style.Kind == "heavy"))
+                        await SkillCharge(hero, style, style.Kind == "heavy");
                     await AttackAnim(e.Source, style, () =>
                     {
                         if (e.Kind == "hit") Impact(e, style, chain);
@@ -1451,6 +1487,11 @@ namespace Drakepg
                         else Fx.StatusPuff(World, x, GroundY - Chest, tint);
                         Fx.HitSparks(World, x, GroundY - Chest, true, false, def.Tint.HasValue ? new[] { 0xffffffL, tint, tint } : ColorsOf(e.Element));
                         Fx.WhiteFlash(f.Fig, 100, 0xffffff, tint);
+                        if (e.Target == "enemy" && e.Status == "bleed")
+                        {
+                            Fx.Bleed(World, x - 20, GroundY - Chest, Random.value < 0.5f ? -1 : 1, MonsterBlood, 0.3f, GroundY, GroundOrder);
+                            Sfx.Play("splat");
+                        }
                         Sfx.Play("hit");
                         var tilt = e.Target == "player" ? -4 : 4;
                         f.Track(Anim.Float(0, tilt, 0.06f, v => f.Angle = v, Ease.CubicOut, yoyo: true)).OnComplete(() => f.Angle = 0);
@@ -1563,7 +1604,30 @@ namespace Drakepg
                         }, Ease.Linear, 0, -1, true);
                     }
                     foe.Track(Anim.Float(EnemyX, EnemyX + 25, 0.18f, v => foe.X = v, Ease.QuadOut, yoyo: true));
-                    await Anim.Wait(0.7f);
+                    // It sinks back and strains, shaking, while red power rises around it and gathers in its body; it
+                    // holds the pose until it lets go next turn.
+                    foe.Pose(-10, 0.8f);
+                    foe.Strain(2.4f);
+                    Sfx.Play("charge");
+                    Fx.Dust(World, EnemyX - 60, GroundY, 4, Design.Depth(GroundY) + 1);
+                    Fx.Dust(World, EnemyX + 60, GroundY, 4, Design.Depth(GroundY) + 1);
+                    var body = BodyOf("enemy");
+                    if (chargeFlow == null)
+                        chargeFlow = Fx.Stream(World, EnemyX, GroundY, Fx.Tex.Soft, new Fx.Emit
+                        {
+                            Zone = new Rect(-body.width / 2, -12, body.width, 24),
+                            SpeedY = Fx.Val.Rand(-300, -140),
+                            SpeedX = Fx.Val.Rand(-20, 20),
+                            Scale = Fx.Val.Life(1.6f, 0.2f),
+                            Alpha = Fx.Val.Life(0.9f, 0),
+                            Lifespan = 800,
+                            Tints = new[] { 0xff2a2aL, 0xff6a3a, 0xc81e1e },
+                            Frequency = 22,
+                        });
+                    await Fx.ChargeUp(World, EnemyX - 20, (body.top + GroundY) / 2, 0xff3b3b, 520);
+                    Fx.Glint(World, EnemyX - 20, (body.top + GroundY) / 2, 0xffd0c0, 2.2f);
+                    Sfx.Play("glint");
+                    await Anim.Wait(0.25f);
                     break;
                 }
                 case "enrage":
@@ -1662,41 +1726,49 @@ namespace Drakepg
                         var colors = m.Element != null ? ColorsOf(m.Element) : new[] { 0xffffffL, m.Look.Color, m.Look.Accent };
                         PushLog($"{enemyName} is defeated!");
                         Fx.HitStop(m.Boss ? 260 : 160);
-                        Fx.WhiteFlash(f.Fig, 260);
-                        // Knocked back off its feet.
+                        Fx.WhiteFlash(f.Fig, 140);
+                        var bend = f.Fig.Bend;
+                        if (bend != null)
+                        {
+                            bend.Idle = false;
+                            bend.Hurt = 0;
+                        }
+                        var blood = MonsterBlood;
+                        var kind = blood?.Kind ?? "liquid";
+                        var gold = battle.Rewards?.Gold ?? 0;
+                        // Rocked back off balance by the blow.
+                        f.Pose(-22, 0.25f);
                         var fromX = f.X;
-                        await f.Track(Anim.Float(0, 1, 0.2f, t =>
+                        await f.Track(Anim.Float(0, 1, 0.22f, t =>
                         {
                             f.X = Mathf.Lerp(fromX, EnemyX + 40, t);
-                            f.Angle = 10 * t;
+                            f.Angle = 8 * t;
                         }, Ease.QuadOut)).Task;
                         if (m.Boss)
                         {
-                            // A boss goes down in a chain of blasts.
+                            // A boss goes down in a chain of blasts, shaking, spilling with each.
+                            f.Strain(3);
                             for (int i = 0; i < 3; i++)
                             {
                                 var bx = EnemyX + Random.Range(-body.width / 2, body.width / 2);
                                 var by = Random.Range(body.top + 20, GroundY - 40);
                                 Fx.Explosion(World, bx, by, colors);
+                                Fx.Bleed(World, bx, by, Random.value < 0.5f ? -1 : 1, blood, 1.2f, GroundY, GroundOrder);
                                 Fx.WhiteFlash(f.Fig, 90);
                                 Sfx.Play("explode");
                                 GameRoot.I.Shake(0.16f, 13);
                                 await Anim.Wait(0.2f);
                             }
+                            f.Strain(0);
                             GameRoot.I.Flash(0.26f, Color.white);
-                            Fx.Shockwave(World, EnemyX, GroundY, colors[1], 5, 0.35f);
+                            Fx.Shockwave(World, EnemyX, GroundY, colors[1], 5, 0.3f);
                         }
-                        Fx.DeathPoof(World, f.X, GroundY - 60, m.Look.Color);
-                        Fx.Dissolve(World, f.X, GroundY, body.width * 0.8f, GroundY - body.top, colors);
-                        Sfx.Play("explode");
-                        GameRoot.I.Shake(0.2f, 10);
-                        var gold = battle.Rewards?.Gold ?? 0;
-                        _ = Fx.CoinShower(World, new Vector2(f.X, GroundY - 100), new Vector2(60, 40), (int)Math.Ceiling(gold / 2), () => Sfx.Play("coin"));
-                        await f.Track(Anim.Float(0, 1, 0.38f, t =>
-                        {
-                            f.Sy = 1 - 0.8f * t;
-                            f.Fig.SetAlpha(1 - t);
-                        }, Ease.CubicIn)).Task;
+                        // The camera eases back out so the whole fall shows.
+                        ViewOut(0.5f);
+                        if (kind == "chips") await Shatter(f, body, blood, colors, gold);
+                        else if (kind == "wisps") await FadeAway(f, body, blood, colors, gold);
+                        else if (m.Look.Shape == "humanoid") await Topple(f, blood, colors, gold);
+                        else await Slump(f, body, blood, colors, gold);
                     }
                     else
                     {
@@ -1709,6 +1781,7 @@ namespace Drakepg
                             f.Angle = -80 * t;
                             f.Fig.SetAlpha(1 - 0.5f * t);
                         }, Ease.BounceOut)).Task;
+                        ViewOut();
                     }
                     break;
                 }
@@ -1744,6 +1817,153 @@ namespace Drakepg
                 h.OnComplete(() => f.WeaponTweens.Add(Anim.Float(0, 1, big ? 0.22f : 0.16f, t => { if (w != null) w.localRotation = Quaternion.Euler(0, 0, Mathf.LerpAngle(through, baseAngle, t)); }, Ease.QuadOut)));
                 f.WeaponTweens.Add(h);
             }
+        }
+
+        /// <summary>Close the camera in on (x, y) at `zoom`, kept inside the picture (no black edges past the backdrop).</summary>
+        static Anim.Handle ViewIn(float x, float y, float zoom, float seconds, Ease ease = Ease.QuadOut)
+        {
+            float halfW = Design.Width / 2f / zoom, halfH = Design.Height / 2f / zoom;
+            return GameRoot.I.View(Mathf.Clamp(x, halfW, Design.Width - halfW), Mathf.Clamp(y, halfH, Design.Height - halfH), zoom, seconds, ease);
+        }
+
+        static void ViewOut(float seconds = 0.45f) => GameRoot.I.View(Design.Width / 2, Design.Height / 2, 1, seconds, Ease.CubicInOut);
+
+        // --- Monster deaths ---
+
+        /// <summary>A body hitting the ground along `length` px centered at x: a thud, a shake and dust along it.</summary>
+        void BodyLands(float x, float length)
+        {
+            Sfx.Play("thud");
+            GameRoot.I.Shake(0.22f, 12);
+            for (int i = 0; i < 5; i++) Fx.Dust(World, x - length / 2 + length * i / 4f, GroundY + 4, 4, Design.Depth(GroundY) + 1);
+        }
+
+        /// <summary>The remains go up in smoke and motes over `w` x `h` px centered at x, the gold flies to the counter, and the body fades.</summary>
+        async Task Vanish(Fighter f, float x, float w, float h, long[] colors, double gold, float fade = 0.4f)
+        {
+            Fx.DeathPoof(World, x, GroundY - h / 2, monster.Look.Color);
+            Fx.Dissolve(World, x, GroundY, w, h, colors);
+            Sfx.Play("explode");
+            _ = Fx.CoinShower(World, new Vector2(x, GroundY - 100), new Vector2(60, 40), (int)Math.Ceiling(gold / 2), () => Sfx.Play("coin"));
+            await f.Track(Anim.Float(0, 1, fade, t => f.Fig.SetAlpha(1 - t), Ease.CubicIn)).Task;
+        }
+
+        /// <summary>Upright monsters: the knees give, it pitches forward onto its face, bounces once, and a pool spreads under it.</summary>
+        async Task Topple(Fighter f, Blood blood, long[] colors, double gold)
+        {
+            f.Pose(12, 1);
+            await Anim.Wait(0.16f);
+            var length = Mathf.Min(f.Fig.DrawnHeight * f.Base * 0.92f, 400);
+            var from = f.Angle;
+            Sfx.Play("whoosh");
+            await f.Track(Anim.Float(0, 1, 0.42f, t => f.Angle = Mathf.LerpUnclamped(from, -84, t), Ease.CubicIn)).Task;
+            var mid = f.X - length / 2;
+            BodyLands(mid, length);
+            f.Track(Anim.Float(-84, -77, 0.09f, v => f.Angle = v, Ease.QuadOut, yoyo: true));
+            Fx.Pool(World, f.X - length * 0.45f, GroundY + 4, length * 0.85f, blood, GroundOrder);
+            await Anim.Wait(0.6f);
+            await Vanish(f, mid, length, 70, colors, gold);
+        }
+
+        /// <summary>Beasts, blobs and chests: it sags flat, head down, and a pool spreads under it.</summary>
+        async Task Slump(Fighter f, (float top, float width) body, Blood blood, long[] colors, double gold)
+        {
+            f.Pose(26, 1);
+            await f.Track(Anim.Float(0, 1, 0.34f, t =>
+            {
+                f.Angle = Mathf.LerpUnclamped(8, -5, t);
+                f.Sy = 1 - 0.24f * t;
+                f.Sx = 1 + 0.08f * t;
+            }, Ease.BounceOut)).Task;
+            BodyLands(f.X, body.width);
+            Fx.Pool(World, f.X - 10, GroundY + 6, body.width, blood, GroundOrder);
+            await Anim.Wait(0.6f);
+            await Vanish(f, f.X, body.width * 0.8f, (GroundY - body.top) * 0.6f, colors, gold);
+        }
+
+        /// <summary>Stone, bark, shell and wood: it shakes, cracks white, and bursts into bits.</summary>
+        async Task Shatter(Fighter f, (float top, float width) body, Blood blood, long[] colors, double gold)
+        {
+            // Cracks of light: a few quick flashes while it shakes.
+            f.Strain(4);
+            Sfx.Play("quake");
+            for (int i = 0; i < 3; i++)
+            {
+                Fx.WhiteFlash(f.Fig, 60, 0xffffff);
+                await Anim.Wait(0.13f);
+            }
+            f.Strain(0);
+            for (int i = 0; i < 4; i++)
+                Fx.Bleed(World, f.X + Random.Range(-body.width / 2, body.width / 2), Random.Range(body.top + 20, GroundY - 30), i % 2 == 0 ? -1 : 1, blood, 2,
+                    GroundY, GroundOrder);
+            Fx.Shockwave(World, f.X, GroundY, blood?.Color ?? 0xffffff, 4, 0.3f);
+            GameRoot.I.Shake(0.25f, 14);
+            Sfx.Play("thud");
+            f.Track(Anim.Float(0, 1, 0.18f, t =>
+            {
+                f.Sx = 1 + 0.3f * t;
+                f.Sy = 1 - 0.5f * t;
+            }, Ease.QuadOut));
+            await Vanish(f, f.X, body.width * 0.8f, GroundY - body.top, colors, gold, 0.18f);
+        }
+
+        /// <summary>Spirits: it shudders and rises, its essence pouring off in bursts, and thins away.</summary>
+        async Task FadeAway(Fighter f, (float top, float width) body, Blood blood, long[] colors, double gold)
+        {
+            f.Strain(2);
+            f.Pose(-12, 0);
+            Sfx.Play("void");
+            for (int i = 0; i < 3; i++)
+                Anim.After(i * 0.18f, () => Fx.Bleed(World, f.X + Random.Range(-body.width / 3, body.width / 3), Random.Range(body.top + 20, GroundY - 40),
+                    Random.value < 0.5f ? -1 : 1, blood, 1.6f, GroundY, GroundOrder));
+            await f.Track(Anim.Float(0, 1, 0.6f, t =>
+            {
+                f.Y = GroundY - 50 * t;
+                f.Sx = 1 - 0.3f * t;
+                f.Sy = 1 + 0.2f * t;
+            }, Ease.QuadIn)).Task;
+            f.Strain(0);
+            await Vanish(f, f.X, body.width * 0.8f, GroundY - body.top, colors, gold, 0.3f);
+        }
+
+        /// <summary>Where a fighter's weapon hand is (design px), or in front of its chest when it holds nothing drawn.</summary>
+        static Vector2 HandPoint(Fighter f, int dir)
+        {
+            if (f.Fig != null && f.Fig.Weapons.Count > 0 && f.Fig.Weapons[0] != null) return Design.FromWorld(f.Fig.Weapons[0].position);
+            return new Vector2(f.X + 50 * dir, GroundY - Chest - 10);
+        }
+
+        /// <summary>Where a held weapon's tip is (design px): up its blade from the hand. Null without one.</summary>
+        static Vector2? BladeTip(Fighter f)
+        {
+            if (f.Fig == null || f.Fig.Weapons.Count == 0 || f.Fig.Weapons[0] == null) return null;
+            var pivot = f.Fig.Weapons[0];
+            var reach = f.Fig.DrawnHeight * f.Base * 0.38f / Design.PixelsPerUnit;
+            return Design.FromWorld(pivot.position + pivot.up * reach);
+        }
+
+        /// <summary>
+        /// A skill gathering power before the blow: the hero sinks into a crouch and strains (shaking), the weapon
+        /// cocks, power in the skill's color gathers to the weapon hand over a glow on the ground, and a glint runs to the
+        /// tip as it peaks.
+        /// </summary>
+        async Task SkillCharge(Fighter f, Style style, bool heavy)
+        {
+            var dir = f == hero ? 1 : -1;
+            long color = style.Element != null ? style.Colors[1] : 0xffe08a;
+            Sfx.Play("charge");
+            f.Pose(-7, heavy ? 0.9f : 0.6f);
+            f.Strain(heavy ? 2.2f : 1.4f);
+            Cock(f, 0.2f);
+            Fx.CastCircle(World, f.X, GroundY, color, heavy ? 520 : 380);
+            Fx.Dust(World, f.X - 50, GroundY, 3, Design.Depth(GroundY) + 1);
+            Fx.Dust(World, f.X + 50, GroundY, 3, Design.Depth(GroundY) + 1);
+            var hand = HandPoint(f, dir);
+            await Fx.ChargeUp(World, hand.x, hand.y, color, heavy ? 520 : 380);
+            f.Strain(0);
+            var tip = BladeTip(f) ?? hand;
+            Fx.Glint(World, tip.x, tip.y, 0xffffff, heavy ? 2.2f : 1.7f);
+            Sfx.Play("glint");
         }
 
         /// <summary>Lean back (and cock the weapon) before a lunge: the anticipation that sells the blow.</summary>
@@ -1834,7 +2054,16 @@ namespace Drakepg
                 case "slash":
                 case "enemy-melee":
                 {
-                    await WindUp(f, dir, 0.08f);
+                    if (chain.Finisher)
+                    {
+                        // The last blow: the camera leans in as it winds up, a glint, then it strikes.
+                        ViewIn((home + target.x) / 2, GroundY - 150, 1.08f, 0.16f);
+                        await WindUp(f, dir, 0.16f, true);
+                        var tip = BladeTip(f);
+                        if (tip.HasValue) Fx.Glint(World, tip.Value.x, tip.Value.y, 0xffffff, 2);
+                        Sfx.Play("glint");
+                    }
+                    else await WindUp(f, dir, 0.08f);
                     Sfx.Play("whoosh");
                     Afterimages(source, 150, trail);
                     Fx.SpeedLines(World, f.X, GroundY, dir, trail);
@@ -1859,6 +2088,7 @@ namespace Drakepg
                 case "heavy":
                 {
                     // Crouch, leap, crash down.
+                    if (chain.Finisher) ViewIn((home + target.x) / 2, GroundY - 170, 1.08f, 0.2f);
                     await WindUp(f, dir, 0.13f, true);
                     Fx.Dust(World, f.X, GroundY, 5, Design.Depth(GroundY) + 1);
                     Sfx.Play("whoosh");
@@ -1898,7 +2128,9 @@ namespace Drakepg
                         var charge = spit ? 180 : style.Big ? 520 : 300;
                         Sfx.Play("charge");
                         Fx.CastCircle(World, home, GroundY, style.Colors[1], charge);
+                        f.Strain(spit ? 1.4f : style.Big ? 2.2f : 1.2f);
                         await Fx.ChargeUp(World, f.X + 50 * dir, GroundY - Chest - 10, style.Colors[1], charge);
+                        f.Strain(0);
                     }
                     var hand = new Vector2(f.X + 50 * dir, GroundY - Chest - 10);
                     Sfx.Play(style.Element == "energy" ? "zap" : "fireball");
@@ -2017,12 +2249,41 @@ namespace Drakepg
             f.Pose(guarded ? -3 : -(7 + weight * 30 + (e.Crit ? 6 : 0)), guarded ? 0.5f : 0.2f + weight, 0.14f);
             UiMotion.Jolt(targetSide == "player" ? heroHud : enemyHud, (guarded || dull ? 3 : 5) + weight * 22 + (e.Crit ? 5 : 0));
 
+            // Monsters spill blood (or chips, or wisps): more for heavier blows, a gush for the last one.
+            if (targetSide == "enemy" && e.Effect != "immune")
+            {
+                var amount = (0.2f + weight * 1.6f + (e.Crit ? 0.35f : 0) + (e.Effect == "weak" ? 0.2f : 0)) * (e.Effect == "resisted" ? 0.5f : 1);
+                if (chain.Finisher) amount = 2;
+                Fx.Bleed(World, x - 40 * dir, y + Random.Range(-20f, 20f), dir, MonsterBlood, amount, GroundY, GroundOrder);
+                if ((MonsterBlood?.Kind ?? "liquid") == "liquid") Anim.After(0.06f, () => Sfx.Play("splat"));
+            }
+            if (chain.Finisher) FinishingBlow(targetSide, x, y, dir, style, e);
+
             var color2 = e.Element != null ? Palette.ElementText(e.Element) : magic ? Palette.TextMagic : e.Source == "enemy" ? Palette.TextBad : Color.white;
             var tags = string.Join(" ", new[] { e.Crit ? "CRIT!" : "", e.Effect != null ? EffectTags[e.Effect] : "", guarded ? "Guarded" : "" }.Where(s => s != ""));
             var spot = NumberSpot();
             Float(x + spot[0], TextY(targetSide, GroundY - 230) + spot[1], JsMath.Str(e.Damage), color2, e.Crit || e.Effect == "weak" ? 50 : 36, tags != "" ? tags : null);
             ShowHp(targetSide, -e.Damage);
             ShowMp();
+        }
+
+        /// <summary>
+        /// The blow that ends the fight: a longer freeze, then slow motion while the camera closes in on the one going
+        /// down, a white flash, a second slash and a ring across the ground. ("defeated" plays the fall and resets the camera.)
+        /// </summary>
+        void FinishingBlow(string targetSide, float x, float y, int dir, Style style, BattleEvent e)
+        {
+            long color = e.Element != null ? style.Colors[1] : 0xffe08a;
+            Fx.HitStop(170);
+            Fx.SlowMo(0.3f, 950);
+            ViewIn(x - 70 * dir, GroundY - 150, 1.2f, 0.14f);
+            GameRoot.I.Flash(0.1f, new Color(1, 1, 1, 0.55f));
+            if (style.Kind == "slash" || style.Kind == "heavy") Fx.Slash(World, x, y, dir, color, -0.6f, true);
+            Fx.CritFlare(World, x, y, color);
+            Fx.Shockwave(World, x, GroundY, color, 5, 0.3f);
+            Sfx.Play("crit");
+            Sfx.Play("explode");
+            if (targetSide == "enemy") Float(x, TextY("enemy", GroundY - 300), "FINISH!", Design.Css("#ffd36b"), 50);
         }
 
         void Dodge(string side)

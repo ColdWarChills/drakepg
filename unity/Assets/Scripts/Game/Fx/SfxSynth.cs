@@ -279,6 +279,22 @@ namespace Drakepg
                     // Felt pieces sliding into place.
                     m.Hiss(0, 0.22, 0.1, Pass.Bandpass, 600 * v, 1800, 1.2);
                     return true;
+                case "glint":
+                    // Light running up a blade: a bright ping with a shimmer.
+                    m.Tone(0, Wave.Triangle, 2500 * v, 2350, 0.22, 0.12);
+                    m.Tone(0.03, Wave.Sine, 3750 * v, 3600, 0.18, 0.06);
+                    m.Hiss(0, 0.12, 0.05, Pass.Bandpass, 7000, 9000, 3);
+                    return true;
+                case "splat":
+                    // Something wet hitting the ground.
+                    m.Hiss(0, 0.12, 0.35, Pass.Lowpass, 1600 * v, 250, 1.5);
+                    m.Tone(0, Wave.Sine, 220 * v, 90, 0.08, 0.25);
+                    return true;
+                case "thud":
+                    // A body hitting the ground.
+                    m.Tone(0, Wave.Sine, 95 * v, 38, 0.32, 0.9);
+                    m.Hiss(0, 0.2, 0.5, Pass.Lowpass, 900, 120);
+                    return true;
                 case "whoosh":
                     // A quick lunge through the air.
                     m.Hiss(0, 0.14, 0.22, Pass.Bandpass, 900 * v, 2600, 1.5);
