@@ -288,7 +288,7 @@ namespace Drakepg
             if (monster.Boss)
             {
                 Sfx.Play("warning");
-                GameRoot.I.Shake(0.4f, 15);
+                GameRoot.I.Shake(0.3f, 9);
                 GameRoot.I.Flash(0.25f, new Color(120 / 255f, 0, 0));
                 Fx.Shockwave(World, EnemyX, GroundY, 0xff4d4d, 4, 0.3f);
                 await BossBanner();
@@ -317,7 +317,7 @@ namespace Drakepg
             UiMotion.FadeIn(holder, 0.1f);
             Sfx.Play("swish");
             await UiMotion.SlideIn(holder, new Vector2(-Design.Width - 200, 0), 0.26f, 0, Ease.CubicOut).Task;
-            GameRoot.I.Shake(0.2f, 8);
+            GameRoot.I.Shake(0.15f, 5);
             Sfx.Play("hit");
             // The name drifts a little while it holds, so the band doesn't freeze.
             await UiMotion.Move(holder, new Vector2(24, 0), 0.75f, Ease.Linear).Task;
@@ -1593,7 +1593,7 @@ namespace Drakepg
                 {
                     Sfx.Play("warning");
                     PushLog(e.Text);
-                    GameRoot.I.Shake(0.35f, 8);
+                    GameRoot.I.Shake(0.25f, 5);
                     Float(EnemyX, TextY("enemy", GroundY - 260), $"{e.Move}!", Palette.TextBad, 34);
                     if (chargeAura == null)
                     {
@@ -1658,7 +1658,7 @@ namespace Drakepg
                     var colors = ColorsOf(e.Element);
                     Sfx.Play("warning");
                     GameRoot.I.Flash(0.35f, Design.Hex(colors[1]));
-                    GameRoot.I.Shake(0.45f, 15);
+                    GameRoot.I.Shake(0.3f, 9);
                     Fx.Shockwave(World, EnemyX, GroundY, colors[1], 4, 0.4f);
                     Fx.Explosion(World, EnemyX, GroundY - Chest, colors);
                     Fx.ElementBurst(World, EnemyX, GroundY - Chest, e.Element, 1);
@@ -1761,7 +1761,7 @@ namespace Drakepg
                                 Fx.Bleed(World, bx, by, Random.value < 0.5f ? -1 : 1, blood, 1.2f, GroundY, GroundOrder);
                                 Fx.WhiteFlash(f.Fig, 90);
                                 Sfx.Play("explode");
-                                GameRoot.I.Shake(0.16f, 13);
+                                GameRoot.I.Shake(0.12f, 7);
                                 await Anim.Wait(0.2f);
                             }
                             f.Strain(0);
@@ -1780,7 +1780,7 @@ namespace Drakepg
                         PushLog("You collapse...");
                         Sfx.Play("defeat");
                         GameRoot.I.Flash(0.3f, new Color(160 / 255f, 0, 0));
-                        GameRoot.I.Shake(0.3f, 13);
+                        GameRoot.I.Shake(0.25f, 8);
                         await f.Track(Anim.Float(0, 1, 0.6f, t =>
                         {
                             f.Angle = -80 * t;
@@ -1839,7 +1839,7 @@ namespace Drakepg
         void BodyLands(float x, float length)
         {
             Sfx.Play("thud");
-            GameRoot.I.Shake(0.22f, 12);
+            GameRoot.I.Shake(0.16f, 7);
             for (int i = 0; i < 5; i++) Fx.Dust(World, x - length / 2 + length * i / 4f, GroundY + 4, 4, Design.Depth(GroundY) + 1);
         }
 
@@ -1902,7 +1902,7 @@ namespace Drakepg
                 Fx.Bleed(World, f.X + Random.Range(-body.width / 2, body.width / 2), Random.Range(body.top + 20, GroundY - 30), i % 2 == 0 ? -1 : 1, blood, 2,
                     GroundY, GroundOrder);
             Fx.Shockwave(World, f.X, GroundY, blood?.Color ?? 0xffffff, 4, 0.3f);
-            GameRoot.I.Shake(0.25f, 14);
+            GameRoot.I.Shake(0.18f, 8);
             Sfx.Play("thud");
             f.Track(Anim.Float(0, 1, 0.18f, t =>
             {
@@ -2205,8 +2205,8 @@ namespace Drakepg
                     f.Pose(26, 1, 0.3f);
                     onContact();
                     Fx.Dust(World, f.X, GroundY, 12, Design.Depth(GroundY) + 1);
-                    GameRoot.I.Shake(0.16f, 10);
-                    GameRoot.I.Kick(0, 14);
+                    GameRoot.I.Shake(0.12f, 6);
+                    GameRoot.I.Kick(0, 6);
                     await Anim.Wait(0.16f);
                     if (chain.Last) await Recover(f, home, 0.34f, 22);
                     break;
@@ -2235,14 +2235,14 @@ namespace Drakepg
                     var flying = Fx.Projectile(World, hand, target, style.Colors, flight, style.Element);
                     f.Squash(1.1f, 0.92f, 0.2f);
                     f.Pose(16, 0.2f, 0.3f);
-                    GameRoot.I.Kick(-4 * dir, 0);
+                    GameRoot.I.Kick(-3 * dir, 0);
                     if (chain.First) await Task.WhenAll(MoveX(f, home + 20 * dir, 0.12f, Ease.BackOut), flying);
                     else await flying;
                     Sfx.Play("explode");
                     if (style.Big)
                     {
                         Fx.Explosion(World, target.x, target.y, style.Colors);
-                        GameRoot.I.Shake(0.26f, 15);
+                        GameRoot.I.Shake(0.18f, 8);
                     }
                     onContact();
                     if (chain.Last) await Recover(f, home, 0.24f, 8);
@@ -2326,9 +2326,9 @@ namespace Drakepg
             Fx.WhiteFlash(f.Fig, big ? 140 : 100, 0xffffff, palette != null && !dull ? palette[1] : (long?)null);
             // The freeze grows with the blow; the camera is knocked the way the blow travels and springs back.
             Fx.HitStop(quick ? 40 : e.Crit ? 150 : big ? 130 : Mathf.Min(150, 70 + weight * 120));
-            GameRoot.I.Shake(e.Crit ? 0.2f : 0.12f, ((guarded || dull ? 0.0015f : 0.003f) + weight * (quick ? 0.009f : 0.022f)) * Design.Width);
-            var kickPx = (guarded || dull ? 4 : 9 + weight * 34 + (e.Crit ? 10 : 0)) * (quick ? 0.5f : 1);
-            GameRoot.I.Kick(kickPx * dir, big ? 5 : 2);
+            GameRoot.I.Shake(e.Crit ? 0.14f : 0.09f, ((guarded || dull ? 0.001f : 0.002f) + weight * (quick ? 0.005f : 0.011f)) * Design.Width);
+            var kickPx = (guarded || dull ? 2 : 4 + weight * 14 + (e.Crit ? 4 : 0)) * (quick ? 0.5f : 1);
+            GameRoot.I.Kick(kickPx * dir, big ? 2 : 1);
             if (big && !quick) Sfx.Play("thud");
 
             // Knocked back: snapped away fast (lifted off its feet by a big one), then a slow recovery home, feet

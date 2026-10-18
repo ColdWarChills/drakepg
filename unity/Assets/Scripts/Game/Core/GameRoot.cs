@@ -258,8 +258,8 @@ namespace Drakepg
         Vector2 kick, kickVelocity;
 
         /// <summary>
-        /// Knock the camera (dx, dy) design px, the way a blow travels; it springs back with a little overshoot. Game
-        /// time, so a hit-stop holds it there for the freeze.
+        /// Knock the camera (dx, dy) design px, the way a blow travels; it springs back in about a tenth of a second
+        /// (real time, so slow motion doesn't drag it out).
         /// </summary>
         public void Kick(float dx, float dy)
         {
@@ -267,11 +267,17 @@ namespace Drakepg
             kickVelocity = Vector2.zero;
         }
 
-        /// <summary>Camera shake in design pixels.</summary>
+        float shakeTotal;
+
+        /// <summary>How much of a shake is left: it fades out (quadratically) over its length instead of stopping dead.</summary>
+        float ShakeLeft => shakeTotal > 0 && shakeTime > 0 ? (shakeTime / shakeTotal) * (shakeTime / shakeTotal) : 0;
+
+        /// <summary>Camera shake of `pixels` design px that fades out over `seconds`. A weaker one doesn't cut a stronger one short.</summary>
         public void Shake(float seconds, float pixels)
         {
-            shakeTime = Mathf.Max(shakeTime, seconds);
-            shakeAmount = Mathf.Max(shakeTime > 0 ? shakeAmount : 0, pixels);
+            if (pixels < shakeAmount * ShakeLeft) return;
+            shakeAmount = pixels;
+            shakeTime = shakeTotal = Mathf.Max(0.01f, seconds);
         }
 
         void Update()
@@ -287,16 +293,20 @@ namespace Drakepg
             if (shakeTime > 0)
             {
                 shakeTime -= dt;
-                off = UnityEngine.Random.insideUnitCircle * shakeAmount;
+                off = UnityEngine.Random.insideUnitCircle * shakeAmount * ShakeLeft;
                 if (shakeTime <= 0) shakeAmount = 0;
             }
             if (kick != Vector2.zero || kickVelocity != Vector2.zero)
             {
-                // A stiff spring, slightly under-damped: back in about a tenth of a second with a small bounce.
-                var kdt = dt * Anim.TimeScale;
-                const float omega = 32, damping = 0.45f;
-                kickVelocity += (-omega * omega * kick - 2 * damping * omega * kickVelocity) * kdt;
-                kick += kickVelocity * kdt;
+                // A stiff spring, a little under-damped: back in about a tenth of a second with a small bounce. Stepped in
+                // small fixed steps: one big step at a low frame rate would overshoot further each frame and blow up.
+                const float omega = 40, damping = 0.6f, step = 1 / 240f;
+                for (var left = Mathf.Min(dt, 0.1f); left > 0; left -= step)
+                {
+                    var h = Mathf.Min(step, left);
+                    kickVelocity += (-omega * omega * kick - 2 * damping * omega * kickVelocity) * h;
+                    kick += kickVelocity * h;
+                }
                 if (kick.sqrMagnitude < 0.01f && kickVelocity.sqrMagnitude < 1) kick = kickVelocity = Vector2.zero;
             }
             off += new Vector2(kick.x, -kick.y);
