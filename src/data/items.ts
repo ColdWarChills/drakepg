@@ -55,6 +55,7 @@ export const ITEMS: ItemDef[] = [
     art: 'wpn_training_sword',
     grip: 0.79,
     size: 0.6,
+    kind: 'sword',
   },
   {
     id: 'worn_staff',
@@ -68,6 +69,7 @@ export const ITEMS: ItemDef[] = [
     art: 'wpn_worn_staff',
     grip: 0.45,
     size: 1.0,
+    kind: 'staff',
   },
   {
     id: 'rusty_dagger',
@@ -82,6 +84,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.89,
     size: 0.3,
     stats: { dex: 1 },
+    kind: 'dagger',
   },
 
   // Shop weapons
@@ -97,6 +100,7 @@ export const ITEMS: ItemDef[] = [
     art: 'wpn_iron_sword',
     grip: 0.78,
     size: 0.62,
+    kind: 'sword',
   },
   {
     id: 'oak_staff',
@@ -111,6 +115,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.45,
     size: 1.0,
     stats: { int: 3 },
+    kind: 'staff',
   },
   {
     id: 'tusk_dagger',
@@ -125,6 +130,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.78,
     size: 0.32,
     stats: { dex: 2 },
+    kind: 'dagger',
   },
 
   {
@@ -140,6 +146,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.8,
     size: 0.32,
     stats: { dex: 1 },
+    kind: 'dagger',
   },
 
   // Ash Imp drops (Fire): good against the Thornwood, which burns.
@@ -158,6 +165,7 @@ export const ITEMS: ItemDef[] = [
     element: 'fire',
     stats: { dex: 1 },
     proc: { name: 'Ignite', chance: 0.15, power: 0, applies: [{ status: 'burn', turns: 2 }] },
+    kind: 'dagger',
   },
   {
     id: 'emberbrand',
@@ -173,6 +181,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.64,
     element: 'fire',
     proc: { name: 'Flare', chance: 0.12, power: 0.6 },
+    kind: 'sword',
   },
   {
     id: 'ember_wand',
@@ -188,6 +197,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.45,
     element: 'fire',
     stats: { int: 2 },
+    kind: 'wand',
   },
 
   // Chapter 1 boss rewards (Earth)
@@ -206,6 +216,7 @@ export const ITEMS: ItemDef[] = [
     element: 'earth',
     stats: { str: 2, end: 1 },
     proc: { name: 'Thorn Burst', chance: 0.15, power: 0.8, applies: [{ status: 'bleed', turns: 2 }] },
+    kind: 'sword',
   },
   {
     id: 'heartwood_staff',
@@ -222,6 +233,7 @@ export const ITEMS: ItemDef[] = [
     element: 'earth',
     stats: { int: 4 },
     proc: { name: 'Verdant Pulse', chance: 0.15, power: 0, heal: 0.08 },
+    kind: 'staff',
   },
   {
     id: 'briar_fang',
@@ -238,6 +250,7 @@ export const ITEMS: ItemDef[] = [
     element: 'earth',
     stats: { dex: 3 },
     proc: { name: 'Briar Sting', chance: 0.2, power: 0, applies: [{ status: 'poison', turns: 3 }] },
+    kind: 'dagger',
   },
 
   // Chapter 2: Reedwatch shop (tier 2, about x1.5 the Brindlemoor shop)
@@ -254,6 +267,7 @@ export const ITEMS: ItemDef[] = [
     art: 'wpn_steel_broadsword',
     grip: 0.78,
     size: 0.64,
+    kind: 'sword',
   },
   {
     id: 'yew_staff',
@@ -269,6 +283,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.45,
     size: 1.0,
     stats: { int: 4 },
+    kind: 'staff',
   },
   {
     id: 'fenwatch_stiletto',
@@ -284,6 +299,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.84,
     size: 0.32,
     stats: { dex: 2 },
+    kind: 'dagger',
   },
 
   // Chapter 2 drops, tier 2. Water monsters drop Water weapons (good against Energy), and the other way round.
@@ -303,6 +319,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.64,
     stats: { end: 1 },
     proc: { name: 'Undertow', chance: 0.15, power: 0, applies: [{ status: 'weaken', turns: 2 }] },
+    kind: 'sword',
   },
   {
     id: 'stormcleaver',
@@ -319,6 +336,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.78,
     size: 0.66,
     proc: { name: 'Arc Flash', chance: 0.15, power: 0.5, applies: [{ status: 'shock', turns: 2 }] },
+    kind: 'axe',
   },
   {
     id: 'tidecaller_rod',
@@ -336,6 +354,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.8,
     stats: { int: 3 },
     proc: { name: 'Riptide', chance: 0.15, power: 0, applies: [{ status: 'chill', turns: 2 }] },
+    kind: 'wand',
   },
   {
     id: 'sparkglass_wand',
@@ -353,6 +372,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.45,
     stats: { int: 3 },
     proc: { name: 'Static', chance: 0.15, power: 0.4, applies: [{ status: 'shock', turns: 2 }] },
+    kind: 'wand',
   },
   {
     id: 'brinefang',
@@ -370,6 +390,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.33,
     stats: { dex: 2 },
     proc: { name: 'Brine Cut', chance: 0.18, power: 0, applies: [{ status: 'bleed', turns: 2 }] },
+    kind: 'dagger',
   },
   {
     id: 'sparkfang',
@@ -387,6 +408,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.33,
     stats: { dex: 2 },
     proc: { name: 'Spark', chance: 0.18, power: 0.5 },
+    kind: 'dagger',
   },
 
   // Chapter 2 boss rewards (Energy), tier 3
@@ -406,6 +428,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.7,
     stats: { str: 3, end: 1 },
     proc: { name: 'Thunderclap', chance: 0.12, power: 0.8, applies: [{ status: 'stun', turns: 1 }] },
+    kind: 'hammer',
   },
   {
     id: 'stormcoil_scepter',
@@ -423,6 +446,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.85,
     stats: { int: 5 },
     proc: { name: 'Chain Lightning', chance: 0.15, power: 0.4, hits: 2 },
+    kind: 'staff',
   },
   {
     id: 'coilfang',
@@ -440,6 +464,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.35,
     stats: { dex: 4 },
     proc: { name: 'Static Venom', chance: 0.2, power: 0, applies: [{ status: 'shock', turns: 2 }, { status: 'poison', turns: 3 }] },
+    kind: 'dagger',
   },
 
   // Armor
@@ -567,6 +592,7 @@ export const ITEMS: ItemDef[] = [
     art: 'wpn_tempered_longsword',
     grip: 0.77,
     size: 0.66,
+    kind: 'sword',
   },
   {
     id: 'larchwood_staff',
@@ -582,6 +608,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.45,
     size: 1.05,
     stats: { int: 2 },
+    kind: 'staff',
   },
   {
     id: 'ridgerunner_kris',
@@ -597,6 +624,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.88,
     size: 0.34,
     stats: { dex: 2 },
+    kind: 'dagger',
   },
   {
     id: 'ridgeplate',
@@ -637,6 +665,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.64,
     stats: { str: 1 },
     proc: { name: 'Bite of Winter', chance: 0.15, power: 0, applies: [{ status: 'chill', turns: 2 }] },
+    kind: 'sword',
   },
   {
     id: 'hoarfrost_staff',
@@ -653,6 +682,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.45,
     size: 1.05,
     stats: { int: 3 },
+    kind: 'staff',
   },
   {
     id: 'icicle_kris',
@@ -670,6 +700,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.34,
     stats: { dex: 2 },
     proc: { name: 'Shatter', chance: 0.12, power: 0.6 },
+    kind: 'dagger',
   },
   // Fire (drops and recipes: the counter for the mountain)
   {
@@ -688,6 +719,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.64,
     stats: { str: 1 },
     proc: { name: 'Kindle', chance: 0.15, power: 0, applies: [{ status: 'burn', turns: 2 }] },
+    kind: 'sword',
   },
   {
     id: 'kindling_rod',
@@ -704,6 +736,7 @@ export const ITEMS: ItemDef[] = [
     grip: 0.45,
     size: 1.0,
     stats: { int: 3 },
+    kind: 'staff',
   },
   {
     id: 'salamander_kris',
@@ -721,6 +754,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.34,
     stats: { dex: 2 },
     proc: { name: 'Scorch', chance: 0.12, power: 0.6 },
+    kind: 'dagger',
   },
   {
     id: 'frostpelt_vest',
@@ -763,6 +797,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.7,
     stats: { str: 3 },
     proc: { name: 'Avalanche', chance: 0.12, power: 0.8, applies: [{ status: 'chill', turns: 2 }] },
+    kind: 'axe',
   },
   {
     id: 'mawtooth_staff',
@@ -780,6 +815,7 @@ export const ITEMS: ItemDef[] = [
     size: 1.05,
     stats: { int: 4 },
     proc: { name: 'Frozen Breath', chance: 0.12, power: 0.6, applies: [{ status: 'chill', turns: 2 }] },
+    kind: 'staff',
   },
   {
     id: 'snowmaw_claw',
@@ -797,6 +833,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.36,
     stats: { dex: 3 },
     proc: { name: 'Rend', chance: 0.15, power: 0, applies: [{ status: 'bleed', turns: 3 }] },
+    kind: 'dagger',
   },
   // The Frostbinder (Chapter 3 boss): tier 4 Wind
   {
@@ -815,6 +852,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.72,
     stats: { str: 4, end: 1 },
     proc: { name: 'Whiteout', chance: 0.12, power: 0.8, applies: [{ status: 'blind', turns: 2 }] },
+    kind: 'sword',
   },
   {
     id: 'squall_stave',
@@ -832,6 +870,7 @@ export const ITEMS: ItemDef[] = [
     size: 1.08,
     stats: { int: 5 },
     proc: { name: 'Squall', chance: 0.12, power: 0.8, applies: [{ status: 'shock', turns: 2 }] },
+    kind: 'staff',
   },
   {
     id: 'galecutter',
@@ -849,6 +888,7 @@ export const ITEMS: ItemDef[] = [
     size: 0.36,
     stats: { dex: 4 },
     proc: { name: 'Tailwind', chance: 0.15, power: 0, applies: [{ status: 'evasive', turns: 2, self: true }] },
+    kind: 'dagger',
   },
   // Travel (src/game/Travel.ts), sold in every town shop.
   {

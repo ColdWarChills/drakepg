@@ -64,6 +64,8 @@ namespace Drakepg
             public bool Big;
             /// <summary>A top skill (SkillDef.Epic): the hero takes drawn key poses for it.</summary>
             public bool Epic;
+            /// <summary>The hero's weapon kind (sword, axe, hammer, dagger, staff, wand): how the blow is swung.</summary>
+            public string Weapon;
         }
 
         /// <summary>Where a hit sits in a multi-hit move: lunge in on the first, stay in reach, go home after the last.</summary>
@@ -96,6 +98,18 @@ namespace Drakepg
             public int Facing = 1;
             public readonly List<Anim.Handle> Tweens = new List<Anim.Handle>();
             public float[] WeaponAngles = new float[0];
+            /// <summary>
+            /// Degrees the weapons are turned from their rest angles (+ = cocked back, - = swung forward). Unwrapped, so a
+            /// chop from far back to far forward goes the long way round, and a staff can twirl.
+            /// </summary>
+            public float WeaponTurn;
+
+            public void ApplyWeapons()
+            {
+                if (Fig == null) return;
+                for (int i = 0; i < Fig.Weapons.Count && i < WeaponAngles.Length; i++)
+                    if (Fig.Weapons[i] != null) Fig.Weapons[i].localRotation = Quaternion.Euler(0, 0, WeaponAngles[i] + WeaponTurn);
+            }
             public readonly List<Anim.Handle> WeaponTweens = new List<Anim.Handle>();
 
             public void Apply()
@@ -142,6 +156,7 @@ namespace Drakepg
             public void ReadWeapons()
             {
                 WeaponAngles = Fig.Weapons.Select(w => w.localEulerAngles.z).ToArray();
+                WeaponTurn = 0;
             }
 
             Anim.Handle shaping;
@@ -1345,10 +1360,20 @@ namespace Drakepg
                     Colors = e.Element != null ? colors : new[] { 0xffffffL, monster.Look.Color, monster.Look.Accent }, Element = e.Element,
                 };
             if (e.MoveId == "proc") return new Style { Kind = "proc", Colors = colors, Element = e.Element };
-            if (e.MoveId == "attack") return new Style { Kind = e.DamageType == "magic" ? "bolt" : "slash", Colors = colors, Element = e.Element };
+            var weapon = HeroWeaponKind();
+            if (e.MoveId == "attack") return new Style { Kind = e.DamageType == "magic" ? "bolt" : "slash", Colors = colors, Element = e.Element, Weapon = weapon };
             var skill = Db.Skill(e.MoveId);
-            if (e.DamageType == "magic") return new Style { Kind = "bolt", Colors = colors, Element = e.Element, Big = skill.Fx == "heavy" };
-            return new Style { Kind = skill.Fx == "heavy" ? "heavy" : "slash", Colors = colors, Element = e.Element, Epic = skill.Epic };
+            if (e.DamageType == "magic") return new Style { Kind = "bolt", Colors = colors, Element = e.Element, Big = skill.Fx == "heavy", Weapon = weapon };
+            return new Style { Kind = skill.Fx == "heavy" ? "heavy" : "slash", Colors = colors, Element = e.Element, Epic = skill.Epic, Weapon = weapon };
+        }
+
+        /// <summary>The kind of the hero's weapon in hand (its data, else from its damage type; fists swing like a sword).</summary>
+        string HeroWeaponKind()
+        {
+            var w = battle.Player.Weapon;
+            if (w == null) return "sword";
+            if (w.Kind != null) return w.Kind;
+            return w.DamageType == "pierce" ? "dagger" : w.DamageType == "magic" ? "staff" : "sword";
         }
 
         /// <summary>Player hits of the same skill in a row (multi-hit skills); monster moves and weapon specials stand alone.</summary>
@@ -1520,7 +1545,9 @@ namespace Drakepg
                     {
                         if (def.Harmful) Sfx.Play("debuff");
                         Fx.StatusMark(World, x, head - 20, color, !def.Harmful);
-                        if (def.Harmful) Fx.StatusPuff(World, x, GroundY - Chest, color);
+                        // Bleed opens a wound (on a monster: its own blood); other harmful statuses burst in their color.
+                        if (def.Harmful && e.Target == "enemy" && e.Status == "bleed") Fx.Bleed(World, x - 20, GroundY - Chest, 1, MonsterBlood, 0.4f, GroundY, GroundOrder);
+                        else if (def.Harmful) Fx.StatusPuff(World, x, GroundY - Chest, color);
                     }
                     SetShown(e.Target, def.Id, e.Turns);
                     RefreshStatuses();
@@ -1548,7 +1575,7 @@ namespace Drakepg
                         var tint = StatusColor(def, e.Element);
                         // Burn flickers with flames, Spores puff earth, Poison bubbles, Bleed drips.
                         if (e.Element != null && !def.Tint.HasValue) Fx.ElementBurst(World, x, GroundY - Chest, e.Element, 0.25f);
-                        else Fx.StatusPuff(World, x, GroundY - Chest, tint);
+                        else if (!(e.Target == "enemy" && e.Status == "bleed")) Fx.StatusPuff(World, x, GroundY - Chest, tint);
                         Fx.HitSparks(World, x, GroundY - Chest, true, false, def.Tint.HasValue ? new[] { 0xffffffL, tint, tint } : ColorsOf(e.Element));
                         Fx.WhiteFlash(f.Fig, 100, 0xffffff, tint);
                         if (e.Target == "enemy" && e.Status == "bleed")
@@ -1853,35 +1880,112 @@ namespace Drakepg
             }
         }
 
-        /// <summary>Cock the weapons a figure holds back (if its art shows them) `back` degrees, ready to swing.</summary>
-        static void Cock(Fighter f, float seconds, float back = 40)
+        /// <summary>
+        /// Turn the weapons a figure holds through `steps` one after another: each to an offset from rest (+ = back,
+        /// - = forward) over its seconds with its ease. A new call cuts the last one short.
+        /// </summary>
+        static void Turns(Fighter f, params (float to, float seconds, Ease ease)[] steps)
         {
             foreach (var t in f.WeaponTweens) t.Stop();
             f.WeaponTweens.Clear();
-            for (int i = 0; i < f.Fig.Weapons.Count; i++)
+            void Run(int i)
             {
-                var w = f.Fig.Weapons[i];
-                var baseAngle = f.WeaponAngles[i];
-                var from = w.localEulerAngles.z;
-                f.WeaponTweens.Add(Anim.Float(0, 1, seconds, t => { if (w != null) w.localRotation = Quaternion.Euler(0, 0, Mathf.LerpAngle(from, baseAngle + back, t)); }, Ease.CubicOut));
-            }
-        }
-
-        /// <summary>Swing the weapons a figure holds through the target and settle back.</summary>
-        static void Swing(Fighter f, bool big = false)
-        {
-            foreach (var t in f.WeaponTweens) t.Stop();
-            f.WeaponTweens.Clear();
-            for (int i = 0; i < f.Fig.Weapons.Count; i++)
-            {
-                var w = f.Fig.Weapons[i];
-                var baseAngle = f.WeaponAngles[i];
-                var from = w.localEulerAngles.z;
-                var through = baseAngle - (big ? 110 : 80);
-                var h = Anim.Float(0, 1, big ? 0.11f : 0.08f, t => { if (w != null) w.localRotation = Quaternion.Euler(0, 0, Mathf.LerpAngle(from, through, t)); }, Ease.QuadIn);
-                h.OnComplete(() => f.WeaponTweens.Add(Anim.Float(0, 1, big ? 0.22f : 0.16f, t => { if (w != null) w.localRotation = Quaternion.Euler(0, 0, Mathf.LerpAngle(through, baseAngle, t)); }, Ease.QuadOut)));
+                if (i >= steps.Length || f.Fig == null) return;
+                var (to, seconds, ease) = steps[i];
+                var from = f.WeaponTurn;
+                var h = Anim.Float(0, 1, Mathf.Max(0.001f, seconds), t =>
+                {
+                    f.WeaponTurn = Mathf.LerpUnclamped(from, to, t);
+                    f.ApplyWeapons();
+                }, ease);
+                h.OnComplete(() => Run(i + 1));
                 f.WeaponTweens.Add(h);
             }
+            Run(0);
+        }
+
+        /// <summary>Cock the weapons a figure holds back (if its art shows them) `back` degrees, ready to swing.</summary>
+        static void Cock(Fighter f, float seconds, float back = 40) => Turns(f, (back, seconds, Ease.CubicOut));
+
+        /// <summary>Swing the weapons a figure holds through the target and settle back.</summary>
+        static void Swing(Fighter f, bool big = false) =>
+            Turns(f, (big ? -110 : -80, big ? 0.11f : 0.08f, Ease.QuadIn), (0, big ? 0.22f : 0.16f, Ease.QuadOut));
+
+        /// <summary>How a weapon kind swings in the hero's hands: the four beats' timing and the weapon's arc.</summary>
+        sealed class Blow
+        {
+            /// <summary>Anticipation (s), its held beat (s), how big (0-1), how far the weapon is cocked back (degrees).</summary>
+            public float Antic, Hold, Power, Back;
+            /// <summary>Where the swing ends (degrees, - = forward) and how slowly it goes back after.</summary>
+            public float Through, SwingOut;
+            /// <summary>The lunge: its time, its hop, how much closer than usual it stops (px).</summary>
+            public float Lunge, Hop, Closer;
+            /// <summary>Follow-through: how far it carries on past (px) and how long it stays down; then the recovery (s).</summary>
+            public float Follow, FollowHold, Recover;
+            /// <summary>How far into the lunge the swing starts (0-1), so it lands as the body arrives.</summary>
+            public float SwingAt = 0.6f;
+        }
+
+        static readonly Dictionary<string, Blow> Blows = new Dictionary<string, Blow>
+        {
+            // A wide arc: cocked behind the head, through and past.
+            ["sword"] = new Blow { Antic = 0.14f, Hold = 0.04f, Power = 0.4f, Back = 75, Through = -110, SwingOut = 0.22f, Lunge = 0.11f, Hop = 14, Follow = 22, Recover = 0.3f },
+            // An overhead chop: raised high, brought straight down, held low a beat.
+            ["axe"] = new Blow { Antic = 0.2f, Hold = 0.06f, Power = 0.8f, Back = 80, Through = -95, SwingOut = 0.3f, Lunge = 0.12f, Hop = 20, Follow = 14, FollowHold = 0.12f, Recover = 0.32f, SwingAt = 0.45f },
+            // The heaviest: a long raise behind the head, a jump in, a slam into the ground.
+            ["hammer"] = new Blow { Antic = 0.26f, Hold = 0.09f, Power = 1, Back = 85, Through = -100, SwingOut = 0.36f, Lunge = 0.16f, Hop = 34, Follow = 8, FollowHold = 0.18f, Recover = 0.36f, SwingAt = 0.4f },
+            // Quick: a short pull back, a dash in close and a straight stab.
+            ["dagger"] = new Blow { Antic = 0.08f, Hold = 0.02f, Power = 0.25f, Back = 25, Through = -90, SwingOut = 0.16f, Lunge = 0.09f, Hop = 6, Closer = 34, Follow = 12, Recover = 0.22f, SwingAt = 0.7f },
+            // A staff in a melee blow: an overhead bonk, slower than a sword.
+            ["staff"] = new Blow { Antic = 0.18f, Hold = 0.05f, Power = 0.6f, Back = 100, Through = -80, SwingOut = 0.26f, Lunge = 0.12f, Hop = 16, Follow = 16, FollowHold = 0.06f, Recover = 0.3f, SwingAt = 0.5f },
+            // A wand in a melee blow: a quick jab.
+            ["wand"] = new Blow { Antic = 0.1f, Hold = 0.03f, Power = 0.3f, Back = 40, Through = -70, SwingOut = 0.18f, Lunge = 0.1f, Hop = 8, Closer = 20, Follow = 12, Recover = 0.24f, SwingAt = 0.65f },
+        };
+
+        static Blow BlowOf(string kind) => kind != null && Blows.TryGetValue(kind, out var b) ? b : Blows["sword"];
+
+        /// <summary>
+        /// The hero's blow with the weapon in hand, in the four beats, shaped by its kind: anticipation (cocked back by its
+        /// own amount, held), the lunge (the swing starts on the way in, so it lands as the body arrives), contact, follow-
+        /// through (held down a beat by the heavy ones; an axe or hammer hits the ground), recovery.
+        /// </summary>
+        async Task WeaponBlow(Fighter f, string source, int dir, float home, Vector2 target, long trail, Action onContact, Chain chain, string kind)
+        {
+            var b = BlowOf(kind);
+            var reach = target.x - (170 * StageScale - b.Closer) * dir;
+            if (chain.Finisher)
+            {
+                // The last blow: the scene darkens and the camera leans in as it winds up, a glint, then it strikes.
+                Dim(0.35f, 0.18f);
+                ViewIn((home + target.x) / 2, GroundY - 150, 1.08f, 0.2f);
+            }
+            await Anticipate(f, dir, b.Antic + (chain.Finisher ? 0.06f : 0), b.Hold + (chain.Finisher ? 0.06f : 0), chain.Finisher ? 1 : b.Power, back: b.Back);
+            if (chain.Finisher)
+            {
+                var tip = BladeTip(f);
+                if (tip.HasValue) Fx.Glint(World, tip.Value.x, tip.Value.y, 0xffffff, 2);
+                Sfx.Play("glint");
+            }
+            var lunge = Lunge(f, source, dir, reach, b.Lunge, b.Hop, trail);
+            // The swing ends right at contact, so the freeze on impact holds the blow at its extreme.
+            Anim.After(b.Lunge * b.SwingAt, () => Turns(f, (b.Through, b.Lunge * (1 - b.SwingAt), Ease.QuadIn), (b.Through, 0.06f + b.FollowHold, Ease.Linear),
+                (0, b.SwingOut, Ease.QuadOut)));
+            await lunge;
+            Fx.Dust(World, reach, GroundY, 3, Design.Depth(GroundY) + 1);
+            Sfx.Play("slash");
+            if (kind == "hammer" || kind == "axe")
+            {
+                // Down into the ground in front: a ring of dust across it and a thud.
+                var at = reach + 110 * StageScale * dir;
+                Fx.Shockwave(World, at, GroundY, 0xd9c8a9, kind == "hammer" ? 3.4f : 2.4f, 0.28f);
+                Fx.Dust(World, at, GroundY, kind == "hammer" ? 10 : 6, Design.Depth(GroundY) + 1);
+                GameRoot.I.Kick(2 * dir, kind == "hammer" ? 9 : 6);
+                Sfx.Play("thud");
+            }
+            onContact();
+            await FollowThrough(f, dir, b.Follow, 0.09f);
+            if (b.FollowHold > 0) await Anim.Wait(b.FollowHold);
+            if (chain.Last) await Recover(f, home, b.Recover);
         }
 
         /// <summary>Close the camera in on (x, y) at `zoom`, kept inside the picture (no black edges past the backdrop).</summary>
@@ -2044,9 +2148,9 @@ namespace Drakepg
         /// big the coming blow is: deeper, further back, longer. `drawn`: the figure is in a drawn key pose that already
         /// crouches, so the bend only leans it back.
         /// </summary>
-        static async Task Anticipate(Fighter f, int dir, float seconds, float hold, float power, bool drawn = false)
+        static async Task Anticipate(Fighter f, int dir, float seconds, float hold, float power, bool drawn = false, float back = -1)
         {
-            Cock(f, seconds, 40 + 30 * power);
+            Cock(f, seconds, back >= 0 ? back : 40 + 30 * power);
             f.Shape(1.06f + 0.07f * power, 0.94f - 0.07f * power, seconds, Ease.CubicOut);
             f.Pose(-(7 + 7 * power), drawn ? 0.1f : 0.45f + 0.5f * power);
             var fromX = f.X;
@@ -2196,13 +2300,14 @@ namespace Drakepg
                 // A small step back (a quick anticipation), then in again.
                 var fromX = f.X;
                 var back = reach - 32 * dir;
+                var blow = BlowOf(style.Weapon);
                 f.Pose(-5, 0.35f);
-                Cock(f, 0.05f);
+                Cock(f, 0.05f, blow.Back * 0.6f);
                 await Tw(f, 0.05f, t => f.X = Mathf.LerpUnclamped(fromX, back, t), Ease.CubicOut);
                 f.Pose(18, 0.3f);
+                Turns(f, (blow.Through, 0.06f, Ease.QuadIn), (0, blow.SwingOut, Ease.QuadOut));
                 await Tw(f, 0.05f, t => f.X = Mathf.LerpUnclamped(back, reach, t), Ease.QuadIn);
                 Sfx.Play("slash");
-                Swing(f);
                 onContact();
                 await FollowThrough(f, dir, 12, 0.06f);
                 if (chain.Last) await Recover(f, home, 0.28f);
@@ -2214,6 +2319,11 @@ namespace Drakepg
                 case "slash":
                 case "enemy-melee":
                 {
+                    if (style.Kind == "slash" && source == "player")
+                    {
+                        await WeaponBlow(f, source, dir, home, target, trail, onContact, chain, style.Weapon);
+                        break;
+                    }
                     // Monsters take longer to wind up, so you can see them coming; big ones longest (timing sells weight).
                     var monsterBlow = style.Kind == "enemy-melee";
                     var heavyMonster = monsterBlow && (monster.Boss || monster.Look.Scale >= 1.25);
@@ -2301,11 +2411,21 @@ namespace Drakepg
                         var charge = spit ? 180 : style.Big ? 520 : 300;
                         Sfx.Play("charge");
                         Fx.CastCircle(World, home, GroundY, style.Colors[1], charge);
+                        if (!spit && style.Weapon == "staff") Turns(f, (400, charge / 1000f, Ease.SineInOut));
+                        else if (!spit && style.Weapon == "wand") Turns(f, (55, 0.14f, Ease.CubicOut));
                         f.Strain(spit ? 1.4f : style.Big ? 2.2f : 1.2f);
                         await Fx.ChargeUp(World, f.X + 50 * dir, GroundY - Chest - 10, style.Colors[1], charge);
                         f.Strain(0);
                     }
-                    var hand = new Vector2(f.X + 50 * dir, GroundY - Chest - 10);
+                    if (!spit && (style.Weapon == "staff" || style.Weapon == "wand"))
+                    {
+                        // Release: the staff stops pointing at the foe; the wand flicks. The spell leaves from the tip.
+                        if (f.WeaponTurn > 180) f.WeaponTurn -= 360;
+                        var point = style.Weapon == "staff" ? -70 : -65;
+                        Turns(f, (point, style.Weapon == "staff" ? 0.07f : 0.05f, Ease.QuadIn), (point, 0.12f, Ease.Linear), (0, 0.28f, Ease.QuadOut));
+                        await Anim.Wait(0.05f);
+                    }
+                    var hand = (source == "player" ? BladeTip(f) : null) ?? new Vector2(f.X + 50 * dir, GroundY - Chest - 10);
                     Sfx.Play(style.Element == "energy" ? "zap" : "fireball");
                     // Combo bolts fly faster, without a new wind-up.
                     var flight = !chain.First ? 260 : spit ? 360 : style.Big ? 520 : 420;
@@ -2367,9 +2487,13 @@ namespace Drakepg
             // The blow itself: a crescent from the hero's weapon, claw rakes from a monster.
             if (style.Kind == "slash")
             {
+                // The weapon's mark: a sword's crescent, an axe's near-upright cleave, a dagger's stab, a hammer's crush.
                 long color = e.Element != null ? style.Colors[1] : 0xffffff;
                 twinFlip = !twinFlip;
-                Fx.Slash(World, x, y, dir, color, twinFlip ? 0.35f : -0.35f);
+                if (style.Weapon == "axe") Fx.Slash(World, x, y, dir, color, twinFlip ? 1.15f : 1.25f, true);
+                else if (style.Weapon == "dagger" || style.Weapon == "wand") Fx.Stab(World, x, y, dir, color);
+                else if (style.Weapon == "hammer" || style.Weapon == "staff") Fx.Impact(World, x, y, color, 1.7f);
+                else Fx.Slash(World, x, y, dir, color, twinFlip ? 0.35f : -0.35f);
             }
             else if (style.Kind == "enemy-melee") Fx.ClawMarks(World, x, y, dir, e.Element != null ? style.Colors[1] : MonsterHitColor);
             else if (style.Kind == "heavy")

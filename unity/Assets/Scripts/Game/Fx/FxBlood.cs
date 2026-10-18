@@ -78,9 +78,10 @@ namespace Drakepg
                 return;
             }
 
-            // Liquid: a fine spray of specks, a jet that arcs out of the wound (drops leaving one after another along
+            // Liquid: a splat on the body where the blow landed, a fine spray of specks, a jet that arcs out of the wound (drops leaving one after another along
             // nearly the same path, slowing, so they draw a curve), and heavier globs. Landing drops splash on the way
             // they were going.
+            WoundSplat(root, x, y, dir, color, dark, 0.7f + 0.35f * Mathf.Min(1.5f, amount));
             Burst(parent, x, y, Tex.Drop, Mathf.Min(40, Mathf.RoundToInt(10 + amount * 14)), new Emit
             {
                 Speed = Val.Rand(260, 720 + 200 * Mathf.Min(1, amount)),
@@ -116,6 +117,44 @@ namespace Drakepg
                 Drop(parent, root, x + Random.Range(-10f, 10f), y + Random.Range(-24f, 24f), vx, vy,
                     Random.Range(0.7f, 1.4f) * (0.85f + 0.25f * Mathf.Min(1.5f, amount)), Random.value < 0.35f ? dark : color, floorY, groundOrder, 0, 0.7f);
             }
+        }
+
+        /// <summary>
+        /// The splat where a blow lands on a body: a spatter flung the way the blow travels (dark rim, the blood's color
+        /// inside) that bursts out, holds a moment, then runs down and fades.
+        /// </summary>
+        static void WoundSplat(Transform root, float x, float y, int dir, long color, long dark, float size)
+        {
+            var holder = Holder(root, x, y, "wound splat");
+            holder.localScale = new Vector3(dir, 1, 1);
+            var tilt = Random.Range(-25f, 15f);
+            // The spatter's core sits left of its middle: shift it onto the hit.
+            var rim = Img(holder, Get(Tex.Spatter), 18 * size, 0, dark, 1, OrderFx - 2, false);
+            var inside = Img(holder, Get(Tex.Spatter), 18 * size, 0, color, 1, OrderFx - 1, false);
+            AngleTo(rim, tilt);
+            AngleTo(inside, tilt);
+            Tw(520, Lin, t =>
+            {
+                // Slaps on in 60 ms, holds, then runs down and fades.
+                var on = Mathf.Min(1, t / 0.12f);
+                var s = size * Mathf.Lerp(0.4f, 1, 1 - (1 - on) * (1 - on));
+                var run = Mathf.Max(0, (t - 0.45f) / 0.55f);
+                var a = 1 - run;
+                if (rim != null)
+                {
+                    ScaleTo(rim, s, s * (1 + 0.25f * run));
+                    SetAlpha(rim, a);
+                }
+                if (inside != null)
+                {
+                    ScaleTo(inside, s * 0.82f, s * (0.82f + 0.2f * run));
+                    SetAlpha(inside, a);
+                }
+                if (holder != null) holder.localPosition = P(x, y + 18 * run * run);
+            }, () =>
+            {
+                if (holder != null) Object.Destroy(holder.gameObject);
+            });
         }
 
         /// <summary>
@@ -175,8 +214,10 @@ namespace Drakepg
         static void Splat(Transform root, float x, float y, float size, long color, int order, float vx = 0)
         {
             var holder = Holder(root, x, y, "splat");
-            var moving = Mathf.Abs(vx) > 60;
-            holder.localScale = new Vector3(vx < 0 ? -1 : 1, 0.38f, 1);
+            // Every drop splashes on (a slow one a little smaller), so no round blots.
+            var moving = true;
+            if (Mathf.Abs(vx) < 60) size *= 0.8f;
+            holder.localScale = new Vector3(vx < 0 ? -1 : vx > 0 ? 1 : (Random.value < 0.5f ? -1 : 1), 0.38f, 1);
             // The splash texture's blob sits left of its middle: shift it so the blob is where the drop landed.
             var scale = moving ? size * 0.75f : size;
             var r = Img(holder, Get(moving ? Tex.Splash : Tex.Splat), moving ? 16 * scale : 0, 0, color, 0.95f, order, false);

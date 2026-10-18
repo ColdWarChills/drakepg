@@ -31,6 +31,15 @@ namespace Drakepg.EditorTools
             return $"{classId} Lv {p.Level} in {at.RoomId}";
         }
 
+        /// <summary>Give the hero a fresh piece of gear and put it on (a weapon goes in the hand).</summary>
+        public static string Wield(string itemId)
+        {
+            var p = Session.Player;
+            var gear = p.MakeGear(itemId);
+            p.Data.Gear.Add(gear);
+            return p.Equip(gear.Uid) ? $"wielding {itemId}" : $"could not equip {itemId}";
+        }
+
         /// <summary>Go to a room (its middle, or x/y).</summary>
         public static void Room(string roomId, float x = 640, float y = -1)
         {

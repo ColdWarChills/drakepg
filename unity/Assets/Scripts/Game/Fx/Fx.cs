@@ -119,16 +119,60 @@ namespace Drakepg
                 Colors = colors,
                 Add = true,
             });
-            Burst(parent, x, y, Tex.Soft, crit ? 10 : 5, new Emit
+            Impact(parent, x, y, palette != null ? mid : magic ? 0x9fd3ff : 0xffe7a0, crit ? 1.5f : 1.1f);
+        }
+
+        /// <summary>A dagger's stab: thin streaks shooting through the target the way the blade went, and a small impact.</summary>
+        public static void Stab(Transform parent, float x, float y, int dir, long color = 0xffffff)
+        {
+            dir = dir < 0 ? -1 : 1;
+            Burst(parent, x - 30 * dir, y, Tex.Streak, 4, new Emit
             {
-                Speed = Val.Rand(20, 120),
-                Scale = Val.Life(crit ? 2.2f : 1.5f, 0),
-                Alpha = Val.Life(0.9f, 0),
-                Lifespan = 300,
-                Tint = palette != null ? mid : magic ? 0x9fd3ff : 0xffe7a0,
-                Add = true,
+                Zone = new Rect(-10, -14, 20, 28),
+                SpeedX = Val.Rand(900 * dir, 1300 * dir),
+                FaceVelocity = 0,
+                ScaleX = Val.Life(1.3f, 0.4f),
+                ScaleY = 1.2f,
+                Alpha = Val.Life(1, 0),
+                Lifespan = 140,
+                Tint = color,
             });
-            Shockwave(parent, x, y, palette != null ? mid : magic ? 0x9fd3ff : 0xffffff, crit ? 2.2f : 1.4f, 1);
+            Impact(parent, x + 10 * dir, y, color, 0.8f);
+        }
+
+        /// <summary>
+        /// A flat comic impact where a blow lands: a jagged burst in `color` with a white one inside, popping out in a
+        /// blink and gone (no glow, no rings).
+        /// </summary>
+        public static void Impact(Transform parent, float x, float y, long color, float size = 1.1f)
+        {
+            var root = Root(parent);
+            if (root == null) return;
+            var spin = Random.Range(0f, 360f);
+            var outer = Img(root, Get(Tex.Impact), x, y, color, 1, Depth(903), false);
+            var inner = Img(root, Get(Tex.Impact), x, y, 0xffffff, 1, Depth(904), false);
+            AngleTo(outer, spin);
+            AngleTo(inner, spin + 20);
+            Tw(170, Lin, t =>
+            {
+                // Out fast (most of it in the first third), then thinning away.
+                var grow = Mathf.Min(1, t * 3);
+                var s = size * Mathf.Lerp(0.35f, 1.15f, 1 - (1 - grow) * (1 - grow));
+                if (outer != null)
+                {
+                    ScaleTo(outer, s, s * 0.9f);
+                    SetAlpha(outer, t < 0.4f ? 1 : 1 - (t - 0.4f) / 0.6f);
+                }
+                if (inner != null)
+                {
+                    ScaleTo(inner, s * 0.55f, s * 0.5f);
+                    SetAlpha(inner, t < 0.3f ? 1 : Mathf.Max(0, 1 - (t - 0.3f) / 0.4f));
+                }
+            }, () =>
+            {
+                Kill(outer);
+                Kill(inner);
+            });
         }
 
         /// <summary>A crescent sweep across a target. `dir` 1 = swinging from the left.</summary>
@@ -857,25 +901,29 @@ namespace Drakepg
         /// <summary>A status taking hold (or ticking): a cloud and bubbles in its color around the body.</summary>
         public static void StatusPuff(Transform parent, float x, float y, long color)
         {
-            Burst(parent, x, y, Tex.Soft, 12, new Emit
+            // Flat: a ring of diamonds in the status's color flung out from the body, and a few drifting up (no soft
+            // blobs or rings, which read as circles).
+            Burst(parent, x, y, Tex.Spark, 10, new Emit
             {
-                Zone = new Rect(-60, -60, 120, 120),
-                Speed = Val.Rand(10, 60),
-                Scale = Val.Life(1.6f, 0.2f),
-                Alpha = Val.Life(0.6f, 0),
-                Lifespan = 600,
+                EdgeRadius = 18,
+                EdgeCount = 10,
+                Speed = Val.Rand(140, 260),
+                FaceVelocity = 90,
+                Scale = Val.Life(1.1f, 0.3f),
+                Alpha = Val.Life(1, 0),
+                Lifespan = 340,
                 Tint = color,
             });
-            Burst(parent, x, y, Tex.Ring, 7, new Emit
+            Burst(parent, x, y, Tex.Spark, 5, new Emit
             {
-                Zone = new Rect(-50, -40, 100, 80),
-                SpeedY = Val.Rand(-120, -50),
-                SpeedX = Val.Rand(-20, 20),
-                Scale = Val.Life(0.12f, 0.3f),
+                Zone = new Rect(-50, -30, 100, 60),
+                SpeedY = Val.Rand(-140, -60),
+                SpeedX = Val.Rand(-15, 15),
+                FaceVelocity = 90,
+                Scale = Val.Life(0.7f, 0.2f),
                 Alpha = Val.Life(1, 0),
-                Lifespan = 600,
+                Lifespan = 520,
                 Tint = color,
-                Add = true,
             });
         }
 

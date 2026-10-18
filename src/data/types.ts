@@ -204,7 +204,12 @@ export interface WeaponDef extends ItemBase {
   grip?: number;
   /** Length on screen relative to the hero's height. Default 0.6. */
   size?: number;
+  /** How it's swung in battle (Unity): a sword's arc, an axe's chop, a hammer's smash, a dagger's stabs, a staff's twirl, a wand's flick. */
+  kind?: WeaponKind;
 }
+
+/** The family a weapon's attack animation comes from. */
+export type WeaponKind = 'sword' | 'axe' | 'hammer' | 'dagger' | 'staff' | 'wand';
 
 /** Where an armor piece is worn. Default: body. */
 export type ArmorSlot = 'body' | 'helm' | 'gloves' | 'boots';

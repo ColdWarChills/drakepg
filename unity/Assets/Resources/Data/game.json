@@ -825,7 +825,8 @@
    "damageType": "melee",
    "art": "wpn_training_sword",
    "grip": 0.79,
-   "size": 0.6
+   "size": 0.6,
+   "kind": "sword"
   },
   {
    "id": "worn_staff",
@@ -841,7 +842,8 @@
    "damageType": "magic",
    "art": "wpn_worn_staff",
    "grip": 0.45,
-   "size": 1
+   "size": 1,
+   "kind": "staff"
   },
   {
    "id": "rusty_dagger",
@@ -860,7 +862,8 @@
    "size": 0.3,
    "stats": {
     "dex": 1
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "iron_sword",
@@ -876,7 +879,8 @@
    "damageType": "melee",
    "art": "wpn_iron_sword",
    "grip": 0.78,
-   "size": 0.62
+   "size": 0.62,
+   "kind": "sword"
   },
   {
    "id": "oak_staff",
@@ -895,7 +899,8 @@
    "size": 1,
    "stats": {
     "int": 3
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "tusk_dagger",
@@ -914,7 +919,8 @@
    "size": 0.32,
    "stats": {
     "dex": 2
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "hunting_knife",
@@ -933,7 +939,8 @@
    "size": 0.32,
    "stats": {
     "dex": 1
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "cinder_fang",
@@ -964,7 +971,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "emberbrand",
@@ -986,7 +994,8 @@
     "name": "Flare",
     "chance": 0.12,
     "power": 0.6
-   }
+   },
+   "kind": "sword"
   },
   {
    "id": "ember_wand",
@@ -1006,7 +1015,8 @@
    "element": "fire",
    "stats": {
     "int": 2
-   }
+   },
+   "kind": "wand"
   },
   {
    "id": "thornheart_blade",
@@ -1038,7 +1048,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "sword"
   },
   {
    "id": "heartwood_staff",
@@ -1064,7 +1075,8 @@
     "chance": 0.15,
     "power": 0,
     "heal": 0.08
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "briar_fang",
@@ -1095,7 +1107,8 @@
       "turns": 3
      }
     ]
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "steel_broadsword",
@@ -1112,7 +1125,8 @@
    "iconColor": 11583173,
    "art": "wpn_steel_broadsword",
    "grip": 0.78,
-   "size": 0.64
+   "size": 0.64,
+   "kind": "sword"
   },
   {
    "id": "yew_staff",
@@ -1132,7 +1146,8 @@
    "size": 1,
    "stats": {
     "int": 4
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "fenwatch_stiletto",
@@ -1152,7 +1167,8 @@
    "size": 0.32,
    "stats": {
     "dex": 2
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "tidebreaker",
@@ -1184,7 +1200,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "sword"
   },
   {
    "id": "stormcleaver",
@@ -1213,7 +1230,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "axe"
   },
   {
    "id": "tidecaller_rod",
@@ -1245,7 +1263,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "wand"
   },
   {
    "id": "sparkglass_wand",
@@ -1277,7 +1296,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "wand"
   },
   {
    "id": "brinefang",
@@ -1309,7 +1329,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "sparkfang",
@@ -1335,7 +1356,8 @@
     "name": "Spark",
     "chance": 0.18,
     "power": 0.5
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "thunderhead_maul",
@@ -1368,7 +1390,8 @@
       "turns": 1
      }
     ]
-   }
+   },
+   "kind": "hammer"
   },
   {
    "id": "stormcoil_scepter",
@@ -1395,7 +1418,8 @@
     "chance": 0.15,
     "power": 0.4,
     "hits": 2
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "coilfang",
@@ -1431,7 +1455,8 @@
       "turns": 3
      }
     ]
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "travel_garb",
@@ -1609,7 +1634,8 @@
    "iconColor": 13621468,
    "art": "wpn_tempered_longsword",
    "grip": 0.77,
-   "size": 0.66
+   "size": 0.66,
+   "kind": "sword"
   },
   {
    "id": "larchwood_staff",
@@ -1629,7 +1655,8 @@
    "size": 1.05,
    "stats": {
     "int": 2
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "ridgerunner_kris",
@@ -1649,7 +1676,8 @@
    "size": 0.34,
    "stats": {
     "dex": 2
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "ridgeplate",
@@ -1715,7 +1743,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "sword"
   },
   {
    "id": "hoarfrost_staff",
@@ -1736,7 +1765,8 @@
    "size": 1.05,
    "stats": {
     "int": 3
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "icicle_kris",
@@ -1762,7 +1792,8 @@
     "name": "Shatter",
     "chance": 0.12,
     "power": 0.6
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "hearthfire_blade",
@@ -1794,7 +1825,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "sword"
   },
   {
    "id": "kindling_rod",
@@ -1815,7 +1847,8 @@
    "size": 1,
    "stats": {
     "int": 3
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "salamander_kris",
@@ -1841,7 +1874,8 @@
     "name": "Scorch",
     "chance": 0.12,
     "power": 0.6
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "frostpelt_vest",
@@ -1913,7 +1947,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "axe"
   },
   {
    "id": "mawtooth_staff",
@@ -1945,7 +1980,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "snowmaw_claw",
@@ -1977,7 +2013,8 @@
       "turns": 3
      }
     ]
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "whiteout",
@@ -2010,7 +2047,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "sword"
   },
   {
    "id": "squall_stave",
@@ -2042,7 +2080,8 @@
       "turns": 2
      }
     ]
-   }
+   },
+   "kind": "staff"
   },
   {
    "id": "galecutter",
@@ -2075,7 +2114,8 @@
       "self": true
      }
     ]
-   }
+   },
+   "kind": "dagger"
   },
   {
    "id": "recall_scroll",

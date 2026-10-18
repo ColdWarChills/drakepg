@@ -186,6 +186,8 @@ namespace Drakepg.Rules
         public ProcDef Proc;
         public string Art;
         public double? Grip, Size;
+        /// <summary>sword, axe, hammer, dagger, staff or wand: how it's swung in battle.</summary>
+        public string Kind;
         // armor (slot: body/helm/gloves/boots) and accessory (slot: ring/necklace)
         public string Slot;
         public Dictionary<string, double> Defense;

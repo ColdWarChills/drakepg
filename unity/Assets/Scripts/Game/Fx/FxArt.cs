@@ -12,7 +12,7 @@ namespace Drakepg
     public static partial class Fx
     {
         /// <summary>The particle textures (fx_soft, fx_spark, ... in fx.ts).</summary>
-        public enum Tex { Soft, Spark, Star, Leaf, Coin, Ring, Rock, Plus, Chevron, Streak, Drop, Splat, Splash }
+        public enum Tex { Soft, Spark, Star, Leaf, Coin, Ring, Rock, Plus, Chevron, Streak, Drop, Splat, Splash, Impact, Spatter }
 
         const float Density = 2;
         static Sprite[] sprites;
@@ -110,6 +110,38 @@ namespace Drakepg
             for (int i = 0; i < splash.Length; i += 3) c.Fill(Disc(splash[i], splash[i + 1], splash[i + 2], c.D), 0xffffff, 1);
             c.Fill(Inside(c.D, Poly(26, 13, 53, 16.5f, 53, 19.5f, 26, 24)), 0xffffff, 1);
             sprites[(int)Tex.Splash] = c.ToSprite("fx_splash");
+
+            // A comic impact: a jagged burst of uneven spikes (flat, no glow), drawn where a blow lands.
+            c = new Canvas(0, 0, 64, 64);
+            float[] spikes = { 31, 12, 27, 14, 30, 11, 25, 13, 31, 12, 28, 14 };
+            var burst = new float[spikes.Length * 2];
+            for (int i = 0; i < spikes.Length; i++)
+            {
+                float a = i / (float)spikes.Length * Mathf.PI * 2 + (i % 2 == 0 ? 0 : 0.08f);
+                burst[i * 2] = 32 + Mathf.Cos(a) * spikes[i];
+                burst[i * 2 + 1] = 32 + Mathf.Sin(a) * spikes[i];
+            }
+            c.Fill(Inside(c.D, Poly(burst)), 0xffffff, 1);
+            sprites[(int)Tex.Impact] = c.ToSprite("fx_impact");
+
+            // A blood spatter where a blow lands: a small ragged core and tapered spikes flung out of it, longest the way
+            // the blow travels (+x), each ending in a droplet.
+            c = new Canvas(0, 0, 96, 64);
+            const float cx = 30, cy = 32;
+            c.Fill(Disc(cx, cy, 10, c.D), 0xffffff, 1);
+            c.Fill(Disc(cx - 5, cy - 6, 6, c.D), 0xffffff, 1);
+            c.Fill(Disc(cx + 4, cy + 7, 6, c.D), 0xffffff, 1);
+            // (angle in degrees from +x, length, width at the core)
+            float[] arms = { 0, 46, 8, 17, 38, 7, -19, 40, 7, 38, 28, 6, -41, 30, 6, 62, 19, 5, -66, 21, 5, 98, 15, 4, -102, 14, 4, 138, 13, 4, -150, 12, 4, 178, 15, 5 };
+            for (int i = 0; i < arms.Length; i += 3)
+            {
+                float a = arms[i] * Mathf.Deg2Rad, len = arms[i + 1], wd = arms[i + 2];
+                float dx = Mathf.Cos(a), dy = Mathf.Sin(a), nx = -dy, ny = dx;
+                float bx = cx + dx * 6, by = cy + dy * 6, tx = cx + dx * len, ty = cy + dy * len;
+                c.Fill(Inside(c.D, Poly(bx + nx * wd / 2, by + ny * wd / 2, tx, ty, bx - nx * wd / 2, by - ny * wd / 2)), 0xffffff, 1);
+                c.Fill(Disc(cx + dx * (len + wd * 0.35f), cy + dy * (len + wd * 0.35f), wd * 0.42f, c.D), 0xffffff, 1);
+            }
+            sprites[(int)Tex.Spatter] = c.ToSprite("fx_spatter");
         }
 
         /// <summary>A particle texture as a sprite: scale 1 draws it at its design size (fx_soft is 32 px).</summary>
