@@ -21,8 +21,14 @@ namespace Drakepg
         public float DrawnHeight, DrawnWidth;
         public Look Look;
         public int Facing = 1;
+        /// <summary>The soft bones bending the picture (null until EnableBend).</summary>
+        public Bend Bend { get; private set; }
         SortingGroup group;
         Transform art;
+        /// <summary>Each weapon's hand pivot and the child holding its sprites (tilted by Bend).</summary>
+        readonly List<(Transform pivot, Transform held)> held = new List<(Transform, Transform)>();
+        /// <summary>The body is real art (not the placeholder shape).</summary>
+        bool hasArt;
 
         public static Figure Create(Transform parent, float x, float y, Look look, int facing = 1, ItemDef weapon = null, string sigil = null)
         {
@@ -52,6 +58,7 @@ namespace Drakepg
                 DrawnWidth = size.x * s;
                 AddShadow(DrawnWidth * 0.7f);
                 Body = AddSprite(sprite, art, 10, s);
+                hasArt = true;
                 var wSprite = Art.Get(weaponArt);
                 var wSize = Art.Size(wSprite);
                 var grip = (float)(weapon.Grip ?? 0.85);
@@ -63,11 +70,15 @@ namespace Drakepg
                     pivot.localRotation = Quaternion.Euler(0, 0, -(float)hand.Angle);
                     var ws = (float)(weapon.Size ?? 0.6) * DrawnHeight / wSize.y;
                     var offset = new Vector3(0, -(0.5f - grip) * wSize.y * ws, 0) / Design.PixelsPerUnit;
+                    // The sprites hang on a child of the pivot: screens swing the pivot, Bend tilts the child.
+                    var inHand = new GameObject("held").transform;
+                    inHand.SetParent(pivot, false);
+                    held.Add((pivot, inHand));
                     // Weapons lean away from the viewer: whole behind the body (the blade goes behind the head)...
-                    var back = AddSprite(wSprite, pivot, 5, ws);
+                    var back = AddSprite(wSprite, inHand, 5, ws);
                     back.transform.localPosition = offset;
                     // ...and the grip end again in front, from the guard down, its handle under the fist (drawn on top).
-                    var front = AddSprite(wSprite, pivot, 15, ws);
+                    var front = AddSprite(wSprite, inHand, 15, ws);
                     front.name = wSprite.name + " grip";
                     front.transform.localPosition = offset;
                     CutAboveGuard(front, wSprite, grip, wSize.y * ws);
@@ -104,6 +115,7 @@ namespace Drakepg
                     DrawnWidth = size.x * s;
                     AddShadow(DrawnWidth * 0.7f);
                     Body = AddSprite(sprite, art, 10, s);
+                    hasArt = true;
                 }
                 else BuildShape(look);
             }
@@ -291,6 +303,21 @@ namespace Drakepg
                 if (r == null || r.name == "shadow") continue;
                 r.color = new Color(c.r, c.g, c.b, r.color.a);
             }
+        }
+
+        /// <summary>
+        /// Let the picture bend on soft bones (breathing, weight shift, poses; see Bend). Null for placeholder shapes, or
+        /// while the testing switch `Bend.On` is off.
+        /// </summary>
+        public Bend EnableBend()
+        {
+            if (Bend != null || !Bend.On || !hasArt) return Bend;
+            Bend = gameObject.AddComponent<Bend>();
+            var parts = new List<SpriteRenderer>();
+            foreach (var r in Renderers)
+                if (r != null && r.transform.parent == art && r.name != "shadow") parts.Add(r);
+            Bend.Init(art, DrawnHeight, DrawnWidth, Body, parts, held);
+            return Bend;
         }
 
         /// <summary>The art (body and weapons) without the shadow, for bobbing and lunges.</summary>

@@ -194,6 +194,14 @@ namespace Drakepg
                 Toggle(4, "All unlocks", () => Cheats.AllFeatures, v => Cheats.AllFeatures = v,
                     "Forge, Sigils, chests and the rest without finishing chapters.");
 
+                // The soft-bone animation test (Bend): compare fighters with and without it.
+                Btn(700, 600, $"Bend fighters: {(Bend.On ? "ON" : "off")}", () =>
+                {
+                    Bend.On = !Bend.On;
+                    Render();
+                }, 220, Bend.On ? On : (Color?)null);
+                Ui.Text(c, 930, 598, "Animation test: breathing, sway, lean and crouch. Next fight.", 14, Palette.TextDim, wrap: 240);
+
                 Btn(40, 600, "Reset character...", ConfirmReset, 220, Danger);
             }
 

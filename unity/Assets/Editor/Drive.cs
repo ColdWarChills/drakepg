@@ -84,6 +84,38 @@ namespace Drakepg.EditorTools
             GameRoot.I.Snapshot(path);
         }
 
+        /// <summary>
+        /// Save `frames` pictures `1/fps` s of game time apart (Time.captureFramerate, so slow captures don't skip motion),
+        /// `width` px wide, as dir/f000.jpg...; then press battle button `press` (-1: none) `pressAt` s in.
+        /// </summary>
+        public static void Record(string dir, int frames, int fps = 20, int width = 1280, int press = -1, float pressAt = 0) =>
+            GameRoot.I.StartCoroutine(RecordLoop(dir, frames, fps, width, press, pressAt));
+
+        static IEnumerator RecordLoop(string dir, int frames, int fps, int width, int press, float pressAt)
+        {
+            System.IO.Directory.CreateDirectory(dir);
+            Time.captureFramerate = fps;
+            var rt = new RenderTexture(width, width * 9 / 16, 0);
+            var small = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+            for (int i = 0; i < frames; i++)
+            {
+                if (press >= 0 && i == Mathf.RoundToInt(pressAt * fps)) Press(press);
+                yield return new WaitForEndOfFrame();
+                var tex = ScreenCapture.CaptureScreenshotAsTexture();
+                Graphics.Blit(tex, rt);
+                RenderTexture.active = rt;
+                small.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                small.Apply();
+                RenderTexture.active = null;
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir, $"f{i:000}.jpg"), small.EncodeToJPG(92));
+                Object.Destroy(tex);
+            }
+            Time.captureFramerate = 0;
+            Object.Destroy(rt);
+            Object.Destroy(small);
+            Debug.Log($"drakepg: recorded {frames} frames to {dir}");
+        }
+
         /// <summary>What's on screen: the screen, open menus, the battle state.</summary>
         public static string State()
         {

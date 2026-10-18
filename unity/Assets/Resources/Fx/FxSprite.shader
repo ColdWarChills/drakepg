@@ -2,6 +2,7 @@
 // SRPDefaultUnlit), premultiplied output so one shader does normal alpha (Blend One OneMinusSrcAlpha) and additive glows
 // (Blend One One). `_Fill` 1 paints the sprite one solid color (the renderer color) through its alpha: hit flashes and
 // ghost silhouettes. Lives in Resources so builds always include it; Fx loads it with Resources.Load("Fx/FxSprite").
+// A figure's pictures bend on its soft bones (Bend.cginc, set per renderer by World/Bend.cs); others are left as they are.
 Shader "Drakepg/FxSprite"
 {
     Properties
@@ -36,10 +37,17 @@ Shader "Drakepg/FxSprite"
         Pass
         {
         CGPROGRAM
-            #pragma vertex SpriteVert
+            #pragma vertex BendSpriteVert
             #pragma fragment FxFrag
             #pragma target 2.0
             #include "UnitySprites.cginc"
+            #include "Bend.cginc"
+
+            v2f BendSpriteVert(appdata_t IN)
+            {
+                IN.vertex = BendVertex(IN.vertex);
+                return SpriteVert(IN);
+            }
 
             float _Fill;
 

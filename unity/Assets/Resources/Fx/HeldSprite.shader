@@ -5,6 +5,7 @@
 // the UV gives texels), z the offset, w a soft edge in texels (w <= 0: unused). `_Circle`: the circle in texture UVs
 // (center xy, radii zw; zw <= 0: unused). All set per renderer. Unlit and premultiplied like FxSprite; lives in
 // Resources so builds include it.
+// A figure's pictures bend on its soft bones (Bend.cginc, set per renderer by World/Bend.cs); others are left as they are.
 Shader "Drakepg/HeldSprite"
 {
     Properties
@@ -40,10 +41,17 @@ Shader "Drakepg/HeldSprite"
         Pass
         {
         CGPROGRAM
-            #pragma vertex SpriteVert
+            #pragma vertex BendSpriteVert
             #pragma fragment HeldFrag
             #pragma target 2.0
             #include "UnitySprites.cginc"
+            #include "Bend.cginc"
+
+            v2f BendSpriteVert(appdata_t IN)
+            {
+                IN.vertex = BendVertex(IN.vertex);
+                return SpriteVert(IN);
+            }
 
             float4 _Circle;
             float4 _LineA;

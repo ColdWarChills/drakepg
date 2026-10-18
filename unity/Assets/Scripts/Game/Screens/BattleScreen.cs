@@ -103,6 +103,9 @@ namespace Drakepg
                 return h;
             }
 
+            /// <summary>Bend the picture: lean (degrees, + = toward the foe) and crouch (0-1); `hold` > 0 springs back after it.</summary>
+            public void Pose(float lean, float crouch, float hold = -1) => Fig?.Bend?.Pose(lean, crouch, hold);
+
             public void Kill()
             {
                 foreach (var t in Tweens) t.Stop();
@@ -201,6 +204,7 @@ namespace Drakepg
 
             Backdrop.Draw(World, zone.Background, zone.Backdrop, BgRaise);
             hero = new Fighter { Fig = Figure.Create(World, -200, GroundY, PlayerLook, 1, Session.Player.Weapon, Session.Player.WeaponSigil), X = -200, Base = (float)PlayerLook.Scale };
+            hero.Fig.EnableBend();
             hero.ReadWeapons();
             if (Session.Player.WeaponSigil != null) Fx.SigilGlow(hero.Fig, Session.Player.WeaponSigil);
             if (monster.Elite != null || monster.Lucky)
@@ -217,6 +221,7 @@ namespace Drakepg
                 }, Ease.SineInOut, repeat: -1, yoyo: true);
             }
             foe = new Fighter { Fig = Figure.Create(World, Design.Width + 200, GroundY, monster.Look, -1), X = Design.Width + 200, Facing = -1, Base = (float)monster.Look.Scale };
+            foe.Fig.EnableBend();
             foe.ReadWeapons();
             hero.Apply();
             foe.Apply();
@@ -259,6 +264,8 @@ namespace Drakepg
             Fx.Dust(World, EnemyX, GroundY, 6, Design.Depth(GroundY) + 1);
             hero.Squash(1.1f, 0.9f);
             foe.Squash(1.1f, 0.9f);
+            hero.Pose(0, 0.8f, 0.14f);
+            foe.Pose(0, 0.8f, 0.14f);
             if (monster.Boss)
             {
                 Sfx.Play("warning");
@@ -300,7 +307,12 @@ namespace Drakepg
             holder.RemoveFromHierarchy();
         }
 
-        static void Idle(Fighter f) => f.Track(Anim.Float(1, 1.03f, 0.9f, v => f.Breath = v, Ease.SineInOut, repeat: -1, yoyo: true));
+        /// <summary>Breathing: the bent picture breathes by itself (Bend), a stiff one stretches a little.</summary>
+        static void Idle(Fighter f)
+        {
+            if (f.Fig != null && f.Fig.Bend != null) return;
+            f.Track(Anim.Float(1, 1.03f, 0.9f, v => f.Breath = v, Ease.SineInOut, repeat: -1, yoyo: true));
+        }
 
         public override void Tick(float dt)
         {
@@ -1270,6 +1282,7 @@ namespace Drakepg
             {
                 var s = shield;
                 shield = null;
+                hero.Pose(0, 0);
                 Anim.Float(0, 1, 0.25f, t =>
                 {
                     if (s == null) return;
@@ -1490,6 +1503,7 @@ namespace Drakepg
                     // A slow shimmer while it holds.
                     Anim.Float(1, 0.75f, 0.5f, a => { if (s != null && shield == s) s.Alpha = a; }, Ease.SineInOut, 0.22f, -1, true);
                     Fx.Aura(World, PlayerX, GroundY, GuardColor);
+                    hero.Pose(-3, 0.45f);
                     Float(PlayerX, GroundY - 290, e.Mp > 0 ? $"Defend  +{JsMath.Str(e.Mp)} MP" : "Defend", Palette.TextMagic, 28);
                     PushLog("You brace yourself.");
                     ShowMp();
@@ -1505,6 +1519,7 @@ namespace Drakepg
                     await hero.Track(Anim.Float(1, 0, 0.11f, v => hero.Sx = v, Ease.QuadIn)).Task;
                     UnityEngine.Object.Destroy(hero.Fig.gameObject);
                     hero.Fig = Figure.Create(World, PlayerX, GroundY, PlayerLook, 1, p.Weapon, p.WeaponSigil);
+                    hero.Fig.EnableBend();
                     hero.Base = (float)PlayerLook.Scale;
                     hero.ReadWeapons();
                     if (p.WeaponSigil != null) Fx.SigilGlow(hero.Fig, p.WeaponSigil);
@@ -1736,6 +1751,7 @@ namespace Drakepg
         {
             Cock(f, seconds);
             f.Shape(big ? 1.1f : 1.06f, big ? 0.88f : 0.94f, seconds);
+            f.Pose(big ? -9 : -6, big ? 0.9f : 0.45f);
             var fromX = f.X;
             var toX = f.X - (big ? 30 : 20) * dir;
             var toA = -(big ? 9 : 6) * dir;
@@ -1756,6 +1772,7 @@ namespace Drakepg
                 : Figure.Create(World, f.X, f.Y, monster.Look, -1);
             copy.transform.localScale = f.Fig.transform.localScale;
             copy.transform.localRotation = f.Fig.transform.localRotation;
+            if (f.Fig.Bend != null) copy.EnableBend()?.Freeze(f.Fig.Bend);
             copy.Order = f.Fig.Order - 1;
             Fx.FadeGhost(copy, color, alpha, ms);
         }
@@ -1797,12 +1814,18 @@ namespace Drakepg
             if (!chain.First && style.Kind != "bolt" && style.Kind != "proc")
             {
                 var fromX = f.X;
+                f.Pose(8, 0.3f);
                 await Tw(f, 0.06f, t => f.X = Mathf.LerpUnclamped(fromX, reach - 26 * dir, t), Ease.QuadOut, true);
                 Sfx.Play("slash");
                 Swing(f);
                 f.Squash(0.95f, 1.04f, 0.16f);
+                f.Pose(18, 0.3f);
                 onContact();
-                if (chain.Last) await MoveX(f, home, 0.24f, Ease.QuadOut, 0);
+                if (chain.Last)
+                {
+                    f.Pose(0, 0);
+                    await MoveX(f, home, 0.24f, Ease.QuadOut, 0);
+                }
                 return;
             }
 
@@ -1817,13 +1840,20 @@ namespace Drakepg
                     Fx.SpeedLines(World, f.X, GroundY, dir, trail);
                     // Stretched long through the lunge, squashed as the blow lands.
                     f.Shape(1.12f, 0.93f, 0.1f);
+                    f.Pose(14, 0.15f);
                     await MoveX(f, reach, 0.15f, Ease.QuadIn, 4 * dir);
                     Fx.Dust(World, reach, GroundY, 3, Design.Depth(GroundY) + 1);
                     Sfx.Play("slash");
                     Swing(f);
                     f.Squash(0.92f, 1.06f);
+                    // Follow through: the body pitches into the blow.
+                    f.Pose(20, 0.35f);
                     onContact();
-                    if (chain.Last) await MoveX(f, home, 0.24f, Ease.QuadOut, 0);
+                    if (chain.Last)
+                    {
+                        f.Pose(0, 0);
+                        await MoveX(f, home, 0.24f, Ease.QuadOut, 0);
+                    }
                     break;
                 }
                 case "heavy":
@@ -1837,6 +1867,7 @@ namespace Drakepg
                     var endX = target.x - 180 * dir;
                     // Tall and thin in the air, flattened on landing.
                     f.Shape(0.9f, 1.12f, 0.14f);
+                    f.Pose(-5, 0);
                     await Tw(f, 0.3f, t =>
                     {
                         f.X = Mathf.Lerp(startX, endX, t);
@@ -1847,6 +1878,7 @@ namespace Drakepg
                     Sfx.Play("slash");
                     Swing(f, true);
                     f.Squash(1.16f, 0.84f, 0.28f);
+                    f.Pose(22, 1, 0.28f);
                     onContact();
                     Fx.Dust(World, f.X, GroundY, 10, Design.Depth(GroundY) + 1);
                     GameRoot.I.Shake(0.18f, 13);
@@ -1861,6 +1893,7 @@ namespace Drakepg
                     {
                         // Gathering the spell: drawn up tall.
                         f.Shape(0.95f, 1.06f, 0.12f);
+                        f.Pose(-8, 0.25f);
                         await MoveX(f, home - 20 * dir, 0.12f, Ease.CubicOut);
                         var charge = spit ? 180 : style.Big ? 520 : 300;
                         Sfx.Play("charge");
@@ -1873,6 +1906,7 @@ namespace Drakepg
                     var flight = !chain.First ? 260 : spit ? 360 : style.Big ? 520 : 420;
                     var flying = Fx.Projectile(World, hand, target, style.Colors, flight, style.Element);
                     f.Squash(1.08f, 0.94f, 0.2f);
+                    f.Pose(13, 0.2f, 0.3f);
                     if (chain.First) await Task.WhenAll(MoveX(f, home + 20 * dir, 0.12f, Ease.BackOut), flying);
                     else await flying;
                     Sfx.Play("explode");
@@ -1979,6 +2013,8 @@ namespace Drakepg
 
             // The body gives under the blow, and the target's HUD piece shakes with it (ties the bar to the hit).
             f.Squash(guarded ? 0.97f : 0.9f - weight * 0.1f, guarded ? 1.02f : 1.06f + weight * 0.06f, 0.24f);
+            // Rocked back by the blow, the head snapping after.
+            f.Pose(guarded ? -3 : -(7 + weight * 30 + (e.Crit ? 6 : 0)), guarded ? 0.5f : 0.2f + weight, 0.14f);
             UiMotion.Jolt(targetSide == "player" ? heroHud : enemyHud, (guarded || dull ? 3 : 5) + weight * 22 + (e.Crit ? 5 : 0));
 
             var color2 = e.Element != null ? Palette.ElementText(e.Element) : magic ? Palette.TextMagic : e.Source == "enemy" ? Palette.TextBad : Color.white;
@@ -1999,6 +2035,7 @@ namespace Drakepg
             Fx.Slash(World, HomeX(side) - 60 * away, GroundY - Chest, -away, 0xffffff, 0);
             Fx.Dust(World, HomeX(side), GroundY, 4, Design.Depth(GroundY) + 1);
             var home = HomeX(side);
+            f.Pose(-14, 0.5f, 0.22f);
             f.Track(Anim.Float(0, 1, 0.12f, t => f.X = home + 60 * away * t, Ease.QuadOut))
                 .OnComplete(() => f.Track(Anim.Float(1, 0, 0.12f, t => f.X = home + 60 * away * t, Ease.QuadOut, 0.12f)));
             var spot = NumberSpot();
