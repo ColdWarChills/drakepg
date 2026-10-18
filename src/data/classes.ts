@@ -6,12 +6,12 @@ import type { ClassDef, Hand } from './types';
  */
 const HERO_ART = 'char_hero_bare';
 /**
- * The base hero's raised fist (front hand). Like a real grip, the handle runs straight through the fist, square to the
- * finger creases: in between thumb and index finger at the top, where the guard rests, and out right under the
- * little finger at the bottom. `fist` is the part drawn over the grip in Unity (fingers and thumb, down to the little
- * finger's lower edge at y 145), so the handle shows again under it.
+ * The base hero's raised fist (front hand), in layers like a real grip: the hero's art is the palm behind the handle,
+ * then the handle, then the fingers that wrap it (`part_hero_fingers`). Grip line and fingers come from an edit of the
+ * art where the fist grips a rod (scripts/grip_hands.py layers 1912959231): the handle goes under the index finger at
+ * the top, where the guard rests, and comes out under the curled fingertips at the bottom.
  */
-const RAISED_FIST: Hand = { x: 231, y: 136, angle: 5, fist: { x: 234, y: 130, r: 18, bottom: 145 } };
+const RAISED_FIST: Hand = { x: 235.1, y: 133.5, angle: -10, fingers: { art: 'part_hero_fingers', x: 190, y: 95 } };
 
 export const CLASSES: ClassDef[] = [
   {

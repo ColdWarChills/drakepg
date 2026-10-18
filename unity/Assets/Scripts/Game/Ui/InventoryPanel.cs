@@ -95,29 +95,67 @@ namespace Drakepg
                 var body = Art.Get(key);
                 foreach (var hand in hands)
                 {
-                    var fist = Figure.Fist(body, size, hand, out var at);
-                    if (fist == null) continue;
-                    float fw = fist.rect.width / body.rect.width * size.x, fh = fist.rect.height / body.rect.height * size.y;
-                    // The fist's circle, cut off under the little finger like in the world: a round element in a clip.
-                    var y0 = size.y - at.y - fh;
-                    var bottom = (float)(Figure.ShapeOf(hand).Bottom ?? y0 + fh);
-                    var clip = new VisualElement { pickingMode = PickingMode.Ignore, name = "fist" };
-                    Ui.Place(clip, x + (at.x - size.x / 2) * s * k, top + y0 * s * k);
-                    Ui.Size(clip, fw * s * k, Mathf.Clamp(bottom - y0, 0, fh) * s * k);
-                    clip.style.overflow = Overflow.Hidden;
-                    var f = new VisualElement { pickingMode = PickingMode.Ignore };
-                    Ui.Place(f, 0, 0);
-                    Ui.Size(f, fw * s * k, fh * s * k);
-                    f.style.backgroundImage = new StyleBackground(fist);
-                    f.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
-                    Ui.Round(f, Mathf.Min(fw, fh) * s * k / 2);
-                    clip.Add(f);
-                    root.Add(clip);
+                    // The fingers that wrap the handle on top, like Figure; a hand without them gets a circle of the fist.
+                    if (hand.Fingers != null && Art.Has(hand.Fingers.Art))
+                    {
+                        var fs = Art.Size(Art.Get(hand.Fingers.Art));
+                        Ui.Image(root, x + ((float)hand.Fingers.X - size.x / 2) * s * k, top + (float)hand.Fingers.Y * s * k, fs.x * s * k, fs.y * s * k,
+                            hand.Fingers.Art);
+                        continue;
+                    }
+                    var circle = new List<Vector2>();
+                    for (int i = 0; i < 24; i++)
+                    {
+                        var ang = i / 24f * Mathf.PI * 2;
+                        circle.Add(new Vector2((float)hand.X + Mathf.Cos(ang) * Figure.FistRadius, (float)hand.Y + Mathf.Sin(ang) * Figure.FistRadius));
+                    }
+                    if (body != null) root.Add(new HandOverGrip(body, size, circle, x - size.x / 2 * s * k, top, s * k));
                 }
                 return root;
             }
             Ui.Image(root, x - w / 2, top, w, h, key);
             return root;
+        }
+
+        /// <summary>
+        /// The menus' version of Figure's circle of the fist over the grip (hands without a fingers sprite): the body's own
+        /// pixels inside `poly` (1x art px from the art's top-left) as a textured mesh. The art's top-left is drawn at
+        /// (left, top) with `scale` UI px per 1x px.
+        /// </summary>
+        sealed class HandOverGrip : VisualElement
+        {
+            public HandOverGrip(Sprite body, Vector2 size, List<Vector2> poly, float left, float top, float scale)
+            {
+                pickingMode = PickingMode.Ignore;
+                name = "fist";
+                Ui.Place(this, left, top);
+                Ui.Size(this, size.x * scale, size.y * scale);
+                var tex = body.texture;
+                var k = body.rect.width / size.x;
+                // UI meshes are wound clockwise (y down).
+                float area = 0;
+                for (int i = 0; i < poly.Count; i++) area += poly[i].x * poly[(i + 1) % poly.Count].y - poly[(i + 1) % poly.Count].x * poly[i].y;
+                if (area < 0) poly = Enumerable.Reverse(poly).ToList();
+                generateVisualContent += ctx =>
+                {
+                    if (poly.Count < 3) return;
+                    var mesh = ctx.Allocate(poly.Count, (poly.Count - 2) * 3, tex);
+                    foreach (var p in poly)
+                        mesh.SetNextVertex(new Vertex
+                        {
+                            position = new Vector3(p.x * scale, p.y * scale, Vertex.nearZ),
+                            tint = Color.white,
+                            uv = mesh.uvRegion.position + Vector2.Scale(mesh.uvRegion.size,
+                                new Vector2((body.rect.x + p.x * k) / tex.width, (body.rect.y + (size.y - p.y) * k) / tex.height)),
+                        });
+                    for (int i = 1; i + 1 < poly.Count; i++)
+                    {
+                        mesh.SetNextIndex(0);
+                        mesh.SetNextIndex((ushort)i);
+                        mesh.SetNextIndex((ushort)(i + 1));
+                    }
+                };
+            }
         }
 
         static void Shadow(VisualElement parent, float x, float y, float w, float h)

@@ -86,10 +86,12 @@ export interface Hand {
   /** Weapon angle in degrees: 0 = pointing up, 90 = pointing forward. */
   angle: number;
   /**
-   * The part of the hand drawn over the grip (Unity): a circle (center, radius, 1x px) cut off below `bottom`, the
-   * little finger's lower edge, so the handle shows again under it. Default: a circle of 17 around (x, y).
+   * The fingers that wrap the handle, a sprite drawn over it (Unity): the hero's own art is the palm behind the handle,
+   * then the handle, then these fingers. `x`, `y`: the sprite's top-left on the bare art, 1x px. Made by
+   * scripts/grip_hands.py from an edit of the art where the fist grips a rod. Without it, a circle of the fist is
+   * drawn over the grip.
    */
-  fist?: { x: number; y: number; r: number; bottom?: number };
+  fingers?: { art: string; x: number; y: number };
 }
 
 export interface SkillDef {

@@ -492,14 +492,13 @@
      "art": "char_hero_bare",
      "hands": [
       {
-       "x": 231,
-       "y": 136,
-       "angle": 5,
-       "fist": {
-        "x": 234,
-        "y": 130,
-        "r": 18,
-        "bottom": 145
+       "x": 235.1,
+       "y": 133.5,
+       "angle": -10,
+       "fingers": {
+        "art": "part_hero_fingers",
+        "x": 190,
+        "y": 95
        }
       }
      ]
@@ -586,14 +585,13 @@
      "art": "char_hero_bare",
      "hands": [
       {
-       "x": 231,
-       "y": 136,
-       "angle": 5,
-       "fist": {
-        "x": 234,
-        "y": 130,
-        "r": 18,
-        "bottom": 145
+       "x": 235.1,
+       "y": 133.5,
+       "angle": -10,
+       "fingers": {
+        "art": "part_hero_fingers",
+        "x": 190,
+        "y": 95
        }
       }
      ]
@@ -680,14 +678,13 @@
      "art": "char_hero_bare",
      "hands": [
       {
-       "x": 231,
-       "y": 136,
-       "angle": 5,
-       "fist": {
-        "x": 234,
-        "y": 130,
-        "r": 18,
-        "bottom": 145
+       "x": 235.1,
+       "y": 133.5,
+       "angle": -10,
+       "fingers": {
+        "art": "part_hero_fingers",
+        "x": 190,
+        "y": 95
        }
       },
       {
