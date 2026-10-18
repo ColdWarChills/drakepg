@@ -6,11 +6,12 @@ import type { ClassDef, Hand } from './types';
  */
 const HERO_ART = 'char_hero_bare';
 /**
- * The base hero's raised fist (front hand): the grip runs from the thumb, where the guard rests, to just under the
- * little finger's lower edge (y 145), where the handle comes out in front of the heel of the hand; so weapons lean
- * back (the blade goes behind the head in Unity's Figure.cs).
+ * The base hero's raised fist (front hand). Like a real grip, the handle runs straight through the fist, square to the
+ * finger creases: in between thumb and index finger at the top, where the guard rests, and out right under the
+ * little finger at the bottom. `fist` is the part drawn over the grip in Unity (fingers and thumb, down to the little
+ * finger's lower edge at y 145), so the handle shows again under it.
  */
-const RAISED_FIST: Hand = { x: 227, y: 134, angle: -35, fist: { x: 234, y: 130, r: 18, bottom: 145 } };
+const RAISED_FIST: Hand = { x: 231, y: 136, angle: 5, fist: { x: 234, y: 130, r: 18, bottom: 145 } };
 
 export const CLASSES: ClassDef[] = [
   {
