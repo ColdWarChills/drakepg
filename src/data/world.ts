@@ -320,8 +320,8 @@ export const ROOMS: RoomDef[] = [
     exits: [
       { side: 'left', to: 'fen_road', label: 'Mirewater Fen', requiresQuest: 'rising_waters', blocker: 'barricade' },
       { side: 'right', to: 'thornwood_path', label: 'Thornwood' },
-      // The north gate to the Frostfangs (drawn until the town art shows one).
-      { side: 'back', x: 1080, frame: 'gate', to: 'frostfang_pass', label: 'Frostfang Pass', requiresQuest: 'cold_scale', blocker: 'snowdrift' },
+      // The north gate to the Frostfangs: the arched door in the town wall at the right of the art.
+      { side: 'back', x: 1108, to: 'frostfang_pass', label: 'Frostfang Pass', requiresQuest: 'cold_scale', blocker: 'snowdrift' },
     ],
     npcs: [
       {
@@ -449,7 +449,7 @@ export const ROOMS: RoomDef[] = [
     ambient: ['fireflies'],
     exits: [{ side: 'back', x: 640, to: 'thornwood_path', label: 'Thornwood Path' }],
     npcs: [],
-    campfire: { x: 400, y: 640 },
+    campfire: { x: 532, y: 586 }, // in the art's stone ring
     inspect: [
       {
         id: 'hunters_note',
@@ -578,6 +578,8 @@ export const ROOMS: RoomDef[] = [
         lines: ["Crates stamped with Tobin's mark. So that is where his spring stock went."],
       },
     ],
+    // The bandits' stash: a sure chest from the return trips on (chests open after Chapter 1, when hunts send you back).
+    chest: { x: 960, y: 668 },
     zoneId: 'bramble_hideout',
     monsterCount: 2,
   },
@@ -1048,7 +1050,7 @@ export const ROOMS: RoomDef[] = [
     exits: [
       { side: 'left', to: 'hearthold', label: 'Hearthold' },
       { side: 'right', to: 'high_trail', label: 'The High Trail' },
-      { side: 'back', x: 640, frame: 'cave', to: 'steamvent_caves', label: 'Steamvent Caves' },
+      { side: 'back', x: 672, to: 'steamvent_caves', label: 'Steamvent Caves' },
     ],
     npcs: [],
     zoneId: 'windscour',
@@ -1148,7 +1150,7 @@ export const ROOMS: RoomDef[] = [
       {
         id: 'lookout_door',
         label: 'Clawed door',
-        x: 1000,
+        x: 880,
         y: 600,
         look: 'marks',
         lines: ['Deep claw marks on the door, on the outside. Whatever made them wanted in, then gave up.'],

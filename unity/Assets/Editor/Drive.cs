@@ -198,6 +198,66 @@ namespace Drakepg.EditorTools
             Debug.Log($"drakepg: recorded {frames} frames to {dir}");
         }
 
+        /// <summary>
+        /// Visit rooms in turn (space-separated ids) and save a picture of each as dir/&lt;room&gt;.png, `wait` s after
+        /// arriving (open menus are closed first). Mark the rooms visited beforehand to skip their first-visit scenes.
+        /// </summary>
+        public static void Tour(string rooms, string dir, float wait = 1.6f) =>
+            GameRoot.I.StartCoroutine(TourLoop(rooms.Split(' '), dir, wait));
+
+        static IEnumerator TourLoop(string[] rooms, string dir, float wait)
+        {
+            System.IO.Directory.CreateDirectory(dir);
+            foreach (var id in rooms)
+            {
+                if (string.IsNullOrEmpty(id)) continue;
+                while (UiModal.OpenCount > 0) Close();
+                Room(id);
+                yield return new WaitForSeconds(wait);
+                while (UiModal.OpenCount > 0)
+                {
+                    Close();
+                    yield return new WaitForSeconds(0.4f);
+                }
+                GameRoot.I.Snapshot(System.IO.Path.Combine(dir, id + ".png"));
+                yield return new WaitForSeconds(0.4f);
+            }
+            Debug.Log($"drakepg: tour done, {rooms.Length} rooms in {dir}");
+        }
+
+        /// <summary>
+        /// Fight each "monster:zone:room" in turn at full HP, attacking until it ends; a picture 2.5 s in goes to
+        /// dir/&lt;monster&gt;.png. Logs each outcome.
+        /// </summary>
+        public static void Battles(string spec, string dir) => GameRoot.I.StartCoroutine(BattleLoop(spec.Split(' '), dir));
+
+        static IEnumerator BattleLoop(string[] fights, string dir)
+        {
+            System.IO.Directory.CreateDirectory(dir);
+            var results = new List<string>();
+            foreach (var f in fights)
+            {
+                var parts = f.Split(':');
+                if (parts.Length != 3) continue;
+                while (UiModal.OpenCount > 0) Close();
+                Session.Player.RestoreFull();
+                Fight(parts[0], parts[1], parts[2]);
+                yield return new WaitForSeconds(2.5f);
+                GameRoot.I.Snapshot(System.IO.Path.Combine(dir, parts[0] + ".png"));
+                yield return new WaitForSeconds(0.4f);
+                string outcome = null;
+                for (int i = 0; i < 600 && Screen is BattleScreen; i++)
+                {
+                    if (Field("battle") is Battle b) outcome = b.State;
+                    Press(0);
+                    yield return new WaitForSeconds(0.25f);
+                }
+                results.Add($"{parts[0]}={outcome}");
+                yield return new WaitForSeconds(1.5f);
+            }
+            Debug.Log("drakepg: battles " + string.Join(", ", results));
+        }
+
         /// <summary>What's on screen: the screen, open menus, the battle state.</summary>
         public static string State()
         {

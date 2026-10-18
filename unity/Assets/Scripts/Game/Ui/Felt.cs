@@ -779,6 +779,40 @@ namespace Drakepg
         public static Sheet Runner(VisualElement parent, float y, int seed) =>
             MakePatch(parent, -12, y, Design.Width + 24, 200, seed, Patch.Runner());
 
+        static readonly Dictionary<string, bool> iconExists = new Dictionary<string, bool>();
+
+        /// <summary>Whether Resources/UiIcons has a drawing by this name (skills and statuses: `skill_<id>`, `status_<id>`).</summary>
+        public static bool HasIcon(string name)
+        {
+            if (name == null) return false;
+            if (!iconExists.TryGetValue(name, out var has))
+                iconExists[name] = has = Resources.Load<Texture2D>("UiIcons/" + name) != null;
+            return has;
+        }
+
+        /// <summary>A status chip with its icon: the chip's felt holds the icon (cream ink) and then the text.</summary>
+        public static VisualElement IconChip(string rich, Color color, string icon, float fontSize = 15, int seed = 1)
+        {
+            var label = Chip(rich, color, fontSize, seed);
+            if (!HasIcon(icon)) return label;
+            var chip = new VisualElement { pickingMode = PickingMode.Ignore };
+            chip.style.flexDirection = FlexDirection.Row;
+            chip.style.alignItems = Align.Center;
+            chip.style.height = label.style.height;
+            chip.style.backgroundColor = label.style.backgroundColor;
+            chip.style.paddingLeft = 4;
+            Ui.Round(chip, 7);
+            chip.AddToClassList(FeltPass.Keep);
+            label.style.backgroundColor = Color.clear;
+            label.style.paddingLeft = 3;
+            var size = Mathf.Round(fontSize + 5);
+            var ic = Icon(null, 0, 0, size, icon, true);
+            ic.style.position = Position.Relative;
+            chip.Add(ic);
+            chip.Add(label);
+            return chip;
+        }
+
         /// <summary>An icon from Resources/UiIcons (hand-drawn, scripts/ui_icons.py); `light`: the cream-ink set for dark felt.</summary>
         public static VisualElement Icon(VisualElement parent, float x, float y, float size, string name, bool light = false)
         {

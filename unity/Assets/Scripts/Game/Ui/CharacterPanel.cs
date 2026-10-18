@@ -115,7 +115,7 @@ namespace Drakepg
                     var carried = known && player.IsCarried(skill.Id);
                     var x = 380 + (i / perColumn) * 230;
                     var y = 230 + (i % perColumn) * 32;
-                    var row = SkillRow(c, x, y, known, carried, !known ? $"Lv {entry.Level}  {skill.Name}" : skill.Name);
+                    var row = SkillRow(c, x, y, known, carried, !known ? $"Lv {entry.Level}  {skill.Name}" : skill.Name, "skill_" + skill.Id);
                     var cd = skill.Cooldown > 0 ? $", cooldown {skill.Cooldown}" : "";
                     var describe = $"{skill.Name} ({PanelKit.Num(skill.MpCost)} MP{cd}): {skill.Description}";
                     row.pickingMode = PickingMode.Position;
@@ -152,7 +152,7 @@ namespace Drakepg
         /// One skill line: a diamond (filled = carried, hollow = learned; none when not learned yet) and the name.
         /// The TS uses the ◆/◇ glyphs, which the default font may not have, so the diamond is drawn.
         /// </summary>
-        static VisualElement SkillRow(VisualElement c, float x, float y, bool known, bool carried, string text)
+        static VisualElement SkillRow(VisualElement c, float x, float y, bool known, bool carried, string text, string icon = null)
         {
             var color = carried ? Palette.TextMagic : known ? Palette.Text : Palette.TextDim;
             var row = new VisualElement();
@@ -170,6 +170,17 @@ namespace Drakepg
                 if (carried) gem.style.backgroundColor = color;
                 else Ui.Border(gem, 1.5f, color);
                 row.Add(gem);
+            }
+            // The skill's drawing (faded until it's learned).
+            if (Felt.HasIcon(icon))
+            {
+                var ic = Felt.Icon(null, 0, 0, 22, icon, true);
+                ic.style.position = Position.Relative;
+                ic.style.flexShrink = 0;
+                ic.style.marginLeft = known ? 0 : 21;
+                ic.style.marginRight = 7;
+                ic.style.opacity = known ? 1 : 0.4f;
+                row.Add(ic);
             }
             var label = new Label(text) { pickingMode = PickingMode.Ignore };
             label.style.fontSize = 17;

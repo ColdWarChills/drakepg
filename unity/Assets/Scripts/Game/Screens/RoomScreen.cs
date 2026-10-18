@@ -431,14 +431,14 @@ namespace Drakepg
             if (!news.Any) return;
             Features.MarkSeen(P, news);
             Save(false);
-            var rows = new List<(string title, string text, Color color)>();
-            foreach (var f in news.Features) rows.Add((f.Name, f.Text, Palette.TextGold));
+            var rows = new List<(string title, string text, Color color, string icon)>();
+            foreach (var f in news.Features) rows.Add((f.Name, f.Text, Palette.TextGold, null));
             foreach (var s in news.Skills)
             {
                 var element = s.Element != null && s.Element != "weapon" ? $" · {Db.Data.ElementLabels[s.Element]}" : "";
                 var cd = s.Cooldown > 0 ? $" · cooldown {s.Cooldown}" : "";
                 var slot = P.IsCarried(s.Id) ? "" : $" Your {Db.B.SkillSlots} skill slots are full: carry it from the Character panel (C).";
-                rows.Add(($"New skill: {s.Name}  ({s.MpCost} MP{element}{cd})", s.Description + slot, Palette.TextMagic));
+                rows.Add(($"New skill: {s.Name}  ({s.MpCost} MP{element}{cd})", s.Description + slot, Palette.TextMagic, "skill_" + s.Id));
             }
             Sfx.Play("quest");
             var height = Math.Min(640, 150 + rows.Count * 84);
@@ -450,7 +450,23 @@ namespace Drakepg
             modal.Content.Add(list);
             foreach (var r in rows)
             {
-                list.Add(FlowText(r.title, 20, r.color, true, 4));
+                var title = FlowText(r.title, 20, r.color, true, 4);
+                if (Felt.HasIcon(r.icon))
+                {
+                    // A new skill shows its drawing next to its name.
+                    var head = new VisualElement { pickingMode = PickingMode.Ignore };
+                    head.style.flexDirection = FlexDirection.Row;
+                    head.style.alignItems = Align.Center;
+                    head.style.marginBottom = 4;
+                    var ic = Felt.Icon(null, 0, 0, 30, r.icon, true);
+                    ic.style.position = Position.Relative;
+                    ic.style.marginRight = 8;
+                    head.Add(ic);
+                    title.style.marginBottom = 0;
+                    head.Add(title);
+                    list.Add(head);
+                }
+                else list.Add(title);
                 list.Add(FlowText(r.text, 16, Palette.Text, false, 14));
             }
             new UiButton(modal.Content, 380, height - 44, "Got it", () => modal.Close(Refresh), 180, 48);

@@ -48,6 +48,8 @@ MIN_2X_SHARE = 0.75
 BG_FOCUS: dict[str, float] = {"bg_brindlemoor": 0.75, "bg_windscour_ridge": 0.75}
 # Backgrounds kept at their own aspect (scaled to 720 tall). The scene lays them out itself.
 BG_KEEP_ASPECT = {"bg_title"}
+# Map pages (`bg_map_<area>`, scripts/redo_art.py MAPS) keep their wide shape at the height the map shows them.
+MAP_HEIGHT = 408
 
 # Sprites that came out facing left. Game art faces right; the engine mirrors enemies itself.
 FLIP: set[str] = set()
@@ -83,7 +85,10 @@ def pick_res(size: int, size_1x: int, max_res: int) -> int:
 def process_background(src: Path, key: str, max_res: int) -> Path:
     img = Image.open(src).convert("RGB")
     w, h = img.size
-    if key in BG_KEEP_ASPECT:
+    if key.startswith("bg_map_"):
+        res = pick_res(h, MAP_HEIGHT, max_res)
+        img = img.resize((round(w * MAP_HEIGHT * res / h), MAP_HEIGHT * res), Image.LANCZOS)
+    elif key in BG_KEEP_ASPECT:
         res = pick_res(h, BG_SIZE[1], max_res)
         img = img.resize((round(w * BG_SIZE[1] * res / h), BG_SIZE[1] * res), Image.LANCZOS)
     else:

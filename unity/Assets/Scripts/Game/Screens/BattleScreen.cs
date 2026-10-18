@@ -976,8 +976,14 @@ namespace Drakepg
                 foreach (var kv in shown[side])
                 {
                     var def = Db.Status(kv.Key);
-                    var chip = Felt.Chip($"{def.Name} {kv.Value}", def.Harmful ? Design.Hex(0xd9604a) : Design.Hex(0x6aa84f), 15, seed++);
+                    var chip = Felt.IconChip($"{def.Name} {kv.Value}", def.Harmful ? Design.Hex(0xd9604a) : Design.Hex(0x6aa84f), "status_" + def.Id, 15, seed++);
                     chip.style.marginRight = 6;
+                    // Hover (or tap) says what it does, in the log's place, like the skill buttons.
+                    var note = $"{def.Name} ({kv.Value} turn{(kv.Value == 1 ? "" : "s")} left): {def.Description}";
+                    chip.pickingMode = PickingMode.Position;
+                    chip.RegisterCallback<PointerEnterEvent>(_ => ShowNote(note, 17));
+                    chip.RegisterCallback<PointerDownEvent>(_ => ShowNote(note, 17));
+                    chip.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
                     row.Add(chip);
                     // A new status is sewn on with a pop; the ones already there just change their number.
                     if (before.Contains(kv.Key)) continue;
@@ -1056,7 +1062,9 @@ namespace Drakepg
             var effect = battle.SkillEffect(skill);
             var sub = cd > 0 ? $"Ready in {cd}" : $"{fresh}{JsMath.Str(skill.MpCost)} MP{(kind != null ? $" · {kind}" : "")}{(effect != null ? $" · {EffectLabels[effect]}" : "")}";
             var cdText = skill.Cooldown > 0 ? $" Cooldown {skill.Cooldown}." : "";
-            var icon = skill.Kind == "heal" ? "cross" : skill.Kind == "buff" ? "rise" : skill.DamageType == "magic" ? "spark" : skill.DamageType == "pierce" ? "arrow" : "sword";
+            // Each skill's own drawing (scripts/ui_icons.py), else one by kind.
+            var icon = Felt.HasIcon("skill_" + skill.Id) ? "skill_" + skill.Id
+                : skill.Kind == "heal" ? "cross" : skill.Kind == "buff" ? "rise" : skill.DamageType == "magic" ? "spark" : skill.DamageType == "pierce" ? "arrow" : "sword";
             return new MenuButton
             {
                 Label = skill.Name, Sub = sub, Enabled = battle.CanUseSkill(skill.Id), Hover = $"{skill.Name}: {skill.Description}{cdText}",

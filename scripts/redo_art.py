@@ -151,8 +151,9 @@ NEW = {
                             "shown alone as a game inventory icon."),
     "icon_briarberry": ("1:1", "A small cluster of dark purple-red berries on a thorny bramble twig with two leaves, shown "
                         "alone as a game inventory icon."),
-    "icon_scorched_twig": ("1:1", "A single charred black twig with glowing orange embers at its broken end and a wisp of "
-                           "smoke, shown alone as a game inventory icon."),
+    "icon_scorched_twig": ("1:1", "A single short, thick forked branch, charred black and cracked like charcoal, glowing "
+                           "orange embers in the cracks and at its broken end, a thin wisp of smoke, lying diagonally "
+                           "and filling most of the square, shown alone as a game inventory icon."),
     "icon_stolen_trinket": ("1:1", "A single small gold locket on a broken chain, its lid open a crack, shown alone as a "
                             "game inventory icon."),
     "icon_bog_lily": ("1:1", "A single pale white-green lily flower with a long dripping stem and a lily pad leaf, shown "
@@ -226,6 +227,9 @@ OUTFITS = {
 }
 
 
+WINTER = ("Only snow, ice, snow-laden dark pines and bare grey rock: no green leafy trees, no grass, no bushes, no "
+          "autumn colours. The bottom 30% of the image is flat packed snow running across the full width.")
+
 # Old prompts whose subject changes in the redo. key: subject (aspect and pose stay).
 FIXES = {
     # Traveler's Garb is the base hero's own clothes (no outfit art): the icon shows them.
@@ -255,10 +259,11 @@ FIXES = {
                         "statues with a coiled serpent carved on them, small offerings of coins on the top step, "
                         "sideways rain, lightning striking a stone far off. In the foreground the bottom 30% of the image "
                         "is a flat, dry paved stone terrace running across the full width, no water on it."),
-    "bg_steamvent_caves": ("Inside a warm volcanic cave: dark rock walls and stalactites framing the scene, glowing orange "
-                           "hot pools and steam vents set back in the middle distance, a few red crystals. In the "
-                           "foreground the bottom 30% of the image is a flat floor of solid dark rock running across the "
-                           "full width, no lava or water on it."),
+    "bg_steamvent_caves": ("Inside a warm volcanic cave deep in a mountain. The whole picture is the cave: dark rock "
+                           "walls on the left and right and a low rock ceiling with stalactites across the top. Glowing "
+                           "orange hot pools and steam vents set back in the middle distance, a few red crystals. No sky, "
+                           "no clouds, no trees, no plants anywhere. In the foreground the bottom 30% of the image is a "
+                           "flat floor of solid dark rock running across the full width, no lava or water on it."),
     "icon_storm_scale": ("A single long slate-blue heron crest feather with small yellow lightning sparks crackling along "
                          "it, shown alone as a game inventory icon."),
     # The one old dragon stays in the story (docs/ART_PLAN.md, dragon clean-up): only a dim shape deep in the ice.
@@ -268,11 +273,77 @@ FIXES = {
     "mon_mossling": ("A small, cute but mischievous moss creature monster: a round blob of green moss and lichen with "
                      "two big round yellow eyes with small dark pupils, tiny mushrooms and leaves growing on top, stubby "
                      "root-like feet."),
+    # Frostfang rooms whose first tries came out with summer-green trees and meadows (the style reference is a green
+    # forest): deep winter spelled out, landmarks where the exits and props are.
+    "bg_windscour_ridge": ("A wind-blasted ridge high in the mountains in deep winter: snow streaming off the rocks, bare "
+                           "icy boulders, a few snow-laden dark pines, a stormy grey sky, and in the exact middle of the "
+                           "image a dark cave mouth in the cliff face with faint orange steam glowing inside, at the back "
+                           "edge of the walkable ground. " + WINTER),
+    "bg_rangers_lookout": ("A small wooden rangers' lookout hut half buried in snow on a mountain ledge in deep winter, "
+                           "its door hanging open with deep claw marks, a cold fire pit, a lookout platform on stilts; "
+                           "at the right edge, the dark mouth of a den between snowy cliffs. " + WINTER),
+    "bg_snowmaw_den": ("A deep snowy hollow between grey cliffs in deep winter: huge gnawed bones half buried in snow, a "
+                       "giant flattened nest of snow and white fur, icicles hanging from the rocks, cold grey light. "
+                       + WINTER),
+    "bg_roost_stair": ("Ancient wide stone steps cut into a snowy mountainside in deep winter, climbing toward the right, "
+                       "tall pillars of blue ice with glowing runes on both sides, a cold blue light at the top right. "
+                       + WINTER),
+    "bg_hot_springs": ("Inside a dark rock cave deep in a mountain. The whole picture is the cave: dark rock walls on "
+                       "the left and right and a low rock ceiling with stalactites across the top. A large steaming hot "
+                       "spring pool with turquoise water set back in the middle, smooth warm rocks around it, soft orange "
+                       "light from glowing volcanic vents in the back wall, steam drifting up, a few red crystals. No sky, "
+                       "no clouds, no trees, no plants anywhere. In the foreground the bottom 30% of the image is a flat "
+                       "floor of solid dark rock running across the full width, no water on it."),
+    "bg_high_trail": ("A narrow high mountain trail along a cliff in deep winter: snow, wind-blown ice, chunks of broken "
+                      "blue ice like shattered statues, a sheer drop with clouds below on the far side, a pale winter "
+                      "sky. " + WINTER),
+    # The eel was dropped as a sample, but it roams three Fen zones (Tough, absorbs Energy): it needs its picture.
+    # Battle sprites stand on nothing, so it rears up out of nothing instead of a puddle.
+    "mon_volt_eel": ("A big electric swamp eel monster rearing up in a tall S-curve like a cobra: a long slippery dark "
+                     "teal body with a pale yellow belly, a row of glowing yellow spots along its sides, a ragged fin "
+                     "along its spine crackling with small yellow lightning sparks, a wide flat head with small glowing "
+                     "yellow eyes and an open mouth of needle teeth. No water, no puddle, no ground under it."),
     "bg_frozen_roost": ("A mountaintop roost: a vast frozen plateau under a blizzard sky, tall ice pillars carved with "
                         "faintly glowing blue runes, and behind them a towering wall of thick blue ice with a huge dark "
                         "shape sleeping deep inside it, only a curled horn and a closed eye faintly visible through the "
                         "ice. Only snow, ice and bare grey rock up here: no green trees, no plants. The bottom 30% of the image is "
                         "flat, open, snowy ground running across the full width."),
+}
+
+
+# Map pages (src/data/map.ts): one panorama per area behind the map's route, `bg_map_<area>`. Seen from high above like
+# a paper-cut relief map, laid out in the direction the page's rooms run, with each end's landmark at its edge. No
+# roads: the game draws the route on top.
+MAP_STYLE = (
+    "A wide illustrated map of a small region for a 2D fantasy RPG, seen from high above at a steep angle like a "
+    "paper-cut relief map: every hill, tree clump, rock, pool and roof is cut from matte coloured card paper and "
+    "stacked in flat layers, with soft shadows between the layers. Flat colours with a fine paper grain, clean cut "
+    "edges, no outlines, big simple shapes with few small details, a soft muted palette and gentle even light. The "
+    "land fills the whole picture edge to edge: no sky, no border, no frame, no compass, no roads, no paths, no "
+    "bridges, no characters, no text, no letters, no labels."
+)
+MAPS = {
+    "bg_map_road": ("Gentle green farmland divided by hedgerows into small fields, a few round trees and wildflower "
+                    "meadows. At the far left edge the corner of a small walled town with red roofs. In the middle a "
+                    "little stream with a stone watermill beside it. Toward the right more hedges and low rolling hills."),
+    "bg_map_thornwood": ("A forest region. At the far left edge a small walled market town with red and brown roofs. "
+                         "From there to the right a bright, friendly green forest of round trees with a few sunny "
+                         "clearings and one giant fallen oak, growing darker, denser and thornier toward the right. "
+                         "Near the right edge a wall of black thorny brambles, and at the far right a dark hollow "
+                         "around one huge twisted dead tree with a faint green glow."),
+    # Landmarks sit where their rooms do on the page (MapPanel lays the rooms out on a grid; fractions from the left).
+    "bg_map_fen": ("A misty marsh region of reed beds, shallow green pools and mud islands with a few crooked trees. At "
+                   "the far left edge, an old stone shrine half sunk in dark water under stormy violet mist. Around "
+                   "two thirds from the left, a short line of broken old stone arches standing in the water. Around "
+                   "four fifths from the left, a small village of wooden houses on stilts over the water. The marsh is "
+                   "dark and stormy at the left and turns calmer and greener toward the right."),
+    "bg_map_frostfang": ("A snowy mountain region seen from above. At the far left edge, a pass between snowy pine "
+                         "forests. Around one fifth from the left, in the lower half, a small village of a few "
+                         "snow-roofed log cabins with chimney smoke. Around one third from the left, higher up in the "
+                         "upper half, a dark cave mouth in a grey cliff with white steam rising beside a small turquoise "
+                         "hot spring. The middle and right half are wind-swept snowy ridges and rocky ledges, then ice "
+                         "fields with tall blue ice crystals, climbing to the far right edge where a mountaintop of "
+                         "glowing blue ice stands. Only snow, ice, pines and grey rock."),
 }
 
 
@@ -308,6 +379,10 @@ def build(key: str, prompts: dict) -> tuple[str, tuple[int, int], list[str]]:
                 "art style with hard-edged shadows, thin dark lines and a warm golden rim light. No weapon anywhere. "
                 f"No ground, no shadow, no text. {RGBA_CLOSE}")
         return text, None, ["hero_base.png"]
+    if key in MAPS:
+        ref = ("Use <image1> only as an example of the paper-cut style, the palette and the light: none of its trees, "
+               "hills or layout appear in this map.")
+        return f"{MAPS[key]} {MAP_STYLE} {ref}", (2048, 768), ["bg.png"]
     if key in HERO:
         text = (f"{RGBA_OPEN} Full body, {HERO_KEEP}, {HERO[key]}. The whole figure visible with empty margin around "
                 f"it. No sword, no weapon, no ground, no shadow, no background. {RGBA_CLOSE}")
@@ -378,7 +453,8 @@ def keys_of(prefix: str, prompts: dict) -> list[str]:
 
 def generate(keys: list[str], seeds: int, dry: bool) -> None:
     prompts = old_prompts()
-    missing = [k for k in keys if k not in prompts and k not in NEW and k not in HERO and not k.startswith("outfit_")]
+    missing = [k for k in keys if k not in prompts and k not in NEW and k not in HERO and k not in MAPS
+               and not k.startswith("outfit_")]
     if missing:
         sys.exit(f"No subject for: {', '.join(missing)}")
     if dry:
