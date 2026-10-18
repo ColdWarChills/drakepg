@@ -87,6 +87,8 @@ namespace Drakepg
                     Ui.Size(f, fw * s * k, fh * s * k);
                     f.style.backgroundImage = new StyleBackground(fist);
                     f.style.backgroundSize = new BackgroundSize(Length.Percent(100), Length.Percent(100));
+                    // The fist's circle (Figure.FistRadius), like the soft circle in the world.
+                    Ui.Round(f, Mathf.Min(fw, fh) * s * k / 2);
                     root.Add(f);
                 }
                 return root;

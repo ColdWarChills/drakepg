@@ -70,6 +70,7 @@ namespace Drakepg
                     if (fist == null) continue;
                     var f = AddSprite(fist, art, 20, s);
                     f.name = "fist";
+                    RoundFist(f, fist);
                     f.transform.localPosition = new Vector3((at.x - size.x / 2) * s, at.y * s, 0) / Design.PixelsPerUnit;
                 }
             }
@@ -91,22 +92,25 @@ namespace Drakepg
             transform.localScale = new Vector3((float)look.Scale * facing, (float)look.Scale, 1);
         }
 
-        /// <summary>The fist around a hand anchor, in 1x art px from the anchor: wide enough for the knuckles, down to the wrist.</summary>
-        const float FistHalfWidth = 20, FistAbove = 22, FistBelow = 13;
+        /// <summary>The fist: a circle this many 1x art px around the hand anchor (the art's fists are about 36 px across).</summary>
+        public const float FistRadius = 17;
 
         static readonly Dictionary<(int, int, int), Sprite> fists = new Dictionary<(int, int, int), Sprite>();
+        static Material fistMaterial;
+        static readonly int CircleId = Shader.PropertyToID("_Circle");
 
         /// <summary>
-        /// The fist of `body` around `hand` as its own sprite (the same texture, no copy), drawn over the weapon so the
-        /// grip disappears into the fist: the fists in the art are closed and face the viewer, so a held weapon passes
-        /// in front of the palm and under the fingers. Only the fist's own pixels cover the weapon (the rest of the
-        /// rectangle is transparent), so the guard above it and the pommel below show. `at`: the sprite's bottom-left
-        /// in 1x px from the art's bottom-left.
+        /// The fist of `body` around `hand` as its own sprite (the square around the fist circle, the same texture, no
+        /// copy), drawn over the weapon so the grip disappears into the fist: the fists in the art are closed and face
+        /// the viewer, so a held weapon passes in front of the palm and under the fingers. Drawn through a soft circle
+        /// (Fx/FistSprite.shader; a round clip in the menus), only the fist's own pixels cover the weapon, so the
+        /// guard above it and the pommel below show, and the cut follows the fist's round outline. `at`: the sprite's
+        /// bottom-left in 1x px from the art's bottom-left.
         /// </summary>
         public static Sprite Fist(Sprite body, Vector2 size, Hand hand, out Vector2 at)
         {
-            float x0 = Mathf.Max(0, (float)hand.X - FistHalfWidth), x1 = Mathf.Min(size.x, (float)hand.X + FistHalfWidth);
-            float y0 = Mathf.Max(0, (float)hand.Y - FistAbove), y1 = Mathf.Min(size.y, (float)hand.Y + FistBelow);
+            float x0 = Mathf.Max(0, (float)hand.X - FistRadius), x1 = Mathf.Min(size.x, (float)hand.X + FistRadius);
+            float y0 = Mathf.Max(0, (float)hand.Y - FistRadius), y1 = Mathf.Min(size.y, (float)hand.Y + FistRadius);
             at = new Vector2(x0, size.y - y1);
             if (body == null || x1 <= x0 || y1 <= y0) return null;
             var key = (body.GetInstanceID(), Mathf.RoundToInt((float)hand.X), Mathf.RoundToInt((float)hand.Y));
@@ -118,6 +122,24 @@ namespace Drakepg
             fist.name = body.name + "_fist";
             fists[key] = fist;
             return fist;
+        }
+
+        /// <summary>A renderer that draws `fist` through its soft circle.</summary>
+        static void RoundFist(SpriteRenderer r, Sprite fist)
+        {
+            if (fistMaterial == null)
+            {
+                var shader = Resources.Load<Shader>("Fx/FistSprite");
+                if (shader == null) return;
+                fistMaterial = new Material(shader) { name = "Fist" };
+            }
+            r.sharedMaterial = fistMaterial;
+            var tex = fist.texture;
+            var rect = fist.rect;
+            var block = new MaterialPropertyBlock();
+            r.GetPropertyBlock(block);
+            block.SetVector(CircleId, new Vector4(rect.center.x / tex.width, rect.center.y / tex.height, rect.width / 2 / tex.width, rect.height / 2 / tex.height));
+            r.SetPropertyBlock(block);
         }
 
         void AddShadow(float width)
