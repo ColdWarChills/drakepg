@@ -2478,8 +2478,15 @@ namespace Drakepg
                         var charge = spit ? 180 : style.Big ? 520 : 300;
                         Sfx.Play("charge");
                         Fx.CastCircle(World, home, GroundY, style.Colors[1], charge);
-                        if (!spit && source == "player" && PoseOf(f, style.Weapon, "wind") != null) SwapPose(f, source, PoseOf(f, style.Weapon, "wind"));
-                        if (!spit && style.Weapon == "staff") Turns(f, (400, charge / 1000f, Ease.SineInOut));
+                        var gatherPose = !spit && source == "player" ? PoseOf(f, style.Weapon, "wind") : null;
+                        if (gatherPose != null)
+                        {
+                            // The drawn pose already raises or cocks the weapon: only a small sway on top (turning it
+                            // further pointed the wand flat out behind his head).
+                            SwapPose(f, source, gatherPose);
+                            Turns(f, (5, charge / 2000f, Ease.SineInOut), (-3, charge / 2000f, Ease.SineInOut));
+                        }
+                        else if (!spit && style.Weapon == "staff") Turns(f, (400, charge / 1000f, Ease.SineInOut));
                         else if (!spit && style.Weapon == "wand") Turns(f, (55, 0.14f, Ease.CubicOut));
                         f.Strain(spit ? 1.4f : style.Big ? 2.2f : 1.2f);
                         await Fx.ChargeUp(World, f.X + 50 * dir, GroundY - Chest - 10, style.Colors[1], charge);

@@ -37,7 +37,7 @@ const HERO_POSES: Record<string, Hand[]> = {
   staff_wind: [{ x: 75, y: 21, angle: 0 }],
   staff_step: [{ x: 186, y: 35, angle: 30 }],
   staff_strike: [{ x: 379, y: 123, angle: 80 }],
-  wand_wind: [{ x: 96, y: 79, angle: -40 }],
+  wand_wind: [{ x: 96, y: 79, angle: -12 }],
   wand_step: [{ x: 217, y: 133, angle: 40 }],
   wand_strike: [{ x: 357, y: 100, angle: 75 }],
 };
