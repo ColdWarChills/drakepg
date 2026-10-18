@@ -14,6 +14,16 @@ Shader "Drakepg/FxSprite"
         [PerRendererData] _AlphaTex ("External Alpha", 2D) = "white" {}
         [PerRendererData] _EnableExternalAlpha ("Enable External Alpha", Float) = 0
         _Fill ("Fill With Color", Float) = 0
+        // Soft-bone bend (Bend.cginc), set per renderer by World/Bend.cs. Declared so a renderer without a bend draws with
+        // these zeros: undeclared, the last bent figure's values leaked into the next sprites drawn and warped them.
+        [PerRendererData] _BendXf ("Bend object to figure", Vector) = (0,0,0,0)
+        [PerRendererData] _BendJ ("Bend joints", Vector) = (0,0,0,0)
+        [PerRendererData] _BendA0 ("Bend legs", Vector) = (1,0,0,1)
+        [PerRendererData] _BendA1 ("Bend body", Vector) = (1,0,0,1)
+        [PerRendererData] _BendA2 ("Bend head", Vector) = (1,0,0,1)
+        [PerRendererData] _BendT01 ("Bend t01", Vector) = (0,0,0,0)
+        [PerRendererData] _BendT2 ("Bend t2", Vector) = (0,0,0,0)
+        [PerRendererData] _BendWave ("Bend wave", Vector) = (0,0,0,1)
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 10
     }

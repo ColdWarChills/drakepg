@@ -262,6 +262,23 @@ namespace Drakepg
         }
 
         /// <summary>Sets a renderer's material when there is one (without the shader, sprites keep their default).</summary>
+        static MaterialPropertyBlock texBlock;
+        static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+
+        /// <summary>
+        /// Pin a sprite renderer's texture in its own property block. Effect sprites share a few materials, and without
+        /// this Unity now and then drew one with another's texture (a crisp blood spatter came out as the soft glow dot:
+        /// "circles instead of splats"). Call after setting the sprite.
+        /// </summary>
+        public static void BindTexture(SpriteRenderer r)
+        {
+            if (r == null || r.sprite == null) return;
+            texBlock ??= new MaterialPropertyBlock();
+            r.GetPropertyBlock(texBlock);
+            texBlock.SetTexture(MainTexId, r.sprite.texture);
+            r.SetPropertyBlock(texBlock);
+        }
+
         static void Use(Renderer r, Material m)
         {
             if (m != null) r.sharedMaterial = m;
@@ -401,14 +418,16 @@ namespace Drakepg
                 // Rows run bottom-up in a texture; the canvas is y down like the web.
                 var flipped = new Color[W * H];
                 for (int j = 0; j < H; j++) Array.Copy(px, j * W, flipped, (H - 1 - j) * W, W);
-                var tex = new Texture2D(W, H, TextureFormat.RGBA32, true)
+                // No mipmaps: effects are drawn at their own size or bigger, and a smaller copy got sampled now and then
+                // (a crisp spatter flickering into a soft red blob).
+                var tex = new Texture2D(W, H, TextureFormat.RGBA32, false)
                 {
                     name = name,
                     wrapMode = TextureWrapMode.Clamp,
                     filterMode = FilterMode.Bilinear,
                 };
                 tex.SetPixels(flipped);
-                tex.Apply(true, true);
+                tex.Apply(false, true);
                 var s = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), D * Design.PixelsPerUnit, 0, SpriteMeshType.FullRect);
                 s.name = name;
                 return s;

@@ -1425,6 +1425,7 @@ namespace Drakepg
             var t = Holder(under, x, y, sprite != null ? sprite.name : "fx");
             var r = t.gameObject.AddComponent<SpriteRenderer>();
             r.sprite = sprite;
+            BindTexture(r);
             Use(r, add ? AdditiveMaterial : AlphaMaterial);
             r.sortingOrder = order;
             r.color = Design.Hex(color, alpha);

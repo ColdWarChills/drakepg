@@ -40,6 +40,52 @@ namespace Drakepg.EditorTools
             return p.Equip(gear.Uid) ? $"wielding {itemId}" : $"could not equip {itemId}";
         }
 
+        static GameObject poseSheet;
+
+        /// <summary>
+        /// Line up the hero (`classId`'s look) holding `weaponId` in each of `poses` ("sword_wind,sword_step", "" for
+        /// standing) across the current screen, to check a pose's hands. `hands` overrides a pose's first hand for the
+        /// test: "pose=x,y,angle;pose2=..." (1x px). Call again to redo; Close it with an empty pose list.
+        /// </summary>
+        public static string PoseSheet(string classId, string weaponId, string poses, string hands = "")
+        {
+            if (poseSheet != null) Object.Destroy(poseSheet);
+            if (string.IsNullOrEmpty(poses)) return "cleared";
+            var look = Db.Class(classId).Look;
+            var bare = look.Bare[0];
+            foreach (var part in hands.Split(';'))
+            {
+                var kv = part.Split('=');
+                if (kv.Length != 2 || !bare.Poses.TryGetValue(kv[0], out var list)) continue;
+                var n = kv[1].Split(',');
+                var c = System.Globalization.CultureInfo.InvariantCulture;
+                int i = n.Length > 3 ? int.Parse(n[3]) : 0;
+                list[i].X = double.Parse(n[0], c);
+                list[i].Y = double.Parse(n[1], c);
+                list[i].Angle = double.Parse(n[2], c);
+            }
+            poseSheet = new GameObject("pose sheet");
+            poseSheet.transform.SetParent(Screen.World, false);
+            // A plain backdrop so the weapons read.
+            var plate = new GameObject("plate").AddComponent<SpriteRenderer>();
+            plate.transform.SetParent(poseSheet.transform, false);
+            plate.sprite = Art.White;
+            plate.color = new Color(0.9f, 0.88f, 0.83f);
+            plate.sortingOrder = 29000;
+            plate.transform.position = Design.World(Design.Width / 2, Design.Height / 2);
+            plate.transform.localScale = new Vector3(Design.Width * 2, Design.Height * 2, 1);
+            var names = poses.Split(',');
+            var weapon = Db.Item(weaponId);
+            for (int k = 0; k < names.Length; k++)
+            {
+                var x = (k + 0.5f) * Design.Width / names.Length;
+                var fig = Figure.Create(poseSheet.transform, x, 560, look, 1, weapon);
+                fig.Order = 30000;
+                if (names[k] != "") fig.SetPose(names[k]);
+            }
+            return $"{names.Length} figures";
+        }
+
         /// <summary>Go to a room (its middle, or x/y).</summary>
         public static void Room(string roomId, float x = 640, float y = -1)
         {

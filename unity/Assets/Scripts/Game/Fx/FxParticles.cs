@@ -262,7 +262,11 @@ namespace Drakepg
             p.Tint = c.Tints != null && c.Tints.Length > 0 ? Design.Hex(c.Tints[Random.Range(0, c.Tints.Length)]) : Color.white;
 
             var r = p.R;
-            r.sprite = sprite;
+            if (r.sprite != sprite)
+            {
+                r.sprite = sprite;
+                Fx.BindTexture(r);
+            }
             var m = c.Add ? Fx.AdditiveMaterial : Fx.AlphaMaterial;
             if (m != null) r.sharedMaterial = m;
             r.sortingOrder = c.Order;

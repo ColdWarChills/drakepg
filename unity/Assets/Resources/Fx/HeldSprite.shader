@@ -20,6 +20,16 @@ Shader "Drakepg/HeldSprite"
         [PerRendererData] _LineA ("Line A (normal xy, offset, soft)", Vector) = (0,0,0,0)
         [PerRendererData] _LineB ("Line B (normal xy, offset, soft)", Vector) = (0,0,0,0)
         _Feather ("Circle's soft edge (fraction of the radius)", Float) = 0.09
+        // Soft-bone bend (Bend.cginc), set per renderer by World/Bend.cs. Declared so a renderer without a bend draws with
+        // these zeros: undeclared, the last bent figure's values leaked into the next sprites drawn and warped them.
+        [PerRendererData] _BendXf ("Bend object to figure", Vector) = (0,0,0,0)
+        [PerRendererData] _BendJ ("Bend joints", Vector) = (0,0,0,0)
+        [PerRendererData] _BendA0 ("Bend legs", Vector) = (1,0,0,1)
+        [PerRendererData] _BendA1 ("Bend body", Vector) = (1,0,0,1)
+        [PerRendererData] _BendA2 ("Bend head", Vector) = (1,0,0,1)
+        [PerRendererData] _BendT01 ("Bend t01", Vector) = (0,0,0,0)
+        [PerRendererData] _BendT2 ("Bend t2", Vector) = (0,0,0,0)
+        [PerRendererData] _BendWave ("Bend wave", Vector) = (0,0,0,1)
     }
 
     SubShader

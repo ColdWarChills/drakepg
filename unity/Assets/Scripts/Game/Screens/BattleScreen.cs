@@ -1953,24 +1953,38 @@ namespace Drakepg
         {
             var b = BlowOf(kind);
             var reach = target.x - (170 * StageScale - b.Closer) * dir;
+            // Drawn key poses for this weapon kind (wind-up, lunge step, strike), when the hero has them: the arms and
+            // legs move between them, the bend and the weapon's turn add the in-between motion.
+            var posed = PoseOf(f, kind, "wind") != null && PoseOf(f, kind, "strike") != null;
             if (chain.Finisher)
             {
                 // The last blow: the scene darkens and the camera leans in as it winds up, a glint, then it strikes.
                 Dim(0.35f, 0.18f);
                 ViewIn((home + target.x) / 2, GroundY - 150, 1.08f, 0.2f);
             }
-            await Anticipate(f, dir, b.Antic + (chain.Finisher ? 0.06f : 0), b.Hold + (chain.Finisher ? 0.06f : 0), chain.Finisher ? 1 : b.Power, back: b.Back);
+            if (posed) SwapPose(f, source, PoseOf(f, kind, "wind"));
+            await Anticipate(f, dir, b.Antic + (chain.Finisher ? 0.06f : 0), b.Hold + (chain.Finisher ? 0.06f : 0), chain.Finisher ? 1 : b.Power, posed,
+                posed ? 14 : b.Back);
             if (chain.Finisher)
             {
                 var tip = BladeTip(f);
                 if (tip.HasValue) Fx.Glint(World, tip.Value.x, tip.Value.y, 0xffffff, 2);
                 Sfx.Play("glint");
             }
-            var lunge = Lunge(f, source, dir, reach, b.Lunge, b.Hop, trail);
-            // The swing ends right at contact, so the freeze on impact holds the blow at its extreme.
-            Anim.After(b.Lunge * b.SwingAt, () => Turns(f, (b.Through, b.Lunge * (1 - b.SwingAt), Ease.QuadIn), (b.Through, 0.06f + b.FollowHold, Ease.Linear),
-                (0, b.SwingOut, Ease.QuadOut)));
+            var stepPose = posed ? PoseOf(f, kind, "step") : null;
+            var lunge = Lunge(f, source, dir, reach, b.Lunge, stepPose == "leap" ? Mathf.Max(b.Hop, 60) : b.Hop, trail);
+            if (stepPose != null) Anim.After(b.Lunge * 0.15f, () => SwapPose(f, source, stepPose));
+            // The swing ends right at contact, so the freeze on impact holds the blow at its extreme. With drawn poses
+            // the strike pose is the swing; the weapon only snaps a little further through and settles.
+            if (!posed)
+                Anim.After(b.Lunge * b.SwingAt, () => Turns(f, (b.Through, b.Lunge * (1 - b.SwingAt), Ease.QuadIn), (b.Through, 0.06f + b.FollowHold, Ease.Linear),
+                    (0, b.SwingOut, Ease.QuadOut)));
             await lunge;
+            if (posed)
+            {
+                SwapPose(f, source, PoseOf(f, kind, "strike"));
+                Turns(f, (-16, 0.05f, Ease.QuadOut), (-16, 0.06f + b.FollowHold, Ease.Linear), (0, b.SwingOut, Ease.QuadOut));
+            }
             Fx.Dust(World, reach, GroundY, 3, Design.Depth(GroundY) + 1);
             Sfx.Play("slash");
             if (kind == "hammer" || kind == "axe")
@@ -1985,7 +1999,35 @@ namespace Drakepg
             onContact();
             await FollowThrough(f, dir, b.Follow, 0.09f);
             if (b.FollowHold > 0) await Anim.Wait(b.FollowHold);
-            if (chain.Last) await Recover(f, home, b.Recover);
+            if (posed && chain.Last) await Anim.Wait(0.08f);
+            if (chain.Last)
+            {
+                if (posed) SwapPose(f, source, null);
+                await Recover(f, home, b.Recover);
+            }
+        }
+
+        /// <summary>Stand-ins for a weapon kind's beats it has no drawn pose of (the hammer jumps in like the epic leap).</summary>
+        static readonly Dictionary<string, string> PoseStandIns = new Dictionary<string, string> { ["hammer_step"] = "leap" };
+
+        /// <summary>The hero's drawn key pose for a weapon kind's beat ("wind", "step", "strike"), or null without one.</summary>
+        static string PoseOf(Fighter f, string kind, string beat)
+        {
+            if (f?.Fig == null || kind == null) return null;
+            var name = kind + "_" + beat;
+            if (f.Fig.HasPose(name)) return name;
+            return PoseStandIns.TryGetValue(name, out var stand) && f.Fig.HasPose(stand) ? stand : null;
+        }
+
+        /// <summary>
+        /// Swap to a drawn key pose (null: standing). The pose it leaves stays a moment as a fading afterimage, so the
+        /// jump between two drawings reads as fast motion instead of a cut.
+        /// </summary>
+        void SwapPose(Fighter f, string side, string pose)
+        {
+            if (f?.Fig == null || f.Fig.PoseName == pose) return;
+            Ghost(side, 0xffffff, 0.28f, 110);
+            f.SetPose(pose);
         }
 
         /// <summary>Close the camera in on (x, y) at `zoom`, kept inside the picture (no black edges past the backdrop).</summary>
@@ -2124,6 +2166,13 @@ namespace Drakepg
             Dim(0.25f, 0.15f);
             // Top skills: the hero drops into a drawn power stance (the bend only adds the strain on top).
             var posed = style.Epic && f.SetPose("charge");
+            // Other skills: the weapon kind's drawn wind-up pose, when the hero has it.
+            var kindWind = !posed && f == hero ? PoseOf(f, style.Weapon, "wind") : null;
+            if (kindWind != null)
+            {
+                SwapPose(f, "player", kindWind);
+                posed = true;
+            }
             if (posed) f.Squash(1.1f, 0.9f, 0.24f);
             f.Pose(posed ? -3 : -7, posed ? 0.15f : heavy ? 0.9f : 0.6f);
             f.Strain(heavy ? 2.2f : 1.4f);
@@ -2301,16 +2350,27 @@ namespace Drakepg
                 var fromX = f.X;
                 var back = reach - 32 * dir;
                 var blow = BlowOf(style.Weapon);
+                var comboPosed = source == "player" && PoseOf(f, style.Weapon, "wind") != null && PoseOf(f, style.Weapon, "strike") != null;
+                if (comboPosed) SwapPose(f, source, PoseOf(f, style.Weapon, "wind"));
                 f.Pose(-5, 0.35f);
-                Cock(f, 0.05f, blow.Back * 0.6f);
+                Cock(f, 0.05f, comboPosed ? 10 : blow.Back * 0.6f);
                 await Tw(f, 0.05f, t => f.X = Mathf.LerpUnclamped(fromX, back, t), Ease.CubicOut);
                 f.Pose(18, 0.3f);
-                Turns(f, (blow.Through, 0.06f, Ease.QuadIn), (0, blow.SwingOut, Ease.QuadOut));
+                if (!comboPosed) Turns(f, (blow.Through, 0.06f, Ease.QuadIn), (0, blow.SwingOut, Ease.QuadOut));
                 await Tw(f, 0.05f, t => f.X = Mathf.LerpUnclamped(back, reach, t), Ease.QuadIn);
+                if (comboPosed)
+                {
+                    SwapPose(f, source, PoseOf(f, style.Weapon, "strike"));
+                    Turns(f, (-14, 0.04f, Ease.QuadOut), (0, blow.SwingOut, Ease.QuadOut));
+                }
                 Sfx.Play("slash");
                 onContact();
                 await FollowThrough(f, dir, 12, 0.06f);
-                if (chain.Last) await Recover(f, home, 0.28f);
+                if (chain.Last)
+                {
+                    if (comboPosed) SwapPose(f, source, null);
+                    await Recover(f, home, 0.28f);
+                }
                 return;
             }
 
@@ -2361,7 +2421,9 @@ namespace Drakepg
                     await Anticipate(f, dir, 0.18f, 0.08f, posed ? 0.3f : 1, posed);
                     Fx.Dust(World, f.X, GroundY, 6, Design.Depth(GroundY) + 1);
                     Sfx.Play("whoosh");
+                    var kindPosed = !posed && source == "player" && PoseOf(f, style.Weapon, "wind") != null && PoseOf(f, style.Weapon, "strike") != null;
                     if (posed) f.SetPose("leap");
+                    else if (kindPosed) SwapPose(f, source, PoseOf(f, style.Weapon, "step") ?? PoseOf(f, style.Weapon, "wind"));
                     Afterimages(source, 340, trail);
                     var startX = f.X;
                     var endX = target.x - 180 * StageScale * dir;
@@ -2380,7 +2442,12 @@ namespace Drakepg
                     f.Y = GroundY;
                     Sfx.Play("slash");
                     // Posed: the landing pose is the blow already struck, the weapon down in the ground in front.
-                    if (!(posed && f.SetPose("land"))) Swing(f, true);
+                    if (kindPosed)
+                    {
+                        SwapPose(f, source, PoseOf(f, style.Weapon, "strike"));
+                        Turns(f, (-16, 0.05f, Ease.QuadOut), (-16, 0.2f, Ease.Linear), (0, 0.3f, Ease.QuadOut));
+                    }
+                    else if (!(posed && f.SetPose("land"))) Swing(f, true);
                     // Flattened on landing and held low a moment: the weight of it.
                     f.Squash(posed ? 1.12f : 1.22f, posed ? 0.9f : 0.8f, 0.3f);
                     if (posed) f.Pose(6, 0.3f, 0.3f);
@@ -2411,13 +2478,29 @@ namespace Drakepg
                         var charge = spit ? 180 : style.Big ? 520 : 300;
                         Sfx.Play("charge");
                         Fx.CastCircle(World, home, GroundY, style.Colors[1], charge);
+                        if (!spit && source == "player" && PoseOf(f, style.Weapon, "wind") != null) SwapPose(f, source, PoseOf(f, style.Weapon, "wind"));
                         if (!spit && style.Weapon == "staff") Turns(f, (400, charge / 1000f, Ease.SineInOut));
                         else if (!spit && style.Weapon == "wand") Turns(f, (55, 0.14f, Ease.CubicOut));
                         f.Strain(spit ? 1.4f : style.Big ? 2.2f : 1.2f);
                         await Fx.ChargeUp(World, f.X + 50 * dir, GroundY - Chest - 10, style.Colors[1], charge);
                         f.Strain(0);
                     }
-                    if (!spit && (style.Weapon == "staff" || style.Weapon == "wand"))
+                    var castPosed = !spit && source == "player" && PoseOf(f, style.Weapon, "strike") != null;
+                    if (castPosed)
+                    {
+                        // Step into it, then the cast itself: the staff or wand thrust at the foe. The spell leaves from its tip.
+                        if (f.WeaponTurn > 180) f.WeaponTurn -= 360;
+                        var stepIn = PoseOf(f, style.Weapon, "step");
+                        if (stepIn != null && chain.First)
+                        {
+                            SwapPose(f, source, stepIn);
+                            Turns(f, (0, 0.06f, Ease.QuadOut));
+                            await Anim.Wait(0.07f);
+                        }
+                        SwapPose(f, source, PoseOf(f, style.Weapon, "strike"));
+                        Turns(f, (-10, 0.05f, Ease.QuadOut), (0, 0.3f, Ease.QuadOut));
+                    }
+                    else if (!spit && (style.Weapon == "staff" || style.Weapon == "wand"))
                     {
                         // Release: the staff stops pointing at the foe; the wand flicks. The spell leaves from the tip.
                         if (f.WeaponTurn > 180) f.WeaponTurn -= 360;
@@ -2442,7 +2525,11 @@ namespace Drakepg
                         GameRoot.I.Shake(0.18f, 8);
                     }
                     onContact();
-                    if (chain.Last) await Recover(f, home, 0.24f, 8);
+                    if (chain.Last)
+                    {
+                        if (castPosed) SwapPose(f, source, null);
+                        await Recover(f, home, 0.24f, 8);
+                    }
                     break;
                 }
                 case "proc":

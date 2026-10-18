@@ -24,6 +24,7 @@ namespace Drakepg
         static readonly int XfId = Shader.PropertyToID("_BendXf"), JId = Shader.PropertyToID("_BendJ");
         static readonly int A0Id = Shader.PropertyToID("_BendA0"), A1Id = Shader.PropertyToID("_BendA1"), A2Id = Shader.PropertyToID("_BendA2");
         static readonly int T01Id = Shader.PropertyToID("_BendT01"), T2Id = Shader.PropertyToID("_BendT2"), WaveId = Shader.PropertyToID("_BendWave");
+        static readonly int MainTexId = Shader.PropertyToID("_MainTex");
 
         /// <summary>Degrees the top tips toward the figure's front (negative: back).</summary>
         public float Lean;
@@ -234,6 +235,7 @@ namespace Drakepg
             {
                 if (r == null) continue;
                 r.GetPropertyBlock(block);
+                if (r.sprite != null) block.SetTexture(MainTexId, r.sprite.texture);
                 var t = r.transform;
                 block.SetVector(XfId, new Vector4(t.localScale.x, t.localScale.y, t.localPosition.x, t.localPosition.y));
                 block.SetVector(JId, j);

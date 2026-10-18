@@ -8,6 +8,7 @@ raised arms fit without Qwen shrinking him; picks are cut out at that same scale
 and centered where the base is, so the game can swap pictures without the hero jumping or changing size.
 
   python scripts/hero_poses.py gen charge leap land --seeds 3    # tries -> art/redo/pose/<pose>_s<seed>.png
+  python scripts/hero_poses.py gen sword_ dagger_ --seeds 2       # every pose whose name starts with these
   python scripts/hero_poses.py sheet                             # every try side by side -> art/redo/pose/_sheet.png
   python scripts/hero_poses.py pick charge:4243 leap:4242        # cut to the game canvas -> art/raw + prepare_art
 """
@@ -38,6 +39,11 @@ KEEP = ("Keep everything else exactly the same: the same young hero with the sam
         "hard-edged cel shadows, thin dark outlines and a warm golden rim light along his edges.")
 EMPTY = ("Both hands are closed into empty fists with nothing in them: no sword, no weapon, no staff anywhere. "
          "No ground, no shadow, no dust, no effects, no text.")
+# Casting poses: the weapon hand is an empty fist, the other an open hand.
+CASTING = ("The hand that would hold the staff is closed into an empty fist with nothing in it; the other hand is open with "
+           "the fingers spread. No staff, no wand, no weapon anywhere. No ground, no shadow, no magic effects, no text.")
+# Poses that use CASTING instead of EMPTY.
+OPEN_HAND = set()
 POSES = {
     # SkillCharge: gathering power before the blow, the weapon cocked back over the shoulder.
     "charge": ("a low, wide power stance, gathering all his strength for a mighty blow: three-quarter view facing "
@@ -54,7 +60,74 @@ POSES = {
              "bent, the back leg stretched far behind him, his body leaning forward and low, both arms swung down "
              "in front of him with both fists together, one fist right next to the other, low in front of his front "
              "knee, as if a big sword in both hands has just struck the ground; a fierce shout"),
+    # --- A blow per weapon kind (BattleScreen.WeaponBlow): <kind>_wind (anticipation, held), <kind>_step (the lunge
+    # in), <kind>_strike (contact and follow-through). ---
+    "sword_wind": ("coiled to swing a sword: three-quarter view facing right, feet apart, knees bent, his weight back on "
+                   "the rear foot and his shoulders turned away to the left; his sword arm is pulled back and up so its "
+                   "fist is high behind his head, above and behind his rear shoulder, as if a sword is cocked back over "
+                   "his shoulder ready to swing; his other arm reaches forward and low with a clenched fist for balance; "
+                   "a focused, determined face"),
+    "sword_step": ("striding in to swing a sword: three-quarter view facing right, a long step forward, the front leg "
+                   "reaching ahead with the knee bent and the back foot pushing off on its toes, his body leaning "
+                   "forward; his sword fist is still raised high beside and behind his head, as if a sword is held back "
+                   "over his shoulder; his other arm swings back behind him; a fierce face"),
+    "sword_strike": ("the end of a big downward diagonal sword slash: three-quarter view facing right, a deep forward "
+                     "lunge with the front knee bent and the back leg stretched far out behind, his upper body bent far "
+                     "forward; his sword arm hangs straight down in front of his front knee, the fist low near the "
+                     "ground, as if the sword has just cut down through the enemy and its tip points at the ground; his "
+                     "other arm is flung up and back behind him; a fierce shout"),
+    "axe_wind": ("raising a heavy axe for an overhead chop: three-quarter view facing right, feet planted wide apart, "
+                 "leaning back, both arms raised straight up high above and slightly behind his head with both fists "
+                 "together, one fist right on top of the other, as if gripping one long axe handle with both hands, "
+                 "ready to chop straight down; gritted teeth"),
+    "axe_step": ("stepping in with an axe raised overhead: three-quarter view facing right, a big stride forward, the "
+                 "front knee bent and the back foot pushing off, his body leaning forward; both arms still raised high "
+                 "above his head with both fists together, one fist on top of the other, as if holding an axe up in "
+                 "both hands; a fierce face"),
+    "axe_strike": ("the end of a heavy overhead chop: three-quarter view facing right, a deep forward lunge, his body "
+                   "bent forward over his front knee, both arms brought straight down in front of him with both fists "
+                   "together, one fist right on top of the other, just above the ground in front of his front foot, as "
+                   "if an axe in both hands has just chopped down; a fierce shout"),
+    "hammer_wind": ("winding up a huge war hammer: three-quarter view facing right, a low wide crouch, his body twisted "
+                    "far away to the left, both fists together, one right on top of the other, low behind his back hip "
+                    "on the left side of the picture, as if a heavy hammer in both hands is drawn far back behind him; "
+                    "straining, gritted teeth"),
+    "hammer_strike": ("slamming a huge hammer into the ground: three-quarter view facing right, crouched very low with "
+                      "both knees deeply bent and his feet wide apart, his body bent far forward, both arms straight "
+                      "down in front of him with both fists together, one right on top of the other, touching the "
+                      "ground in front of his front foot, as if a hammer in both hands has just smashed into the "
+                      "ground; a fierce shout"),
+    "dagger_wind": ("crouched low, ready to pounce with two daggers: three-quarter view facing right, knees deeply "
+                    "bent, his body low and leaning forward, one fist pulled back beside his hip ready to stab "
+                    "forward, the other fist held low in front of him; a sly, focused face"),
+    "dagger_step": ("dashing forward low and fast: three-quarter view facing right, a long low running stride, his "
+                    "body leaning far forward, the front foot reaching ahead and the back foot kicking up behind him, "
+                    "both fists low near his hips, as if holding two daggers ready; a focused face"),
+    "dagger_strike": ("a straight thrusting stab: three-quarter view facing right, a deep forward lunge with the front "
+                      "knee bent and the back leg stretched behind, one arm stretched straight out forward to the right "
+                      "at chest height with the fist leading, as if stabbing with a dagger; the other fist pulled back "
+                      "beside his hip; a fierce face"),
+    "staff_wind": ("gathering magic before a spell: three-quarter view facing right, feet apart, standing tall, his "
+                   "staff arm raised high with its fist above his head, as if holding a tall staff up toward the sky; "
+                   "his other hand is open with the fingers spread, held out in front of his chest; an intense, "
+                   "focused face"),
+    "staff_step": ("stepping forward into a spell: three-quarter view facing right, a stride forward with the front "
+                   "knee bent, his body leaning in, his staff fist swinging down and forward from above his head at "
+                   "the height of his forehead; his other hand open, reaching forward; an intense face"),
+    "staff_strike": ("casting a spell: three-quarter view facing right, a forward lunge, his staff arm thrust straight "
+                     "out forward at shoulder height with the fist leading, as if pointing a staff at an enemy; his "
+                     "other hand open with the fingers spread, pushed forward beside it; a shout"),
+    "wand_wind": ("about to flick a wand: three-quarter view facing right, his weight on the rear foot, his wand arm "
+                  "bent with its fist raised beside his ear, cocked back; his other hand open, held out in front of "
+                  "him; a sly, focused face"),
+    "wand_step": ("a quick step into a spell: three-quarter view facing right, a short step forward, leaning in, his "
+                  "wand fist coming forward at head height; his other hand open, pulled back beside his chest; an "
+                  "intense face"),
+    "wand_strike": ("flicking a wand at an enemy: three-quarter view facing right, leaning forward on the front foot, "
+                    "his wand arm stretched out forward and a little up with the fist leading, as if snapping a wand "
+                    "toward an enemy; his other hand open, held back beside his hip; a confident face"),
 }
+OPEN_HAND.update(k for k in POSES if k.startswith(("staff_", "wand_")))
 
 
 def base_canvas() -> Image.Image:
@@ -87,7 +160,8 @@ def on_white(img: Image.Image) -> bytes:
 
 
 def prompt(pose: str) -> str:
-    return (f"{RGBA_OPEN} Edit <image1>. Change only his pose: the hero is now in {POSES[pose]}. {KEEP} {EMPTY} "
+    hands = CASTING if pose in OPEN_HAND else EMPTY
+    return (f"{RGBA_OPEN} Edit <image1>. Change only his pose: the hero is now in {POSES[pose]}. {KEEP} {hands} "
             f"{RGBA_CLOSE}")
 
 
@@ -193,7 +267,8 @@ def main() -> None:
             seeds = int(args[args.index("--seeds") + 1])
         if "--first-seed" in args:
             first = int(args[args.index("--first-seed") + 1])
-        poses = [a for a in args[1:] if a in POSES]
+        wanted = [a for a in args[1:] if not a.startswith("--") and not a.isdigit()]
+        poses = [p for p in POSES if any(p == w or (w.endswith("_") and p.startswith(w)) for w in wanted)]
         gen(poses or list(POSES), seeds, first)
         return
     sys.exit(__doc__)

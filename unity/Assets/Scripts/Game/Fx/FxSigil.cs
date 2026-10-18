@@ -95,6 +95,7 @@ namespace Drakepg
                     go.transform.localPosition = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0) * (dists[ring] / Design.PixelsPerUnit / ws);
                     var r = go.AddComponent<SpriteRenderer>();
                     r.sprite = w.sprite;
+                    BindTexture(r);
                     r.flipX = w.flipX;
                     r.flipY = w.flipY;
                     Use(r, FillAdditiveMaterial);
