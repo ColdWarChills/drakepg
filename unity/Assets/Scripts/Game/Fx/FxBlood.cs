@@ -78,72 +78,118 @@ namespace Drakepg
                 return;
             }
 
-            // Liquid: a puff of spray, then drops that arc out and splat where they land.
-            Burst(parent, x, y, Tex.Soft, Mathf.RoundToInt(3 + amount * 5), new Emit
+            // Liquid: a fine spray of specks, a jet that arcs out of the wound (drops leaving one after another along
+            // nearly the same path, slowing, so they draw a curve), and heavier globs. Landing drops splash on the way
+            // they were going.
+            Burst(parent, x, y, Tex.Drop, Mathf.Min(40, Mathf.RoundToInt(10 + amount * 14)), new Emit
             {
-                Speed = Val.Rand(40, 180 + 120 * amount),
-                Angle = dir > 0 ? Val.Rand(-50, 30) : Val.Rand(150, 230),
-                Scale = Val.Life(0.9f, 1.8f + 0.6f * amount),
-                Alpha = Val.Life(0.6f, 0),
-                Lifespan = 260,
-                Tint = color,
+                Speed = Val.Rand(260, 720 + 200 * Mathf.Min(1, amount)),
+                Angle = dir > 0 ? Val.Rand(-55, 25) : Val.Rand(155, 235),
+                GravityY = 1100,
+                FaceVelocity = 90,
+                Scale = Val.Life(0.42f, 0.16f),
+                Alpha = Val.Life(1, 0),
+                Lifespan = 300,
+                Tints = new[] { color, dark },
             });
-            int count = Mathf.Min(54, Mathf.RoundToInt(8 + amount * 24));
-            for (int i = 0; i < count; i++)
+            if (amount >= 0.35f)
+            {
+                int jet = Mathf.Min(16, Mathf.RoundToInt(5 + amount * 6));
+                var angle = Random.Range(18f, 42f) * Mathf.Deg2Rad;
+                var speed = Random.Range(520f, 680f) + 120 * Mathf.Min(1, amount);
+                for (int i = 0; i < jet; i++)
+                {
+                    var k = i / (float)jet;
+                    var sp = speed * (1 - 0.45f * k);
+                    var a = angle + Random.Range(-0.05f, 0.05f);
+                    Drop(parent, root, x, y, dir * Mathf.Cos(a) * sp, -Mathf.Sin(a) * sp, Mathf.Lerp(1.15f, 0.55f, k) * Random.Range(0.9f, 1.1f),
+                        k < 0.5f ? color : dark, floorY, groundOrder, i * 0.012f, 0.8f);
+                }
+            }
+            int globs = Mathf.Min(16, Mathf.RoundToInt(3 + amount * 6));
+            for (int i = 0; i < globs; i++)
             {
                 // Most fly on with the blow; a few spatter back toward the attacker.
-                var back = Random.value < 0.22f;
-                var vx = dir * Random.Range(110, 440 + 300 * amount) * (back ? -0.45f : 1);
-                var vy = -Random.Range(80, 520) * (0.65f + 0.35f * Mathf.Min(1, amount));
-                var size = Random.Range(0.7f, 1.5f) * (0.85f + 0.3f * Mathf.Min(1.5f, amount));
-                var x0 = x + Random.Range(-10f, 10f);
-                var y0 = y + Random.Range(-26f, 26f);
-                var land = floorY + Random.Range(-16f, 36f);
-                // Time to fall to `land`: y0 + vy t + g t^2 / 2 = land.
-                var fall = Mathf.Max(0, land - y0);
-                var secs = (-vy + Mathf.Sqrt(vy * vy + 2 * BloodGravity * fall)) / BloodGravity;
-                var tint = Random.value < 0.35f ? dark : color;
-                var drop = Img(root, Get(Tex.Drop), x0, y0, tint, 1, OrderFx, false);
-                ScaleTo(drop, size * 0.8f, size);
-                var splatChance = 0.65f;
-                Tw(secs * 1000, Lin, t =>
-                {
-                    if (drop == null) return;
-                    var s = t * secs;
-                    var px = x0 + vx * s;
-                    var py = y0 + vy * s + BloodGravity * s * s / 2;
-                    drop.transform.localPosition = P(px, py);
-                    // Long along its flight, faster = longer.
-                    var fy = vy + BloodGravity * s;
-                    AngleTo(drop, Mathf.Atan2(fy, vx) * Mathf.Rad2Deg + 90);
-                    var speed = Mathf.Sqrt(vx * vx + fy * fy);
-                    ScaleTo(drop, size * 0.8f, size * (1 + speed / 1100));
-                }, () =>
-                {
-                    if (drop == null) return;
-                    var at = drop.transform.localPosition;
-                    Kill(drop);
-                    if (Random.value < splatChance) Splat(root, at.x * Design.PixelsPerUnit, -at.y * Design.PixelsPerUnit, size * 0.85f, tint, groundOrder);
-                });
+                var back = Random.value < 0.2f;
+                var vx = dir * Random.Range(120, 420 + 260 * amount) * (back ? -0.45f : 1);
+                var vy = -Random.Range(120, 520) * (0.65f + 0.35f * Mathf.Min(1, amount));
+                Drop(parent, root, x + Random.Range(-10f, 10f), y + Random.Range(-24f, 24f), vx, vy,
+                    Random.Range(0.7f, 1.4f) * (0.85f + 0.25f * Mathf.Min(1.5f, amount)), Random.value < 0.35f ? dark : color, floorY, groundOrder, 0, 0.7f);
             }
         }
 
-        /// <summary>A splat on the ground (flattened for the floor's angle) that pops in and dries darker over a few seconds.</summary>
-        static void Splat(Transform root, float x, float y, float size, long color, int order)
+        /// <summary>
+        /// One drop flying from (x, y) at (vx, vy) px/s under gravity after `delay` s, turned along its flight (head
+        /// first, tail behind, longer the faster), landing around `floorY`; it splashes there `splatChance` of the time,
+        /// and a big one throws up a few specks.
+        /// </summary>
+        static void Drop(Transform parent, Transform root, float x, float y, float vx, float vy, float size, long tint, float floorY, int groundOrder,
+            float delay, float splatChance)
+        {
+            var land = floorY + Random.Range(-16f, 36f);
+            // Time to fall to `land`: y + vy t + g t^2 / 2 = land.
+            var fall = Mathf.Max(0, land - y);
+            var secs = (-vy + Mathf.Sqrt(vy * vy + 2 * BloodGravity * fall)) / BloodGravity;
+            SpriteRenderer drop = null;
+            bool started = false;
+            Tw(secs * 1000, Lin, t =>
+            {
+                if (!started)
+                {
+                    started = true;
+                    drop = Img(root, Get(Tex.Drop), x, y, tint, 1, OrderFx, false);
+                }
+                if (drop == null) return;
+                var s = t * secs;
+                drop.transform.localPosition = P(x + vx * s, y + vy * s + BloodGravity * s * s / 2);
+                var fy = vy + BloodGravity * s;
+                AngleTo(drop, Mathf.Atan2(fy, vx) * Mathf.Rad2Deg + 90);
+                var speed = Mathf.Sqrt(vx * vx + fy * fy);
+                ScaleTo(drop, size * 0.85f, size * (0.75f + speed / 1300));
+            }, () =>
+            {
+                if (drop == null) return;
+                var at = drop.transform.localPosition;
+                Kill(drop);
+                float lx = at.x * Design.PixelsPerUnit, ly = -at.y * Design.PixelsPerUnit;
+                if (Random.value < splatChance) Splat(root, lx, ly, size * (0.55f + Mathf.Min(0.5f, Mathf.Abs(vx) / 1200)), tint, groundOrder, vx);
+                if (size > 1.05f)
+                    Burst(parent, lx, ly, Tex.Drop, 3, new Emit
+                    {
+                        Speed = Val.Rand(90, 200),
+                        Angle = Val.Rand(-150, -30),
+                        GravityY = 1500,
+                        FaceVelocity = 90,
+                        Scale = Val.Life(0.32f, 0.14f),
+                        Lifespan = 220,
+                        Tint = tint,
+                    });
+            }, delay * 1000);
+        }
+
+        /// <summary>
+        /// A splat on the ground (flattened for the floor's angle) that spreads out from where the drop hit and dries
+        /// darker over a few seconds. A drop that was moving splashes on the way it was going (`vx`'s sign); a slow one
+        /// leaves a round blot.
+        /// </summary>
+        static void Splat(Transform root, float x, float y, float size, long color, int order, float vx = 0)
         {
             var holder = Holder(root, x, y, "splat");
-            holder.localScale = new Vector3(1, 0.36f, 1);
-            var r = Img(holder, Get(Tex.Splat), 0, 0, color, 0.95f, order, false);
-            AngleTo(r, Random.Range(0, 360));
-            Tw(110, BackOut, t =>
+            var moving = Mathf.Abs(vx) > 60;
+            holder.localScale = new Vector3(vx < 0 ? -1 : 1, 0.38f, 1);
+            // The splash texture's blob sits left of its middle: shift it so the blob is where the drop landed.
+            var scale = moving ? size * 0.75f : size;
+            var r = Img(holder, Get(moving ? Tex.Splash : Tex.Splat), moving ? 16 * scale : 0, 0, color, 0.95f, order, false);
+            AngleTo(r, moving ? Random.Range(-12f, 12f) : Random.Range(0, 360));
+            Tw(90, CubicOut, t =>
             {
-                if (r != null) ScaleTo(r, size * Mathf.LerpUnclamped(0.3f, 1, t), size * Mathf.LerpUnclamped(0.3f, 1, t));
+                if (r != null) ScaleTo(r, scale * Mathf.LerpUnclamped(0.35f, 1, t), scale * Mathf.LerpUnclamped(0.6f, 1, t));
             });
             Tw(3000, Lin, t =>
             {
                 if (r != null) SetAlpha(r, Mathf.Lerp(0.95f, 0.7f, t));
             }, null, 400);
-            splats.RemoveAll(s => s == null);
+            splats.RemoveAll(sp => sp == null);
             splats.Add(holder);
             while (splats.Count > MaxSplats)
             {

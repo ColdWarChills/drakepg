@@ -187,6 +187,9 @@ namespace Drakepg
         bool shellRegrew;
         /// <summary>Red power rising around a monster winding up a big attack.</summary>
         Fx.Flow chargeFlow;
+        /// <summary>A dark veil over the backdrop for big moments (Dim).</summary>
+        SpriteRenderer dim;
+        Anim.Handle dimTween;
         /// <summary>This turn's killing blows (the last hit before each "defeated").</summary>
         readonly HashSet<BattleEvent> finishers = new HashSet<BattleEvent>();
         Anim.Handle recoil;
@@ -1310,6 +1313,7 @@ namespace Drakepg
                 chargeFlow?.Stop();
                 chargeFlow = null;
                 foe.Strain(0);
+                Dim(0, 0.4f);
             }
             if (shield != null)
             {
@@ -1608,6 +1612,7 @@ namespace Drakepg
                     // holds the pose until it lets go next turn.
                     foe.Pose(-10, 0.8f);
                     foe.Strain(2.4f);
+                    Dim(0.22f, 0.3f);
                     Sfx.Play("charge");
                     Fx.Dust(World, EnemyX - 60, GroundY, 4, Design.Depth(GroundY) + 1);
                     Fx.Dust(World, EnemyX + 60, GroundY, 4, Design.Depth(GroundY) + 1);
@@ -1788,8 +1793,8 @@ namespace Drakepg
             }
         }
 
-        /// <summary>Cock the weapons a figure holds back (if its art shows them), ready to swing.</summary>
-        static void Cock(Fighter f, float seconds)
+        /// <summary>Cock the weapons a figure holds back (if its art shows them) `back` degrees, ready to swing.</summary>
+        static void Cock(Fighter f, float seconds, float back = 40)
         {
             foreach (var t in f.WeaponTweens) t.Stop();
             f.WeaponTweens.Clear();
@@ -1798,7 +1803,7 @@ namespace Drakepg
                 var w = f.Fig.Weapons[i];
                 var baseAngle = f.WeaponAngles[i];
                 var from = w.localEulerAngles.z;
-                f.WeaponTweens.Add(Anim.Float(0, 1, seconds, t => { if (w != null) w.localRotation = Quaternion.Euler(0, 0, Mathf.LerpAngle(from, baseAngle + 40, t)); }, Ease.QuadOut));
+                f.WeaponTweens.Add(Anim.Float(0, 1, seconds, t => { if (w != null) w.localRotation = Quaternion.Euler(0, 0, Mathf.LerpAngle(from, baseAngle + back, t)); }, Ease.CubicOut));
             }
         }
 
@@ -1952,6 +1957,7 @@ namespace Drakepg
             var dir = f == hero ? 1 : -1;
             long color = style.Element != null ? style.Colors[1] : 0xffe08a;
             Sfx.Play("charge");
+            Dim(0.25f, 0.15f);
             f.Pose(-7, heavy ? 0.9f : 0.6f);
             f.Strain(heavy ? 2.2f : 1.4f);
             Cock(f, 0.2f);
@@ -1964,22 +1970,111 @@ namespace Drakepg
             var tip = BladeTip(f) ?? hand;
             Fx.Glint(World, tip.x, tip.y, 0xffffff, heavy ? 2.2f : 1.7f);
             Sfx.Play("glint");
+            Dim(0, 0.35f);
         }
 
-        /// <summary>Lean back (and cock the weapon) before a lunge: the anticipation that sells the blow.</summary>
-        static Task WindUp(Fighter f, int dir, float seconds, bool big = false)
+        // --- A blow in four beats (Disney's principles): anticipation, action, follow-through, recovery ---
+
+        /// <summary>
+        /// Anticipation: ease back into a coiled pose (weight back and down, leaning away, the weapon cocked far back;
+        /// slow into it), then hold a beat with the muscles straining so the eye reads what's coming. `power` 0-1 is how
+        /// big the coming blow is: deeper, further back, longer.
+        /// </summary>
+        static async Task Anticipate(Fighter f, int dir, float seconds, float hold, float power)
         {
-            Cock(f, seconds);
-            f.Shape(big ? 1.1f : 1.06f, big ? 0.88f : 0.94f, seconds);
-            f.Pose(big ? -9 : -6, big ? 0.9f : 0.45f);
+            Cock(f, seconds, 40 + 30 * power);
+            f.Shape(1.06f + 0.07f * power, 0.94f - 0.07f * power, seconds, Ease.CubicOut);
+            f.Pose(-(7 + 7 * power), 0.45f + 0.5f * power);
             var fromX = f.X;
-            var toX = f.X - (big ? 30 : 20) * dir;
-            var toA = -(big ? 9 : 6) * dir;
-            return f.Track(Anim.Float(0, 1, seconds, t =>
+            var toX = f.X - (20 + 18 * power) * dir;
+            var toA = -(6 + 6 * power) * dir;
+            await f.Track(Anim.Float(0, 1, seconds, t =>
             {
                 f.X = Mathf.Lerp(fromX, toX, t);
                 f.Angle = toA * t;
-            }, Ease.QuadOut)).Task;
+            }, Ease.CubicOut)).Task;
+            if (hold <= 0) return;
+            f.Strain(0.8f + power);
+            await Anim.Wait(hold);
+            f.Strain(0);
+        }
+
+        /// <summary>
+        /// The action: a push-off, then fast in (accelerating) to `to` on a low arc, stretched long along the motion and
+        /// leaning in, with afterimages and speed lines behind.
+        /// </summary>
+        Task Lunge(Fighter f, string side, int dir, float to, float seconds, float hop, long trail)
+        {
+            Sfx.Play("whoosh");
+            Fx.Dust(World, f.X - 20 * dir, GroundY, 3, Design.Depth(GroundY) + 1);
+            Afterimages(side, seconds * 1000, trail);
+            Fx.SpeedLines(World, f.X, GroundY, dir, trail);
+            f.Shape(1.2f, 0.86f, seconds * 0.6f);
+            f.Pose(16, 0.15f);
+            var fromX = f.X;
+            var fromA = f.Angle;
+            return Tw(f, seconds, t =>
+            {
+                f.X = Mathf.LerpUnclamped(fromX, to, Anim.Apply(Ease.QuadIn, t));
+                f.Y = GroundY - Mathf.Sin(t * Mathf.PI) * hop;
+                f.Angle = Mathf.Lerp(fromA, 5 * dir, t);
+            }, Ease.Linear);
+        }
+
+        /// <summary>Follow-through: the body squashes on contact and carries on past the blow, pitched in, then settles.</summary>
+        async Task FollowThrough(Fighter f, int dir, float distance, float seconds)
+        {
+            f.Y = GroundY;
+            f.Squash(0.9f, 1.08f, 0.22f);
+            f.Pose(24, 0.4f);
+            var fromX = f.X;
+            await Tw(f, seconds, t => f.X = fromX + distance * dir * t, Ease.QuadOut);
+            f.Pose(10, 0.25f);
+        }
+
+        /// <summary>Recovery: back home on a little hop (an arc, slow out and slow in), landing with a small squash.</summary>
+        async Task Recover(Fighter f, float home, float seconds, float hop = 16)
+        {
+            f.Pose(-3, 0);
+            var fromX = f.X;
+            var fromA = f.Angle;
+            await Tw(f, seconds, t =>
+            {
+                var e = Anim.Apply(Ease.SineInOut, t);
+                f.X = Mathf.LerpUnclamped(fromX, home, e);
+                f.Y = GroundY - Mathf.Sin(t * Mathf.PI) * hop;
+                f.Angle = Mathf.Lerp(fromA, 0, e);
+            }, Ease.Linear);
+            f.Y = GroundY;
+            f.Squash(1.06f, 0.94f, 0.18f);
+            f.Pose(0, 0);
+        }
+
+        /// <summary>
+        /// Staging: darken the backdrop (not the fighters or effects) to `alpha` over `seconds`, so a big moment stands
+        /// out. 0 brings it back.
+        /// </summary>
+        void Dim(float alpha, float seconds = 0.2f)
+        {
+            if (dim == null)
+            {
+                var go = new GameObject("dim");
+                go.transform.SetParent(World, false);
+                go.transform.position = Design.World(Design.Width / 2, Design.Height / 2);
+                go.transform.localScale = new Vector3(Design.Width * 1.6f, Design.Height * 1.6f, 1);
+                dim = go.AddComponent<SpriteRenderer>();
+                dim.sprite = Art.White;
+                dim.sharedMaterial = Fx.AlphaMaterial;
+                dim.sortingOrder = GroundOrder + 5;
+                dim.color = new Color(0.04f, 0.03f, 0.08f, 0);
+            }
+            var d = dim;
+            var from = d.color.a;
+            dimTween?.Stop();
+            dimTween = Anim.Float(from, alpha, seconds, a =>
+            {
+                if (d != null) d.color = new Color(0.04f, 0.03f, 0.08f, a);
+            }, Ease.QuadOut);
         }
 
         /// <summary>A fading silhouette of a figure where it stands now (behind it).</summary>
@@ -2033,19 +2128,19 @@ namespace Drakepg
             // Combo hits after the first: already in reach, a quick step back and in, then the next blow.
             if (!chain.First && style.Kind != "bolt" && style.Kind != "proc")
             {
+                // A small step back (a quick anticipation), then in again.
                 var fromX = f.X;
-                f.Pose(8, 0.3f);
-                await Tw(f, 0.06f, t => f.X = Mathf.LerpUnclamped(fromX, reach - 26 * dir, t), Ease.QuadOut, true);
+                var back = reach - 32 * dir;
+                f.Pose(-5, 0.35f);
+                Cock(f, 0.05f);
+                await Tw(f, 0.05f, t => f.X = Mathf.LerpUnclamped(fromX, back, t), Ease.CubicOut);
+                f.Pose(18, 0.3f);
+                await Tw(f, 0.05f, t => f.X = Mathf.LerpUnclamped(back, reach, t), Ease.QuadIn);
                 Sfx.Play("slash");
                 Swing(f);
-                f.Squash(0.95f, 1.04f, 0.16f);
-                f.Pose(18, 0.3f);
                 onContact();
-                if (chain.Last)
-                {
-                    f.Pose(0, 0);
-                    await MoveX(f, home, 0.24f, Ease.QuadOut, 0);
-                }
+                await FollowThrough(f, dir, 12, 0.06f);
+                if (chain.Last) await Recover(f, home, 0.28f);
                 return;
             }
 
@@ -2054,65 +2149,66 @@ namespace Drakepg
                 case "slash":
                 case "enemy-melee":
                 {
+                    // Monsters take longer to wind up, so you can see them coming; big ones longest (timing sells weight).
+                    var monsterBlow = style.Kind == "enemy-melee";
+                    var heavyMonster = monsterBlow && (monster.Boss || monster.Look.Scale >= 1.25);
                     if (chain.Finisher)
                     {
-                        // The last blow: the camera leans in as it winds up, a glint, then it strikes.
-                        ViewIn((home + target.x) / 2, GroundY - 150, 1.08f, 0.16f);
-                        await WindUp(f, dir, 0.16f, true);
+                        // The last blow: the scene darkens and the camera leans in as it winds up, a glint, then it strikes.
+                        Dim(0.35f, 0.18f);
+                        ViewIn((home + target.x) / 2, GroundY - 150, 1.08f, 0.2f);
+                        await Anticipate(f, dir, 0.2f, 0.1f, 1);
                         var tip = BladeTip(f);
                         if (tip.HasValue) Fx.Glint(World, tip.Value.x, tip.Value.y, 0xffffff, 2);
                         Sfx.Play("glint");
                     }
-                    else await WindUp(f, dir, 0.08f);
-                    Sfx.Play("whoosh");
-                    Afterimages(source, 150, trail);
-                    Fx.SpeedLines(World, f.X, GroundY, dir, trail);
-                    // Stretched long through the lunge, squashed as the blow lands.
-                    f.Shape(1.12f, 0.93f, 0.1f);
-                    f.Pose(14, 0.15f);
-                    await MoveX(f, reach, 0.15f, Ease.QuadIn, 4 * dir);
+                    else if (monsterBlow) await Anticipate(f, dir, heavyMonster ? 0.3f : 0.22f, heavyMonster ? 0.1f : 0.07f, heavyMonster ? 1 : 0.6f);
+                    else await Anticipate(f, dir, 0.14f, 0.04f, 0.4f);
+                    await Lunge(f, source, dir, reach, monsterBlow ? 0.13f : 0.11f, monsterBlow ? 10 : 14, trail);
                     Fx.Dust(World, reach, GroundY, 3, Design.Depth(GroundY) + 1);
                     Sfx.Play("slash");
                     Swing(f);
-                    f.Squash(0.92f, 1.06f);
-                    // Follow through: the body pitches into the blow.
-                    f.Pose(20, 0.35f);
                     onContact();
-                    if (chain.Last)
-                    {
-                        f.Pose(0, 0);
-                        await MoveX(f, home, 0.24f, Ease.QuadOut, 0);
-                    }
+                    await FollowThrough(f, dir, heavyMonster ? 28 : 22, 0.09f);
+                    if (chain.Last) await Recover(f, home, 0.3f);
                     break;
                 }
                 case "heavy":
                 {
                     // Crouch, leap, crash down.
-                    if (chain.Finisher) ViewIn((home + target.x) / 2, GroundY - 170, 1.08f, 0.2f);
-                    await WindUp(f, dir, 0.13f, true);
-                    Fx.Dust(World, f.X, GroundY, 5, Design.Depth(GroundY) + 1);
+                    if (chain.Finisher)
+                    {
+                        Dim(0.35f, 0.18f);
+                        ViewIn((home + target.x) / 2, GroundY - 170, 1.08f, 0.2f);
+                    }
+                    await Anticipate(f, dir, 0.18f, 0.08f, 1);
+                    Fx.Dust(World, f.X, GroundY, 6, Design.Depth(GroundY) + 1);
                     Sfx.Play("whoosh");
-                    Afterimages(source, 300, trail);
+                    Afterimages(source, 340, trail);
                     var startX = f.X;
                     var endX = target.x - 180 * dir;
-                    // Tall and thin in the air, flattened on landing.
-                    f.Shape(0.9f, 1.12f, 0.14f);
-                    f.Pose(-5, 0);
-                    await Tw(f, 0.3f, t =>
+                    // Tall and thin on take-off; a true parabola, so it hangs at the top before it comes down.
+                    f.Shape(0.86f, 1.16f, 0.12f);
+                    f.Pose(-6, 0);
+                    await Tw(f, 0.34f, t =>
                     {
                         f.X = Mathf.Lerp(startX, endX, t);
-                        f.Y = GroundY - Mathf.Sin(t * Mathf.PI) * 130;
-                        f.Angle = -9 * dir + t * 21 * dir;
-                    }, Ease.SineInOut);
+                        f.Y = GroundY - 4 * 150 * t * (1 - t);
+                        f.Angle = Mathf.Lerp(-10, 14, t) * dir;
+                        if (t > 0.55f) f.Pose(22, 0);
+                    }, Ease.Linear);
                     f.Y = GroundY;
                     Sfx.Play("slash");
                     Swing(f, true);
-                    f.Squash(1.16f, 0.84f, 0.28f);
-                    f.Pose(22, 1, 0.28f);
+                    // Flattened on landing and held low a moment: the weight of it.
+                    f.Squash(1.22f, 0.8f, 0.3f);
+                    f.Pose(26, 1, 0.3f);
                     onContact();
-                    Fx.Dust(World, f.X, GroundY, 10, Design.Depth(GroundY) + 1);
-                    GameRoot.I.Shake(0.18f, 13);
-                    if (chain.Last) await MoveX(f, home, 0.3f, Ease.QuadOut, 0);
+                    Fx.Dust(World, f.X, GroundY, 12, Design.Depth(GroundY) + 1);
+                    GameRoot.I.Shake(0.16f, 10);
+                    GameRoot.I.Kick(0, 14);
+                    await Anim.Wait(0.16f);
+                    if (chain.Last) await Recover(f, home, 0.34f, 22);
                     break;
                 }
                 case "bolt":
@@ -2137,8 +2233,9 @@ namespace Drakepg
                     // Combo bolts fly faster, without a new wind-up.
                     var flight = !chain.First ? 260 : spit ? 360 : style.Big ? 520 : 420;
                     var flying = Fx.Projectile(World, hand, target, style.Colors, flight, style.Element);
-                    f.Squash(1.08f, 0.94f, 0.2f);
-                    f.Pose(13, 0.2f, 0.3f);
+                    f.Squash(1.1f, 0.92f, 0.2f);
+                    f.Pose(16, 0.2f, 0.3f);
+                    GameRoot.I.Kick(-4 * dir, 0);
                     if (chain.First) await Task.WhenAll(MoveX(f, home + 20 * dir, 0.12f, Ease.BackOut), flying);
                     else await flying;
                     Sfx.Play("explode");
@@ -2148,7 +2245,7 @@ namespace Drakepg
                         GameRoot.I.Shake(0.26f, 15);
                     }
                     onContact();
-                    if (chain.Last) await MoveX(f, home, 0.2f, Ease.CubicOut);
+                    if (chain.Last) await Recover(f, home, 0.24f, 8);
                     break;
                 }
                 case "proc":
@@ -2227,26 +2324,44 @@ namespace Drakepg
             Sfx.Play(big ? "crit" : "hit");
             if (e.Element != null && !dull && Sfx.ElementSfx.TryGetValue(e.Element, out var elementSound)) Sfx.Play(elementSound);
             Fx.WhiteFlash(f.Fig, big ? 140 : 100, 0xffffff, palette != null && !dull ? palette[1] : (long?)null);
-            Fx.HitStop(quick ? 35 : e.Crit ? 130 : big ? 110 : 60);
-            GameRoot.I.Shake(e.Crit ? 0.22f : 0.14f, ((guarded || dull ? 0.002f : 0.004f) + weight * (quick ? 0.012f : 0.03f)) * Design.Width);
+            // The freeze grows with the blow; the camera is knocked the way the blow travels and springs back.
+            Fx.HitStop(quick ? 40 : e.Crit ? 150 : big ? 130 : Mathf.Min(150, 70 + weight * 120));
+            GameRoot.I.Shake(e.Crit ? 0.2f : 0.12f, ((guarded || dull ? 0.0015f : 0.003f) + weight * (quick ? 0.009f : 0.022f)) * Design.Width);
+            var kickPx = (guarded || dull ? 4 : 9 + weight * 34 + (e.Crit ? 10 : 0)) * (quick ? 0.5f : 1);
+            GameRoot.I.Kick(kickPx * dir, big ? 5 : 2);
+            if (big && !quick) Sfx.Play("thud");
 
-            // Knockback and a recoil tilt, bigger for heavier blows. A new blow cuts the last one's short.
+            // Knocked back: snapped away fast (lifted off its feet by a big one), then a slow recovery home, feet
+            // dragging dust. A new blow cuts the last one's short.
             recoil?.Stop();
             f.X = x;
             f.Y = GroundY;
             f.Angle = 0;
-            var push = guarded ? 8 : 16 + weight * 60 + (e.Crit ? 18 : 0);
-            var tilt = (guarded ? 2 : 5 + weight * 10) * dir;
-            recoil = f.Track(Anim.Float(0, 1, 0.08f, t =>
+            var push = guarded ? 8 : 18 + weight * 70 + (e.Crit ? 20 : 0);
+            var tilt = (guarded ? 2 : 6 + weight * 12) * dir;
+            var lift = guarded || !big ? 0 : 10 + weight * 30;
+            var snap = f.Track(Anim.Float(0, 1, 0.06f, t =>
             {
                 f.X = x + push * dir * t;
                 f.Angle = tilt * t;
-            }, Ease.QuadOut, yoyo: true)).OnComplete(() => f.Angle = 0);
+                f.Y = GroundY - lift * Mathf.Sin(t * Mathf.PI / 2);
+            }, Ease.CubicOut));
+            recoil = snap;
+            snap.OnComplete(() =>
+            {
+                if (push > 26) Fx.Dust(World, x + push * dir, GroundY, 3, Design.Depth(GroundY) + 1);
+                recoil = f.Track(Anim.Float(1, 0, 0.3f, t =>
+                {
+                    f.X = x + push * dir * t;
+                    f.Angle = tilt * t;
+                    f.Y = GroundY - lift * t;
+                }, Ease.SineInOut, 0.05f));
+            });
 
-            // The body gives under the blow, and the target's HUD piece shakes with it (ties the bar to the hit).
-            f.Squash(guarded ? 0.97f : 0.9f - weight * 0.1f, guarded ? 1.02f : 1.06f + weight * 0.06f, 0.24f);
+            // The body gives under the blow (squashed, then springing back), and the target's HUD piece shakes with it.
+            f.Squash(guarded ? 0.97f : 0.86f - weight * 0.12f, guarded ? 1.02f : 1.08f + weight * 0.08f, 0.26f);
             // Rocked back by the blow, the head snapping after.
-            f.Pose(guarded ? -3 : -(7 + weight * 30 + (e.Crit ? 6 : 0)), guarded ? 0.5f : 0.2f + weight, 0.14f);
+            f.Pose(guarded ? -3 : -(9 + weight * 34 + (e.Crit ? 8 : 0)), guarded ? 0.5f : 0.2f + weight, 0.16f);
             UiMotion.Jolt(targetSide == "player" ? heroHud : enemyHud, (guarded || dull ? 3 : 5) + weight * 22 + (e.Crit ? 5 : 0));
 
             // Monsters spill blood (or chips, or wisps): more for heavier blows, a gush for the last one.
@@ -2276,6 +2391,7 @@ namespace Drakepg
             long color = e.Element != null ? style.Colors[1] : 0xffe08a;
             Fx.HitStop(170);
             Fx.SlowMo(0.3f, 950);
+            Dim(0, 0.6f);
             ViewIn(x - 70 * dir, GroundY - 150, 1.2f, 0.14f);
             GameRoot.I.Flash(0.1f, new Color(1, 1, 1, 0.55f));
             if (style.Kind == "slash" || style.Kind == "heavy") Fx.Slash(World, x, y, dir, color, -0.6f, true);

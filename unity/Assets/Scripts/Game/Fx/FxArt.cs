@@ -12,7 +12,7 @@ namespace Drakepg
     public static partial class Fx
     {
         /// <summary>The particle textures (fx_soft, fx_spark, ... in fx.ts).</summary>
-        public enum Tex { Soft, Spark, Star, Leaf, Coin, Ring, Rock, Plus, Chevron, Streak, Drop, Splat }
+        public enum Tex { Soft, Spark, Star, Leaf, Coin, Ring, Rock, Plus, Chevron, Streak, Drop, Splat, Splash }
 
         const float Density = 2;
         static Sprite[] sprites;
@@ -90,9 +90,11 @@ namespace Drakepg
             for (int i = 0; i < 4; i++) c.Fill(Inside(c.D, Ellipse(48, 3, (96 - i * 20) / 2f, (6 - i) / 2f)), 0xffffff, 0.25f + i * 0.25f);
             sprites[(int)Tex.Streak] = c.ToSprite("fx_streak");
 
-            // A drop of blood in flight: a solid oval, long side up (turned along its flight).
-            c = new Canvas(0, 0, 10, 18);
-            c.Fill(Inside(c.D, Ellipse(5, 9, 5, 9)), 0xffffff, 1);
+            // A drop of liquid in flight: a round head on top and a tail that tapers off below (turned along its flight,
+            // head first).
+            c = new Canvas(0, 0, 10, 26);
+            c.Fill(Disc(5, 5.5f, 5, c.D), 0xffffff, 1);
+            c.Fill(Inside(c.D, Poly(0.4f, 6, 9.6f, 6, 5, 26)), 0xffffff, 1);
             sprites[(int)Tex.Drop] = c.ToSprite("fx_drop");
 
             // A splat on the ground: a blob with lobes and a few flecks around it (squashed flat when drawn).
@@ -100,6 +102,14 @@ namespace Drakepg
             float[] blobs = { 24, 24, 13, 13, 20, 6.5f, 35, 27, 7, 26, 37, 5.5f, 20, 12, 5, 37, 15, 4.5f, 7, 31, 2.5f, 43, 39, 2.5f, 31, 5, 2, 9, 43, 2 };
             for (int i = 0; i < blobs.Length; i += 3) c.Fill(Disc(blobs[i], blobs[i + 1], blobs[i + 2], c.D), 0xffffff, 1);
             sprites[(int)Tex.Splat] = c.ToSprite("fx_splat");
+
+            // A splash on the ground from a drop that landed moving right: a ragged blob, then a tongue and a run of
+            // droplets splattering on to the right (flipped for drops moving left, squashed flat when drawn).
+            c = new Canvas(0, 0, 72, 36);
+            float[] splash = { 20, 18, 12, 10, 12, 6, 12, 26, 5.5f, 27, 10, 5, 29, 25, 5, 56, 18, 3.4f, 63, 16.5f, 2.4f, 69, 19.5f, 1.6f, 36, 6, 2, 45, 30, 1.8f, 4, 28, 1.6f, 49, 7, 1.4f };
+            for (int i = 0; i < splash.Length; i += 3) c.Fill(Disc(splash[i], splash[i + 1], splash[i + 2], c.D), 0xffffff, 1);
+            c.Fill(Inside(c.D, Poly(26, 13, 53, 16.5f, 53, 19.5f, 26, 24)), 0xffffff, 1);
+            sprites[(int)Tex.Splash] = c.ToSprite("fx_splash");
         }
 
         /// <summary>A particle texture as a sprite: scale 1 draws it at its design size (fx_soft is 32 px).</summary>

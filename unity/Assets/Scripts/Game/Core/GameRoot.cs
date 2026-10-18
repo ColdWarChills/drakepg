@@ -254,6 +254,19 @@ namespace Drakepg
             await FadeTo(0, inSeconds);
         }
 
+        /// <summary>The camera knocked off its rest by a blow (design px, y down) and how fast it's moving back.</summary>
+        Vector2 kick, kickVelocity;
+
+        /// <summary>
+        /// Knock the camera (dx, dy) design px, the way a blow travels; it springs back with a little overshoot. Game
+        /// time, so a hit-stop holds it there for the freeze.
+        /// </summary>
+        public void Kick(float dx, float dy)
+        {
+            kick += new Vector2(dx, dy);
+            kickVelocity = Vector2.zero;
+        }
+
         /// <summary>Camera shake in design pixels.</summary>
         public void Shake(float seconds, float pixels)
         {
@@ -270,17 +283,25 @@ namespace Drakepg
 #endif
             Anim.Tick(dt);
             Layout();
+            var off = Vector2.zero;
             if (shakeTime > 0)
             {
                 shakeTime -= dt;
-                var off = UnityEngine.Random.insideUnitCircle * shakeAmount / Design.PixelsPerUnit;
-                Camera.transform.position = cameraHome + (Vector3)off;
-                if (shakeTime <= 0)
-                {
-                    Camera.transform.position = cameraHome;
-                    shakeAmount = 0;
-                }
+                off = UnityEngine.Random.insideUnitCircle * shakeAmount;
+                if (shakeTime <= 0) shakeAmount = 0;
             }
+            if (kick != Vector2.zero || kickVelocity != Vector2.zero)
+            {
+                // A stiff spring, slightly under-damped: back in about a tenth of a second with a small bounce.
+                var kdt = dt * Anim.TimeScale;
+                const float omega = 32, damping = 0.45f;
+                kickVelocity += (-omega * omega * kick - 2 * damping * omega * kickVelocity) * kdt;
+                kick += kickVelocity * kdt;
+                if (kick.sqrMagnitude < 0.01f && kickVelocity.sqrMagnitude < 1) kick = kickVelocity = Vector2.zero;
+            }
+            off += new Vector2(kick.x, -kick.y);
+            if (shakeTime > 0 || off != Vector2.zero || Camera.transform.position != cameraHome)
+                Camera.transform.position = cameraHome + (Vector3)(off / Design.PixelsPerUnit);
             if (Screen != null)
             {
                 try { Screen.Tick(dt); }
