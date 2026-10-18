@@ -24,6 +24,7 @@ Usage:
 
 Needs Pillow and numpy.
 """
+import re
 import sys
 from pathlib import Path
 
@@ -169,20 +170,25 @@ def _trim_box(alpha: np.ndarray, pad: int = 6) -> tuple[int, int, int, int]:
     return max(0, xs.min() - pad), max(0, ys.min() - pad), min(w, xs.max() + pad + 1), min(h, ys.max() + pad + 1)
 
 
+# Key pose names (scripts/hero_poses.py): the epic ones and <weapon kind>_<beat>.
+POSE_NAME = re.compile(r"_(charge|leap|land|(?:sword|axe|hammer|dagger|staff|wand)_(?:wind|step|strike))$")
+
+
 def _outfit_base(key: str) -> Path | None:
     """Armor outfits (`char_<class>_<armor>`) are edits of the class's bare art in the same framing. Cropping them
     with the bare art's box keeps the fists at the same pixels, so the class's hand anchors stay valid."""
     parts = key.split("_", 2)
-    if len(parts) < 3 or parts[0] != "char" or parts[2].startswith("bare"):
+    if len(parts) < 3 or parts[0] != "char" or parts[2].startswith("bare") or POSE_NAME.search(key):
         return None
     return next((p for p in RAW.glob(f"char_{parts[1]}_bare.*") if p.suffix.lower() in EXTS), None)
 
 
 def _pose_base(key: str) -> Path | None:
-    """Key poses (`char_<class>_bare_<pose>`, scripts/hero_poses.py) come already cut to their canvas (feet on the
-    bare art's baseline, centered on it) in the bare art's pixels: they are scaled like the bare art, not trimmed."""
-    parts = key.split("_", 3)
-    if len(parts) < 4 or parts[0] != "char" or parts[2] != "bare":
+    """Key poses (`char_<class>_bare_<pose>`, and `char_<class>_<armor>_<pose>` in an outfit; scripts/hero_poses.py)
+    come already cut to their canvas (feet on the bare art's baseline, centered on it) in the bare art's pixels: they
+    are scaled like the bare art, not trimmed."""
+    parts = key.split("_", 2)
+    if len(parts) < 3 or parts[0] != "char" or not POSE_NAME.search(key):
         return None
     return next((p for p in RAW.glob(f"char_{parts[1]}_bare.*") if p.suffix.lower() in EXTS), None)
 

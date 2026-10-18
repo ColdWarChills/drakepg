@@ -14,32 +14,33 @@ const HERO_ART = 'char_hero_bare';
 const RAISED_FIST: Hand = { x: 235.1, y: 133.5, angle: -10, fingers: { art: 'part_hero_fingers', x: 190, y: 95 } };
 /**
  * Key poses for the top skills (`SkillDef.epic`; scripts/hero_poses.py, Qwen edits of the base): the weapon fist on each
+ * (canvases include hero_poses.MARGIN_X on both sides, so outfit robes fit; x is measured with it)
  * (`char_hero_bare_<pose>`, 1x px). A circle of the fist covers the grip. charge: the power stance, the sword raised
  * beside his head; leap: both fists together overhead, the weapon swung back behind his head; land: the deep lunge after the blow, both fists low in front.
  */
 const HERO_POSES: Record<string, Hand[]> = {
-  charge: [{ x: 157, y: 48, angle: -30 }],
-  leap: [{ x: 110, y: 28, angle: -120 }],
-  land: [{ x: 388, y: 305, angle: 128 }],
+  charge: [{ x: 186.7, y: 48, angle: -30 }],
+  leap: [{ x: 139.7, y: 28, angle: -120 }],
+  land: [{ x: 417.7, y: 305, angle: 128 }],
   // A blow per weapon kind (Unity BattleScreen.WeaponBlow): <kind>_wind, _step, _strike. The first hand holds the weapon;
   // dagger poses also give the rogue's second dagger hand. The hammer steps in with the epic leap.
-  sword_wind: [{ x: 104, y: 68, angle: -75 }],
-  sword_step: [{ x: 99, y: 21, angle: -45 }],
-  sword_strike: [{ x: 302, y: 388, angle: 115 }],
-  axe_wind: [{ x: 116, y: 23, angle: -110 }],
-  axe_step: [{ x: 129, y: 21, angle: -90 }],
-  axe_strike: [{ x: 321, y: 292, angle: 115 }],
-  hammer_wind: [{ x: 27, y: 267, angle: -150 }],
-  hammer_strike: [{ x: 267, y: 383, angle: 112 }],
-  dagger_wind: [{ x: 300, y: 240, angle: 70 }, { x: 60, y: 233, angle: -130 }],
-  dagger_step: [{ x: 358, y: 238, angle: 60 }, { x: 106, y: 238, angle: -120 }],
-  dagger_strike: [{ x: 444, y: 125, angle: 90 }, { x: 144, y: 238, angle: -140 }],
-  staff_wind: [{ x: 75, y: 21, angle: 0 }],
-  staff_step: [{ x: 186, y: 35, angle: 30 }],
-  staff_strike: [{ x: 379, y: 123, angle: 80 }],
-  wand_wind: [{ x: 96, y: 79, angle: -12 }],
-  wand_step: [{ x: 217, y: 133, angle: 40 }],
-  wand_strike: [{ x: 357, y: 100, angle: 75 }],
+  sword_wind: [{ x: 133.7, y: 68, angle: -75 }],
+  sword_step: [{ x: 128.7, y: 21, angle: -45 }],
+  sword_strike: [{ x: 331.7, y: 388, angle: 115 }],
+  axe_wind: [{ x: 145.7, y: 23, angle: -110 }],
+  axe_step: [{ x: 158.7, y: 21, angle: -90 }],
+  axe_strike: [{ x: 350.7, y: 292, angle: 115 }],
+  hammer_wind: [{ x: 56.7, y: 267, angle: -150 }],
+  hammer_strike: [{ x: 296.7, y: 383, angle: 112 }],
+  dagger_wind: [{ x: 329.7, y: 240, angle: 70 }, { x: 89.7, y: 233, angle: -130 }],
+  dagger_step: [{ x: 387.7, y: 238, angle: 60 }, { x: 135.7, y: 238, angle: -120 }],
+  dagger_strike: [{ x: 473.7, y: 125, angle: 90 }, { x: 173.7, y: 238, angle: -140 }],
+  staff_wind: [{ x: 104.7, y: 21, angle: 0 }],
+  staff_step: [{ x: 215.7, y: 35, angle: 30 }],
+  staff_strike: [{ x: 408.7, y: 123, angle: 80 }],
+  wand_wind: [{ x: 125.7, y: 79, angle: -12 }],
+  wand_step: [{ x: 246.7, y: 133, angle: 40 }],
+  wand_strike: [{ x: 386.7, y: 100, angle: 75 }],
 };
 
 export const CLASSES: ClassDef[] = [

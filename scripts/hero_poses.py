@@ -11,6 +11,13 @@ and centered where the base is, so the game can swap pictures without the hero j
   python scripts/hero_poses.py gen sword_ dagger_ --seeds 2       # every pose whose name starts with these
   python scripts/hero_poses.py sheet                             # every try side by side -> art/redo/pose/_sheet.png
   python scripts/hero_poses.py pick charge:4243 leap:4242        # cut to the game canvas -> art/raw + prepare_art
+
+Every pose in every body-armor outfit (`char_hero_<armor>_<pose>`, the look Player.look picks with that armor): edits
+of the picked bare try with the outfit's own prompt (redo_art.OUTFITS), cut with the bare pose's exact box, so the
+pose's hand anchors fit every outfit.
+  python scripts/hero_poses.py outfits gen [--armors a,b] [--poses p,q] [--seed 5100] [--no-ref]  # -> art/redo/pose/outfit/
+  python scripts/hero_poses.py outfits sheet <armor>                                   # an outfit's poses, bare beside
+  python scripts/hero_poses.py outfits cut [armor_pose:seed ...]                        # -> art/raw + prepare_art
 """
 import io
 import subprocess
@@ -130,6 +137,20 @@ POSES = {
 OPEN_HAND.update(k for k in POSES if k.startswith(("staff_", "wand_")))
 
 
+# The try picked for each pose (`pick`): the outfit versions are edits of these.
+PICKS = {
+    "charge": 4244, "leap": 4242, "land": 4242,
+    "sword_wind": 4243, "sword_step": 4242, "sword_strike": 4250, "axe_wind": 4242, "axe_step": 4242, "axe_strike": 4242,
+    "hammer_wind": 4242, "hammer_strike": 4242, "dagger_wind": 4243, "dagger_step": 4243, "dagger_strike": 4242,
+    "staff_wind": 4242, "staff_step": 4243, "staff_strike": 4242, "wand_wind": 4243, "wand_step": 4243, "wand_strike": 4243,
+}
+OUTFIT_DIR = OUT / "outfit"
+# Extra canvas on both sides of every pose (bare and outfits), in edit px (2.154 per 1x game px: 1034 / 480). The pose
+# hands in src/data/classes.ts are measured on canvases that include it.
+MARGIN_X = 64
+OUTFIT_SEED = 5100
+
+
 def base_canvas() -> Image.Image:
     """The base hero on the square edit canvas: same pixel size, centered sideways, same height from the bottom."""
     base = Image.open(BASE).convert("RGBA")
@@ -223,32 +244,175 @@ def sheet(out: Path) -> None:
     print(out)
 
 
-def pick(picks: list[str]) -> None:
-    """Cut each pick to the game canvas: the base's scale and height, its feet on the base's baseline, centered where
-    the base figure's center is; as wide as the pose needs (symmetric, so the bottom-center pivot stays put)."""
+def cut_of(img: Image.Image) -> tuple[tuple[int, int, int, int], int]:
+    """Where a try is cut to the game canvas: the box (its feet on the base's baseline, centered where the base figure's
+    center is, as wide as the pose needs on both sides so the bottom-center pivot stays put) and the vertical shift."""
     base = base_canvas()
     bx0, by0, bx1, by1 = figure_box(base)
     pad = 6
     cx = (bx0 + bx1) / 2
+    x0, y0, x1, y1 = figure_box(img)
+    # Feet on the base's baseline: shift the picture down/up so its lowest pixel meets the base's.
+    dy = by1 - y1
+    # MARGIN_X more on both sides: outfit robes flare past the bare pose (up to 58 px) and are cut with its box.
+    half = max(cx - x0, x1 - cx) + pad + MARGIN_X
+    top = min(by0, y0 + dy) - pad
+    return (round(cx - half), round(top), round(cx + half), by1 + pad), dy
+
+
+def cut(img: Image.Image, box: tuple[int, int, int, int], dy: int) -> Image.Image:
+    shifted = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    shifted.alpha_composite(img, (0, dy)) if dy >= 0 else shifted.alpha_composite(img.crop((0, -dy, img.width, img.height)))
+    canvas = Image.new("RGBA", (box[2] - box[0], box[3] - box[1]), (0, 0, 0, 0))
+    canvas.alpha_composite(shifted, (-box[0], -box[1]))
+    return canvas
+
+
+def pick(picks: list[str]) -> None:
+    """Cut each pick to the game canvas (cut_of): the base's scale and height, its feet on the base's baseline."""
     keys = []
     for p in picks:
         pose, _, seed = p.partition(":")
         img = cleaned(OUT / f"{pose}_s{seed or FIRST_SEED}.png")
-        x0, y0, x1, y1 = figure_box(img)
-        # Feet on the base's baseline: shift the picture down/up so its lowest pixel meets the base's.
-        dy = by1 - y1
-        half = max(cx - x0, x1 - cx) + pad
-        top = min(by0, y0 + dy) - pad
-        box = (round(cx - half), round(top), round(cx + half), by1 + pad)
-        shifted = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        shifted.alpha_composite(img, (0, dy)) if dy >= 0 else shifted.alpha_composite(img.crop((0, -dy, img.width, img.height)))
-        canvas = Image.new("RGBA", (box[2] - box[0], box[3] - box[1]), (0, 0, 0, 0))
-        canvas.alpha_composite(shifted, (-box[0], -box[1]))
+        box, dy = cut_of(img)
+        canvas = cut(img, box, dy)
         key = f"char_hero_bare_{pose}"
         canvas.save(RAW / f"{key}.png")
         keys.append(key)
-        print(f"{key}: {canvas.size} (base figure {bx1 - bx0 + 2 * pad}x{by1 - by0 + 2 * pad}), feet moved {dy:+d} px")
+        print(f"{key}: {canvas.size}, feet moved {dy:+d} px")
     subprocess.run([sys.executable, str(ROOT / "scripts" / "prepare_art.py"), "--force", *keys], check=False)
+
+
+# --- The poses in every outfit ---
+
+# Outfits that drifted in motion, described for it: stormweave turned into white silk trousers in strides and lunges.
+OUTFIT_IN_MOTION = {
+    "stormweave_robe": "a long pale silver-blue silk robe with small yellow lightning zigzags stitched along the seams, "
+                       "wrapped closed across his chest and belted at the waist exactly as in <image2>, and OPEN only "
+                       "below the belt like a long coat: its two lower front panels hang loose at his sides and swing "
+                       "with the motion, and his dark teal trousers show clearly on both legs between them",
+}
+
+
+def outfit_prompt(armor: str, pose: str, ref: bool = True) -> str:
+    """The edit of a bare pose into an outfit. ref: <image2> is the standing hero in that outfit (its exact design:
+    length, pattern, the trousers under a robe); without it robes drifted into pants and lost their stitching."""
+    from redo_art import OUTFITS
+    OUTFITS = {**OUTFITS, **OUTFIT_IN_MOTION}
+    hands = ("his fist and his open hand exactly the same and in exactly the same place" if pose in OPEN_HAND
+             else "both empty fists exactly the same and in exactly the same place")
+    if ref:
+        dress = (f"Dress the hero of <image1> in exactly the outfit the hero wears in <image2>: {OUTFITS[armor]}, with the "
+                 "same cut, length, colours and pattern as in <image2>, and the same dark teal trousers and brown boots "
+                 "under it as in <image2>. Take only the clothes from <image2>, not its pose. ")
+    else:
+        dress = f"Change only the clothing: the hero now wears {OUTFITS[armor]}. "
+    return (f"{RGBA_OPEN} Edit <image1>. {dress}Keep everything else of <image1> exactly the same: the same young hero "
+            "with messy dark brown hair and the red headband, the same face and expression, the same body, pose and "
+            f"proportions, {hands}, the same flat cartoon art style with hard-edged cel shadows, thin dark outlines and a "
+            f"warm golden rim light. No weapon anywhere. No ground, no shadow, no text. {RGBA_CLOSE}")
+
+
+def outfit_gen(armors: list[str], poses: list[str], seed: int, with_ref: bool = True) -> None:
+    comfy = Comfy("http://127.0.0.1:8188")
+    comfy.check()
+    OUTFIT_DIR.mkdir(parents=True, exist_ok=True)
+    looks = {}
+    if with_ref:
+        for armor in armors:
+            standing = Image.open(ROOT / "src" / "assets" / "art" / f"char_hero_{armor}@2x.webp").convert("RGBA")
+            looks[armor] = comfy.upload(f"drakepg_outfit_{armor}.png", on_white(standing))
+    for pose in poses:
+        src = cleaned(OUT / f"{pose}_s{PICKS[pose]}.png")
+        ref = comfy.upload(f"drakepg_pose_{pose}.png", on_white(src))
+        for armor in armors:
+            out = OUTFIT_DIR / f"{armor}_{pose}_s{seed}.png"
+            if out.exists():
+                continue
+            print(out.relative_to(ROOT), flush=True)
+            refs = [ref, looks[armor]] if with_ref else [ref]
+            try:
+                out.write_bytes(comfy.generate(outfit_prompt(armor, pose, with_ref), refs, None, seed, 30))
+            except RuntimeError as e:
+                print(f"  ComfyUI error: {e}", flush=True)
+                continue
+            write_notes(out.with_suffix(".txt"), comfy.last_graph)
+
+
+def outfit_sheet(armor: str, out: Path) -> None:
+    """An outfit's poses next to the bare ones, cut like the game will see them, on a light tile."""
+    font = ImageFont.load_default()
+    try:
+        font = ImageFont.truetype("arialbd.ttf", 15)
+    except OSError:
+        pass
+    cells = []
+    for pose in PICKS:
+        tries = sorted(OUTFIT_DIR.glob(f"{armor}_{pose}_s*.png"))
+        if not tries:
+            continue
+        bare = cleaned(OUT / f"{pose}_s{PICKS[pose]}.png")
+        box, dy = cut_of(bare)
+        row = [(f"bare {pose}", cut(bare, box, dy))] + [(t.stem, cut(fit(cleaned(t)), box, dy)) for t in tries]
+        cells.append(row)
+    h = 300
+    width = max(sum(round(img.width * h / img.height) + 8 for _, img in row) for row in cells) + 8
+    sheet_img = Image.new("RGB", (width, len(cells) * (h + 22) + 8), (30, 28, 34))
+    d = ImageDraw.Draw(sheet_img)
+    y = 6
+    for row in cells:
+        x = 6
+        for label, img in row:
+            w = round(img.width * h / img.height)
+            tile = Image.new("RGBA", img.size, (226, 220, 204, 255))
+            tile.alpha_composite(img)
+            sheet_img.paste(tile.convert("RGB").resize((w, h), Image.LANCZOS), (x, y + 18))
+            d.text((x, y), label, fill=(235, 228, 210), font=font)
+            x += w + 8
+        y += h + 22
+    sheet_img.save(out)
+    print(out)
+
+
+def fit(img: Image.Image) -> Image.Image:
+    """An edit back on the try's square canvas (the edit may come back a few pixels off size)."""
+    return img if img.size == (CANVAS, CANVAS) else img.resize((CANVAS, CANVAS), Image.LANCZOS)
+
+
+def outfit_cut(picks: list[str]) -> None:
+    """Cut outfit poses with their bare pose's box. picks: `armor_pose:seed`, or nothing for every edit there is (the
+    newest seed of each). Warns when the outfit spills past the box (it would be clipped)."""
+    from redo_art import OUTFITS
+    chosen: dict[tuple[str, str], int] = {}
+    if picks:
+        for p in picks:
+            name, _, seed = p.partition(":")
+            armor = next(a for a in OUTFITS if name.startswith(a + "_"))
+            chosen[(armor, name[len(armor) + 1:])] = int(seed or OUTFIT_SEED)
+    else:
+        for path in sorted(OUTFIT_DIR.glob("*_s*.png")):
+            name, _, seed = path.stem.rpartition("_s")
+            armor = next((a for a in OUTFITS if name.startswith(a + "_")), None)
+            if armor is None:
+                continue
+            key = (armor, name[len(armor) + 1:])
+            chosen[key] = max(chosen.get(key, 0), int(seed))
+    keys = []
+    for (armor, pose), seed in sorted(chosen.items()):
+        bare = cleaned(OUT / f"{pose}_s{PICKS[pose]}.png")
+        box, dy = cut_of(bare)
+        img = fit(cleaned(OUTFIT_DIR / f"{armor}_{pose}_s{seed}.png"))
+        canvas = cut(img, box, dy)
+        a = np.asarray(canvas)[..., 3] >= 128
+        spill = int(a[0].sum() + a[:, 0].sum() + a[:, -1].sum())
+        key = f"char_hero_{armor}_{pose}"
+        canvas.save(RAW / f"{key}.png")
+        keys.append(key)
+        if spill > 20:
+            print(f"  {key}: {spill} px touch the edge (clipped)")
+    print(f"cut {len(keys)} outfit poses")
+    for i in range(0, len(keys), 40):
+        subprocess.run([sys.executable, str(ROOT / "scripts" / "prepare_art.py"), "--force", *keys[i:i + 40]], check=False)
 
 
 def main() -> None:
@@ -261,6 +425,21 @@ def main() -> None:
     if args[0] == "pick":
         pick(args[1:])
         return
+    if args[0] == "outfits":
+        from redo_art import OUTFITS
+        sub = args[1] if len(args) > 1 else ""
+        opt = lambda name: args[args.index(name) + 1] if name in args else None  # noqa: E731
+        if sub == "gen":
+            armors = opt("--armors").split(",") if opt("--armors") else list(OUTFITS)
+            poses = opt("--poses").split(",") if opt("--poses") else list(PICKS)
+            outfit_gen(armors, poses, int(opt("--seed") or OUTFIT_SEED), "--no-ref" not in args)
+            return
+        if sub == "sheet":
+            outfit_sheet(args[2], OUTFIT_DIR / f"_sheet_{args[2]}.png")
+            return
+        if sub == "cut":
+            outfit_cut(args[2:])
+            return
     if args[0] == "gen":
         seeds, first = 2, FIRST_SEED
         if "--seeds" in args:

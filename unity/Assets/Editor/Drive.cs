@@ -47,11 +47,18 @@ namespace Drakepg.EditorTools
         /// standing) across the current screen, to check a pose's hands. `hands` overrides a pose's first hand for the
         /// test: "pose=x,y,angle;pose2=..." (1x px). Call again to redo; Close it with an empty pose list.
         /// </summary>
-        public static string PoseSheet(string classId, string weaponId, string poses, string hands = "")
+        public static string PoseSheet(string classId, string weaponId, string poses, string hands = "", string outfit = null)
         {
             if (poseSheet != null) Object.Destroy(poseSheet);
             if (string.IsNullOrEmpty(poses)) return "cleared";
             var look = Db.Class(classId).Look;
+            if (outfit != null)
+            {
+                // In an armor's outfit, as Player.Look dresses the hero (same hands and poses, the outfit's art).
+                look = look.Clone();
+                var b = look.Bare[0];
+                look.Bare = new List<BareLook> { new BareLook { Art = "char_hero_" + outfit, Hands = b.Hands, Poses = b.Poses } };
+            }
             var bare = look.Bare[0];
             foreach (var part in hands.Split(';'))
             {
