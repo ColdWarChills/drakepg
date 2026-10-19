@@ -42,7 +42,7 @@ Build order (all built, see "Done" at the bottom):
 4. ~~Chapter 1-3 room layouts plus drafted story lines for review~~
 5. ~~Sim and pacing check, art queue entries~~
 
-- **Review:** every new line (first-visit scenes, notes, signs) is a draft, listed in `docs/ROOM_LINES.md`. Mark what to change; the next chat edits `src/data/world.ts` and deletes that file once approved. Includes the Hunters' Camp lines.
+- **Review (on hold, 2026-10-19: no dialogues for now):** every new line (first-visit scenes, notes, signs) is a draft, listed in `docs/ROOM_LINES.md`. Mark what to change; the next chat edits `src/data/world.ts` and deletes that file once approved. Includes the Hunters' Camp lines.
 - **Timed run:** the designer times one run per chapter; compare with the pace bot (see "Longer chapters").
 - **Playtest by hand** (only the sim, the pace bot and screenshots have checked these so far):
   - New rooms: one timed run per chapter (the pace bot's minutes are guesses). Do the quiet rooms feel good or slow? Are campfires before every boss too generous?
@@ -117,7 +117,7 @@ Build order (all built, see "Done" at the bottom):
 - **Built (2026-10-15, designer: "too long to get to the city, uneventful", then "first with 1 monster, second with 2, then the boss before the city"):** 3 rooms instead of 6: Overturned Cart (1 pest), Old Mill Road (2 pests), Brindlemoor Gate (Pell and a gate guard per class), each weak to that class's first skill so it teaches weak spots: Warrior Millstone Crab (Blunt: Heavy Strike), Mage Dusk Wraith (Light: Light Bolt), Rogue Hedge Troll (Poison: Gas Shot). See `docs/IMPROVEMENTS_2026-10.md`.
 - To do: real monsters (names, stats) for `burrow_rat`, `dew_slug` and `hedge_pixie`. Art made in the art redo (2026-10-17): a plump field rat, a green garden slug, a twig-haired pixie with a thorn spear.
 - ~~To do: background art for the 3 `road_*` rooms, art for Odo and Pell, the 3 gate guards~~: made in the art redo (2026-10-17).
-- To do: final lines for Odo and Pell (redrafted for the gate guard, listed in `docs/ROOM_LINES.md`).
+- On hold (no dialogues for now): final lines for Odo and Pell (redrafted for the gate guard, listed in `docs/ROOM_LINES.md`).
 - **Open:** the designer called the Rogue "ranger" when asking for Gas Shot. Rename the class, or keep Rogue?
 - **Proposed:** more Blunt and Poison weak spots later (skeletons, golems and shelled things weak to Blunt; big beasts weak to Poison; slimes could resist Blunt). Only the gate guards use them now.
 - ~~Open: the hero looks armored with no armor on~~: the art redo's base hero wears plain clothes (cream shirt, teal trousers); armor changes the outfit.
@@ -129,6 +129,7 @@ Build order (all built, see "Done" at the bottom):
 - **Decided:** dragons must be super rare, not a common enemy or a boss every chapter.
 - **Decided:** the hero is a wanderer. Keep Warrior, Mage and Rogue.
 - **Decided:** no rework of the Ch1-3 story for now.
+- **Decided (designer, 2026-10-19): no dialogues for now.** NPC lines, room lines and story text wait: the drafts in `docs/ROOM_LINES.md` and the Odo/Pell lines stay as they are, no review needed yet.
 - **Decided:** rooms stay stationary single screens, with vertical (up/down) exits allowed.
 - **Proposed:** story rooms always show their short lines, even with story text off.
 - **Open:** turn story text on by default? It's off now (`storyText: false` in `src/game/settings.ts`), so players see only each NPC's first line.
