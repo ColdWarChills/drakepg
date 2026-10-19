@@ -817,7 +817,7 @@ export const MONSTERS: MonsterDef[] = [
     resists: { ice: 50, wind: 25, fire: -50 },
     immune: ['stun'],
     // Boss test: lasting the distance. Her blizzard half wears you down every other move.
-    trait: 'Big hit every 3rd move. At half HP: turns Wind (Blizzard).',
+    trait: 'Big hit every 3rd move. At half HP: a fiercer Wind blizzard.',
     heroic: {
       text: 'Shatter every 5th move: a heavy Ice blow.',
       attacks: [{ name: 'Shatter', damageType: 'magic', element: 'ice', power: 1.8, weight: 1, every: 5 }],
@@ -837,21 +837,22 @@ export const MONSTERS: MonsterDef[] = [
     // Halfway down she draws on the frozen dragon and becomes the blizzard itself: bring Fire and Earth.
     phase: {
       at: 0.5,
-      text: 'The Frostbinder presses a hand to the dragon\'s ice and drinks its strength! She dissolves into a howling blizzard. She is a Wind creature now.',
+      text: 'The Frostbinder presses a hand to the dragon\'s ice and drinks its strength! She dissolves into a howling blizzard. She is a Wind creature now, and only Earth cuts through the storm.',
       element: 'wind',
-      resists: { wind: 50, ice: 25, earth: -50 },
+      // The blizzard scatters every element but Earth: totals Wind 50, Ice 25, Earth -50, everything else 20.
+      resists: { all: 20, wind: 30, ice: 5, earth: -70 },
       attacks: [
         {
           name: 'Cyclone',
           damageType: 'magic',
-          power: 2.8,
+          power: 3.4,
           weight: 2,
           every: 3,
           windup: 'The wind screams into a funnel around the Frostbinder... (Defend or heal!)',
         },
-        { name: 'Gale Slash', damageType: 'magic', power: 1, weight: 4 },
-        { name: 'Whiteout', damageType: 'magic', power: 0.8, weight: 2, applies: [{ status: 'blind', turns: 2, chance: 0.6 }] },
-        { name: 'Blizzard', damageType: 'magic', power: 0.6, weight: 1, every: 2, applies: [{ status: 'windchill', turns: 3 }] },
+        { name: 'Hail Lash', damageType: 'pierce', power: 1.5, weight: 4 },
+        { name: 'Whiteout', damageType: 'magic', power: 1.0, weight: 2, applies: [{ status: 'blind', turns: 2, chance: 0.6 }] },
+        { name: 'Blizzard', damageType: 'magic', power: 0.8, weight: 1, every: 2, applies: [{ status: 'windchill', turns: 3 }] },
       ],
     },
     xp: 1000,

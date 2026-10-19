@@ -481,6 +481,8 @@ table('The Frostbinder (boss, Ice -> Wind at half HP, 3 potions)', [
   { monster: 'frostbinder', level: 14, gear: FIRE3_SWAP, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 14, gear: STORM, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', level: 15, gear: SHOP3, potions: 3, potion: SUPERIOR },
+  // Where the pace bot usually meets her (Rank C at 3 points).
+  { monster: 'frostbinder', level: 16, gear: SHOP3, potions: 3, potion: SUPERIOR },
 ]);
 
 table('Heroic rematches (3 potions, a few levels past the chapter)', [

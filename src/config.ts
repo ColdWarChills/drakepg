@@ -211,7 +211,7 @@ export const BALANCE = {
     ranks: [
       { id: 'F', minLevel: 1, toNext: 3 },
       { id: 'E', minLevel: 3, toNext: 4 },
-      { id: 'D', minLevel: 6, toNext: 5 },
+      { id: 'D', minLevel: 6, toNext: 3 },
       { id: 'C', minLevel: 9, toNext: 6 },
       { id: 'B', minLevel: 12, toNext: 8 },
       { id: 'A', minLevel: 15, toNext: 10 },
