@@ -14,7 +14,7 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
     - Fixed on the way: screen shake (unstable kick spring), "circles instead of splats" (effect sprites drawn with the wrong texture: `Fx.BindTexture`).
   - **Tools for the next chat:** `unity/Assets/Editor/Drive.cs` (NewGame, Room, Fight, Wield, Presses, Record for clips, PoseSheet for checking poses and grips, Shot); ffmpeg at `C:\Users\Epic\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0-full_build\bin\ffmpeg.exe` for clips; local ComfyUI + Qwen for art (~30-70 s per edit). A Unity import of many new textures is slow (crunch): wait for "Asset Pipeline Refresh ... Total" in `C:/Users/Epic/UnityCache/editor.log`.
   - **Open, most important first:**
-    - Playtest the battles: too much blood, slow motion or shake? Blows take ~0.75 s (monsters ~0.85 s): does farming drag? Do the key poses read?
+    - Playtest the battles: too much blood, slow motion or shake? Blows take ~0.75 s (monsters ~0.85 s): does farming drag? Research (2026-10-26): fast, fluid battles are a top praise point in comparables (Dungeon Antiqua 2, Veilbreak) and players in this genre want to grind; **proposed:** a battle speed option (x2), and slow motion and long freezes only on boss and finishing blows, not every trash fight. Do the key poses read?
     - Web build size: 240 more pose textures; build WebGL and measure (was 45 MB). If too big, outfit poses at 1x.
     - Playtest the three locations: do the map pages read, are the landmarks near their rooms? Is the Frostbinder's blizzard half a real fight now?
     - Monsters bend but have no key poses; the rogue's lowered dagger hand still uses the round fist (no fingers sprite).
@@ -132,6 +132,7 @@ Build order (all built, see "Done" at the bottom):
 - **Decided (designer, 2026-10-19): no dialogues for now.** NPC lines, room lines and story text wait: the drafts in `docs/ROOM_LINES.md` and the Odo/Pell lines stay as they are, no review needed yet.
 - **Decided:** rooms stay stationary single screens, with vertical (up/down) exits allowed.
 - **Proposed:** story rooms always show their short lines, even with story text off.
+- Research (2026-10-26): characters, humour and writing are among the top praise points of the hits (Kingdoms of the Dump, The Crazy Hyper-Dungeon Chronicles, Isekai Adventurer Guild), and "minimal story" or "poor dialogue" among the complaints (Dungeon Antiqua 2, Veilbreak). When dialogues come back, treat personality as a feature.
 - **Open:** turn story text on by default? It's off now (`storyText: false` in `src/game/settings.ts`), so players see only each NPC's first line.
 - **Open:** give each quest offer a short in-character line too (offers still use the plain reminder line)?
 - **Open:** magic-world story spec (rules of magic, who the wanderer is, how it connects to Ch1-3). Not started.
@@ -282,7 +283,7 @@ Market research on 25 indie 2D turn-based or loot-and-class RPGs released on Ste
 ## Parked
 
 - **#7 Class choice before seeing combat:** not important now. Options: a free class swap until the end of Chapter 1, or a one-fight trial per class on the Create screen.
-- **#8 Bad-luck protection kicks in too late:** agreed, not urgent. `pityAfter` is 80 dry kills per area; a chapter is roughly 40-50 normal kills, so it may never trigger. Options: lower to 25-30, count across all areas, or cut it.
+- **#8 Bad-luck protection kicks in too late:** agreed, not urgent. Research (2026-10-26): drop grinds that run into the hundreds are a standing complaint (Xenoblade 2's rare Blades need 100-150+ missions); lower it when loot is reworked. `pityAfter` is 80 dry kills per area; a chapter is roughly 40-50 normal kills, so it may never trigger. Options: lower to 25-30, count across all areas, or cut it.
 - **#9 Endgame:** no goal yet, on purpose. Heroic boss tier is built. Open: more tiers later (new moves each, never more HP)?
 - **#10 System overlap audit:** agreed in principle. First candidates: hone vs reinforce, and normal mods vs Sigil mods.
 
