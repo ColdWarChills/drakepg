@@ -46,7 +46,7 @@ namespace Drakepg.Tests
                 case "heroic thornheart": return Monsters.MakeHeroic(Db.Monster("thornheart"));
                 case "heroic stormcoil": return Monsters.MakeHeroic(Db.Monster("stormcoil"));
                 case "impling fen": return Monsters.MakeImpling(Db.Zone("fen"));
-                default: return Db.Monster(name);
+                default: return Db.Monster(name.StartsWith("books ") ? name.Substring(6) : name);
             }
         }
 
@@ -84,6 +84,13 @@ namespace Drakepg.Tests
                 var cls = (string)f["cls"];
                 var seed = (int)f["seed"];
                 var player = HeroFor(cls, (int)f["chapter"]);
+                if (f["books"] != null && f["books"].Type != JTokenType.Null)
+                {
+                    var books = f["books"].Select(t => (string)t).ToList();
+                    player.Data.Learned = new List<string>(books);
+                    var heal = player.ClassDef.Skills.Select(s => Db.Skill(s.SkillId)).First(s => s.Kind == "heal");
+                    player.Data.Loadout = new[] { heal.Id }.Concat(books).ToList();
+                }
                 var rng = new Mulberry32((uint)(seed * 7919 + name.Length));
                 var battle = new Battle(player, MonsterFor(name), rng);
                 if (f["zoneId"].Type != JTokenType.Null) battle.ZoneId = (string)f["zoneId"];
@@ -104,6 +111,7 @@ namespace Drakepg.Tests
                 if (f["rewards"].Type != JTokenType.Null)
                     Assert.IsTrue(JToken.DeepEquals(f["rewards"], ToJson(battle.Rewards)), $"{where}: rewards\nTS {f["rewards"]}\nC# {ToJson(battle.Rewards)}");
                 Assert.IsTrue(JToken.DeepEquals(f["pity"], ToJson(player.Data.LootPity)), $"{where}: loot pity");
+                if (f["bookPity"] != null) Assert.IsTrue(JToken.DeepEquals(f["bookPity"], ToJson(player.Data.BookPity)), $"{where}: book pity");
                 checkedFights++;
                 lines += log.Count;
             }

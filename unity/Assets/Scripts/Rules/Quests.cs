@@ -99,6 +99,10 @@ namespace Drakepg.Rules
             quest.Rewards.ClassItems?.TryGetValue(player.Data.ClassId, out classItem);
             var ids = new List<string>(quest.Rewards.Items ?? new List<string>());
             if (classItem != null) ids.Add(classItem);
+            // Story bosses teach every class a skill: its book.
+            string classBook = null;
+            quest.Rewards.ClassBooks?.TryGetValue(player.Data.ClassId, out classBook);
+            if (classBook != null) ids.Add(Books.BookId(classBook));
             var rewards = new Rewards
             {
                 Xp = quest.Rewards.Xp * Cheats.Rates,

@@ -14,6 +14,10 @@ namespace Drakepg.Rules
         public double BaseCritChance, CritPerDex, CritMultiplier;
         public double StatDamageScale, BaseFleeChance;
         public int MaxLevel, SkillSlots, StatPointsPerLevel;
+        public BookTuning Books;
+        public Dictionary<string, FamilyTuning> Families;
+        public WardTuning Ward;
+        public FreezeTuning Freeze;
         public double DefendDamage, DefendMp, MaxPlayerResist, MinResist;
 
         public Dictionary<string, double> GearRolls;
@@ -40,6 +44,38 @@ namespace Drakepg.Rules
         public double RespawnSeconds;
         public ChestTuning Chest;
         public double WalkSpeed, MonsterWanderSpeed, MonsterChaseSpeed, MonsterAggroRange, FleeGraceSeconds;
+    }
+
+    /// <summary>Skill books (docs/BUILD_VARIETY_SPEC.md).</summary>
+    public class BookTuning
+    {
+        /// <summary>Level an element's books need.</summary>
+        public Dictionary<string, int> Levels;
+        public double Price, Match;
+        public BookDropTuning Drop;
+    }
+
+    public class BookDropTuning
+    {
+        public double Chance;
+        public int SureAfter;
+    }
+
+    public class FamilyTuning
+    {
+        public double Power, MpCost, Chance;
+        public int Hits, Cooldown;
+    }
+
+    public class WardTuning
+    {
+        public double Resist, MpCost;
+        public int Turns, Cooldown;
+    }
+
+    public class FreezeTuning
+    {
+        public double PerStat, Max;
     }
 
     public class SigilTuning

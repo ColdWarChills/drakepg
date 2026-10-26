@@ -31,6 +31,7 @@ import {
 } from '../src/game/Guild';
 import { rollGear, type Gear, type GearDef } from '../src/game/Items';
 import { emptyEquipment, Player } from '../src/game/Player';
+import { learnBooks, pickLoadout, readAll } from './bookplay';
 import { acceptQuest, questStarted, questStatus, questWantsElite, recordKill, turnInQuest } from '../src/game/Quests';
 import { visitRoom } from '../src/game/Travel';
 import { chance, seeded, weightedPick, type Rng } from '../src/game/rng';
@@ -249,6 +250,7 @@ class Run {
       return e ? (def.resists[e] ?? 0) : 0;
     };
     if (this.weapons.length > 1) p.data.equipment.weapon = [...this.weapons].sort((a, b) => resist(a) - resist(b))[0];
+    p.data.loadout = pickLoadout(p, def);
     p.restoreFull();
     const b = new Battle(p, def, this.rng);
     let turns = 0;
@@ -309,6 +311,9 @@ class Run {
     const p = this.p;
     const plan = STAT_PLAN[p.data.classId];
     for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
+    // Skill books: read the ones from rewards, and buy the shop books (and sure chests) once the level allows them.
+    readAll(p);
+    learnBooks(p, p.level, (s) => s.startsWith('Sold in') || s.startsWith('The chest in'));
     p.data.loadout = p.defaultLoadout();
   }
 

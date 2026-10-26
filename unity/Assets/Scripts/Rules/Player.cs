@@ -42,6 +42,10 @@ namespace Drakepg.Rules
         public string LastTown;
         public List<string> GuardsBeaten = new List<string>();
         public GuildState Guild = new GuildState();
+        /// <summary>Skills learned from books, in the order read (Books.cs). Save v16.</summary>
+        public List<string> Learned = new List<string>();
+        /// <summary>Elite kills without a book drop, per loot table. Save v16.</summary>
+        public Dictionary<string, double> BookPity = new Dictionary<string, double>();
     }
 
     public class Rewards
@@ -284,7 +288,18 @@ namespace Drakepg.Rules
         public double Xp => Data.Xp;
         public double XpNeeded => XpToNext(Level);
 
-        public List<SkillDef> KnownSkills => ClassDef.Skills.Where(s => s.Level <= Level).Select(s => Db.Skill(s.SkillId)).ToList();
+        /// <summary>Level skills unlocked at the current level, then skills learned from books (in the order read).</summary>
+        public List<SkillDef> KnownSkills
+        {
+            get
+            {
+                var fromLevels = ClassDef.Skills.Where(s => s.Level <= Level).Select(s => s.SkillId).ToList();
+                return fromLevels.Concat(Data.Learned.Where(id => !fromLevels.Contains(id))).Select(Db.Skill).ToList();
+            }
+        }
+
+        public bool KnowsSkill(string skillId) =>
+            Data.Learned.Contains(skillId) || ClassDef.Skills.Any(s => s.SkillId == skillId && s.Level <= Level);
 
         public List<SkillDef> CarriedSkills
         {
@@ -309,7 +324,7 @@ namespace Drakepg.Rules
         /// <summary>added, removed, full or unknown.</summary>
         public string ToggleCarry(string skillId)
         {
-            if (!KnownSkills.Any(s => s.Id == skillId)) return "unknown";
+            if (!KnowsSkill(skillId)) return "unknown";
             var list = Data.Loadout;
             if (list.Contains(skillId))
             {

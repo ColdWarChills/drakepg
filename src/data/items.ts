@@ -1,7 +1,35 @@
+import { BALANCE } from '../config';
+import { CLASSES } from './classes';
 import { MATERIALS } from './crafting';
+import { ELEMENT_COLORS } from './elements';
 import { EQUIPMENT } from './equipment';
 import { HUNT_ITEMS } from './guild';
-import type { ItemDef } from './types';
+import { SKILLS } from './skills';
+import type { BookDef, ItemDef, SkillDef } from './types';
+
+/** Level skills are learned by leveling; every other skill comes as a book. */
+const LEVEL_SKILLS = new Set(CLASSES.flatMap((c) => c.skills.map((s) => s.skillId)));
+
+/**
+ * A skill book (`book_<skill id>`). Price: `BALANCE.books.price` per read level, class books (not element families) x2;
+ * shops sell only element and generic books, so a class book's price is what it sells for.
+ */
+function book(skill: SkillDef): BookDef {
+  const level = skill.readLevel ?? 1;
+  const cls = CLASSES.find((c) => c.id === skill.classId);
+  const classBook = skill.classId !== undefined && !skill.family;
+  return {
+    id: `book_${skill.id}`,
+    type: 'book',
+    skillId: skill.id,
+    name: `${skill.name} Book`,
+    description: `Teaches ${skill.name} (${cls ? `${cls.name} only` : 'any class'}, level ${level}): ${skill.description}`,
+    price: BALANCE.books.price * level * (classBook ? 2 : 1),
+    iconColor: skill.element && skill.element !== 'weapon' ? ELEMENT_COLORS[skill.element][1] : 0x8d6e63,
+  };
+}
+
+export const BOOKS: BookDef[] = SKILLS.filter((s) => !LEVEL_SKILLS.has(s.id)).map(book);
 
 export const ITEMS: ItemDef[] = [
   // Consumables
@@ -943,4 +971,6 @@ export const ITEMS: ItemDef[] = [
   ...MATERIALS,
   // Guild gather hunt items (src/data/guild.ts)
   ...HUNT_ITEMS,
+  // Skill books, one per skill that isn't a level skill
+  ...BOOKS,
 ];

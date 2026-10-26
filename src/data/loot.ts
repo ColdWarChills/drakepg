@@ -63,6 +63,7 @@ export const LOOT_TABLES: LootTableDef[] = [
       rare: [{ itemId: 'thornheart_blade' }, { itemId: 'heartwood_staff' }, { itemId: 'briar_fang' }],
     },
     set: 'thornwarden',
+    books: ['fire', 'earth', 'wind'],
   },
   {
     id: 'fen',
@@ -97,6 +98,7 @@ export const LOOT_TABLES: LootTableDef[] = [
       rare: [{ itemId: 'thunderhead_maul' }, { itemId: 'stormcoil_scepter' }, { itemId: 'coilfang' }],
     },
     set: 'stormwatch',
+    books: ['water', 'energy'],
   },
   {
     // The Bogmother's own: her rare tier is the three Water weapons.
@@ -141,6 +143,7 @@ export const LOOT_TABLES: LootTableDef[] = [
       rare: [{ itemId: 'whiteout' }, { itemId: 'squall_stave' }, { itemId: 'galecutter' }],
     },
     set: 'frostward',
+    books: ['ice'],
   },
   {
     // Old Snowmaw's own: its rare tier is the three weapons made from it.

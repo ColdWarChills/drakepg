@@ -38,6 +38,11 @@ export interface StatusDef {
   regen?: number;
   /** Skip the next turn. */
   stun?: boolean;
+  /**
+   * A stun from Ice (`BALANCE.freeze`): its chance grows with the applier's stat and drops with the target's Ice resist,
+   * and a thawed target (`thawed` status) can't be frozen again right away.
+   */
+  freeze?: boolean;
   /** +0.3 = deal 30% more damage. */
   damageDealt?: number;
   /** -0.4 = take 40% less damage. */
@@ -118,8 +123,17 @@ export interface SkillDef {
   mpCost: number;
   /** After use, the skill is locked for this many of your turns. 0 = usable every turn. */
   cooldown: number;
-  /** 'buff' only applies statuses. */
-  kind: 'damage' | 'heal' | 'buff';
+  /** 'buff' only applies statuses. 'mana': restore `power` of max MP. 'flee': a sure flee from a fight you can flee. */
+  kind: 'damage' | 'heal' | 'buff' | 'mana' | 'flee';
+  /**
+   * Learned from a skill book (docs/BUILD_VARIETY_SPEC.md) unless it's one of its class's level skills. `classId`: only
+   * that class can read it; without it any class can (a generic book).
+   */
+  classId?: ClassId;
+  /** Level needed to read its book. Element books default to `BALANCE.bookLevels`. */
+  readLevel?: number;
+  /** An element family member (`FAMILIES` in skills.ts): fixed element, +`BALANCE.elementMatch` with a weapon of it. */
+  family?: FamilyShape;
   /** Damage skills: default 'weapon' (the equipped weapon's type). */
   damageType?: DamageType | 'weapon';
   /** Damage skills: default 'weapon' (the equipped weapon's element, if any). */
@@ -143,6 +157,9 @@ export interface SkillDef {
 
 export type SkillFx = 'slash' | 'heavy' | 'bolt' | 'heal' | 'buff';
 
+/** Each class's element family shape: Warrior strikes, Rogue knives, Mage bolts. */
+export type FamilyShape = 'strike' | 'knives' | 'bolt';
+
 export type ClassId = 'warrior' | 'mage' | 'rogue';
 
 export interface ClassDef {
@@ -155,8 +172,14 @@ export interface ClassDef {
   growth: Partial<Stats>;
   weapon: string;
   armor: string;
-  /** Skills and the level each unlocks at. */
+  /** Level skills and the level each unlocks at. */
   skills: { skillId: string; level: number }[];
+  /** Class skills learned from books (sources in the data: quest `classBooks`, promotions, `HEROIC_BOOKS`), in spellbook order. */
+  books: string[];
+  /** Its element family's shape (`FAMILIES` in skills.ts). */
+  family: FamilyShape;
+  /** A skill whose book the first Heroic win gives. */
+  heroicBook?: string;
   /** Rage: MP gained each time an enemy hit lands on you. Shown on the class card and Character panel. */
   mpOnHit?: number;
   look: Look;
@@ -275,7 +298,13 @@ export interface ScrollDef extends ItemBase {
   effect: 'recall';
 }
 
-export type ItemDef = WeaponDef | ArmorDef | AccessoryDef | ConsumableDef | MaterialDef | StoneDef | ScrollDef;
+/** Skill book: read it (right-click in the bag) to learn `skillId`; used up when read. Made from SKILLS in items.ts. */
+export interface BookDef extends ItemBase {
+  type: 'book';
+  skillId: string;
+}
+
+export type ItemDef = WeaponDef | ArmorDef | AccessoryDef | ConsumableDef | MaterialDef | StoneDef | ScrollDef | BookDef;
 
 /** What a set bonus gives. All of it is shown on the item card and the Character panel. */
 export interface SetBonus {
@@ -428,6 +457,8 @@ export interface LootTableDef {
   tiers: Record<LootTier, { itemId: string; weight?: number }[]>;
   /** The area's gear set: Elites and bosses here may also drop one of its pieces (`BALANCE.setDrop`). */
   set?: string;
+  /** Elites here may drop the family books and Wards of these elements (`BALANCE.bookDrop`). */
+  books?: Element[];
 }
 
 /** One Elite affix. Lives in elites.ts; every effect shows in the battle UI through `description`. */
@@ -471,7 +502,8 @@ export interface ZoneDef {
 
 export type NpcRole =
   | { kind: 'talk' }
-  | { kind: 'shop'; stock: string[] }
+  /** `books`: it also sells the family books and Wards of these elements (only the ones your class can read). */
+  | { kind: 'shop'; stock: string[]; books?: Element[] }
   | { kind: 'inn' }
   | { kind: 'forge'; recipes: string[] }
   /** The Adventurers' Guild board: hunts and ranks (src/game/Guild.ts). Every clerk shares one board. */
@@ -543,8 +575,11 @@ export interface RoomDef {
   /** Monsters roaming here come from this zone; battles use its scenery. */
   zoneId?: string;
   monsterCount?: number;
-  /** Side rooms: a real chest (never a mimic) always stands here when the room first fills each play session; refills roll as usual. Needs the chests feature. */
-  chest?: { x: number; y: number };
+  /**
+   * Side rooms: a real chest (never a mimic) always stands here when the room first fills each play session; refills roll
+   * as usual. Needs the chests feature. `book`: a skill whose book that first chest also holds, until you know or hold it.
+   */
+  chest?: { x: number; y: number; book?: string };
   /**
    * A boss standing in the room. With `questId`: there once that quest is accepted, and it stays after the quest for
    * rematches (less XP and gold). Without: a gate guard, there from the start and gone for good once beaten
@@ -610,7 +645,8 @@ export interface QuestDef {
   /** Said when you talk to the giver before finishing. */
   reminder: string;
   complete: string[];
-  rewards: { xp: number; gold: number; items?: string[]; classItems?: Partial<Record<ClassId, string>> };
+  /** `classBooks`: a skill (id) whose book this class gets, on top of `classItems`. */
+  rewards: { xp: number; gold: number; items?: string[]; classItems?: Partial<Record<ClassId, string>>; classBooks?: Partial<Record<ClassId, string>> };
   /** Last quest of a chapter: shows the chapter-complete banner. */
   endsChapter?: string;
 }

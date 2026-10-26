@@ -1,4 +1,5 @@
 import { BALANCE, SAVE_KEY, SAVE_VERSION } from '../config';
+import { readableBy } from './Books';
 import { db } from '../data/db';
 import { TOWN_START } from '../data/world';
 import type { EquipSlot } from '../data/types';
@@ -100,7 +101,20 @@ export const SaveSystem = {
  *             sanitize() carries newly known skills that haven't been announced yet.
  * v14 -> v15: the Adventurers' Guild (`guild`). The errand quests between the story quests are gone (sanitize()
  *             drops them); the rank they would have earned is given from how far the story got.
+ * v15 -> v16: skill books (`learned`, `bookPity`). Levels now teach 6 skills per class; the rest are books. Nobody loses
+ *             a skill: every skill the old level lists had taught by the hero's level is learned.
  */
+/** The level lists before skill books (save v15 and older): what an old character already knows. */
+const OLD_LEVEL_SKILLS: Record<string, [string, number][]> = {
+  warrior: [['heavy_strike', 1], ['second_wind', 2], ['war_cry', 3], ['skull_splitter', 4], ['shield_bash', 6], ['sunder', 8], ['iron_skin', 10], ['cleave', 12], ['bloodlust', 14], ['earthshaker', 16], ['rallying_roar', 18], ['titans_wrath', 20]],
+  mage: [['light_bolt', 1], ['mend', 2], ['ember_bolt', 2], ['frost_lance', 3], ['meteor', 5], ['spark_chain', 6], ['stone_skin', 8], ['gale', 10], ['tidal_wave', 12], ['sunburst', 14], ['shadow_hex', 16], ['thunderstorm', 18], ['cataclysm', 20]],
+  rogue: [['gas_shot', 1], ['twin_cut', 2], ['bandage', 2], ['flurry', 3], ['envenom', 4], ['assassinate', 5], ['smoke_bomb', 7], ['expose_weakness', 9], ['shadowstep', 11], ['fan_of_knives', 13], ['hemorrhage', 15], ['death_mark', 18], ['thousand_cuts', 20]],
+};
+
+function oldSkillsAt(classId: unknown, level: number): string[] {
+  return (OLD_LEVEL_SKILLS[typeof classId === 'string' ? classId : ''] ?? []).filter(([, l]) => l <= level).map(([id]) => id);
+}
+
 function migrate(file: SaveFile): SaveFile | null {
   if (!file || typeof file !== 'object' || !file.player) return null;
   if (file.version > SAVE_VERSION) {
@@ -129,8 +143,7 @@ function migrate(file: SaveFile): SaveFile | null {
   if (file.version < 9) {
     // Characters from before this already know their skills: no pile of popups on load.
     const p = file.player as Partial<PlayerData> & { level?: number; classId?: string };
-    const cls = typeof p.classId === 'string' && db.hasClass(p.classId) ? db.class(p.classId as never) : null;
-    p.seen = cls ? cls.skills.filter((s) => s.level <= (p.level ?? 1)).map((s) => `skill:${s.skillId}`) : [];
+    p.seen = oldSkillsAt(p.classId, p.level ?? 1).map((id) => `skill:${id}`);
     p.freshSkills = [];
     file.version = 9;
   }
@@ -166,6 +179,14 @@ function migrate(file: SaveFile): SaveFile | null {
     if (done('thaw') || started('the_old_one')) rank = 3;
     p.guild = { rank, points: 0, board: [], hunts: [], done: 0 };
     file.version = 15;
+  }
+  if (file.version < 16) {
+    const p = file.player as Partial<PlayerData>;
+    const cls = typeof p.classId === 'string' && db.hasClass(p.classId) ? db.class(p.classId) : null;
+    const levelSkills = new Set(cls?.skills.map((s) => s.skillId) ?? []);
+    p.learned = oldSkillsAt(p.classId, typeof p.level === 'number' ? p.level : 1).filter((id) => !levelSkills.has(id));
+    p.bookPity = {};
+    file.version = 16;
   }
   return file;
 }
@@ -274,6 +295,10 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
     lastTown: typeof raw.lastTown === 'string' && db.hasRoom(raw.lastTown) && db.room(raw.lastTown).town ? raw.lastTown : null,
     guardsBeaten: Array.isArray(raw.guardsBeaten) ? [...new Set(raw.guardsBeaten.filter((id): id is string => typeof id === 'string' && db.hasRoom(id)))] : [],
     guild: sanitizeGuild(raw.guild),
+    learned: Array.isArray(raw.learned)
+      ? [...new Set(raw.learned.filter((id): id is string => typeof id === 'string' && db.hasSkill(id) && readableBy(db.skill(id), classId)))]
+      : [],
+    bookPity: sanitizePity(raw.bookPity),
   };
 
   const player = new Player(data);

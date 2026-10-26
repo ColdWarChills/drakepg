@@ -1,11 +1,15 @@
-import type { SkillDef } from './types';
+import { BALANCE } from '../config';
+import { ELEMENT_LABELS, ELEMENTS } from './elements';
+import type { Apply, ClassId, Element, FamilyShape, SkillDef } from './types';
 
 /**
- * Who learns what, and when, is set per class in classes.ts.
+ * Who learns what, and when, is set per class in classes.ts (level skills) and by each skill's book sources
+ * (docs/BUILD_VARIETY_SPEC.md). Skills with a `classId` that aren't level skills are class books; skills without one
+ * are generic books any class can read.
  * Damage skills use the equipped weapon's damage type and element unless they name their own.
  * Cooldown N = locked for the next N turns after use.
  */
-export const SKILLS: SkillDef[] = [
+const HAND_WRITTEN: SkillDef[] = [
   // --- Warrior (melee) ---
   {
     id: 'heavy_strike',
@@ -50,6 +54,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'shield_bash',
     name: 'Shield Bash',
+    classId: 'warrior',
+    readLevel: 5,
     description: '1x Blunt damage with a 60% chance to stun for a turn.',
     mpCost: 8,
     cooldown: 4,
@@ -72,6 +78,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'iron_skin',
     name: 'Iron Skin',
+    classId: 'warrior',
+    readLevel: 8,
     description: 'Take 40% less damage for 3 turns.',
     mpCost: 10,
     cooldown: 6,
@@ -92,6 +100,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'bloodlust',
     name: 'Bloodlust',
+    classId: 'warrior',
+    readLevel: 10,
     description: '1.6x damage. Heal half the damage dealt.',
     mpCost: 12,
     cooldown: 4,
@@ -102,6 +112,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'earthshaker',
     name: 'Earthshaker',
+    classId: 'warrior',
+    readLevel: 12,
     description: 'Split the ground. 2x Earth damage and Weaken for 2 turns.',
     mpCost: 14,
     cooldown: 5,
@@ -115,6 +127,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'rallying_roar',
     name: 'Rallying Roar',
+    classId: 'warrior',
+    readLevel: 11,
     description: 'Heal 20% of max HP, then Regen for 3 turns.',
     mpCost: 14,
     cooldown: 6,
@@ -125,6 +139,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'titans_wrath',
     name: "Titan's Wrath",
+    classId: 'warrior',
+    readLevel: 20,
     description: 'A blow that shakes mountains. 4x damage.',
     mpCost: 24,
     cooldown: 7,
@@ -135,17 +151,6 @@ export const SKILLS: SkillDef[] = [
   },
 
   // --- Mage (magic; Staff Bolt uses the staff's element, the other spells carry their own) ---
-  {
-    id: 'light_bolt',
-    name: 'Light Bolt',
-    description: 'A bolt of pure light. 1.5x Light damage.',
-    mpCost: 6,
-    cooldown: 0,
-    kind: 'damage',
-    damageType: 'magic',
-    element: 'light',
-    power: 1.5,
-  },
   {
     id: 'ember_bolt',
     name: 'Staff Bolt',
@@ -181,6 +186,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'meteor',
     name: 'Meteor',
+    classId: 'mage',
+    readLevel: 5,
     description: 'Call down a falling star. 3x Fire damage.',
     mpCost: 18,
     cooldown: 5,
@@ -216,6 +223,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'gale',
     name: 'Gale',
+    classId: 'mage',
+    readLevel: 12,
     description: '1.8x Wind damage and Weaken (deals 25% less) for 2 turns.',
     mpCost: 10,
     cooldown: 3,
@@ -228,6 +237,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'tidal_wave',
     name: 'Tidal Wave',
+    classId: 'mage',
+    readLevel: 10,
     description: 'A crashing wave. 2.6x Water damage.',
     mpCost: 14,
     cooldown: 3,
@@ -239,6 +250,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'sunburst',
     name: 'Sunburst',
+    classId: 'mage',
+    readLevel: 8,
     description: '2x Light damage. Heal 40% of the damage dealt.',
     mpCost: 14,
     cooldown: 4,
@@ -251,6 +264,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'shadow_hex',
     name: 'Shadow Hex',
+    classId: 'mage',
+    readLevel: 6,
     description: '1x Dark damage and Shadow Rot for 4 turns: Dark damage each turn, -15 all resistances.',
     mpCost: 14,
     cooldown: 5,
@@ -263,6 +278,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'thunderstorm',
     name: 'Thunderstorm',
+    classId: 'mage',
+    readLevel: 11,
     description: 'Four lightning strikes at 0.9x Energy each.',
     mpCost: 22,
     cooldown: 5,
@@ -275,6 +292,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'cataclysm',
     name: 'Cataclysm',
+    classId: 'mage',
+    readLevel: 20,
     description: "Unleash your staff's element. 4.5x damage.",
     mpCost: 30,
     cooldown: 8,
@@ -328,6 +347,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'envenom',
     name: 'Envenom',
+    classId: 'rogue',
+    readLevel: 8,
     description: '0.8x damage and Poison for 4 turns. Poison ignores resistances.',
     mpCost: 7,
     cooldown: 4,
@@ -358,6 +379,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'expose_weakness',
     name: 'Expose Weakness',
+    classId: 'rogue',
+    readLevel: 5,
     description: '1x damage and Expose: -25 to all its resistances for 3 turns.',
     mpCost: 8,
     cooldown: 4,
@@ -368,6 +391,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'shadowstep',
     name: 'Shadowstep',
+    classId: 'rogue',
+    readLevel: 10,
     description: 'Strike from the shadows. 2x Dark damage, +50% crit chance.',
     mpCost: 12,
     cooldown: 4,
@@ -379,6 +404,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'fan_of_knives',
     name: 'Fan of Knives',
+    classId: 'rogue',
+    readLevel: 7,
     description: 'Five thrown knives at 0.5x each.',
     mpCost: 14,
     cooldown: 3,
@@ -389,6 +416,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'hemorrhage',
     name: 'Hemorrhage',
+    classId: 'rogue',
+    readLevel: 12,
     description: '1.2x damage and Bleed for 4 turns.',
     mpCost: 12,
     cooldown: 4,
@@ -399,6 +428,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'death_mark',
     name: 'Death Mark',
+    classId: 'rogue',
+    readLevel: 6,
     description: '0.6x damage and Mark it: takes 30% more damage for 3 turns.',
     mpCost: 14,
     cooldown: 6,
@@ -409,6 +440,8 @@ export const SKILLS: SkillDef[] = [
   {
     id: 'thousand_cuts',
     name: 'Thousand Cuts',
+    classId: 'rogue',
+    readLevel: 20,
     description: 'Eight blinding strikes at 0.45x each.',
     mpCost: 26,
     cooldown: 7,
@@ -416,4 +449,112 @@ export const SKILLS: SkillDef[] = [
     power: 0.45,
     hits: 8,
   },
+];
+
+/**
+ * What each element adds to its family skills, so every element is useful in its own way (one role each): damage over
+ * time, skip a turn, heal, amplify, guard, weaken, crit, strip resists. `text` follows "N% chance ...".
+ */
+export const ELEMENT_EFFECTS: Record<Element, Apply & { text: string }> = {
+  fire: { status: 'burn', turns: 3, text: 'to Burn it (Fire damage each turn) for 3 turns' },
+  ice: { status: 'freeze', turns: 1, text: 'to Freeze it (loses its next turn)' },
+  water: { status: 'regen', turns: 2, self: true, text: 'of Regen on you for 2 turns' },
+  energy: { status: 'shock', turns: 2, text: 'to Shock it (takes 15% more) for 2 turns' },
+  earth: { status: 'stone_skin', turns: 1, self: true, text: 'of Stone Skin on you for 1 turn' },
+  wind: { status: 'weaken', turns: 2, text: 'to Weaken it (deals 25% less) for 2 turns' },
+  light: { status: 'focus', turns: 2, self: true, text: 'of Focus (+25% crit) on you for 2 turns' },
+  dark: { status: 'shadow_rot', turns: 3, text: 'of Shadow Rot (Dark damage each turn, -15 resistances) for 3 turns' },
+};
+
+/** Each class's family: one shape in every element (numbers in `BALANCE.families`). */
+export const FAMILIES: Record<FamilyShape, { classId: ClassId; name: string; stat: string }> = {
+  strike: { classId: 'warrior', name: 'Strike', stat: 'STR' },
+  knives: { classId: 'rogue', name: 'Knives', stat: 'DEX' },
+  bolt: { classId: 'mage', name: 'Bolt', stat: 'INT' },
+};
+
+function familySkill(shape: FamilyShape, element: Element): SkillDef {
+  const n = BALANCE.families[shape];
+  const label = ELEMENT_LABELS[element];
+  const fx = ELEMENT_EFFECTS[element];
+  const pct = Math.round(n.chance * 100);
+  const hits = n.hits > 1 ? `${['', '', 'Two', 'Three', 'Four', 'Five'][n.hits]} thrown knives at ${n.power}x ${label} each.` : `${n.power}x ${label} damage.`;
+  const effect =
+    element === 'ice'
+      ? `${pct}% chance to Freeze it (loses its next turn), more with ${FAMILIES[shape].stat}, at most ${Math.round(BALANCE.freeze.max * 100)}%.`
+      : `${pct}% chance ${fx.text}.`;
+  const { text: _text, ...apply } = fx;
+  return {
+    id: `${element}_${shape}`,
+    name: `${label} ${FAMILIES[shape].name}`,
+    classId: FAMILIES[shape].classId,
+    readLevel: BALANCE.books.levels[element],
+    family: shape,
+    description: `${hits} ${effect} +${Math.round(BALANCE.books.match * 100)}% with a ${label} weapon.`,
+    mpCost: n.mpCost,
+    cooldown: n.cooldown,
+    kind: 'damage',
+    ...(shape === 'bolt' ? { damageType: 'magic' as const } : {}),
+    element,
+    power: n.power,
+    ...(n.hits > 1 ? { hits: n.hits } : {}),
+    applies: [{ ...apply, chance: n.chance }],
+  };
+}
+
+function ward(element: Element): SkillDef {
+  const w = BALANCE.ward;
+  const label = ELEMENT_LABELS[element];
+  return {
+    id: `${element}_ward`,
+    name: `${label} Ward`,
+    readLevel: BALANCE.books.levels[element],
+    description: `+${w.resist} ${label} resistance for ${w.turns} turns.`,
+    mpCost: w.mpCost,
+    cooldown: w.cooldown,
+    kind: 'buff',
+    power: 0,
+    applies: [{ status: `${element}_ward`, turns: w.turns, self: true }],
+  };
+}
+
+/** Generic books any class can read (besides the Wards). */
+const GENERIC: SkillDef[] = [
+  {
+    id: 'field_dressing',
+    name: 'Field Dressing',
+    readLevel: 2,
+    description: 'Patch yourself up. Heal 12% of max HP.',
+    mpCost: 4,
+    cooldown: 3,
+    kind: 'heal',
+    power: 0.12,
+  },
+  {
+    id: 'play_dead',
+    name: 'Play Dead',
+    readLevel: 3,
+    description: 'Lie still until it loses interest. A sure flee from any fight you can flee (not bosses).',
+    mpCost: 3,
+    cooldown: 0,
+    kind: 'flee',
+    power: 0,
+  },
+  {
+    id: 'meditate',
+    name: 'Meditate',
+    readLevel: 7,
+    description: 'Breathe and gather yourself. Restore 25% of max MP instead of attacking.',
+    mpCost: 0,
+    cooldown: 4,
+    kind: 'mana',
+    power: 0.25,
+  },
+];
+
+export const SKILLS: SkillDef[] = [
+  ...HAND_WRITTEN,
+  ...(Object.keys(FAMILIES) as FamilyShape[]).flatMap((shape) => ELEMENTS.map((e) => familySkill(shape, e))),
+  ...ELEMENTS.map(ward),
+  ...GENERIC,
 ];

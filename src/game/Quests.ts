@@ -1,5 +1,6 @@
 import { db } from '../data/db';
 import type { MonsterDef, QuestDef, SkillDef } from '../data/types';
+import { bookId } from './Books';
 import { cheats } from './cheats';
 import { hasRank } from './Guild';
 import { grantFor } from './Items';
@@ -121,11 +122,13 @@ export function turnInQuest(player: Player, quest: QuestDef): TurnInResult | nul
   if (o.kind === 'collect' && !player.removeItem(o.itemId, o.count)) return null;
   player.data.quests[quest.id] = { status: 'done', count: o.count };
   const classItem = quest.rewards.classItems?.[player.data.classId];
+  // Story bosses teach every class a skill: its book.
+  const classBook = quest.rewards.classBooks?.[player.data.classId];
   const rewards: Rewards = {
     // Testing rates (`cheats.rates`) multiply XP and gold.
     xp: quest.rewards.xp * cheats.rates,
     gold: quest.rewards.gold * cheats.rates,
-    items: [...(quest.rewards.items ?? []), ...(classItem ? [classItem] : [])].map((id) => grantFor(id)),
+    items: [...(quest.rewards.items ?? []), ...(classItem ? [classItem] : []), ...(classBook ? [bookId(classBook)] : [])].map((id) => grantFor(id)),
   };
   const levelBefore = player.level;
   // Quest rewards may overflow a full bag rather than be lost.

@@ -344,6 +344,9 @@ namespace Drakepg.Rules
                 p.ClassItems?.TryGetValue(player.Data.ClassId, out classItem);
                 var ids = new List<string>(p.Items ?? new List<string>());
                 if (classItem != null) ids.Add(classItem);
+                string classBook = null;
+                p.ClassBooks?.TryGetValue(player.Data.ClassId, out classBook);
+                if (classBook != null) ids.Add(Books.BookId(classBook));
                 foreach (var itemId in ids) rewards.Items.Add(Items.GrantFor(itemId, rng));
             }
             if (g.Rank >= MaxRank) g.Points = 0;

@@ -151,8 +151,15 @@ namespace Drakepg.Rules
             return EndPlayerTurn(events);
         }
 
-        public bool CanUseSkill(string skillId) =>
-            !IsOver && Player.IsCarried(skillId) && Player.Mp >= Db.Skill(skillId).MpCost && !cooldowns.ContainsKey(skillId);
+        public bool CanUseSkill(string skillId)
+        {
+            var skill = Db.Skill(skillId);
+            if (skill.Kind == "flee" && !CanFlee) return false;
+            return !IsOver && Player.IsCarried(skillId) && Player.Mp >= skill.MpCost && !cooldowns.ContainsKey(skillId);
+        }
+
+        /// <summary>A family skill with a weapon of its element: +Balance.Books.Match damage. For the skill buttons too.</summary>
+        public bool Matched(SkillDef skill) => skill.Family != null && skill.Element != null && skill.Element == Player.WeaponElement;
 
         public List<BattleEvent> UseSkill(string skillId)
         {
@@ -168,10 +175,20 @@ namespace Drakepg.Rules
             var element = skill.Element == null || skill.Element == "weapon" ? p.WeaponElement : skill.Element;
             bool landed = false;
 
+            if (skill.Kind == "flee")
+            {
+                // Play Dead: a sure flee.
+                State = "fled";
+                return new List<BattleEvent> { new BattleEvent { Kind = "flee", Success = true } };
+            }
             if (skill.Kind == "heal")
             {
                 var amount = JsMath.Round(p.MaxHp * skill.Power + p.Stats.Int);
                 events.Add(new BattleEvent { Kind = "heal", Source = "player", Move = skill.Name, MoveId = skill.Id, Hp = p.Heal(amount) });
+            }
+            else if (skill.Kind == "mana")
+            {
+                events.Add(new BattleEvent { Kind = "heal", Source = "player", Move = skill.Name, MoveId = skill.Id, Mp = p.RestoreMp(JsMath.Round(p.MaxMp * skill.Power)) });
             }
             else if (skill.Kind == "buff")
             {
@@ -180,9 +197,10 @@ namespace Drakepg.Rules
             else
             {
                 double dealt = 0;
+                var power = skill.Power * (Matched(skill) ? 1 + B.Books.Match : 1);
                 for (int i = 0; i < (skill.Hits ?? 1) && Enemy.Hp > 0; i++)
                 {
-                    var e = Strike("player", skill.Name, skill.Id, type, element, skill.Power, skill.CritBonus ?? 0, skill.Blunt);
+                    var e = Strike("player", skill.Name, skill.Id, type, element, power, skill.CritBonus ?? 0, skill.Blunt);
                     events.Add(e);
                     if (e.Kind == "hit")
                     {
@@ -486,9 +504,25 @@ namespace Drakepg.Rules
             var list = effects[side];
             int i = list.FindIndex(s => s.Def.Stun);
             if (i < 0) return false;
+            var stun = list[i];
             list.RemoveAt(i);
             events.Add(new BattleEvent { Kind = "stunned", Side = side });
+            if (stun.Def.Freeze)
+            {
+                // Thawed: it can't be frozen again until it has acted once (lasts through its next turn).
+                list.Add(new ActiveStatus { Def = Db.Status("thawed"), Turns = 1, Fresh = true, Tick = 0 });
+                events.Add(new BattleEvent { Kind = "status", Target = side, Status = "thawed", Turns = 1 });
+            }
             return true;
+        }
+
+        /// <summary>Freeze odds on the enemy right now, for a skill of this damage type and effect chance (0 while it's thawed).</summary>
+        public double FreezeChance(string type, double baseChance)
+        {
+            if (effects["enemy"].Any(s => s.Def.Id == "thawed")) return 0;
+            var f = B.Freeze;
+            var raw = (baseChance + Player.StatFor(Player.Stats, type) * f.PerStat) * (1 - ResistOf("enemy", "ice") / 100);
+            return JsMath.Clamp(raw, 0, f.Max);
         }
 
         bool CheckOver(List<BattleEvent> events)
@@ -568,10 +602,15 @@ namespace Drakepg.Rules
 
         void PushApply(List<BattleEvent> events, string source, Apply a, string element, string type)
         {
-            if (!rng.Chance(a.Chance ?? 1)) return;
             var target = a.Self ? source : Other(source);
             var def = Db.Status(a.Status);
-            if (target == "enemy" && (Enemy.Def.Immune?.Contains(def.Id) ?? false))
+            // Freeze: the odds grow with the stat and drop with Ice resist; a thawed target can't be frozen right away.
+            if (def.Freeze && effects[target].Any(s => s.Def.Id == "thawed")) return;
+            var odds = def.Freeze && source == "player" ? FreezeChance(type, a.Chance ?? 1) : a.Chance ?? 1;
+            if (!rng.Chance(odds)) return;
+            // Bosses that shrug off stuns shrug off Freeze too.
+            var immune = Enemy.Def.Immune ?? new List<string>();
+            if (target == "enemy" && (immune.Contains(def.Id) || (def.Stun && immune.Contains("stun"))))
             {
                 events.Add(new BattleEvent { Kind = "immune", Target = target, Status = def.Id });
                 return;
@@ -752,6 +791,14 @@ namespace Drakepg.Rules
                     items.Add(Items.GrantFor(pieces[rng.RandInt(0, pieces.Count - 1)], rng, source, extras));
                 }
             }
+            // Skill books: Elites may drop their area's element books; the first Heroic win teaches a class skill.
+            if (source == "elite" && m.Loot != null)
+            {
+                var book = Books.EliteBook(Player, m.Loot, rng);
+                if (book != null) items.Add(new ItemGrant { ItemId = book });
+            }
+            var heroic = m.IsHeroic ? Books.HeroicBook(Player) : null;
+            if (heroic != null) items.Add(new ItemGrant { ItemId = heroic });
             return new Rewards { Xp = xp, Gold = Gold(), Items = items };
         }
 

@@ -115,6 +115,10 @@ export interface PlayerData {
   guardsBeaten: string[];
   /** Adventurers' Guild rank, rank points, board and taken hunts (src/game/Guild.ts). Added in save version 15. */
   guild: GuildState;
+  /** Skills learned from books, in the order read (src/game/Books.ts). Added in save version 16. */
+  learned: string[];
+  /** Elite kills without a book drop, per loot table (`BALANCE.books.drop`). Added in save version 16. */
+  bookPity: Record<string, number>;
 }
 
 export interface Rewards {
@@ -171,6 +175,8 @@ export class Player {
       lastTown: null,
       guardsBeaten: [],
       guild: { rank: 0, points: 0, board: [], hunts: [], done: 0 },
+      learned: [],
+      bookPity: {},
     });
     player.data.loadout = player.defaultLoadout();
     player.data.equipment.weapon = player.makeGear(cls.weapon);
@@ -392,9 +398,14 @@ export class Player {
     return xpToNext(this.level);
   }
 
-  /** Class skills unlocked at the current level. */
+  /** Level skills unlocked at the current level, then skills learned from books (in the order read). */
   get knownSkills(): SkillDef[] {
-    return this.classDef.skills.filter((s) => s.level <= this.level).map((s) => db.skill(s.skillId));
+    const fromLevels = this.classDef.skills.filter((s) => s.level <= this.level).map((s) => s.skillId);
+    return [...fromLevels, ...this.data.learned.filter((id) => !fromLevels.includes(id))].map((id) => db.skill(id));
+  }
+
+  knowsSkill(skillId: string): boolean {
+    return this.data.learned.includes(skillId) || this.classDef.skills.some((s) => s.skillId === skillId && s.level <= this.level);
   }
 
   /** Known skills carried into battle, in loadout order. */
@@ -419,7 +430,7 @@ export class Player {
 
   /** Carry or put away a known skill. 'full' if every slot is taken. */
   toggleCarry(skillId: string): 'added' | 'removed' | 'full' | 'unknown' {
-    if (!this.knownSkills.some((s) => s.id === skillId)) return 'unknown';
+    if (!this.knowsSkill(skillId)) return 'unknown';
     const list = this.data.loadout;
     if (list.includes(skillId)) {
       list.splice(list.indexOf(skillId), 1);

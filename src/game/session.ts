@@ -24,6 +24,8 @@ export interface Chest {
   x: number;
   y: number;
   mimic: boolean;
+  /** A side room's sure chest: also holds this skill's book (`RoomDef.chest.book`) until you know or hold it. */
+  book?: string;
 }
 
 /** A room as you left it: who was still alive, and when you walked out. */

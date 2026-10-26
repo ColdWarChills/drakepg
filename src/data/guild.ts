@@ -27,13 +27,25 @@ export interface PromotionDef {
   gold: number;
   items?: string[];
   classItems?: Partial<Record<ClassId, string>>;
+  /** A skill whose book this class gets (docs/BUILD_VARIETY_SPEC.md). */
+  classBooks?: Partial<Record<ClassId, string>>;
 }
 
 /** Keyed by the rank you reach. The armor ones are what the Chapter 1-3 errand quests used to give. */
 export const PROMOTIONS: Partial<Record<RankId, PromotionDef>> = {
   E: { gold: 30, items: ['leather_armor', 'health_potion', 'health_potion'] },
-  D: { gold: 150, classItems: { warrior: 'scale_mail', mage: 'reedweave_robe', rogue: 'scale_mail' }, items: ['greater_health_potion', 'greater_health_potion'] },
-  C: { gold: 200, classItems: { warrior: 'frostpelt_vest', mage: 'galeweave_robe', rogue: 'frostpelt_vest' }, items: ['superior_health_potion', 'superior_health_potion'] },
+  D: {
+    gold: 150,
+    classItems: { warrior: 'scale_mail', mage: 'reedweave_robe', rogue: 'scale_mail' },
+    classBooks: { rogue: 'fan_of_knives' },
+    items: ['greater_health_potion', 'greater_health_potion'],
+  },
+  C: {
+    gold: 200,
+    classItems: { warrior: 'frostpelt_vest', mage: 'galeweave_robe', rogue: 'frostpelt_vest' },
+    classBooks: { warrior: 'rallying_roar', mage: 'thunderstorm' },
+    items: ['superior_health_potion', 'superior_health_potion'],
+  },
   B: { gold: 400, items: ['superior_health_potion', 'superior_health_potion', 'superior_mana_potion'] },
   A: { gold: 800 },
   S: { gold: 2000 },

@@ -16,6 +16,8 @@ namespace Drakepg.Rules
     {
         public double X, Y;
         public bool Mimic;
+        /// <summary>A side room's sure chest: also holds this skill's book (RoomDef.Chest.Book) until you know or hold it.</summary>
+        public string Book;
     }
 
     /// <summary>The room you left to fight, so you come back to the same spot with the same monsters.</summary>

@@ -7,7 +7,7 @@
 import { BALANCE } from '../src/config';
 import { db, validateData } from '../src/data/db';
 import { ELEMENTS } from '../src/data/elements';
-import type { ClassId, Element, SkillDef, StatKey } from '../src/data/types';
+import type { ClassId, Element, MonsterDef, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
 import { makeElite } from '../src/game/Elites';
 import { makeHeroic } from '../src/game/Heroic';
@@ -17,6 +17,7 @@ import { LOOT_TABLES } from '../src/data/loot';
 import { rollGear, type GearDef, type SigilTier } from '../src/game/Items';
 import { Player, xpToNext } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
+import { learnBooks, pickLoadout } from './bookplay';
 
 const RUNS = Number(process.argv[2] ?? 400);
 const ONLY = process.argv[3]?.toLowerCase();
@@ -121,14 +122,19 @@ const KITS: Record<string, string[]> = {
   fleecewool_robe: ['fleecewool_hood', 'fleecewool_mittens', 'fleecewool_boots'],
 };
 
-function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number, potion: string): Player {
+/**
+ * A hero at `level` in this gear. Books: what a player could have read by then (`learnBooks`; before a boss, not that
+ * boss's own books), then the class heal and the best damage skills against the monster. `noBooks`: level skills only.
+ */
+function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: number, potion: string, monster: MonsterDef, noBooks = false): Player {
   const p = Player.createNew('Sim', classId);
   while (p.level < level) p.addXp(xpToNext(p.level));
-  // Carry the default pick of skills (the class heal and the newest others), or the loadout's picks first.
+  if (!noBooks) learnBooks(p, monster.boss ? Math.min(level, monster.level - 1) : level);
+  // Carry the loadout's picks first (with the class heal), or the best pick against this monster.
   const picks = gear.carry?.[classId] ?? [];
-  const usual = p.defaultLoadout();
+  const usual = pickLoadout(p, monster);
   const heal = usual.filter((id) => db.skill(id).kind === 'heal');
-  p.data.loadout = [...heal, ...picks, ...usual.filter((id) => !heal.includes(id) && !picks.includes(id))].slice(0, BALANCE.skillSlots);
+  p.data.loadout = [...heal, ...picks.filter((id) => p.knowsSkill(id)), ...usual.filter((id) => !heal.includes(id) && !picks.includes(id))].slice(0, BALANCE.skillSlots);
   const plan = STAT_PLAN[classId];
   for (let i = 0; p.data.statPoints > 0; i++) p.spendStatPoint(plan[i % plan.length]);
   p.data.inventory = [];
@@ -243,7 +249,7 @@ function fight(row: Row, classId: ClassId, rng: Rng, random = false): Result {
   const base = row.zone ? makeImpling(db.zone(row.zone)) : db.monster(monsterId);
   const monster = elite ? makeElite(base, elite) : row.heroic ? makeHeroic(base) : base;
   for (let i = 0; i < RUNS; i++) {
-    const p = makePlayer(classId, level, gear, potions, potion);
+    const p = makePlayer(classId, level, gear, potions, potion, monster, row.noBooks);
     if (row.losses) p.data.bossGrit[monster.id] = row.losses;
     const b = new Battle(p, monster, rng);
     let turns = 0;
@@ -281,6 +287,8 @@ interface Row {
   heroic?: boolean;
   /** Lucky Impling of this zone (`monster` is just the label). */
   zone?: string;
+  /** Level skills only, no books. */
+  noBooks?: boolean;
 }
 
 function table(title: string, rows: Row[]): void {
@@ -296,7 +304,8 @@ function table(title: string, rows: Row[]): void {
       const rndHp = rnd.wins ? rnd.hpLeft / rnd.wins : 0;
       return `win${pct(r.wins / RUNS)} hp${pct(hp)} t${(r.turns / RUNS).toFixed(1).padStart(4)} pot${(r.potions / RUNS).toFixed(1)} rnd${pct(rnd.wins / RUNS)}${pct(rndHp)}`;
     });
-    const name = row.zone ? `lucky@${row.zone}` : row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.losses ? `${row.monster} grit${row.losses}` : row.heroic ? `H.${row.monster}` : row.monster;
+    const base = row.zone ? `lucky@${row.zone}` : row.elite ? `${row.elite.slice(0, 4)}.${row.monster}` : row.losses ? `${row.monster} grit${row.losses}` : row.heroic ? `H.${row.monster}` : row.monster;
+    const name = row.noBooks ? `${base} -books` : base;
     console.log(`${name.padEnd(20)} ${String(row.level).padStart(2)} ${row.gear.label.padEnd(8)} | ${cells.join(' | ')}`);
   }
 }
@@ -550,3 +559,132 @@ table('Heroic rematches with the area set and jewelry (3 potions): the challenge
   { monster: 'old_snowmaw', heroic: true, level: 14, gear: FROST_SET_FIRE, potions: 3, potion: SUPERIOR },
   { monster: 'frostbinder', heroic: true, level: 16, gear: FROST_SET, potions: 3, potion: SUPERIOR },
 ]);
+
+// --- Build variety (docs/BUILD_VARIETY_SPEC.md) ---
+
+table('Story bosses: level skills only (-books) vs the books a player could have read before the boss (3 potions)', [
+  { monster: 'thornheart', level: 5, gear: SHOP, potions: 3, noBooks: true },
+  { monster: 'thornheart', level: 5, gear: SHOP, potions: 3 },
+  { monster: 'bogmother', level: 8, gear: SHOP2, potions: 3, potion: GREATER, noBooks: true },
+  { monster: 'bogmother', level: 8, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'stormcoil', level: 10, gear: SHOP2, potions: 3, potion: GREATER, noBooks: true },
+  { monster: 'stormcoil', level: 10, gear: SHOP2, potions: 3, potion: GREATER },
+  { monster: 'old_snowmaw', level: 13, gear: SHOP3, potions: 3, potion: SUPERIOR, noBooks: true },
+  { monster: 'old_snowmaw', level: 13, gear: SHOP3, potions: 3, potion: SUPERIOR },
+  { monster: 'frostbinder', level: 15, gear: SHOP3, potions: 3, potion: SUPERIOR, noBooks: true },
+  { monster: 'frostbinder', level: 15, gear: SHOP3, potions: 3, potion: SUPERIOR },
+]);
+
+/** Each chapter's monsters at the level and shop gear a player has there (the last ones are its bosses). */
+const CHAPTERS: { name: string; level: number; gear: Loadout; potion: string; monsters: string[] }[] = [
+  { name: 'Ch1', level: 5, gear: SHOP, potion: 'health_potion', monsters: ['mossling', 'thornback_boar', 'ash_imp', 'barkshell_beetle', 'bramble_bandit', 'thornheart'] },
+  { name: 'Ch2', level: 10, gear: SHOP2, potion: GREATER, monsters: ['bog_lurker', 'mire_toad', 'spark_wisp', 'stormscale_drakeling', 'sunken_revenant', 'volt_eel', 'bogmother', 'stormcoil'] },
+  { name: 'Ch3', level: 15, gear: SHOP3, potion: SUPERIOR, monsters: ['crag_ram', 'drift_wolf', 'ember_salamander', 'glacier_golem', 'gust_sprite', 'rime_acolyte', 'vent_wyrmling', 'old_snowmaw', 'frostbinder'] },
+];
+
+/** Fights with a custom hero; `uses` counts skill uses by id. */
+function fights(make: () => Player, monster: MonsterDef, potions: number, potion: string, rng: Rng, runs: number, uses?: Map<string, number>, carried?: Map<string, number>): Result {
+  const res: Result = { wins: 0, turns: 0, hpLeft: 0, potions: 0 };
+  for (let i = 0; i < runs; i++) {
+    const p = make();
+    if (potions > 0) p.addItem(potion, potions);
+    for (const id of p.data.loadout) carried?.set(id, (carried.get(id) ?? 0) + 1);
+    const b = new Battle(p, monster, rng);
+    if (uses) {
+      const use = b.useSkill.bind(b);
+      b.useSkill = (id: string) => {
+        uses.set(id, (uses.get(id) ?? 0) + 1);
+        return use(id);
+      };
+    }
+    let turns = 0;
+    while (!b.isOver && turns < 60) {
+      act(b);
+      turns++;
+    }
+    if (b.state === 'victory') {
+      res.wins++;
+      res.hpLeft += p.hp / p.maxHp;
+    }
+    res.turns += turns;
+  }
+  return res;
+}
+
+/**
+ * Skill use per class with books: how often each known skill is carried (the bot carries the heal and the best
+ * damage skills per monster) and used, over every chapter's monsters. Never carried = dead (or only a utility skill the
+ * bot doesn't use: Wards, Play Dead, Meditate, buffs); carried everywhere = maybe too strong.
+ */
+function skillUseReport(): void {
+  if (ONLY && !'variety skill use'.includes(ONLY)) return;
+  const rng = seeded(4242);
+  const runs = Math.max(40, Math.round(RUNS / 8));
+  console.log(`\nSkill use with books (${runs} fights per monster, chapters 1-3 at their shop gear): carried % of fights, uses per fight`);
+  for (const classId of ['warrior', 'mage', 'rogue'] as ClassId[]) {
+    const uses = new Map<string, number>();
+    const carried = new Map<string, number>();
+    let total = 0;
+    const known = new Set<string>();
+    for (const ch of CHAPTERS) {
+      for (const id of ch.monsters) {
+        const m = db.monster(id);
+        const make = () => {
+          const p = makePlayer(classId, ch.level, ch.gear, 0, ch.potion, m);
+          p.knownSkills.forEach((s) => known.add(s.id));
+          return p;
+        };
+        fights(make, m, 1, ch.potion, rng, runs, uses, carried);
+        total += runs;
+      }
+    }
+    const rows = [...known].map((id) => ({ id, c: (carried.get(id) ?? 0) / total, u: (uses.get(id) ?? 0) / total }));
+    rows.sort((a, b) => b.c - a.c);
+    const flag = (r: { c: number }) => (r.c === 0 ? ' never' : r.c > 0.9 ? ' always' : '');
+    console.log(`  ${classId.padEnd(8)} ${rows.map((r) => `${r.id} ${Math.round(r.c * 100)}%/${r.u.toFixed(1)}${flag(r)}`).join(', ')}`);
+  }
+}
+
+/**
+ * Element families against each chapter: the hero knows its level skills plus one element's family skill (carried
+ * with the heal and the best others). Average win rate and turns over the chapter's monsters; "-" = no family skill.
+ * One element on top in every chapter would mean it's best everywhere.
+ */
+function elementReport(): void {
+  if (ONLY && !'variety element'.includes(ONLY)) return;
+  const rng = seeded(4343);
+  const runs = Math.max(40, Math.round(RUNS / 8));
+  console.log(`\nElement families per chapter (${runs} fights per monster, 1 potion): avg win% / turns; best element marked *`);
+  for (const classId of ['warrior', 'mage', 'rogue'] as ClassId[]) {
+    const family = db.class(classId).family;
+    const line: string[] = [];
+    for (const ch of CHAPTERS) {
+      const cells: { label: string; win: number; turns: number }[] = [];
+      for (const element of [undefined, ...ELEMENTS]) {
+        let win = 0;
+        let turns = 0;
+        for (const id of ch.monsters) {
+          const m = db.monster(id);
+          const make = () => {
+            const p = makePlayer(classId, ch.level, ch.gear, 0, ch.potion, m, true);
+            const skillId = element ? `${element}_${family}` : null;
+            if (skillId && !p.knowsSkill(skillId)) p.data.learned.push(skillId);
+            p.data.loadout = pickLoadout(p, m);
+            if (skillId && !p.data.loadout.includes(skillId)) p.data.loadout[p.data.loadout.length - 1] = skillId;
+            return p;
+          };
+          const r = fights(make, m, 1, ch.potion, rng, runs);
+          win += r.wins / runs;
+          turns += r.turns / runs;
+        }
+        cells.push({ label: element ?? '-', win: win / ch.monsters.length, turns: turns / ch.monsters.length });
+      }
+      const best = Math.max(...cells.slice(1).map((c) => c.win));
+      line.push(`${ch.name}: ${cells.map((c) => `${c.label.slice(0, 3)} ${Math.round(c.win * 100)}/${c.turns.toFixed(1)}${c.label !== '-' && c.win === best ? '*' : ''}`).join(' ')}`);
+    }
+    console.log(`  ${classId}\n    ${line.join('\n    ')}`);
+  }
+}
+
+skillUseReport();
+elementReport();

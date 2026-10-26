@@ -3,6 +3,7 @@ import { db } from '../data/db';
 import { PROMOTIONS } from '../data/guild';
 import type { MonsterDef, RankId, ZoneDef } from '../data/types';
 import { ROOMS, ZONES } from '../data/world';
+import { bookId } from './Books';
 import { boosted, cheats } from './cheats';
 import { featureOn } from './Features';
 import { grantFor, type ItemGrant } from './Items';
@@ -387,7 +388,8 @@ export function turnInHunt(player: Player, key: string, rng: Rng = defaultRng): 
     if (!p) continue;
     rewards.gold += p.gold;
     const classItem = p.classItems?.[player.data.classId];
-    for (const itemId of [...(p.items ?? []), ...(classItem ? [classItem] : [])]) rewards.items.push(grantFor(itemId, rng));
+    const classBook = p.classBooks?.[player.data.classId];
+    for (const itemId of [...(p.items ?? []), ...(classItem ? [classItem] : []), ...(classBook ? [bookId(classBook)] : [])]) rewards.items.push(grantFor(itemId, rng));
   }
   if (g.rank >= MAX_RANK) g.points = 0;
   // Rewards may overflow a full bag rather than be lost, like quest rewards.

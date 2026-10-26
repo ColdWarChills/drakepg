@@ -1,6 +1,7 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
 import type { Apply, DamageType, Element, MonsterAttack, MonsterDef, Resists, SkillDef, StatusDef, Stats } from '../data/types';
+import { eliteBook, heroicBook } from './Books';
 import { boosted, cheats } from './cheats';
 import { grantFor } from './Items';
 import { featureOn } from './Features';
@@ -188,7 +189,14 @@ export class Battle {
   }
 
   canUseSkill(skillId: string): boolean {
-    return !this.isOver && this.player.isCarried(skillId) && this.player.mp >= db.skill(skillId).mpCost && !this.cooldowns.has(skillId);
+    const skill = db.skill(skillId);
+    if (skill.kind === 'flee' && !this.canFlee) return false;
+    return !this.isOver && this.player.isCarried(skillId) && this.player.mp >= skill.mpCost && !this.cooldowns.has(skillId);
+  }
+
+  /** A family skill with a weapon of its element: +`BALANCE.books.match` damage. For the skill buttons too. */
+  matched(skill: SkillDef): boolean {
+    return !!skill.family && skill.element !== undefined && skill.element === this.player.weaponElement;
   }
 
   useSkill(skillId: string): BattleEvent[] {
@@ -205,15 +213,23 @@ export class Battle {
     const element = !skill.element || skill.element === 'weapon' ? p.weaponElement : skill.element;
     let landed = false;
 
+    if (skill.kind === 'flee') {
+      // Play Dead: a sure flee.
+      this.state = 'fled';
+      return [{ kind: 'flee', success: true }];
+    }
     if (skill.kind === 'heal') {
       const amount = Math.round(p.maxHp * skill.power + p.stats.int);
       events.push({ kind: 'heal', source: 'player', move: skill.name, moveId: skill.id, hp: p.heal(amount), mp: 0 });
+    } else if (skill.kind === 'mana') {
+      events.push({ kind: 'heal', source: 'player', move: skill.name, moveId: skill.id, hp: 0, mp: p.restoreMp(Math.round(p.maxMp * skill.power)) });
     } else if (skill.kind === 'buff') {
       events.push({ kind: 'buff', source: 'player', move: skill.name, moveId: skill.id });
     } else {
       let dealt = 0;
+      const power = skill.power * (this.matched(skill) ? 1 + BALANCE.books.match : 1);
       for (let i = 0; i < (skill.hits ?? 1) && this.enemy.hp > 0; i++) {
-        const e = this.strike('player', skill.name, skill.id, type, element, skill.power, skill.critBonus ?? 0, skill.blunt);
+        const e = this.strike('player', skill.name, skill.id, type, element, power, skill.critBonus ?? 0, skill.blunt);
         events.push(e);
         if (e.kind === 'hit') {
           landed = true;
@@ -480,9 +496,22 @@ export class Battle {
     const list = this.effects[side];
     const i = list.findIndex((s) => s.def.stun);
     if (i < 0) return false;
-    list.splice(i, 1);
+    const [stun] = list.splice(i, 1);
     events.push({ kind: 'stunned', side });
+    if (stun.def.freeze) {
+      // Thawed: it can't be frozen again until it has acted once (lasts through its next turn).
+      list.push({ def: db.status('thawed'), turns: 1, fresh: true, tick: 0 });
+      events.push({ kind: 'status', target: side, status: 'thawed', turns: 1 });
+    }
     return true;
+  }
+
+  /** Freeze odds on the enemy right now, for a skill of this damage type and effect chance (0 while it's thawed). */
+  freezeChance(type: DamageType, base: number): number {
+    if (this.effects.enemy.some((s) => s.def.id === 'thawed')) return 0;
+    const f = BALANCE.freeze;
+    const raw = (base + statFor(this.player.stats, type) * f.perStat) * (1 - this.resistOf('enemy', 'ice') / 100);
+    return clamp(raw, 0, f.max);
   }
 
   private checkOver(events: BattleEvent[]): boolean {
@@ -543,10 +572,15 @@ export class Battle {
   // --- Statuses ---
 
   private pushApply(events: BattleEvent[], source: Side, a: Apply, element: Element | undefined, type: DamageType): void {
-    if (!chance(this.rng, a.chance ?? 1)) return;
     const target: Side = a.self ? source : other(source);
     const def = db.status(a.status);
-    if (target === 'enemy' && this.enemy.def.immune?.includes(def.id)) {
+    // Freeze: the odds grow with the stat and drop with Ice resist; a thawed target can't be frozen right away.
+    if (def.freeze && this.effects[target].some((s) => s.def.id === 'thawed')) return;
+    const odds = def.freeze && source === 'player' ? this.freezeChance(type, a.chance ?? 1) : (a.chance ?? 1);
+    if (!chance(this.rng, odds)) return;
+    // Bosses that shrug off stuns shrug off Freeze too.
+    const immune = this.enemy.def.immune ?? [];
+    if (target === 'enemy' && (immune.includes(def.id) || (def.stun && immune.includes('stun')))) {
       events.push({ kind: 'immune', target, status: def.id });
       return;
     }
@@ -722,6 +756,13 @@ export class Battle {
         items.push(grantFor(pieces[randInt(this.rng, 0, pieces.length - 1)], this.rng, source, extras));
       }
     }
+    // Skill books: Elites may drop their area's element books; the first Heroic win teaches a class skill.
+    if (source === 'elite' && m.loot) {
+      const book = eliteBook(this.player, m.loot, this.rng);
+      if (book) items.push({ itemId: book });
+    }
+    const heroic = m.isHeroic ? heroicBook(this.player) : null;
+    if (heroic) items.push({ itemId: heroic });
     return { xp, gold: gold(), items };
   }
 }

@@ -340,7 +340,7 @@ namespace Drakepg
         Chest NewChest(List<RoamingMonster> taken, bool first = false)
         {
             if (!Features.On(P, "chests")) return null;
-            if (first && room.Chest != null) return new Chest { X = room.Chest.X, Y = room.Chest.Y, Mimic = false };
+            if (first && room.Chest != null) return new Chest { X = room.Chest.X, Y = room.Chest.Y, Mimic = false, Book = room.Chest.Book };
             var roll = Monsters.RollChest(Rng);
             if (roll == null) return null;
             var pos = FindSpawnPoint(taken.Select(m => new Vector2((float)m.X, (float)m.Y)));
@@ -499,7 +499,9 @@ namespace Drakepg
                 return;
             }
             var rewards = Monsters.RollChestLoot(Db.Zone(room.ZoneId), Rng, Features.On(P, "sigils"), Features.On(P, "materials"));
-            var (_, lost) = P.GrantRewards(rewards);
+            var book = c.Data.Book != null ? Books.ChestBook(P, room) : null;
+            if (book != null) rewards.Items.Add(new ItemGrant { ItemId = book });
+            var (_, lost) = P.GrantRewards(rewards, book != null);
             Sfx.Play("quest");
             var lid = c.Lid;
             var lidFrom = lid.localPosition;
@@ -2032,7 +2034,7 @@ namespace Drakepg
                 actions.Add(new DialogueAction("Browse wares", close =>
                 {
                     close();
-                    InventoryPanel.OpenShop(P, $"{npc.Def.Name}'s Shop", role.Stock, Refresh);
+                    InventoryPanel.OpenShop(P, $"{npc.Def.Name}'s Shop", Books.ShopStock(P, role), Refresh);
                 }));
             }
             else if (role.Kind == "forge")

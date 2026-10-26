@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { featureOn } from '../game/Features';
+import { bookSkill, readBook, readLevelOf } from '../game/Books';
 import { reroll, rerollableLines, stoneFor, stonesNeeded } from '../game/Stones';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
-import type { ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, ScrollDef, StoneDef } from '../data/types';
+import type { BookDef, ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, ScrollDef, StoneDef } from '../data/types';
 import { ALL_SLOTS, EQUIP_SLOTS, fitsSlot, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, ROLL_LABELS, SLOT_LABELS, type Gear, type GearDef, type GearTraits } from '../game/Items';
 import { activeSetBonuses, setCounts } from '../game/Sets';
 import type { Player } from '../game/Player';
@@ -46,7 +47,7 @@ type SortMode = 'newest' | 'grade' | 'type' | 'value';
 
 type Entry =
   | { kind: 'gear'; key: string; gear: Gear; def: GearDef; slot: EquipSlot | null }
-  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef | StoneDef | ScrollDef; qty: number }
+  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef | StoneDef | ScrollDef | BookDef; qty: number }
   | { kind: 'stock'; key: string; def: ItemDef };
 
 const W = 1240;
@@ -93,7 +94,7 @@ const SORTS: { sort: SortMode; label: string }[] = [
   { sort: 'type', label: 'Type' },
   { sort: 'value', label: 'Value' },
 ];
-const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, accessory: 2, consumable: 3, scroll: 4, stone: 5, material: 6 };
+const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, accessory: 2, consumable: 3, book: 4, scroll: 5, stone: 6, material: 7 };
 /** Grades below this are offered by "Sell junk" (Standard and Fair). */
 const JUNK_BELOW = 40;
 
@@ -167,7 +168,7 @@ class InventoryView {
       this.mode === 'buy' ? this.stock.map((id) => ({ kind: 'stock', key: `stock:${id}`, def: db.item(id) })) : this.bagEntries();
     // Materials live in their own pouch (no bag slots), so only their tab shows them.
     // Stones and scrolls sit with the potions under Items.
-    const tabOf = (t: ItemDef['type']) => (t === 'stone' || t === 'scroll' ? 'consumable' : t);
+    const tabOf = (t: ItemDef['type']) => (t === 'stone' || t === 'scroll' || t === 'book' ? 'consumable' : t);
     const filtered = remembered.tab === 'all' ? all.filter((e) => e.def.type !== 'material') : all.filter((e) => tabOf(e.def.type) === remembered.tab);
     // Sigils rank above every grade: Eclipse 300+, Dusk 200+, Dawn 100+.
     const sigilRank = (e: Entry) => (e.kind === 'gear' && e.gear.sigil ? (SIGIL_TIERS.indexOf(e.gear.sigil) + 1) * 100 : 0);
@@ -462,6 +463,7 @@ class InventoryView {
       else this.equip(entry);
     } else if (entry.kind === 'stack' && entry.def.type === 'consumable') this.use(entry.def);
     else if (entry.kind === 'stack' && entry.def.type === 'scroll') this.onRecall?.();
+    else if (entry.kind === 'stack' && entry.def.type === 'book') this.read(entry.def.id);
   }
 
   // --- Actions ---
@@ -501,6 +503,20 @@ class InventoryView {
       play(this.scene, 'heal');
       toast(this.scene, restoreText(r), COLORS.textGood);
     } else toast(this.scene, 'Already full', COLORS.textDim);
+    this.changed();
+  }
+
+  /** Learn a skill book's skill (the book is used up). */
+  private read(itemId: string): void {
+    const result = readBook(this.player, itemId);
+    const skill = bookSkill(db.item(itemId))!;
+    if (result === 'ok') {
+      play(this.scene, 'levelup');
+      toast(this.scene, `Learned ${skill.name}!`, COLORS.textMagic);
+    } else {
+      const why = { class: "Another class's book", level: `Needs level ${readLevelOf(skill)}`, known: 'You know this already' }[result];
+      toast(this.scene, why, COLORS.textBad);
+    }
     this.changed();
   }
 
@@ -558,7 +574,7 @@ class InventoryView {
       card.add(sig);
       headY += sig.height + 2;
     }
-    const kind = isGearDef(entry.def) ? kindLabel(entry.def) : { material: 'Material', stone: 'Roll stone', consumable: 'Potion', scroll: 'Scroll' }[entry.def.type];
+    const kind = isGearDef(entry.def) ? kindLabel(entry.def) : { material: 'Material', stone: 'Roll stone', consumable: 'Potion', scroll: 'Scroll', book: 'Skill book' }[entry.def.type]!;
     // Gear shows its tier, which also sets how many modifier lines it can carry.
     const tiered = isGearDef(entry.def) ? `Tier ${entry.def.tier} ${kind}` : kind;
     const worn = entry.kind === 'gear' && entry.slot ? (entry.slot === 'spare' ? ' · Spare' : ' · Equipped') : '';
@@ -667,6 +683,9 @@ class InventoryView {
         buttons.push({ label: 'Use', run: () => this.use(def) });
       } else if (entry.kind === 'stack' && entry.def.type === 'scroll' && this.onRecall) {
         buttons.push({ label: 'Read', run: () => this.onRecall!() });
+      } else if (entry.kind === 'stack' && entry.def.type === 'book') {
+        const id = entry.def.id;
+        buttons.push({ label: 'Read', run: () => this.read(id) });
       }
     } else if (this.mode === 'buy' && entry.kind === 'stock') {
       buttons.push({ label: `Buy ${entry.def.price} g`, run: () => this.buy(entry.def), enabled: this.player.gold >= entry.def.price });

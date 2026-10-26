@@ -66,6 +66,7 @@ export const db = {
   affixes: (): readonly EliteAffixDef[] => ELITE_AFFIXES,
   hasClass: (id: string) => classes.has(id),
   quests: (): readonly QuestDef[] => QUESTS,
+  skills: (): readonly SkillDef[] => SKILLS,
   hasRoom: (id: string) => rooms.has(id),
   hasItem: (id: string) => items.has(id),
   hasMonster: (id: string) => monsters.has(id),
@@ -124,12 +125,17 @@ export function validateData(): void {
     if (gatherItems.has(z.gather)) throw new Error(`Zone ${z.id}: gather item ${z.gather} is already another area's`);
     gatherItems.add(z.gather);
   }
-  for (const p of Object.values(PROMOTIONS)) [...(p?.items ?? []), ...Object.values(p?.classItems ?? {})].forEach((id) => db.item(id));
+  for (const p of Object.values(PROMOTIONS)) {
+    [...(p?.items ?? []), ...Object.values(p?.classItems ?? {})].forEach((id) => db.item(id));
+    Object.values(p?.classBooks ?? {}).forEach((id) => db.item(`book_${id}`));
+  }
   for (const c of CLASSES) {
     db.item(c.weapon);
     const body = db.item(c.armor);
     if (body.type !== 'armor' || (body.slot ?? 'body') !== 'body') throw new Error(`Class ${c.id}: starting armor must be body armor`);
     c.skills.forEach((s) => db.skill(s.skillId));
+    for (const id of c.books) if (db.skill(id).classId !== c.id) throw new Error(`Class ${c.id}: book ${id} needs classId '${c.id}'`);
+    if (c.heroicBook) db.item(`book_${c.heroicBook}`);
   }
   const npcIds = new Set(ROOMS.flatMap((r) => r.npcs.map((n) => n.id)));
   for (const q of QUESTS) {
@@ -143,10 +149,15 @@ export function validateData(): void {
     else if (!o.elite) throw new Error(`Quest ${q.id}: objective needs a monsterId or elite`);
     q.rewards.items?.forEach((id) => db.item(id));
     Object.values(q.rewards.classItems ?? {}).forEach((id) => db.item(id));
+    for (const [cls, id] of Object.entries(q.rewards.classBooks ?? {})) {
+      if (db.skill(id).classId !== cls) throw new Error(`Quest ${q.id}: ${cls} book ${id} belongs to another class`);
+      db.item(`book_${id}`);
+    }
   }
   const mapSpots = new Set<string>();
   for (const r of ROOMS) {
     if (r.zoneId) db.zone(r.zoneId);
+    if (r.chest?.book) db.item(`book_${r.chest.book}`);
     if (!MAP_AREAS.some((a) => a.id === r.map.area)) throw new Error(`Room ${r.id}: unknown map area ${r.map.area}`);
     const spot = `${r.map.area}:${r.map.x},${r.map.y}`;
     if (mapSpots.has(spot)) throw new Error(`Room ${r.id}: another room already sits at map spot ${spot}`);

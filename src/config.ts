@@ -8,7 +8,7 @@ export const DESIGN = { width: GAME_WIDTH, height: GAME_HEIGHT } as const;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -31,6 +31,27 @@ export const BALANCE = {
   maxLevel: 50,
   /** Skills a hero carries into battle (picked in the Character panel; new skills fill free slots). */
   skillSlots: 5,
+  /**
+   * Skill books (docs/BUILD_VARIETY_SPEC.md). `levels`: the level an element's books need (they follow the story).
+   * `price`: gold per read level (class books x2). `match`: extra damage of a family skill with a weapon of its element.
+   * `drop`: an Elite's chance at one of its area's element books while one is missing; sure on the `sureAfter`th Elite.
+   */
+  books: {
+    levels: { fire: 3, earth: 3, wind: 3, water: 7, energy: 7, ice: 11, light: 16, dark: 16 },
+    price: 20,
+    match: 0.2,
+    drop: { chance: 0.3, sureAfter: 4 },
+  },
+  /** Element families (skills.ts `FAMILIES`): each class's shape, the same numbers in every element. `chance`: its element effect. */
+  families: {
+    strike: { power: 1.5, hits: 1, mpCost: 6, cooldown: 1, chance: 0.3 },
+    knives: { power: 0.5, hits: 3, mpCost: 6, cooldown: 1, chance: 0.3 },
+    bolt: { power: 1.5, hits: 1, mpCost: 6, cooldown: 0, chance: 0.25 },
+  },
+  /** Element Wards (generic books): +`resist` to one element for `turns`. */
+  ward: { resist: 40, turns: 3, mpCost: 6, cooldown: 5 },
+  /** Ice's Freeze: the skill's effect chance + `perStat` per point of the stat it uses, cut by the target's Ice resist, at most `max`. */
+  freeze: { perStat: 0.0025, max: 0.4 },
   /** Free stat points per level up (class growth is added on top). */
   statPointsPerLevel: 3,
   /** Damage taken while defending is multiplied by this. */

@@ -347,7 +347,9 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0xb9770e, accent: 0x5d3a0a, scale: 1, art: 'npc_tobin' },
         role: {
           kind: 'shop',
+          books: ['fire', 'earth', 'wind'],
           stock: [
+            'book_field_dressing',
             'health_potion',
             'mana_potion',
             'recall_scroll',
@@ -579,7 +581,7 @@ export const ROOMS: RoomDef[] = [
       },
     ],
     // The bandits' stash: a sure chest from the return trips on (chests open after Chapter 1, when hunts send you back).
-    chest: { x: 960, y: 668 },
+    chest: { x: 960, y: 668, book: 'play_dead' },
     zoneId: 'bramble_hideout',
     monsterCount: 2,
   },
@@ -688,6 +690,7 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0x8d6e63, accent: 0x3e2723, scale: 0.95, art: 'npc_wren' },
         role: {
           kind: 'shop',
+          books: ['water', 'energy'],
           stock: [
             'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor',
             'recall_scroll',
@@ -773,7 +776,7 @@ export const ROOMS: RoomDef[] = [
     ],
     zoneId: 'eel_pools',
     monsterCount: 2,
-    chest: { x: 1130, y: 660 },
+    chest: { x: 1130, y: 660, book: 'meditate' },
     wakeAt: REEDWATCH_WAKE,
   },
   {
@@ -986,6 +989,7 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0x8d6e63, accent: 0x3e2723, scale: 1.1, art: 'npc_gunnar' },
         role: {
           kind: 'shop',
+          books: ['ice'],
           stock: [
             'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor',
             'recall_scroll',

@@ -347,6 +347,7 @@ export function itemLines(def: ItemDef, g: GearTraits = { rolls: {} }): string[]
     case 'consumable':
     case 'material':
     case 'stone':
+    case 'book':
       return [def.description];
     case 'scroll':
       // The card's description says it all.

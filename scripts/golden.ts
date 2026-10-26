@@ -106,6 +106,8 @@ interface FightCase {
   chapter: number;
   monster: () => MonsterDef;
   zoneId?: string;
+  /** Skills learned from books and carried (with the class's first heal): the families, Freeze, Wards, Meditate, Play Dead. */
+  books?: string[];
 }
 
 const CH1 = ['burrow_rat', 'mossling', 'thornback_boar', 'ash_imp', 'bramble_bandit', 'barkshell_beetle', 'thornheart', 'millstone_crab', 'dusk_wraith', 'hedge_troll'];
@@ -122,12 +124,23 @@ for (const cls of ['warrior', 'mage', 'rogue'] as ClassId[]) {
   cases.push({ name: 'heroic thornheart', cls, chapter: 2, monster: () => makeHeroic(db.monster('thornheart')) });
   cases.push({ name: 'heroic stormcoil', cls, chapter: 3, monster: () => makeHeroic(db.monster('stormcoil')) });
   cases.push({ name: 'impling fen', cls, chapter: 2, monster: () => makeImpling(db.zone('fen')) });
+  // Skill books (docs/BUILD_VARIETY_SPEC.md): Freeze on a monster weak to Ice, one that resists it, a boss that ignores it.
+  const family = db.class(cls).family;
+  for (const id of ['ember_salamander', 'glacier_golem', 'old_snowmaw', 'drift_wolf']) {
+    cases.push({ name: `books ${id}`, cls, chapter: 3, monster: () => db.monster(id), zoneId: 'frostfang', books: [`ice_${family}`, `fire_${family}`, 'ice_ward', 'meditate'] });
+  }
+  cases.push({ name: 'books mire_toad', cls, chapter: 2, monster: () => db.monster('mire_toad'), zoneId: 'fen', books: [`water_${family}`, 'play_dead'] });
 }
 
 const fights = [];
 for (const c of cases) {
   for (let seed = 1; seed <= SEEDS; seed++) {
     const player = heroFor(c.cls, c.chapter);
+    if (c.books) {
+      player.data.learned = [...c.books];
+      const heal = player.classDef.skills.map((s) => db.skill(s.skillId)).find((s) => s.kind === 'heal')!;
+      player.data.loadout = [heal.id, ...c.books];
+    }
     // A gather hunt in the fight's area, so hunt drops are covered too.
     const rng: Rng = seeded(seed * 7919 + c.name.length);
     const battle = new Battle(player, c.monster(), rng);
@@ -147,6 +160,8 @@ for (const c of cases) {
       state: battle.state,
       rewards: battle.rewards,
       pity: player.data.lootPity,
+      bookPity: player.data.bookPity,
+      books: c.books ?? null,
     });
   }
 }

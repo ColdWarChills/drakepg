@@ -1,5 +1,5 @@
 {
- "saveVersion": 15,
+ "saveVersion": 16,
  "balance": {
   "restoreAfterBattle": false,
   "innCost": 5,
@@ -14,6 +14,57 @@
   "baseFleeChance": 0.5,
   "maxLevel": 50,
   "skillSlots": 5,
+  "books": {
+   "levels": {
+    "fire": 3,
+    "earth": 3,
+    "wind": 3,
+    "water": 7,
+    "energy": 7,
+    "ice": 11,
+    "light": 16,
+    "dark": 16
+   },
+   "price": 20,
+   "match": 0.2,
+   "drop": {
+    "chance": 0.3,
+    "sureAfter": 4
+   }
+  },
+  "families": {
+   "strike": {
+    "power": 1.5,
+    "hits": 1,
+    "mpCost": 6,
+    "cooldown": 1,
+    "chance": 0.3
+   },
+   "knives": {
+    "power": 0.5,
+    "hits": 3,
+    "mpCost": 6,
+    "cooldown": 1,
+    "chance": 0.3
+   },
+   "bolt": {
+    "power": 1.5,
+    "hits": 1,
+    "mpCost": 6,
+    "cooldown": 0,
+    "chance": 0.25
+   }
+  },
+  "ward": {
+   "resist": 40,
+   "turns": 3,
+   "mpCost": 6,
+   "cooldown": 5
+  },
+  "freeze": {
+   "perStat": 0.0025,
+   "max": 0.4
+  },
   "statPointsPerLevel": 3,
   "defendDamage": 0.4,
   "defendMp": 4,
@@ -449,38 +500,23 @@
      "level": 4
     },
     {
-     "skillId": "shield_bash",
+     "skillId": "sunder",
      "level": 6
     },
     {
-     "skillId": "sunder",
-     "level": 8
-    },
-    {
-     "skillId": "iron_skin",
-     "level": 10
-    },
-    {
      "skillId": "cleave",
-     "level": 12
-    },
-    {
-     "skillId": "bloodlust",
-     "level": 14
-    },
-    {
-     "skillId": "earthshaker",
-     "level": 16
-    },
-    {
-     "skillId": "rallying_roar",
-     "level": 18
-    },
-    {
-     "skillId": "titans_wrath",
-     "level": 20
+     "level": 9
     }
    ],
+   "books": [
+    "shield_bash",
+    "iron_skin",
+    "bloodlust",
+    "earthshaker",
+    "rallying_roar",
+    "titans_wrath"
+   ],
+   "family": "strike",
    "mpOnHit": 3,
    "look": {
     "shape": "humanoid",
@@ -684,11 +720,11 @@
      "level": 1
     },
     {
-     "skillId": "mend",
+     "skillId": "ember_bolt",
      "level": 2
     },
     {
-     "skillId": "ember_bolt",
+     "skillId": "mend",
      "level": 2
     },
     {
@@ -696,42 +732,25 @@
      "level": 3
     },
     {
-     "skillId": "meteor",
+     "skillId": "spark_chain",
      "level": 5
     },
     {
-     "skillId": "spark_chain",
-     "level": 6
-    },
-    {
      "skillId": "stone_skin",
-     "level": 8
-    },
-    {
-     "skillId": "gale",
-     "level": 10
-    },
-    {
-     "skillId": "tidal_wave",
-     "level": 12
-    },
-    {
-     "skillId": "sunburst",
-     "level": 14
-    },
-    {
-     "skillId": "shadow_hex",
-     "level": 16
-    },
-    {
-     "skillId": "thunderstorm",
-     "level": 18
-    },
-    {
-     "skillId": "cataclysm",
-     "level": 20
+     "level": 7
     }
    ],
+   "books": [
+    "meteor",
+    "sunburst",
+    "tidal_wave",
+    "gale",
+    "thunderstorm",
+    "shadow_hex",
+    "cataclysm"
+   ],
+   "family": "bolt",
+   "heroicBook": "shadow_hex",
    "look": {
     "shape": "humanoid",
     "color": 8207512,
@@ -946,42 +965,25 @@
      "level": 3
     },
     {
-     "skillId": "envenom",
-     "level": 4
-    },
-    {
      "skillId": "assassinate",
      "level": 5
     },
     {
      "skillId": "smoke_bomb",
      "level": 7
-    },
-    {
-     "skillId": "expose_weakness",
-     "level": 9
-    },
-    {
-     "skillId": "shadowstep",
-     "level": 11
-    },
-    {
-     "skillId": "fan_of_knives",
-     "level": 13
-    },
-    {
-     "skillId": "hemorrhage",
-     "level": 15
-    },
-    {
-     "skillId": "death_mark",
-     "level": 18
-    },
-    {
-     "skillId": "thousand_cuts",
-     "level": 20
     }
    ],
+   "books": [
+    "expose_weakness",
+    "envenom",
+    "shadowstep",
+    "hemorrhage",
+    "fan_of_knives",
+    "death_mark",
+    "thousand_cuts"
+   ],
+   "family": "knives",
+   "heroicBook": "death_mark",
    "look": {
     "shape": "humanoid",
     "color": 2600544,
@@ -3424,6 +3426,492 @@
    "description": "Guild hunt item. White wax seals the Frostbinder's acolytes stamp on everything.",
    "price": 10,
    "iconColor": 15527921
+  },
+  {
+   "id": "book_shield_bash",
+   "type": "book",
+   "skillId": "shield_bash",
+   "name": "Shield Bash Book",
+   "description": "Teaches Shield Bash (Warrior only, level 5): 1x Blunt damage with a 60% chance to stun for a turn.",
+   "price": 200,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_iron_skin",
+   "type": "book",
+   "skillId": "iron_skin",
+   "name": "Iron Skin Book",
+   "description": "Teaches Iron Skin (Warrior only, level 8): Take 40% less damage for 3 turns.",
+   "price": 320,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_bloodlust",
+   "type": "book",
+   "skillId": "bloodlust",
+   "name": "Bloodlust Book",
+   "description": "Teaches Bloodlust (Warrior only, level 10): 1.6x damage. Heal half the damage dealt.",
+   "price": 400,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_earthshaker",
+   "type": "book",
+   "skillId": "earthshaker",
+   "name": "Earthshaker Book",
+   "description": "Teaches Earthshaker (Warrior only, level 12): Split the ground. 2x Earth damage and Weaken for 2 turns.",
+   "price": 480,
+   "iconColor": 13214298
+  },
+  {
+   "id": "book_rallying_roar",
+   "type": "book",
+   "skillId": "rallying_roar",
+   "name": "Rallying Roar Book",
+   "description": "Teaches Rallying Roar (Warrior only, level 11): Heal 20% of max HP, then Regen for 3 turns.",
+   "price": 440,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_titans_wrath",
+   "type": "book",
+   "skillId": "titans_wrath",
+   "name": "Titan's Wrath Book",
+   "description": "Teaches Titan's Wrath (Warrior only, level 20): A blow that shakes mountains. 4x damage.",
+   "price": 800,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_meteor",
+   "type": "book",
+   "skillId": "meteor",
+   "name": "Meteor Book",
+   "description": "Teaches Meteor (Mage only, level 5): Call down a falling star. 3x Fire damage.",
+   "price": 200,
+   "iconColor": 16754483
+  },
+  {
+   "id": "book_gale",
+   "type": "book",
+   "skillId": "gale",
+   "name": "Gale Book",
+   "description": "Teaches Gale (Mage only, level 12): 1.8x Wind damage and Weaken (deals 25% less) for 2 turns.",
+   "price": 480,
+   "iconColor": 12121544
+  },
+  {
+   "id": "book_tidal_wave",
+   "type": "book",
+   "skillId": "tidal_wave",
+   "name": "Tidal Wave Book",
+   "description": "Teaches Tidal Wave (Mage only, level 10): A crashing wave. 2.6x Water damage.",
+   "price": 400,
+   "iconColor": 7131135
+  },
+  {
+   "id": "book_sunburst",
+   "type": "book",
+   "skillId": "sunburst",
+   "name": "Sunburst Book",
+   "description": "Teaches Sunburst (Mage only, level 8): 2x Light damage. Heal 40% of the damage dealt.",
+   "price": 320,
+   "iconColor": 16775382
+  },
+  {
+   "id": "book_shadow_hex",
+   "type": "book",
+   "skillId": "shadow_hex",
+   "name": "Shadow Hex Book",
+   "description": "Teaches Shadow Hex (Mage only, level 6): 1x Dark damage and Shadow Rot for 4 turns: Dark damage each turn, -15 all resistances.",
+   "price": 240,
+   "iconColor": 10648831
+  },
+  {
+   "id": "book_thunderstorm",
+   "type": "book",
+   "skillId": "thunderstorm",
+   "name": "Thunderstorm Book",
+   "description": "Teaches Thunderstorm (Mage only, level 11): Four lightning strikes at 0.9x Energy each.",
+   "price": 440,
+   "iconColor": 16773754
+  },
+  {
+   "id": "book_cataclysm",
+   "type": "book",
+   "skillId": "cataclysm",
+   "name": "Cataclysm Book",
+   "description": "Teaches Cataclysm (Mage only, level 20): Unleash your staff's element. 4.5x damage.",
+   "price": 800,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_envenom",
+   "type": "book",
+   "skillId": "envenom",
+   "name": "Envenom Book",
+   "description": "Teaches Envenom (Rogue only, level 8): 0.8x damage and Poison for 4 turns. Poison ignores resistances.",
+   "price": 320,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_expose_weakness",
+   "type": "book",
+   "skillId": "expose_weakness",
+   "name": "Expose Weakness Book",
+   "description": "Teaches Expose Weakness (Rogue only, level 5): 1x damage and Expose: -25 to all its resistances for 3 turns.",
+   "price": 200,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_shadowstep",
+   "type": "book",
+   "skillId": "shadowstep",
+   "name": "Shadowstep Book",
+   "description": "Teaches Shadowstep (Rogue only, level 10): Strike from the shadows. 2x Dark damage, +50% crit chance.",
+   "price": 400,
+   "iconColor": 10648831
+  },
+  {
+   "id": "book_fan_of_knives",
+   "type": "book",
+   "skillId": "fan_of_knives",
+   "name": "Fan of Knives Book",
+   "description": "Teaches Fan of Knives (Rogue only, level 7): Five thrown knives at 0.5x each.",
+   "price": 280,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_hemorrhage",
+   "type": "book",
+   "skillId": "hemorrhage",
+   "name": "Hemorrhage Book",
+   "description": "Teaches Hemorrhage (Rogue only, level 12): 1.2x damage and Bleed for 4 turns.",
+   "price": 480,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_death_mark",
+   "type": "book",
+   "skillId": "death_mark",
+   "name": "Death Mark Book",
+   "description": "Teaches Death Mark (Rogue only, level 6): 0.6x damage and Mark it: takes 30% more damage for 3 turns.",
+   "price": 240,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_thousand_cuts",
+   "type": "book",
+   "skillId": "thousand_cuts",
+   "name": "Thousand Cuts Book",
+   "description": "Teaches Thousand Cuts (Rogue only, level 20): Eight blinding strikes at 0.45x each.",
+   "price": 800,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_fire_strike",
+   "type": "book",
+   "skillId": "fire_strike",
+   "name": "Fire Strike Book",
+   "description": "Teaches Fire Strike (Warrior only, level 3): 1.5x Fire damage. 30% chance to Burn it (Fire damage each turn) for 3 turns. +20% with a Fire weapon.",
+   "price": 60,
+   "iconColor": 16754483
+  },
+  {
+   "id": "book_water_strike",
+   "type": "book",
+   "skillId": "water_strike",
+   "name": "Water Strike Book",
+   "description": "Teaches Water Strike (Warrior only, level 7): 1.5x Water damage. 30% chance of Regen on you for 2 turns. +20% with a Water weapon.",
+   "price": 140,
+   "iconColor": 7131135
+  },
+  {
+   "id": "book_ice_strike",
+   "type": "book",
+   "skillId": "ice_strike",
+   "name": "Ice Strike Book",
+   "description": "Teaches Ice Strike (Warrior only, level 11): 1.5x Ice damage. 30% chance to Freeze it (loses its next turn), more with STR, at most 40%. +20% with a Ice weapon.",
+   "price": 220,
+   "iconColor": 12580095
+  },
+  {
+   "id": "book_wind_strike",
+   "type": "book",
+   "skillId": "wind_strike",
+   "name": "Wind Strike Book",
+   "description": "Teaches Wind Strike (Warrior only, level 3): 1.5x Wind damage. 30% chance to Weaken it (deals 25% less) for 2 turns. +20% with a Wind weapon.",
+   "price": 60,
+   "iconColor": 12121544
+  },
+  {
+   "id": "book_earth_strike",
+   "type": "book",
+   "skillId": "earth_strike",
+   "name": "Earth Strike Book",
+   "description": "Teaches Earth Strike (Warrior only, level 3): 1.5x Earth damage. 30% chance of Stone Skin on you for 1 turn. +20% with a Earth weapon.",
+   "price": 60,
+   "iconColor": 13214298
+  },
+  {
+   "id": "book_energy_strike",
+   "type": "book",
+   "skillId": "energy_strike",
+   "name": "Energy Strike Book",
+   "description": "Teaches Energy Strike (Warrior only, level 7): 1.5x Energy damage. 30% chance to Shock it (takes 15% more) for 2 turns. +20% with a Energy weapon.",
+   "price": 140,
+   "iconColor": 16773754
+  },
+  {
+   "id": "book_light_strike",
+   "type": "book",
+   "skillId": "light_strike",
+   "name": "Light Strike Book",
+   "description": "Teaches Light Strike (Warrior only, level 16): 1.5x Light damage. 30% chance of Focus (+25% crit) on you for 2 turns. +20% with a Light weapon.",
+   "price": 320,
+   "iconColor": 16775382
+  },
+  {
+   "id": "book_dark_strike",
+   "type": "book",
+   "skillId": "dark_strike",
+   "name": "Dark Strike Book",
+   "description": "Teaches Dark Strike (Warrior only, level 16): 1.5x Dark damage. 30% chance of Shadow Rot (Dark damage each turn, -15 resistances) for 3 turns. +20% with a Dark weapon.",
+   "price": 320,
+   "iconColor": 10648831
+  },
+  {
+   "id": "book_fire_knives",
+   "type": "book",
+   "skillId": "fire_knives",
+   "name": "Fire Knives Book",
+   "description": "Teaches Fire Knives (Rogue only, level 3): Three thrown knives at 0.5x Fire each. 30% chance to Burn it (Fire damage each turn) for 3 turns. +20% with a Fire weapon.",
+   "price": 60,
+   "iconColor": 16754483
+  },
+  {
+   "id": "book_water_knives",
+   "type": "book",
+   "skillId": "water_knives",
+   "name": "Water Knives Book",
+   "description": "Teaches Water Knives (Rogue only, level 7): Three thrown knives at 0.5x Water each. 30% chance of Regen on you for 2 turns. +20% with a Water weapon.",
+   "price": 140,
+   "iconColor": 7131135
+  },
+  {
+   "id": "book_ice_knives",
+   "type": "book",
+   "skillId": "ice_knives",
+   "name": "Ice Knives Book",
+   "description": "Teaches Ice Knives (Rogue only, level 11): Three thrown knives at 0.5x Ice each. 30% chance to Freeze it (loses its next turn), more with DEX, at most 40%. +20% with a Ice weapon.",
+   "price": 220,
+   "iconColor": 12580095
+  },
+  {
+   "id": "book_wind_knives",
+   "type": "book",
+   "skillId": "wind_knives",
+   "name": "Wind Knives Book",
+   "description": "Teaches Wind Knives (Rogue only, level 3): Three thrown knives at 0.5x Wind each. 30% chance to Weaken it (deals 25% less) for 2 turns. +20% with a Wind weapon.",
+   "price": 60,
+   "iconColor": 12121544
+  },
+  {
+   "id": "book_earth_knives",
+   "type": "book",
+   "skillId": "earth_knives",
+   "name": "Earth Knives Book",
+   "description": "Teaches Earth Knives (Rogue only, level 3): Three thrown knives at 0.5x Earth each. 30% chance of Stone Skin on you for 1 turn. +20% with a Earth weapon.",
+   "price": 60,
+   "iconColor": 13214298
+  },
+  {
+   "id": "book_energy_knives",
+   "type": "book",
+   "skillId": "energy_knives",
+   "name": "Energy Knives Book",
+   "description": "Teaches Energy Knives (Rogue only, level 7): Three thrown knives at 0.5x Energy each. 30% chance to Shock it (takes 15% more) for 2 turns. +20% with a Energy weapon.",
+   "price": 140,
+   "iconColor": 16773754
+  },
+  {
+   "id": "book_light_knives",
+   "type": "book",
+   "skillId": "light_knives",
+   "name": "Light Knives Book",
+   "description": "Teaches Light Knives (Rogue only, level 16): Three thrown knives at 0.5x Light each. 30% chance of Focus (+25% crit) on you for 2 turns. +20% with a Light weapon.",
+   "price": 320,
+   "iconColor": 16775382
+  },
+  {
+   "id": "book_dark_knives",
+   "type": "book",
+   "skillId": "dark_knives",
+   "name": "Dark Knives Book",
+   "description": "Teaches Dark Knives (Rogue only, level 16): Three thrown knives at 0.5x Dark each. 30% chance of Shadow Rot (Dark damage each turn, -15 resistances) for 3 turns. +20% with a Dark weapon.",
+   "price": 320,
+   "iconColor": 10648831
+  },
+  {
+   "id": "book_fire_bolt",
+   "type": "book",
+   "skillId": "fire_bolt",
+   "name": "Fire Bolt Book",
+   "description": "Teaches Fire Bolt (Mage only, level 3): 1.5x Fire damage. 25% chance to Burn it (Fire damage each turn) for 3 turns. +20% with a Fire weapon.",
+   "price": 60,
+   "iconColor": 16754483
+  },
+  {
+   "id": "book_water_bolt",
+   "type": "book",
+   "skillId": "water_bolt",
+   "name": "Water Bolt Book",
+   "description": "Teaches Water Bolt (Mage only, level 7): 1.5x Water damage. 25% chance of Regen on you for 2 turns. +20% with a Water weapon.",
+   "price": 140,
+   "iconColor": 7131135
+  },
+  {
+   "id": "book_ice_bolt",
+   "type": "book",
+   "skillId": "ice_bolt",
+   "name": "Ice Bolt Book",
+   "description": "Teaches Ice Bolt (Mage only, level 11): 1.5x Ice damage. 25% chance to Freeze it (loses its next turn), more with INT, at most 40%. +20% with a Ice weapon.",
+   "price": 220,
+   "iconColor": 12580095
+  },
+  {
+   "id": "book_wind_bolt",
+   "type": "book",
+   "skillId": "wind_bolt",
+   "name": "Wind Bolt Book",
+   "description": "Teaches Wind Bolt (Mage only, level 3): 1.5x Wind damage. 25% chance to Weaken it (deals 25% less) for 2 turns. +20% with a Wind weapon.",
+   "price": 60,
+   "iconColor": 12121544
+  },
+  {
+   "id": "book_earth_bolt",
+   "type": "book",
+   "skillId": "earth_bolt",
+   "name": "Earth Bolt Book",
+   "description": "Teaches Earth Bolt (Mage only, level 3): 1.5x Earth damage. 25% chance of Stone Skin on you for 1 turn. +20% with a Earth weapon.",
+   "price": 60,
+   "iconColor": 13214298
+  },
+  {
+   "id": "book_energy_bolt",
+   "type": "book",
+   "skillId": "energy_bolt",
+   "name": "Energy Bolt Book",
+   "description": "Teaches Energy Bolt (Mage only, level 7): 1.5x Energy damage. 25% chance to Shock it (takes 15% more) for 2 turns. +20% with a Energy weapon.",
+   "price": 140,
+   "iconColor": 16773754
+  },
+  {
+   "id": "book_dark_bolt",
+   "type": "book",
+   "skillId": "dark_bolt",
+   "name": "Dark Bolt Book",
+   "description": "Teaches Dark Bolt (Mage only, level 16): 1.5x Dark damage. 25% chance of Shadow Rot (Dark damage each turn, -15 resistances) for 3 turns. +20% with a Dark weapon.",
+   "price": 320,
+   "iconColor": 10648831
+  },
+  {
+   "id": "book_fire_ward",
+   "type": "book",
+   "skillId": "fire_ward",
+   "name": "Fire Ward Book",
+   "description": "Teaches Fire Ward (any class, level 3): +40 Fire resistance for 3 turns.",
+   "price": 60,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_water_ward",
+   "type": "book",
+   "skillId": "water_ward",
+   "name": "Water Ward Book",
+   "description": "Teaches Water Ward (any class, level 7): +40 Water resistance for 3 turns.",
+   "price": 140,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_ice_ward",
+   "type": "book",
+   "skillId": "ice_ward",
+   "name": "Ice Ward Book",
+   "description": "Teaches Ice Ward (any class, level 11): +40 Ice resistance for 3 turns.",
+   "price": 220,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_wind_ward",
+   "type": "book",
+   "skillId": "wind_ward",
+   "name": "Wind Ward Book",
+   "description": "Teaches Wind Ward (any class, level 3): +40 Wind resistance for 3 turns.",
+   "price": 60,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_earth_ward",
+   "type": "book",
+   "skillId": "earth_ward",
+   "name": "Earth Ward Book",
+   "description": "Teaches Earth Ward (any class, level 3): +40 Earth resistance for 3 turns.",
+   "price": 60,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_energy_ward",
+   "type": "book",
+   "skillId": "energy_ward",
+   "name": "Energy Ward Book",
+   "description": "Teaches Energy Ward (any class, level 7): +40 Energy resistance for 3 turns.",
+   "price": 140,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_light_ward",
+   "type": "book",
+   "skillId": "light_ward",
+   "name": "Light Ward Book",
+   "description": "Teaches Light Ward (any class, level 16): +40 Light resistance for 3 turns.",
+   "price": 320,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_dark_ward",
+   "type": "book",
+   "skillId": "dark_ward",
+   "name": "Dark Ward Book",
+   "description": "Teaches Dark Ward (any class, level 16): +40 Dark resistance for 3 turns.",
+   "price": 320,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_field_dressing",
+   "type": "book",
+   "skillId": "field_dressing",
+   "name": "Field Dressing Book",
+   "description": "Teaches Field Dressing (any class, level 2): Patch yourself up. Heal 12% of max HP.",
+   "price": 40,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_play_dead",
+   "type": "book",
+   "skillId": "play_dead",
+   "name": "Play Dead Book",
+   "description": "Teaches Play Dead (any class, level 3): Lie still until it loses interest. A sure flee from any fight you can flee (not bosses).",
+   "price": 60,
+   "iconColor": 9268835
+  },
+  {
+   "id": "book_meditate",
+   "type": "book",
+   "skillId": "meditate",
+   "name": "Meditate Book",
+   "description": "Teaches Meditate (any class, level 7): Breathe and gather yourself. Restore 25% of max MP instead of attacking.",
+   "price": 140,
+   "iconColor": 9268835
   }
  ],
  "skills": [
@@ -3476,6 +3964,8 @@
   {
    "id": "shield_bash",
    "name": "Shield Bash",
+   "classId": "warrior",
+   "readLevel": 5,
    "description": "1x Blunt damage with a 60% chance to stun for a turn.",
    "mpCost": 8,
    "cooldown": 4,
@@ -3509,6 +3999,8 @@
   {
    "id": "iron_skin",
    "name": "Iron Skin",
+   "classId": "warrior",
+   "readLevel": 8,
    "description": "Take 40% less damage for 3 turns.",
    "mpCost": 10,
    "cooldown": 6,
@@ -3535,6 +4027,8 @@
   {
    "id": "bloodlust",
    "name": "Bloodlust",
+   "classId": "warrior",
+   "readLevel": 10,
    "description": "1.6x damage. Heal half the damage dealt.",
    "mpCost": 12,
    "cooldown": 4,
@@ -3545,6 +4039,8 @@
   {
    "id": "earthshaker",
    "name": "Earthshaker",
+   "classId": "warrior",
+   "readLevel": 12,
    "description": "Split the ground. 2x Earth damage and Weaken for 2 turns.",
    "mpCost": 14,
    "cooldown": 5,
@@ -3563,6 +4059,8 @@
   {
    "id": "rallying_roar",
    "name": "Rallying Roar",
+   "classId": "warrior",
+   "readLevel": 11,
    "description": "Heal 20% of max HP, then Regen for 3 turns.",
    "mpCost": 14,
    "cooldown": 6,
@@ -3579,6 +4077,8 @@
   {
    "id": "titans_wrath",
    "name": "Titan's Wrath",
+   "classId": "warrior",
+   "readLevel": 20,
    "description": "A blow that shakes mountains. 4x damage.",
    "mpCost": 24,
    "cooldown": 7,
@@ -3586,17 +4086,6 @@
    "power": 4,
    "fx": "heavy",
    "epic": true
-  },
-  {
-   "id": "light_bolt",
-   "name": "Light Bolt",
-   "description": "A bolt of pure light. 1.5x Light damage.",
-   "mpCost": 6,
-   "cooldown": 0,
-   "kind": "damage",
-   "damageType": "magic",
-   "element": "light",
-   "power": 1.5
   },
   {
    "id": "ember_bolt",
@@ -3639,6 +4128,8 @@
   {
    "id": "meteor",
    "name": "Meteor",
+   "classId": "mage",
+   "readLevel": 5,
    "description": "Call down a falling star. 3x Fire damage.",
    "mpCost": 18,
    "cooldown": 5,
@@ -3686,6 +4177,8 @@
   {
    "id": "gale",
    "name": "Gale",
+   "classId": "mage",
+   "readLevel": 12,
    "description": "1.8x Wind damage and Weaken (deals 25% less) for 2 turns.",
    "mpCost": 10,
    "cooldown": 3,
@@ -3703,6 +4196,8 @@
   {
    "id": "tidal_wave",
    "name": "Tidal Wave",
+   "classId": "mage",
+   "readLevel": 10,
    "description": "A crashing wave. 2.6x Water damage.",
    "mpCost": 14,
    "cooldown": 3,
@@ -3714,6 +4209,8 @@
   {
    "id": "sunburst",
    "name": "Sunburst",
+   "classId": "mage",
+   "readLevel": 8,
    "description": "2x Light damage. Heal 40% of the damage dealt.",
    "mpCost": 14,
    "cooldown": 4,
@@ -3726,6 +4223,8 @@
   {
    "id": "shadow_hex",
    "name": "Shadow Hex",
+   "classId": "mage",
+   "readLevel": 6,
    "description": "1x Dark damage and Shadow Rot for 4 turns: Dark damage each turn, -15 all resistances.",
    "mpCost": 14,
    "cooldown": 5,
@@ -3743,6 +4242,8 @@
   {
    "id": "thunderstorm",
    "name": "Thunderstorm",
+   "classId": "mage",
+   "readLevel": 11,
    "description": "Four lightning strikes at 0.9x Energy each.",
    "mpCost": 22,
    "cooldown": 5,
@@ -3755,6 +4256,8 @@
   {
    "id": "cataclysm",
    "name": "Cataclysm",
+   "classId": "mage",
+   "readLevel": 20,
    "description": "Unleash your staff's element. 4.5x damage.",
    "mpCost": 30,
    "cooldown": 8,
@@ -3817,6 +4320,8 @@
   {
    "id": "envenom",
    "name": "Envenom",
+   "classId": "rogue",
+   "readLevel": 8,
    "description": "0.8x damage and Poison for 4 turns. Poison ignores resistances.",
    "mpCost": 7,
    "cooldown": 4,
@@ -3858,6 +4363,8 @@
   {
    "id": "expose_weakness",
    "name": "Expose Weakness",
+   "classId": "rogue",
+   "readLevel": 5,
    "description": "1x damage and Expose: -25 to all its resistances for 3 turns.",
    "mpCost": 8,
    "cooldown": 4,
@@ -3873,6 +4380,8 @@
   {
    "id": "shadowstep",
    "name": "Shadowstep",
+   "classId": "rogue",
+   "readLevel": 10,
    "description": "Strike from the shadows. 2x Dark damage, +50% crit chance.",
    "mpCost": 12,
    "cooldown": 4,
@@ -3884,6 +4393,8 @@
   {
    "id": "fan_of_knives",
    "name": "Fan of Knives",
+   "classId": "rogue",
+   "readLevel": 7,
    "description": "Five thrown knives at 0.5x each.",
    "mpCost": 14,
    "cooldown": 3,
@@ -3894,6 +4405,8 @@
   {
    "id": "hemorrhage",
    "name": "Hemorrhage",
+   "classId": "rogue",
+   "readLevel": 12,
    "description": "1.2x damage and Bleed for 4 turns.",
    "mpCost": 12,
    "cooldown": 4,
@@ -3909,6 +4422,8 @@
   {
    "id": "death_mark",
    "name": "Death Mark",
+   "classId": "rogue",
+   "readLevel": 6,
    "description": "0.6x damage and Mark it: takes 30% more damage for 3 turns.",
    "mpCost": 14,
    "cooldown": 6,
@@ -3924,12 +4439,685 @@
   {
    "id": "thousand_cuts",
    "name": "Thousand Cuts",
+   "classId": "rogue",
+   "readLevel": 20,
    "description": "Eight blinding strikes at 0.45x each.",
    "mpCost": 26,
    "cooldown": 7,
    "kind": "damage",
    "power": 0.45,
    "hits": 8
+  },
+  {
+   "id": "fire_strike",
+   "name": "Fire Strike",
+   "classId": "warrior",
+   "readLevel": 3,
+   "family": "strike",
+   "description": "1.5x Fire damage. 30% chance to Burn it (Fire damage each turn) for 3 turns. +20% with a Fire weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "fire",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "burn",
+     "turns": 3,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "water_strike",
+   "name": "Water Strike",
+   "classId": "warrior",
+   "readLevel": 7,
+   "family": "strike",
+   "description": "1.5x Water damage. 30% chance of Regen on you for 2 turns. +20% with a Water weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "water",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "regen",
+     "turns": 2,
+     "self": true,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "ice_strike",
+   "name": "Ice Strike",
+   "classId": "warrior",
+   "readLevel": 11,
+   "family": "strike",
+   "description": "1.5x Ice damage. 30% chance to Freeze it (loses its next turn), more with STR, at most 40%. +20% with a Ice weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "ice",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "freeze",
+     "turns": 1,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "wind_strike",
+   "name": "Wind Strike",
+   "classId": "warrior",
+   "readLevel": 3,
+   "family": "strike",
+   "description": "1.5x Wind damage. 30% chance to Weaken it (deals 25% less) for 2 turns. +20% with a Wind weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "wind",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "weaken",
+     "turns": 2,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "earth_strike",
+   "name": "Earth Strike",
+   "classId": "warrior",
+   "readLevel": 3,
+   "family": "strike",
+   "description": "1.5x Earth damage. 30% chance of Stone Skin on you for 1 turn. +20% with a Earth weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "earth",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "stone_skin",
+     "turns": 1,
+     "self": true,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "energy_strike",
+   "name": "Energy Strike",
+   "classId": "warrior",
+   "readLevel": 7,
+   "family": "strike",
+   "description": "1.5x Energy damage. 30% chance to Shock it (takes 15% more) for 2 turns. +20% with a Energy weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "energy",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "shock",
+     "turns": 2,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "light_strike",
+   "name": "Light Strike",
+   "classId": "warrior",
+   "readLevel": 16,
+   "family": "strike",
+   "description": "1.5x Light damage. 30% chance of Focus (+25% crit) on you for 2 turns. +20% with a Light weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "light",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "focus",
+     "turns": 2,
+     "self": true,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "dark_strike",
+   "name": "Dark Strike",
+   "classId": "warrior",
+   "readLevel": 16,
+   "family": "strike",
+   "description": "1.5x Dark damage. 30% chance of Shadow Rot (Dark damage each turn, -15 resistances) for 3 turns. +20% with a Dark weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "dark",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "shadow_rot",
+     "turns": 3,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "fire_knives",
+   "name": "Fire Knives",
+   "classId": "rogue",
+   "readLevel": 3,
+   "family": "knives",
+   "description": "Three thrown knives at 0.5x Fire each. 30% chance to Burn it (Fire damage each turn) for 3 turns. +20% with a Fire weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "fire",
+   "power": 0.5,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "burn",
+     "turns": 3,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "water_knives",
+   "name": "Water Knives",
+   "classId": "rogue",
+   "readLevel": 7,
+   "family": "knives",
+   "description": "Three thrown knives at 0.5x Water each. 30% chance of Regen on you for 2 turns. +20% with a Water weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "water",
+   "power": 0.5,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "regen",
+     "turns": 2,
+     "self": true,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "ice_knives",
+   "name": "Ice Knives",
+   "classId": "rogue",
+   "readLevel": 11,
+   "family": "knives",
+   "description": "Three thrown knives at 0.5x Ice each. 30% chance to Freeze it (loses its next turn), more with DEX, at most 40%. +20% with a Ice weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "ice",
+   "power": 0.5,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "freeze",
+     "turns": 1,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "wind_knives",
+   "name": "Wind Knives",
+   "classId": "rogue",
+   "readLevel": 3,
+   "family": "knives",
+   "description": "Three thrown knives at 0.5x Wind each. 30% chance to Weaken it (deals 25% less) for 2 turns. +20% with a Wind weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "wind",
+   "power": 0.5,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "weaken",
+     "turns": 2,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "earth_knives",
+   "name": "Earth Knives",
+   "classId": "rogue",
+   "readLevel": 3,
+   "family": "knives",
+   "description": "Three thrown knives at 0.5x Earth each. 30% chance of Stone Skin on you for 1 turn. +20% with a Earth weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "earth",
+   "power": 0.5,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "stone_skin",
+     "turns": 1,
+     "self": true,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "energy_knives",
+   "name": "Energy Knives",
+   "classId": "rogue",
+   "readLevel": 7,
+   "family": "knives",
+   "description": "Three thrown knives at 0.5x Energy each. 30% chance to Shock it (takes 15% more) for 2 turns. +20% with a Energy weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "energy",
+   "power": 0.5,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "shock",
+     "turns": 2,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "light_knives",
+   "name": "Light Knives",
+   "classId": "rogue",
+   "readLevel": 16,
+   "family": "knives",
+   "description": "Three thrown knives at 0.5x Light each. 30% chance of Focus (+25% crit) on you for 2 turns. +20% with a Light weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "light",
+   "power": 0.5,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "focus",
+     "turns": 2,
+     "self": true,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "dark_knives",
+   "name": "Dark Knives",
+   "classId": "rogue",
+   "readLevel": 16,
+   "family": "knives",
+   "description": "Three thrown knives at 0.5x Dark each. 30% chance of Shadow Rot (Dark damage each turn, -15 resistances) for 3 turns. +20% with a Dark weapon.",
+   "mpCost": 6,
+   "cooldown": 1,
+   "kind": "damage",
+   "element": "dark",
+   "power": 0.5,
+   "hits": 3,
+   "applies": [
+    {
+     "status": "shadow_rot",
+     "turns": 3,
+     "chance": 0.3
+    }
+   ]
+  },
+  {
+   "id": "fire_bolt",
+   "name": "Fire Bolt",
+   "classId": "mage",
+   "readLevel": 3,
+   "family": "bolt",
+   "description": "1.5x Fire damage. 25% chance to Burn it (Fire damage each turn) for 3 turns. +20% with a Fire weapon.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "fire",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "burn",
+     "turns": 3,
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "water_bolt",
+   "name": "Water Bolt",
+   "classId": "mage",
+   "readLevel": 7,
+   "family": "bolt",
+   "description": "1.5x Water damage. 25% chance of Regen on you for 2 turns. +20% with a Water weapon.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "water",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "regen",
+     "turns": 2,
+     "self": true,
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "ice_bolt",
+   "name": "Ice Bolt",
+   "classId": "mage",
+   "readLevel": 11,
+   "family": "bolt",
+   "description": "1.5x Ice damage. 25% chance to Freeze it (loses its next turn), more with INT, at most 40%. +20% with a Ice weapon.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "ice",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "freeze",
+     "turns": 1,
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "wind_bolt",
+   "name": "Wind Bolt",
+   "classId": "mage",
+   "readLevel": 3,
+   "family": "bolt",
+   "description": "1.5x Wind damage. 25% chance to Weaken it (deals 25% less) for 2 turns. +20% with a Wind weapon.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "wind",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "weaken",
+     "turns": 2,
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "earth_bolt",
+   "name": "Earth Bolt",
+   "classId": "mage",
+   "readLevel": 3,
+   "family": "bolt",
+   "description": "1.5x Earth damage. 25% chance of Stone Skin on you for 1 turn. +20% with a Earth weapon.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "earth",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "stone_skin",
+     "turns": 1,
+     "self": true,
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "energy_bolt",
+   "name": "Energy Bolt",
+   "classId": "mage",
+   "readLevel": 7,
+   "family": "bolt",
+   "description": "1.5x Energy damage. 25% chance to Shock it (takes 15% more) for 2 turns. +20% with a Energy weapon.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "energy",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "shock",
+     "turns": 2,
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "light_bolt",
+   "name": "Light Bolt",
+   "classId": "mage",
+   "readLevel": 16,
+   "family": "bolt",
+   "description": "1.5x Light damage. 25% chance of Focus (+25% crit) on you for 2 turns. +20% with a Light weapon.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "light",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "focus",
+     "turns": 2,
+     "self": true,
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "dark_bolt",
+   "name": "Dark Bolt",
+   "classId": "mage",
+   "readLevel": 16,
+   "family": "bolt",
+   "description": "1.5x Dark damage. 25% chance of Shadow Rot (Dark damage each turn, -15 resistances) for 3 turns. +20% with a Dark weapon.",
+   "mpCost": 6,
+   "cooldown": 0,
+   "kind": "damage",
+   "damageType": "magic",
+   "element": "dark",
+   "power": 1.5,
+   "applies": [
+    {
+     "status": "shadow_rot",
+     "turns": 3,
+     "chance": 0.25
+    }
+   ]
+  },
+  {
+   "id": "fire_ward",
+   "name": "Fire Ward",
+   "readLevel": 3,
+   "description": "+40 Fire resistance for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "fire_ward",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "water_ward",
+   "name": "Water Ward",
+   "readLevel": 7,
+   "description": "+40 Water resistance for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "water_ward",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "ice_ward",
+   "name": "Ice Ward",
+   "readLevel": 11,
+   "description": "+40 Ice resistance for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "ice_ward",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "wind_ward",
+   "name": "Wind Ward",
+   "readLevel": 3,
+   "description": "+40 Wind resistance for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "wind_ward",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "earth_ward",
+   "name": "Earth Ward",
+   "readLevel": 3,
+   "description": "+40 Earth resistance for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "earth_ward",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "energy_ward",
+   "name": "Energy Ward",
+   "readLevel": 7,
+   "description": "+40 Energy resistance for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "energy_ward",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "light_ward",
+   "name": "Light Ward",
+   "readLevel": 16,
+   "description": "+40 Light resistance for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "light_ward",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "dark_ward",
+   "name": "Dark Ward",
+   "readLevel": 16,
+   "description": "+40 Dark resistance for 3 turns.",
+   "mpCost": 6,
+   "cooldown": 5,
+   "kind": "buff",
+   "power": 0,
+   "applies": [
+    {
+     "status": "dark_ward",
+     "turns": 3,
+     "self": true
+    }
+   ]
+  },
+  {
+   "id": "field_dressing",
+   "name": "Field Dressing",
+   "readLevel": 2,
+   "description": "Patch yourself up. Heal 12% of max HP.",
+   "mpCost": 4,
+   "cooldown": 3,
+   "kind": "heal",
+   "power": 0.12
+  },
+  {
+   "id": "play_dead",
+   "name": "Play Dead",
+   "readLevel": 3,
+   "description": "Lie still until it loses interest. A sure flee from any fight you can flee (not bosses).",
+   "mpCost": 3,
+   "cooldown": 0,
+   "kind": "flee",
+   "power": 0
+  },
+  {
+   "id": "meditate",
+   "name": "Meditate",
+   "readLevel": 7,
+   "description": "Breathe and gather yourself. Restore 25% of max MP instead of attacking.",
+   "mpCost": 0,
+   "cooldown": 4,
+   "kind": "mana",
+   "power": 0.25
   }
  ],
  "statuses": [
@@ -4004,6 +5192,22 @@
    "description": "Loses the next turn.",
    "stun": true,
    "tint": 16769126
+  },
+  {
+   "id": "freeze",
+   "name": "Freeze",
+   "harmful": true,
+   "description": "Frozen solid: loses the next turn.",
+   "stun": true,
+   "freeze": true,
+   "tint": 10479871
+  },
+  {
+   "id": "thawed",
+   "name": "Thawed",
+   "harmful": false,
+   "description": "Just thawed: can't be frozen this turn.",
+   "tint": 14087935
   },
   {
    "id": "chill",
@@ -4113,6 +5317,86 @@
    "description": "Takes 25% less damage.",
    "damageTaken": -0.25,
    "tint": 10516554
+  },
+  {
+   "id": "fire_ward",
+   "name": "Fire Ward",
+   "harmful": false,
+   "description": "+40 Fire resistance.",
+   "resists": {
+    "fire": 40
+   },
+   "tint": 16754483
+  },
+  {
+   "id": "water_ward",
+   "name": "Water Ward",
+   "harmful": false,
+   "description": "+40 Water resistance.",
+   "resists": {
+    "water": 40
+   },
+   "tint": 7131135
+  },
+  {
+   "id": "ice_ward",
+   "name": "Ice Ward",
+   "harmful": false,
+   "description": "+40 Ice resistance.",
+   "resists": {
+    "ice": 40
+   },
+   "tint": 12580095
+  },
+  {
+   "id": "wind_ward",
+   "name": "Wind Ward",
+   "harmful": false,
+   "description": "+40 Wind resistance.",
+   "resists": {
+    "wind": 40
+   },
+   "tint": 12121544
+  },
+  {
+   "id": "earth_ward",
+   "name": "Earth Ward",
+   "harmful": false,
+   "description": "+40 Earth resistance.",
+   "resists": {
+    "earth": 40
+   },
+   "tint": 13214298
+  },
+  {
+   "id": "energy_ward",
+   "name": "Energy Ward",
+   "harmful": false,
+   "description": "+40 Energy resistance.",
+   "resists": {
+    "energy": 40
+   },
+   "tint": 16773754
+  },
+  {
+   "id": "light_ward",
+   "name": "Light Ward",
+   "harmful": false,
+   "description": "+40 Light resistance.",
+   "resists": {
+    "light": 40
+   },
+   "tint": 16775382
+  },
+  {
+   "id": "dark_ward",
+   "name": "Dark Ward",
+   "harmful": false,
+   "description": "+40 Dark resistance.",
+   "resists": {
+    "dark": 40
+   },
+   "tint": 10648831
   }
  ],
  "monsters": [
@@ -7566,7 +8850,13 @@
      },
      "role": {
       "kind": "shop",
+      "books": [
+       "fire",
+       "earth",
+       "wind"
+      ],
       "stock": [
+       "book_field_dressing",
        "health_potion",
        "mana_potion",
        "recall_scroll",
@@ -8031,7 +9321,8 @@
    ],
    "chest": {
     "x": 960,
-    "y": 668
+    "y": 668,
+    "book": "play_dead"
    },
    "zoneId": "bramble_hideout",
    "monsterCount": 2
@@ -8258,6 +9549,10 @@
      },
      "role": {
       "kind": "shop",
+      "books": [
+       "water",
+       "energy"
+      ],
       "stock": [
        "stone_of_might",
        "stone_of_precision",
@@ -8428,7 +9723,8 @@
    "monsterCount": 2,
    "chest": {
     "x": 1130,
-    "y": 660
+    "y": 660,
+    "book": "meditate"
    },
    "wakeAt": {
     "roomId": "reedwatch",
@@ -8897,6 +10193,9 @@
      },
      "role": {
       "kind": "shop",
+      "books": [
+       "ice"
+      ],
       "stock": [
        "stone_of_might",
        "stone_of_precision",
@@ -9509,6 +10808,11 @@
      "warrior": "thornheart_blade",
      "mage": "heartwood_staff",
      "rogue": "briar_fang"
+    },
+    "classBooks": {
+     "warrior": "shield_bash",
+     "mage": "meteor",
+     "rogue": "expose_weakness"
     }
    },
    "endsChapter": "Chapter 1: The Restless Thornwood"
@@ -9571,7 +10875,12 @@
      "greater_health_potion",
      "greater_health_potion",
      "greater_health_potion"
-    ]
+    ],
+    "classBooks": {
+     "warrior": "iron_skin",
+     "mage": "sunburst",
+     "rogue": "envenom"
+    }
    }
   },
   {
@@ -9602,6 +10911,11 @@
      "warrior": "thunderhead_maul",
      "mage": "stormcoil_scepter",
      "rogue": "coilfang"
+    },
+    "classBooks": {
+     "warrior": "bloodlust",
+     "mage": "tidal_wave",
+     "rogue": "shadowstep"
     }
    },
    "endsChapter": "Chapter 2: Rising Waters"
@@ -9665,7 +10979,12 @@
      "superior_health_potion",
      "superior_health_potion",
      "superior_health_potion"
-    ]
+    ],
+    "classBooks": {
+     "warrior": "earthshaker",
+     "mage": "gale",
+     "rogue": "hemorrhage"
+    }
    }
   },
   {
@@ -10461,7 +11780,12 @@
      }
     ]
    },
-   "set": "thornwarden"
+   "set": "thornwarden",
+   "books": [
+    "fire",
+    "earth",
+    "wind"
+   ]
   },
   {
    "id": "fen",
@@ -10551,7 +11875,11 @@
      }
     ]
    },
-   "set": "stormwatch"
+   "set": "stormwatch",
+   "books": [
+    "water",
+    "energy"
+   ]
   },
   {
    "id": "bogmother",
@@ -10683,7 +12011,10 @@
      }
     ]
    },
-   "set": "frostward"
+   "set": "frostward",
+   "books": [
+    "ice"
+   ]
   },
   {
    "id": "snowmaw",
@@ -10881,6 +12212,9 @@
     "mage": "reedweave_robe",
     "rogue": "scale_mail"
    },
+   "classBooks": {
+    "rogue": "fan_of_knives"
+   },
    "items": [
     "greater_health_potion",
     "greater_health_potion"
@@ -10892,6 +12226,10 @@
     "warrior": "frostpelt_vest",
     "mage": "galeweave_robe",
     "rogue": "frostpelt_vest"
+   },
+   "classBooks": {
+    "warrior": "rallying_roar",
+    "mage": "thunderstorm"
    },
    "items": [
     "superior_health_potion",

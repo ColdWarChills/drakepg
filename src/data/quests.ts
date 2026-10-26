@@ -28,6 +28,8 @@ export const QUESTS: QuestDef[] = [
       xp: 250,
       gold: 150,
       classItems: { warrior: 'thornheart_blade', mage: 'heartwood_staff', rogue: 'briar_fang' },
+      // Story bosses teach every class a skill (docs/BUILD_VARIETY_SPEC.md).
+      classBooks: { warrior: 'shield_bash', mage: 'meteor', rogue: 'expose_weakness' },
     },
     endsChapter: 'Chapter 1: The Restless Thornwood',
   },
@@ -69,7 +71,7 @@ export const QUESTS: QuestDef[] = [
       'The Bogmother, dead? The whole outpost will drink to you tonight.',
       'But my scouts saw what lies beyond the hollow. An old shrine, half drowned... and lightning crawling over it.',
     ],
-    rewards: { xp: 400, gold: 200, items: ['greater_health_potion', 'greater_health_potion', 'greater_health_potion'] },
+    rewards: { xp: 400, gold: 200, items: ['greater_health_potion', 'greater_health_potion', 'greater_health_potion'], classBooks: { warrior: 'iron_skin', mage: 'sunburst', rogue: 'envenom' } },
   },
   {
     id: 'eye_of_the_storm',
@@ -92,6 +94,8 @@ export const QUESTS: QuestDef[] = [
       xp: 600,
       gold: 300,
       classItems: { warrior: 'thunderhead_maul', mage: 'stormcoil_scepter', rogue: 'coilfang' },
+      // Story bosses teach every class a skill (docs/BUILD_VARIETY_SPEC.md).
+      classBooks: { warrior: 'bloodlust', mage: 'tidal_wave', rogue: 'shadowstep' },
     },
     endsChapter: 'Chapter 2: Rising Waters',
   },
@@ -127,7 +131,7 @@ export const QUESTS: QuestDef[] = [
     ],
     reminder: "Snowmaw's Den is past Windscour Ridge. Fire cracks her shell; it grows back once. Defend against the Avalanche.",
     complete: ['You beat Old Snowmaw? Then nothing stands between you and the roost but whoever made all this.', 'Rest first. You will need it.'],
-    rewards: { xp: 700, gold: 260, items: ['superior_health_potion', 'superior_health_potion', 'superior_health_potion'] },
+    rewards: { xp: 700, gold: 260, items: ['superior_health_potion', 'superior_health_potion', 'superior_health_potion'], classBooks: { warrior: 'earthshaker', mage: 'gale', rogue: 'hemorrhage' } },
   },
   {
     id: 'the_frozen_roost',

@@ -90,8 +90,10 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
     const slots = BALANCE.skillSlots;
     c.add(addText(scene, 380, 190, 'Skills', { size: 22, bold: true, color: COLORS.textGold }));
     c.add(addText(scene, 460, 194, `carried ${player.data.loadout.length} / ${slots}  ·  click to swap`, { size: 15, color: COLORS.textDim }));
-    const perColumn = Math.ceil(player.classDef.skills.length / 3);
-    player.classDef.skills.forEach((entry, i) => {
+    // Level skills, then skills learned from books (the Unity spellbook shows the ones still to find).
+    const entries = [...player.classDef.skills, ...player.data.learned.map((skillId) => ({ skillId, level: 0 }))];
+    const perColumn = Math.ceil(entries.length / 3);
+    entries.forEach((entry, i) => {
       const skill = db.skill(entry.skillId);
       const known = entry.level <= player.level;
       const carried = known && player.isCarried(skill.id);

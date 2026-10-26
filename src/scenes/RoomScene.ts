@@ -4,6 +4,7 @@ import { db } from '../data/db';
 import { ELEMENT_LABELS } from '../data/elements';
 import { ROOMS, START } from '../data/world';
 import type { Blocker, InspectDef, MonsterDef, NpcDef, QuestDef, RoomDef, RoomExit } from '../data/types';
+import { chestBook, shopStock } from '../game/Books';
 import { cheats } from '../game/cheats';
 import { featureOn, markSeen, unseenNews } from '../game/Features';
 import { makeElite, rollElite } from '../game/Elites';
@@ -444,7 +445,9 @@ export class RoomScene extends Phaser.Scene {
 
     const player = session.player;
     const rewards = rollChestLoot(db.zone(this.room.zoneId!), undefined, featureOn(player, 'sigils'), featureOn(player, 'materials'));
-    const { lost } = player.grantRewards(rewards);
+    const book = c.data.book ? chestBook(player, this.room) : null;
+    if (book) rewards.items.push({ itemId: book });
+    const { lost } = player.grantRewards(rewards, !!book);
     sfx.play(this, 'quest');
     this.tweens.add({ targets: c.fig.list[3], y: -70, angle: -25, duration: 220 });
     fx.healSparkles(this, c.data.x, c.data.y, 0xffd34d);
@@ -1713,7 +1716,7 @@ export class RoomScene extends Phaser.Scene {
         label: 'Browse wares',
         run: (close) => {
           close();
-          openShop(this, player, `${npc.def.name}'s Shop`, role.stock, this.refresh);
+          openShop(this, player, `${npc.def.name}'s Shop`, shopStock(player, role), this.refresh);
         },
       });
     } else if (role.kind === 'forge') {

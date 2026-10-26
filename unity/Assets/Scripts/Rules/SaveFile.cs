@@ -33,12 +33,33 @@ namespace Drakepg.Rules
                 if (file?.Player == null) return null;
                 // Older formats were only ever written by the web version, which upgrades them on load first.
                 if (file.Version > Db.Data.SaveVersion || file.Version < 15) return null;
+                if (file.Version < 16) MigrateToBooks(file.Player);
                 return new Player(Sanitize(file.Player));
             }
             catch (Exception)
             {
                 return null;
             }
+        }
+
+        /// <summary>The level lists before skill books (save v15 and older): what an old character already knows.</summary>
+        static readonly Dictionary<string, (string id, int level)[]> OldLevelSkills = new Dictionary<string, (string, int)[]>
+        {
+            ["warrior"] = new[] { ("heavy_strike", 1), ("second_wind", 2), ("war_cry", 3), ("skull_splitter", 4), ("shield_bash", 6), ("sunder", 8), ("iron_skin", 10), ("cleave", 12), ("bloodlust", 14), ("earthshaker", 16), ("rallying_roar", 18), ("titans_wrath", 20) },
+            ["mage"] = new[] { ("light_bolt", 1), ("mend", 2), ("ember_bolt", 2), ("frost_lance", 3), ("meteor", 5), ("spark_chain", 6), ("stone_skin", 8), ("gale", 10), ("tidal_wave", 12), ("sunburst", 14), ("shadow_hex", 16), ("thunderstorm", 18), ("cataclysm", 20) },
+            ["rogue"] = new[] { ("gas_shot", 1), ("twin_cut", 2), ("bandage", 2), ("flurry", 3), ("envenom", 4), ("assassinate", 5), ("smoke_bomb", 7), ("expose_weakness", 9), ("shadowstep", 11), ("fan_of_knives", 13), ("hemorrhage", 15), ("death_mark", 18), ("thousand_cuts", 20) },
+        };
+
+        /// <summary>
+        /// v15 -> v16 (like SaveSystem.ts): levels now teach 6 skills per class and the rest are books. Nobody loses a
+        /// skill: every skill the old level lists had taught by the hero's level is learned.
+        /// </summary>
+        static void MigrateToBooks(PlayerData p)
+        {
+            if (p.ClassId == null || !OldLevelSkills.TryGetValue(p.ClassId, out var old) || !Db.HasClass(p.ClassId)) return;
+            var levelSkills = new HashSet<string>(Db.Class(p.ClassId).Skills.Select(s => s.SkillId));
+            p.Learned = old.Where(o => o.level <= Math.Max(1, p.Level) && !levelSkills.Contains(o.id)).Select(o => o.id).ToList();
+            p.BookPity = new Dictionary<string, double>();
         }
 
         static bool Finite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
@@ -125,6 +146,8 @@ namespace Drakepg.Rules
                 LastTown = raw.LastTown != null && Db.HasRoom(raw.LastTown) && Db.Room(raw.LastTown).Town != null ? raw.LastTown : null,
                 GuardsBeaten = (raw.GuardsBeaten ?? new List<string>()).Where(Db.HasRoom).Distinct().ToList(),
                 Guild = Guild.Sanitize(raw.Guild),
+                Learned = (raw.Learned ?? new List<string>()).Where(id => Db.HasSkill(id) && Books.ReadableBy(Db.Skill(id), classId)).Distinct().ToList(),
+                BookPity = (raw.BookPity ?? new Dictionary<string, double>()).Where(kv => Db.HasLootTable(kv.Key) && Finite(kv.Value) && kv.Value > 0).ToDictionary(kv => kv.Key, kv => Math.Floor(kv.Value)),
             };
 
             var player = new Player(data);

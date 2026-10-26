@@ -57,6 +57,8 @@ namespace Drakepg.Rules
         public DotDef Dot;
         public double? Regen;
         public bool Stun;
+        /// <summary>A stun from Ice (Balance.Freeze): odds grow with the applier's stat, drop with Ice resist; not on a thawed target.</summary>
+        public bool Freeze;
         public double? DamageDealt, DamageTaken, HitChance, CritChance, Evasion;
         public Dictionary<string, double> Resists;
         public long? Tint;
@@ -125,8 +127,14 @@ namespace Drakepg.Rules
         public string Id, Name, Description;
         public double MpCost;
         public int Cooldown;
-        /// <summary>damage, heal or buff.</summary>
+        /// <summary>damage, heal, buff, mana (restore Power of max MP) or flee (a sure flee).</summary>
         public string Kind;
+        /// <summary>Skill books (docs/BUILD_VARIETY_SPEC.md): only this class can read its book; null = any class.</summary>
+        public string ClassId;
+        /// <summary>Level needed to read its book.</summary>
+        public int? ReadLevel;
+        /// <summary>Element family shape (strike, knives, bolt): fixed element, +Balance.Books.Match with a weapon of it.</summary>
+        public string Family;
         public string DamageType, Element;
         public double Power;
         public int? Hits;
@@ -151,6 +159,12 @@ namespace Drakepg.Rules
         public Dictionary<string, double> Growth = new Dictionary<string, double>();
         public string Weapon, Armor;
         public List<ClassSkill> Skills = new List<ClassSkill>();
+        /// <summary>Class skills learned from books, in spellbook order.</summary>
+        public List<string> Books = new List<string>();
+        /// <summary>Its element family's shape (strike, knives, bolt).</summary>
+        public string Family;
+        /// <summary>A skill whose book the first Heroic win gives.</summary>
+        public string HeroicBook;
         public double? MpOnHit;
         public Look Look;
     }
@@ -202,6 +216,8 @@ namespace Drakepg.Rules
         public string Line;
         // scroll
         public string Effect;
+        // book: the skill it teaches
+        public string SkillId;
 
         public bool IsWeapon => Type == "weapon";
         public bool IsArmor => Type == "armor";
@@ -335,6 +351,8 @@ namespace Drakepg.Rules
         public string Id;
         public Dictionary<string, List<LootEntry>> Tiers = new Dictionary<string, List<LootEntry>>();
         public string Set;
+        /// <summary>Elites here may drop the family books and Wards of these elements.</summary>
+        public List<string> Books;
     }
 
     public class EliteAffixDef
@@ -372,6 +390,8 @@ namespace Drakepg.Rules
         /// <summary>talk, shop, inn, forge or guild.</summary>
         public string Kind;
         public List<string> Stock;
+        /// <summary>Shops: also the family books and Wards of these elements (the ones your class can read).</summary>
+        public List<string> Books;
         public List<string> Recipes;
     }
 
@@ -400,6 +420,12 @@ namespace Drakepg.Rules
     public class Spot
     {
         public double X, Y;
+    }
+
+    /// <summary>A side room's sure chest; `Book`: a skill whose book it also holds until you know or hold it.</summary>
+    public class RoomChest : Spot
+    {
+        public string Book;
     }
 
     public class RoomBoss
@@ -448,7 +474,7 @@ namespace Drakepg.Rules
         public List<string> Ambient;
         public string ZoneId;
         public int? MonsterCount;
-        public Spot Chest;
+        public RoomChest Chest;
         public RoomBoss Boss;
         public Location WakeAt;
         public Spot Town;
@@ -484,6 +510,8 @@ namespace Drakepg.Rules
         public double Xp, Gold;
         public List<string> Items;
         public Dictionary<string, string> ClassItems;
+        /// <summary>A skill whose book this class gets.</summary>
+        public Dictionary<string, string> ClassBooks;
     }
 
     public class QuestDef
@@ -503,6 +531,7 @@ namespace Drakepg.Rules
         public double Gold;
         public List<string> Items;
         public Dictionary<string, string> ClassItems;
+        public Dictionary<string, string> ClassBooks;
     }
 
     public class ChapterStart
