@@ -349,7 +349,6 @@ export const ROOMS: RoomDef[] = [
           kind: 'shop',
           books: ['fire', 'earth', 'wind'],
           stock: [
-            'book_field_dressing',
             'health_potion',
             'mana_potion',
             'recall_scroll',
@@ -368,6 +367,7 @@ export const ROOMS: RoomDef[] = [
             'stone_of_precision',
             'stone_of_warding',
             'stone_of_vigor',
+            'book_field_dressing',
           ],
         },
         dialogue: ['Best prices this side of the river. Have a look!'],

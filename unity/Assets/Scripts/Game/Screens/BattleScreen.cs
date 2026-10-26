@@ -976,7 +976,7 @@ namespace Drakepg
                 foreach (var kv in shown[side])
                 {
                     var def = Db.Status(kv.Key);
-                    var chip = Felt.IconChip($"{def.Name} {kv.Value}", def.Harmful ? Design.Hex(0xd9604a) : Design.Hex(0x6aa84f), "status_" + def.Id, 15, seed++);
+                    var chip = Felt.IconChip($"{def.Name} {kv.Value}", def.Harmful ? Design.Hex(0xd9604a) : Design.Hex(0x6aa84f), SkillUi.StatusIcon(def), 15, seed++);
                     chip.style.marginRight = 6;
                     // Hover (or tap) says what it does, in the log's place, like the skill buttons.
                     var note = $"{def.Name} ({kv.Value} turn{(kv.Value == 1 ? "" : "s")} left): {def.Description}";
@@ -1054,20 +1054,23 @@ namespace Drakepg
         MenuButton SkillButton(SkillDef skill)
         {
             var cd = battle.CooldownLeft(skill.Id);
-            var element = skill.Element != null && skill.Element != "weapon" ? Db.Data.ElementLabels[skill.Element] : null;
             var fresh = battle.Player.Data.FreshSkills.Contains(skill.Id) ? "NEW · " : "";
-            var poisons = skill.Applies?.Any(a => a.Status == "poison" && !a.Self) == true;
-            var kind = element ?? (skill.Blunt ? "Blunt" : poisons ? "Poison" : skill.Kind == "heal" ? "Heal" : skill.Kind == "buff" ? "Buff" : null);
-            // Teach weak spots: the button says when this skill lands on one.
+            var kind = SkillUi.KindWord(skill);
+            // Teach weak spots: the button says when this skill lands on one; and when the weapon's element matches.
             var effect = battle.SkillEffect(skill);
-            var sub = cd > 0 ? $"Ready in {cd}" : $"{fresh}{JsMath.Str(skill.MpCost)} MP{(kind != null ? $" · {kind}" : "")}{(effect != null ? $" · {EffectLabels[effect]}" : "")}";
+            var match = battle.Matched(skill) ? $" · +{JsMath.Round(Db.B.Books.Match * 100)}%" : "";
+            var sub = cd > 0 ? $"Ready in {cd}" : $"{fresh}{JsMath.Str(skill.MpCost)} MP{(kind != null ? $" · {kind}" : "")}{(effect != null ? $" · {EffectLabels[effect]}" : "")}{match}";
             var cdText = skill.Cooldown > 0 ? $" Cooldown {skill.Cooldown}." : "";
-            // Each skill's own drawing (scripts/ui_icons.py), else one by kind.
-            var icon = Felt.HasIcon("skill_" + skill.Id) ? "skill_" + skill.Id
-                : skill.Kind == "heal" ? "cross" : skill.Kind == "buff" ? "rise" : skill.DamageType == "magic" ? "spark" : skill.DamageType == "pierce" ? "arrow" : "sword";
+            // Freeze shows its odds on this monster right now (they change with your stat, its Ice resist and Thawed).
+            var freeze = skill.Applies?.FirstOrDefault(a => Db.Status(a.Status).Freeze);
+            var type = skill.DamageType == null || skill.DamageType == "weapon" ? battle.Player.WeaponDamageType : skill.DamageType;
+            var freezeText = freeze != null ? $" Freeze chance now: {JsMath.Round(battle.FreezeChance(type, freeze.Chance ?? 1) * 100)}%." : "";
+            if (Db.B.Books.Match > 0 && skill.Family != null && !battle.Matched(skill)) cdText += $" (+{JsMath.Round(Db.B.Books.Match * 100)}% with a {Db.Data.ElementLabels[skill.Element]} weapon.)";
+            // Each skill's own drawing (scripts/ui_icons.py), else a related one or one by kind.
+            var icon = SkillUi.Icon(skill);
             return new MenuButton
             {
-                Label = skill.Name, Sub = sub, Enabled = battle.CanUseSkill(skill.Id), Hover = $"{skill.Name}: {skill.Description}{cdText}",
+                Label = skill.Name, Sub = sub, Enabled = battle.CanUseSkill(skill.Id), Hover = $"{skill.Name}: {skill.Description}{cdText}{freezeText}",
                 Run = () => Act(() => battle.UseSkill(skill.Id)), Accent = SkillColor(skill), Icon = icon,
             };
         }
@@ -1079,6 +1082,9 @@ namespace Drakepg
         Color SkillColor(SkillDef skill)
         {
             if (skill.Kind == "heal") return Design.Hex(0x5cc85c);
+            if (skill.Kind == "mana") return Design.Hex(0x4d8fe0);
+            if (skill.Kind == "flee") return Design.Hex(0x9a9a9a);
+            if (skill.Kind == "buff" && SkillUi.ElementOf(skill) is string ward) return SkillUi.ElementColor(ward);
             if (skill.Kind == "buff") return Design.Hex(0xe0b040);
             var element = skill.Element == "weapon" ? battle.Player.WeaponElement : skill.Element;
             if (element != null) return Design.Hex(ColorsOf(element)[1]);
@@ -1537,6 +1543,15 @@ namespace Drakepg
                     await Anim.Wait(0.2f);
                     break;
                 }
+                case "status" when e.Status == "thawed":
+                {
+                    // Thawing is quiet: just the chip and a line (the "Frozen!" float is still up).
+                    SetShown(e.Target, e.Status, e.Turns);
+                    RefreshStatuses();
+                    PushLog($"{enemyName} thaws out: it can't be frozen again until it has acted.");
+                    await Anim.Wait(0.2f);
+                    break;
+                }
                 case "status":
                 {
                     var def = Db.Status(e.Status);
@@ -1544,7 +1559,13 @@ namespace Drakepg
                     var color = StatusColor(def);
                     var head = BodyOf(e.Target).top;
                     Float(x, TextY(e.Target, GroundY - 280), def.Name, def.Harmful ? Palette.TextBad : Palette.TextGood, 26);
-                    if (def.Stun)
+                    if (def.Freeze)
+                    {
+                        // Frozen solid: a burst of frost instead of stars.
+                        Sfx.Play("freeze");
+                        Fx.StatusPuff(World, x, GroundY - Chest, color);
+                    }
+                    else if (def.Stun)
                     {
                         Sfx.Play("stun");
                         Fx.StunStars(World, x, head - 10);
@@ -1619,11 +1640,13 @@ namespace Drakepg
                 case "stunned":
                 {
                     var f = FighterOf(e.Side);
-                    Sfx.Play("stun");
-                    Fx.StunStars(World, HomeX(e.Side), BodyOf(e.Side).top - 10, 700);
-                    Float(HomeX(e.Side), TextY(e.Side, GroundY - 280), "Stunned!", Palette.TextGold, 30);
-                    PushLog(e.Side == "player" ? "You are stunned and lose your turn!" : $"{enemyName} is stunned!");
-                    shown[e.Side].RemoveAll(k => k.Key == "stun");
+                    // A Freeze is used up before a plain stun is shown: say which it was.
+                    var frozen = shown[e.Side].Any(k => Db.Status(k.Key).Freeze);
+                    Sfx.Play(frozen ? "freeze" : "stun");
+                    if (!frozen) Fx.StunStars(World, HomeX(e.Side), BodyOf(e.Side).top - 10, 700);
+                    Float(HomeX(e.Side), TextY(e.Side, GroundY - 280), frozen ? "Frozen!" : "Stunned!", frozen ? Design.Hex(0x9fe8ff) : Palette.TextGold, 30);
+                    PushLog(e.Side == "player" ? "You are stunned and lose your turn!" : frozen ? $"{enemyName} is frozen solid!" : $"{enemyName} is stunned!");
+                    shown[e.Side].RemoveAll(k => Db.Status(k.Key).Stun);
                     RefreshStatuses();
                     await f.Track(Anim.Float(0, e.Side == "player" ? -6 : 6, 0.09f, v => f.Angle = v, Ease.CubicOut, repeat: 2, yoyo: true)).Task;
                     f.Angle = 0;

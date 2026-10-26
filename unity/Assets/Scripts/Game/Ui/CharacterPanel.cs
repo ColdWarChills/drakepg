@@ -20,9 +20,10 @@ namespace Drakepg
 
         /// <summary>
         /// Stats, stat points and the skill loadout. Gear lives in the inventory: the Inventory button closes this and
-        /// calls `openInventory`. `onChange` refreshes the room (HUD, save).
+        /// calls `openInventory`; the skills still to find are in the spellbook (`openSpellbook`). `onChange` refreshes the
+        /// room (HUD, save).
         /// </summary>
-        public static UiModal OpenCharacterPanel(Player player, Action onChange, Action openInventory)
+        public static UiModal OpenCharacterPanel(Player player, Action onChange, Action openInventory, Action openSpellbook = null)
         {
             var modal = new UiModal(1100, 600, "Character", () => { });
             var anims = new List<Anim.Handle>();
@@ -101,21 +102,22 @@ namespace Drakepg
                 new UiButton(c, 960, 122, "Inventory (I)", () => modal.Close(openInventory), 190, 48, 19);
 
                 // --- Skills ---
-                // Carried skills (filled diamond) go into battle; click a learned skill to carry it or put it away.
+                // Known skills (level skills, then books read); carried ones (filled diamond) go into battle. Click one to
+                // carry it or put it away. The ones still to find, and where, are in the spellbook.
                 var slots = Db.B.SkillSlots;
                 Ui.Text(c, 380, 190, "Skills", 22, Palette.TextGold, true);
                 Ui.Text(c, 460, 194, $"carried {player.Data.Loadout.Count} / {slots}  ·  click to swap", 15, Palette.TextDim);
-                var skills = player.ClassDef.Skills;
-                var perColumn = Math.Max(1, (skills.Count + 2) / 3);
-                for (int i = 0; i < skills.Count; i++)
+                if (openSpellbook != null) new UiButton(c, 960, 196, "Spellbook (K)", () => modal.Close(openSpellbook), 190, 44, 18);
+                var skills = player.KnownSkills;
+                var perColumn = Math.Max(8, (skills.Count + 2) / 3);
+                for (int i = 0; i < skills.Count && i < perColumn * 3; i++)
                 {
-                    var entry = skills[i];
-                    var skill = Db.Skill(entry.SkillId);
-                    var known = entry.Level <= player.Level;
-                    var carried = known && player.IsCarried(skill.Id);
+                    var skill = skills[i];
+                    var known = true;
+                    var carried = player.IsCarried(skill.Id);
                     var x = 380 + (i / perColumn) * 230;
-                    var y = 230 + (i % perColumn) * 32;
-                    var row = SkillRow(c, x, y, known, carried, !known ? $"Lv {entry.Level}  {skill.Name}" : skill.Name, "skill_" + skill.Id);
+                    var y = 236 + (i % perColumn) * 32;
+                    var row = SkillRow(c, x, y, known, carried, skill.Name, SkillUi.Icon(skill), SkillUi.IconTint(skill));
                     var cd = skill.Cooldown > 0 ? $", cooldown {skill.Cooldown}" : "";
                     var describe = $"{skill.Name} ({PanelKit.Num(skill.MpCost)} MP{cd}): {skill.Description}";
                     row.pickingMode = PickingMode.Position;
@@ -152,7 +154,7 @@ namespace Drakepg
         /// One skill line: a diamond (filled = carried, hollow = learned; none when not learned yet) and the name.
         /// The TS uses the ◆/◇ glyphs, which the default font may not have, so the diamond is drawn.
         /// </summary>
-        static VisualElement SkillRow(VisualElement c, float x, float y, bool known, bool carried, string text, string icon = null)
+        static VisualElement SkillRow(VisualElement c, float x, float y, bool known, bool carried, string text, string icon = null, Color? tint = null)
         {
             var color = carried ? Palette.TextMagic : known ? Palette.Text : Palette.TextDim;
             var row = new VisualElement();
@@ -175,6 +177,7 @@ namespace Drakepg
             if (Felt.HasIcon(icon))
             {
                 var ic = Felt.Icon(null, 0, 0, 22, icon, true);
+                if (tint is Color t) ic.style.unityBackgroundImageTintColor = t;
                 ic.style.position = Position.Relative;
                 ic.style.flexShrink = 0;
                 ic.style.marginLeft = known ? 0 : 21;

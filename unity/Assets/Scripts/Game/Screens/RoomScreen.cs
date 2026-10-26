@@ -124,7 +124,7 @@ namespace Drakepg
         Hud hud;
         UiButton charBtn, invBtn;
         Anim.Handle charPulse;
-        UiModal inventory, mapModal;
+        UiModal inventory, mapModal, spellbook;
         VisualElement labels, ui, tracker, prompt;
         Label promptText;
         float wallBumpAt;
@@ -433,12 +433,18 @@ namespace Drakepg
             Save(false);
             var rows = new List<(string title, string text, Color color, string icon)>();
             foreach (var f in news.Features) rows.Add((f.Name, f.Text, Palette.TextGold, null));
-            foreach (var s in news.Skills)
+            // Too much news for the popup (a chapter start, an old save): the new skills share one line.
+            if (news.Skills.Count > 1 && rows.Count + news.Skills.Count > 5)
+            {
+                rows.Add(($"New skills: {string.Join(", ", news.Skills.Select(s => s.Name))}",
+                    "See what they do, and pick the ones you carry into battle, in the Spellbook (K).", Palette.TextMagic, "book"));
+            }
+            else foreach (var s in news.Skills)
             {
                 var element = s.Element != null && s.Element != "weapon" ? $" · {Db.Data.ElementLabels[s.Element]}" : "";
                 var cd = s.Cooldown > 0 ? $" · cooldown {s.Cooldown}" : "";
-                var slot = P.IsCarried(s.Id) ? "" : $" Your {Db.B.SkillSlots} skill slots are full: carry it from the Character panel (C).";
-                rows.Add(($"New skill: {s.Name}  ({s.MpCost} MP{element}{cd})", s.Description + slot, Palette.TextMagic, "skill_" + s.Id));
+                var slot = P.IsCarried(s.Id) ? "" : $" Your {Db.B.SkillSlots} skill slots are full: carry it from the Spellbook (K).";
+                rows.Add(($"New skill: {s.Name}  ({s.MpCost} MP{element}{cd})", s.Description + slot, Palette.TextMagic, SkillUi.Icon(s)));
             }
             Sfx.Play("quest");
             var height = Math.Min(640, 150 + rows.Count * 84);
@@ -1031,7 +1037,7 @@ namespace Drakepg
             if (!showedControls)
             {
                 showedControls = true;
-                var hint = Ui.Text(ui, Design.Width / 2, Design.Height - 18, "WASD / arrows: move    E / Space: talk    C: character    M: map    Click: walk there",
+                var hint = Ui.Text(ui, Design.Width / 2, Design.Height - 18, "WASD / arrows: move    E / Space: talk    C: character    K: spellbook    M: map    Click: walk there",
                     17, Palette.Text, ax: 0.5f, ay: 1, stroke: true);
                 Anim.Float(1, 0, 1, a => hint.style.opacity = a, Ease.Linear, 9).OnComplete(hint.RemoveFromHierarchy);
             }
@@ -1104,6 +1110,7 @@ namespace Drakepg
             if (Keys.Pressed(Key.C)) OpenCharacter();
             if (Keys.Pressed(Key.I)) ToggleInventory();
             if (Keys.Pressed(Key.M)) ToggleMap();
+            if (Keys.Pressed(Key.K)) ToggleSpellbook();
             if (Keys.Pressed(Key.Backquote)) OpenCheats();
             if (Keys.Pressed(Key.E) || Keys.Pressed(Key.Space)) Talk();
         }
@@ -1684,7 +1691,20 @@ namespace Drakepg
         void OpenCharacter()
         {
             if (ModalOpen || leaving) return;
-            CharacterPanel.OpenCharacterPanel(P, Refresh, ToggleInventory);
+            CharacterPanel.OpenCharacterPanel(P, Refresh, ToggleInventory, ToggleSpellbook);
+        }
+
+        /// <summary>K (or the Character panel's button) opens the spellbook, and closes it again.</summary>
+        void ToggleSpellbook()
+        {
+            if (spellbook != null && !spellbook.Closed)
+            {
+                spellbook.Escape();
+                return;
+            }
+            if (ModalOpen || leaving) return;
+            moveTarget = null;
+            spellbook = SpellbookPanel.Open(P, Refresh);
         }
 
         void OpenCheats()

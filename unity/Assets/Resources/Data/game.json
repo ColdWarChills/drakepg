@@ -3821,7 +3821,7 @@
    "name": "Fire Ward Book",
    "description": "Teaches Fire Ward (any class, level 3): +40 Fire resistance for 3 turns.",
    "price": 60,
-   "iconColor": 9268835
+   "iconColor": 16754483
   },
   {
    "id": "book_water_ward",
@@ -3830,7 +3830,7 @@
    "name": "Water Ward Book",
    "description": "Teaches Water Ward (any class, level 7): +40 Water resistance for 3 turns.",
    "price": 140,
-   "iconColor": 9268835
+   "iconColor": 7131135
   },
   {
    "id": "book_ice_ward",
@@ -3839,7 +3839,7 @@
    "name": "Ice Ward Book",
    "description": "Teaches Ice Ward (any class, level 11): +40 Ice resistance for 3 turns.",
    "price": 220,
-   "iconColor": 9268835
+   "iconColor": 12580095
   },
   {
    "id": "book_wind_ward",
@@ -3848,7 +3848,7 @@
    "name": "Wind Ward Book",
    "description": "Teaches Wind Ward (any class, level 3): +40 Wind resistance for 3 turns.",
    "price": 60,
-   "iconColor": 9268835
+   "iconColor": 12121544
   },
   {
    "id": "book_earth_ward",
@@ -3857,7 +3857,7 @@
    "name": "Earth Ward Book",
    "description": "Teaches Earth Ward (any class, level 3): +40 Earth resistance for 3 turns.",
    "price": 60,
-   "iconColor": 9268835
+   "iconColor": 13214298
   },
   {
    "id": "book_energy_ward",
@@ -3866,7 +3866,7 @@
    "name": "Energy Ward Book",
    "description": "Teaches Energy Ward (any class, level 7): +40 Energy resistance for 3 turns.",
    "price": 140,
-   "iconColor": 9268835
+   "iconColor": 16773754
   },
   {
    "id": "book_light_ward",
@@ -3875,7 +3875,7 @@
    "name": "Light Ward Book",
    "description": "Teaches Light Ward (any class, level 16): +40 Light resistance for 3 turns.",
    "price": 320,
-   "iconColor": 9268835
+   "iconColor": 16775382
   },
   {
    "id": "book_dark_ward",
@@ -3884,7 +3884,7 @@
    "name": "Dark Ward Book",
    "description": "Teaches Dark Ward (any class, level 16): +40 Dark resistance for 3 turns.",
    "price": 320,
-   "iconColor": 9268835
+   "iconColor": 10648831
   },
   {
    "id": "book_field_dressing",
@@ -8856,7 +8856,6 @@
        "wind"
       ],
       "stock": [
-       "book_field_dressing",
        "health_potion",
        "mana_potion",
        "recall_scroll",
@@ -8874,7 +8873,8 @@
        "stone_of_might",
        "stone_of_precision",
        "stone_of_warding",
-       "stone_of_vigor"
+       "stone_of_vigor",
+       "book_field_dressing"
       ]
      },
      "dialogue": [

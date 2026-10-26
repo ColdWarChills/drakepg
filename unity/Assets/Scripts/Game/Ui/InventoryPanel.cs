@@ -276,12 +276,12 @@ namespace Drakepg
 
             static readonly Dictionary<string, int> TypeOrder = new Dictionary<string, int>
             {
-                ["weapon"] = 0, ["armor"] = 1, ["accessory"] = 2, ["consumable"] = 3, ["scroll"] = 4, ["stone"] = 5, ["material"] = 6,
+                ["weapon"] = 0, ["armor"] = 1, ["accessory"] = 2, ["consumable"] = 3, ["book"] = 4, ["scroll"] = 5, ["stone"] = 6, ["material"] = 7,
             };
 
             static readonly Dictionary<string, string> NonGearKind = new Dictionary<string, string>
             {
-                ["material"] = "Material", ["stone"] = "Roll stone", ["consumable"] = "Potion", ["scroll"] = "Scroll",
+                ["material"] = "Material", ["stone"] = "Roll stone", ["consumable"] = "Potion", ["scroll"] = "Scroll", ["book"] = "Skill book",
             };
 
             /// <summary>Remembered while the game runs, so the inventory reopens the way you left it.</summary>
@@ -364,7 +364,7 @@ namespace Drakepg
                     : BagEntries();
                 // Materials live in their own pouch (no bag slots), so only their tab shows them.
                 // Stones and scrolls sit with the potions under Items.
-                string TabOf(string t) => t == "stone" || t == "scroll" ? "consumable" : t;
+                string TabOf(string t) => t == "stone" || t == "scroll" || t == "book" ? "consumable" : t;
                 var filtered = rememberedTab == "all"
                     ? all.Where(e => e.Def.Type != "material").ToList()
                     : all.Where(e => TabOf(e.Def.Type) == rememberedTab).ToList();
@@ -657,6 +657,14 @@ namespace Drakepg
                 });
                 bg.RegisterCallback<PointerDownEvent>(e =>
                 {
+                    // Right-click in the bag does what a double-click does: read a book, drink a potion, equip.
+                    if (e.button == 1 && mode == "bag" && entry != null && !InputBlocked)
+                    {
+                        e.StopPropagation();
+                        selected = entry.Key;
+                        Primary(entry);
+                        return;
+                    }
                     if (e.button != 0 || InputBlocked) return;
                     pressAt = Local(e.position);
                     bg.CapturePointer(e.pointerId);
@@ -773,6 +781,7 @@ namespace Drakepg
                 }
                 else if (entry.Kind == EntryKind.Stack && entry.Def.Type == "consumable") Use(entry.Def);
                 else if (entry.Kind == EntryKind.Stack && entry.Def.Type == "scroll") onRecall?.Invoke();
+                else if (entry.Kind == EntryKind.Stack && entry.Def.Type == "book") Read(entry.Def);
                 else Render();
             }
 
@@ -943,6 +952,29 @@ namespace Drakepg
                 Changed();
             }
 
+            /// <summary>Learn a skill book's skill (the book is used up; the skill goes into a free battle slot).</summary>
+            void Read(ItemDef def)
+            {
+                var skill = Books.BookSkill(def);
+                var result = Books.ReadBook(player, def.Id);
+                if (result == "ok")
+                {
+                    Sfx.Play("levelup");
+                    Ui.Toast($"Learned {skill.Name}!", Palette.TextMagic);
+                }
+                else
+                {
+                    Sfx.Play("denied");
+                    Ui.Toast(result switch
+                    {
+                        "class" => "Another class's book",
+                        "level" => $"Needs level {Books.ReadLevelOf(skill)}",
+                        _ => "You know this already",
+                    }, Palette.TextBad);
+                }
+                Changed();
+            }
+
             void Buy(ItemDef def)
             {
                 var result = player.Buy(def.Id);
@@ -980,7 +1012,7 @@ namespace Drakepg
                 Ui.Rect(card, 0, 0, CardW, CardH, CardBg, 12, info?.Sigil != null ? 3 : 2, border);
                 if (entry == null || info == null)
                 {
-                    var hint = mode == "bag" ? "Hover or tap an item.\n\nDouble-click or drag gear\nonto the hero to equip it." : "Hover or tap an item.";
+                    var hint = mode == "bag" ? "Hover or tap an item.\n\nDouble-click or drag gear\nonto the hero to equip it.\nRight-click to use or read." : "Hover or tap an item.";
                     Ui.Text(card, CardW / 2, CardH / 2, hint, 18, Palette.TextDim, ax: 0.5f, ay: 0.5f, align: TextAnchor.MiddleCenter);
                     return;
                 }
@@ -1025,6 +1057,18 @@ namespace Drakepg
 
                 var traits = entry.IsGear ? (GearTraits)entry.Gear : new GearTraits();
                 foreach (var l in ItemUi.ItemLines(entry.Def, traits)) Line(l, Palette.Text);
+                // A skill book says whether you can read it now.
+                if (Books.BookSkill(entry.Def) is SkillDef bookSkill)
+                {
+                    var check = Books.CanRead(player, bookSkill);
+                    if (check == "ok") Line("You can read it now.", Palette.TextGood);
+                    else Line(check switch
+                    {
+                        "level" => $"Needs level {Books.ReadLevelOf(bookSkill)} (you are {player.Level}).",
+                        "known" => "You know this skill already: sell it.",
+                        _ => "Another class's book: sell it.",
+                    }, Palette.TextBad);
+                }
 
                 if (entry.Def.IsGear)
                 {
@@ -1141,6 +1185,11 @@ namespace Drakepg
                     else if (entry.Kind == EntryKind.Stack && entry.Def.Type == "scroll" && onRecall != null)
                     {
                         Add("Read", () => onRecall());
+                    }
+                    else if (entry.Kind == EntryKind.Stack && entry.Def.Type == "book")
+                    {
+                        var def = entry.Def;
+                        Add("Read", () => Read(def));
                     }
                 }
                 else if (mode == "buy" && entry.Kind == EntryKind.Stock)

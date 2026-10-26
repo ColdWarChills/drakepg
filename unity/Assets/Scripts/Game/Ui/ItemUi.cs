@@ -213,6 +213,13 @@ namespace Drakepg
                 }
             }
             Paint(c, 0, 0, size, size, pen => DrawShape(pen, def, size));
+            // A skill book wears its skill's drawing on the cover, so books tell apart at a glance.
+            if (def.Type == "book" && Books.BookSkill(def) is SkillDef skill)
+            {
+                var s = size / 64f;
+                var ink = Felt.Icon(c, size / 2 - 3 * s - 13 * s, size / 2 - 1 * s - 13 * s, 26 * s, SkillUi.Icon(skill), true);
+                ink.style.unityBackgroundImageTintColor = new Color(1, 0.97f, 0.88f, 0.95f);
+            }
             return c;
         }
 
@@ -311,6 +318,15 @@ namespace Drakepg
                 g.Line(Shade(color, 0.55f), 2 * s, -12 * s, 0, 8 * s, 0);
                 g.FillCircle(Design.Hex(0xb03a2e), 8 * s, 10 * s, 7 * s);
                 g.FillCircle(Alpha(0xffffff, 0.35f), 6 * s, 8 * s, 2 * s);
+            }
+            else if (def.Type == "book")
+            {
+                // A closed skill book: cover in its element's color, a page edge, a clasp.
+                g.FillRect(Design.Hex(0xf1e6c8), -16 * s, -22 * s, 34 * s, 44 * s);
+                g.FillRect(color, -20 * s, -24 * s, 34 * s, 46 * s);
+                g.StrokeRect(Shade(color, 0.5f), 2, -20 * s, -24 * s, 34 * s, 46 * s);
+                g.FillRect(Shade(color, 0.6f), -20 * s, -24 * s, 6 * s, 46 * s);
+                g.FillRect(Design.Hex(0xc9a84a), 12 * s, -4 * s, 6 * s, 8 * s);
             }
             else if (def.Type == "material" || def.Type == "stone")
             {
@@ -566,6 +582,10 @@ namespace Drakepg
                 case "material":
                 case "stone":
                     lines.Add(def.Description ?? "");
+                    break;
+                case "book":
+                    // What it teaches is the description; the inventory card adds whether you can read it.
+                    lines.Add(Books.BookSkill(def) is SkillDef skill ? $"{skill.Name}: {JsMath.Str(skill.MpCost)} MP{(skill.Cooldown > 0 ? $", cooldown {skill.Cooldown}" : "")}" : "");
                     break;
                 case "scroll":
                     // The card's description says it all.

@@ -1,7 +1,7 @@
 import { BALANCE } from '../config';
 import { CLASSES } from './classes';
 import { MATERIALS } from './crafting';
-import { ELEMENT_COLORS } from './elements';
+import { ELEMENT_COLORS, ELEMENTS } from './elements';
 import { EQUIPMENT } from './equipment';
 import { HUNT_ITEMS } from './guild';
 import { SKILLS } from './skills';
@@ -18,6 +18,8 @@ function book(skill: SkillDef): BookDef {
   const level = skill.readLevel ?? 1;
   const cls = CLASSES.find((c) => c.id === skill.classId);
   const classBook = skill.classId !== undefined && !skill.family;
+  // The cover takes the skill's element (a Ward's too).
+  const element = skill.element && skill.element !== 'weapon' ? skill.element : ELEMENTS.find((e) => skill.id === `${e}_ward`);
   return {
     id: `book_${skill.id}`,
     type: 'book',
@@ -25,7 +27,7 @@ function book(skill: SkillDef): BookDef {
     name: `${skill.name} Book`,
     description: `Teaches ${skill.name} (${cls ? `${cls.name} only` : 'any class'}, level ${level}): ${skill.description}`,
     price: BALANCE.books.price * level * (classBook ? 2 : 1),
-    iconColor: skill.element && skill.element !== 'weapon' ? ELEMENT_COLORS[skill.element][1] : 0x8d6e63,
+    iconColor: element ? ELEMENT_COLORS[element][1] : 0x8d6e63,
   };
 }
 
