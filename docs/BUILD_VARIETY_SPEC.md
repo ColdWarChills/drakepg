@@ -1,13 +1,13 @@
 # Build variety spec: skill books, element families, spellbook
 
-**Draft 2026-10-26, for the designer's review. Not built.** Built from the decisions in `docs/PLANS.md` (2026-10-26). Numbers are starting points: `npm run sim` and `npm run pace` decide the final ones (all in `BALANCE` or `src/data/`). Names are placeholders.
+**Decided 2026-10-26, being built.** Built from the decisions in `docs/PLANS.md` (2026-10-26); the two open calls were settled with the design advisor (designer: "consult with designer and do what's best here"), see "Advisor review" at the bottom. Numbers are starting points: `npm run sim` and `npm run pace` decide the final ones (all in `BALANCE` or `src/data/`). Names are placeholders.
 
 Goal: two heroes of the same class can play differently. Today every Warrior learns the same 12 skills at the same levels.
 
 ## In one picture
 
 - Levels teach each class **6 core skills**, all by level 9.
-- Every other skill is a **skill book**: bought in town, dropped by Elites, given by a boss's first defeat, a guild promotion, a sure chest, a Heroic win or a Lucky Impling.
+- Every other skill is a **skill book**. One rule for where: **towns sell element books, story bosses teach class skills** (every class gets one at each of the first four bosses), and Elites, guild promotions, Heroic wins and sure chests are extras.
 - **Element families**: each class has one skill shape in all 8 elements (Fire Knives, Ice Knives...). Each element adds its own effect, and the skill hits 20% harder when your weapon has the same element.
 - **Generic books** any class can read: Play Dead, Meditate, Field Dressing and 8 element Wards.
 - A **spellbook** shows every skill your class can get: known ones in color, the rest dark with a hint where to find them.
@@ -45,10 +45,10 @@ After level 9, levels give stat points only. New skills come from books.
 
 ### Price
 
-`BALANCE.bookPrice`: 20 gold x read level; class books x2.
+`BALANCE.bookPrice`: 20 gold x read level; class books x2 (they aren't sold, but a known one sells like any item).
 
-- Chapter 1: element books 60 gold (half a shop sword), Shield Bash 120.
-- Chapter 2: element books 140, Iron Skin 280.
+- Chapter 1: element books 60 gold (half a shop sword).
+- Chapter 2: element books 140.
 - Chapter 3: Ice books 220.
 
 Pace check: a player who buys their class's three Chapter 1 element books still affords a Brindlemoor weapon.
@@ -68,9 +68,9 @@ One shape per class, 8 elements each. Damage type follows the weapon like other 
 - **Light Bolt joins the Mage family:** it keeps its numbers and level 1 and gains the Light effect and the match bonus.
 - No new animations: Strike uses the weapon blow, Knives reuse Fan of Knives' throw, Bolt the bolt.
 
-### One effect per element (proposed)
+### One effect per element
 
-Built from existing statuses, so every element is useful in its own way, not just damage:
+Built from existing statuses, so every element is useful in its own way, not just damage. Each role appears once: damage over time, skip a turn, heal, amplify, guard, weaken, crit, strip resists.
 
 | Element | Effect | Status |
 | --- | --- | --- |
@@ -80,13 +80,13 @@ Built from existing statuses, so every element is useful in its own way, not jus
 | Energy | Takes 15% more damage for 2 turns | Shock (exists) |
 | Earth | Stone Skin on you for 1 turn | Stone Skin (exists) |
 | Wind | Deals 25% less damage for 2 turns | Weaken (exists) |
-| Light | -30% hit chance for 2 turns | Blind (exists) |
+| Light | +25% crit chance on you for 2 turns | Focus (exists) |
 | Dark | Shadow Rot for 3 turns | Shadow Rot (exists) |
 
-### Freeze (proposed, from the designer's Ice idea)
+### Freeze (the designer's Ice idea)
 
 - A stun with an ice look: the monster skips its next turn. Bosses ignore it, like stun.
-- Chance: 30%, +1% per 4 points of the stat the skill uses, cut by the target's Ice resist, at most 50%. Examples: a Mage with 30 INT freezes a neutral monster 37% of the time, a Glacier Golem (Ice +75) 9%.
+- Chance: the family's effect chance (25-30%), +1% per 4 points of the stat the skill uses, cut by the target's Ice resist, at most 40%. Examples: a Mage with 30 INT freezes a neutral monster 32% of the time, a Glacier Golem (Ice +75) 8%.
 - Never twice in a row: a thawed monster shows a **Thawed** chip ("can't be frozen this turn"). Without that, chained freezes make normal fights trivial.
 - The chance is on the skill's card.
 
@@ -105,39 +105,37 @@ Built from existing statuses, so every element is useful in its own way, not jus
 
 ## Where every book comes from
 
-Strong skills only come from sure sources: a boss's first defeat, a guild promotion, a Heroic win, a Lucky Impling, a sure chest, the class quest. Elite drops carry mid-strength skills.
+One rule the player can learn: **towns sell element books, story bosses teach class skills, the rest are extras.** Strong skills only come from sure sources (bosses, guild promotions, Heroic wins, sure chests, the class quest), never from a random spawn.
 
 **Shops** (only your class's books are shown):
 
 | Town | Books |
 | --- | --- |
-| Brindlemoor (Tobin) | Fire, Earth, Wind family books; Fire, Earth, Wind Wards; Field Dressing; Shield Bash (Warrior), Expose Weakness (Rogue) |
-| Reedwatch (Wren) | Water, Energy family books and Wards; Iron Skin (Warrior), Envenom (Rogue) |
+| Brindlemoor (Tobin) | Fire, Earth, Wind family books; Fire, Earth, Wind Wards; Field Dressing |
+| Reedwatch (Wren) | Water, Energy family books and Wards |
 | Hearthold (Gunnar) | Ice family book; Ice Ward |
 
-**Class books from other sources:**
+**Story bosses** (first defeat, as the quest reward; rematches don't give it again). Read level = the boss's level:
 
-| Class | Book | Source | Read level |
+| Boss | Warrior | Mage | Rogue |
 | --- | --- | --- | --- |
-| Warrior | Bloodlust | Elite drop, Chapter 2 areas on | 7 |
-| Warrior | Rallying Roar | Guild promotion to Rank C | 11 |
-| Warrior | Earthshaker | Old Snowmaw's first defeat (Earth for the Frostbinder) | 12 |
-| Warrior | Titan's Wrath | Class quest at level 20 (later) | 20 |
-| Mage | Meteor | The Thornheart's first defeat | 5 |
-| Mage | Tidal Wave | Elite drop, Mirewater Fen | 7 |
-| Mage | Sunburst | The Bogmother's first defeat | 8 |
-| Mage | Gale | Elite drop, Frostfang | 11 |
-| Mage | Shadow Hex | First Heroic win | 6 |
-| Mage | Thunderstorm | First Lucky Impling caught (an early one waits in the bag) | 10 |
-| Mage | Cataclysm | Class quest at level 20 (later) | 20 |
-| Rogue | Hemorrhage | Elite drop, Chapter 2 areas on | 7 |
-| Rogue | Fan of Knives | Guild promotion to Rank D | 7 |
-| Rogue | Shadowstep | The Stormcoil's first defeat | 10 |
-| Rogue | Death Mark | First Heroic win | 6 |
-| Rogue | Thousand Cuts | Class quest at level 20 (later) | 20 |
+| The Thornheart (5) | Shield Bash | Meteor | Expose Weakness |
+| The Bogmother (8) | Iron Skin | Sunburst | Envenom |
+| The Stormcoil (10) | Bloodlust | Tidal Wave | Shadowstep |
+| Old Snowmaw (12) | Earthshaker (Earth for the Frostbinder) | Gale | Hemorrhage |
 
-- **Elite drops:** 30% per Elite kill in those areas while you don't know or hold the book; sure by the 4th Elite there without it (`BALANCE.bookDrop`, wrapped in `boosted()` so the cheat rates reach it).
-- **Boss first defeat:** the quest reward (`classItems`, which then takes a list). Rematches don't drop it again.
+The Frostbinder ends the content for now, so she keeps today's rewards.
+
+**Extras:**
+
+| Source | Warrior | Mage | Rogue |
+| --- | --- | --- | --- |
+| Guild promotion | Rallying Roar (Rank C, 11) | Thunderstorm (Rank C, 11) | Fan of Knives (Rank D, 7) |
+| First Heroic win (6) | (none yet) | Shadow Hex | Death Mark |
+| Class quest at level 20 (later) | Titan's Wrath | Cataclysm | Thousand Cuts |
+
+- **Elites drop their area's element books:** your class's family book or a Ward of an element their area's shop sells (Brindlemoor's three for Chapter 1 areas, and so on). 30% per Elite kill while one is missing, sure by the 4th Elite without one (`BALANCE.bookDrop`, wrapped in `boosted()` so the cheat rates reach it). A lucky find saves the gold.
+- Boss books come through the quest reward (`classItems`, which then takes a list).
 - Level-20 books stay out of reach until the class quest exists (content ends around level 17).
 
 ## Spellbook
@@ -176,7 +174,12 @@ Steps 1-3 can be checked headless; step 4 is the playtest.
 
 The shared box and library (and its bonuses), class quests, advanced classes, the off-hand slot, level-20 skills, Light and Dark sources.
 
-## For the designer
+## Advisor review (2026-10-26)
 
-1. **Element effects and Freeze** are proposals. Build them as above?
-2. **Bosses give one class a book** (the Thornheart a Mage book, the Stormcoil a Rogue book...); the other classes get today's rewards. Fill the gaps, or leave it?
+The designer handed the two open calls to the design advisor.
+
+- **Element effects: build them.** Without them, 8 family skills are one skill in 8 colors; options that do the same thing add complexity without interest (Sirlin, balancing articles) [designer opinion]. Fixed one overlap: Wind (Weaken), Light (Blind) and Earth (Stone Skin) all meant "you take less damage", so Light became Focus (+25% crit on you).
+- **Freeze: lower and capped at 40%.** Mage bolts have no cooldown, so a 37-50% skip-a-turn on the cheapest skill is the dominant strategy players find and keep (Soren Johnson, "water finds a crack") [designer opinion]. Ice monsters resist it, which already limits it in Chapter 3.
+- **Bosses teach every class.** Bigger gaps need bigger rewards, landed on milestones (Mike Stout, reward schedules) [designer opinion], and a new skill is the reward that changes how you play (leveling-systems critique) [article]. The draft gave each boss's book to one class, the Rogue no class book in Chapter 3 and the Mage none in shops. The town/boss/extras rule also makes sources easy to remember (Sylvester's player model principle) [designer opinion].
+- **No book from the Lucky Impling.** It's a rare random spawn, against "strong skills from sure sources"; Thunderstorm moved to the Rank C promotion.
+- **Watch in the sim:** Ward use (Defend already answers telegraphed hits), Play Dead use (a sure flee may be a trash option), and whether levels 10-19 still feel empty between the boss books.
