@@ -281,7 +281,7 @@ namespace Drakepg
         /// </summary>
         public static void SlowMo(float scale, float ms)
         {
-            FxRunner.SlowFor(scale, ms / 1000f);
+            FxRunner.SlowFor(scale, ms / 1000f / Anim.Speed);
             if (Anim.TimeScale > scale) Anim.TimeScale = scale;
         }
 

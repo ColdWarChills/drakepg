@@ -23,7 +23,8 @@ float2 BendPoint(float2 p)
     float2 q1 = float2(dot(_BendA1.xy, p), dot(_BendA1.zw, p)) + _BendT01.zw;
     float2 q2 = float2(dot(_BendA2.xy, p), dot(_BendA2.zw, p)) + _BendT2.xy;
     float2 q = w0 * q0 + w1 * q1 + w2 * q2;
-    float loose = smoothstep(_BendJ.y - 2 * b, _BendJ.w, p.y) * (0.5 + 0.5 * saturate(abs(p.x) / _BendWave.w));
+    // The face (the middle) barely trails; hair and headbands at the edges do.
+    float loose = smoothstep(_BendJ.y - 2 * b, _BendJ.w, p.y) * (0.15 + 0.85 * saturate(abs(p.x) / _BendWave.w));
     q += (_BendT2.zw + float2(_BendWave.x * sin(_BendWave.y + p.y * _BendWave.z), 0)) * loose;
     return q;
 }

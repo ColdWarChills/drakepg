@@ -38,6 +38,8 @@ namespace Drakepg
         static readonly List<Handle> active = new List<Handle>();
         static readonly List<Handle> adding = new List<Handle>();
         public static float TimeScale = 1;
+        /// <summary>The battle speed option (x2): every tween runs this much faster. The battle sets it; any screen change puts it back to 1.</summary>
+        public static float Speed = 1;
 
         /// <summary>The owner new tweens get when none is given: the current screen.</summary>
         public static object DefaultOwner;
@@ -122,7 +124,7 @@ namespace Drakepg
         {
             active.AddRange(adding);
             adding.Clear();
-            dt *= TimeScale;
+            dt *= TimeScale * Speed;
             for (int i = 0; i < active.Count; i++)
             {
                 var h = active[i];

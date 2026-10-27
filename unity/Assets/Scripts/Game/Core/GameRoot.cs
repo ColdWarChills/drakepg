@@ -146,6 +146,7 @@ namespace Drakepg
                     old.Root?.RemoveFromHierarchy();
                 }
                 Anim.TimeScale = 1;
+                Anim.Speed = 1;
                 ResetView();
                 shakeTime = 0;
                 next.World = new GameObject(next.GetType().Name).transform;

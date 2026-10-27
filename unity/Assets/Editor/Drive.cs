@@ -154,6 +154,95 @@ namespace Drakepg.EditorTools
             }
         }
 
+        /// <summary>
+        /// Battle: fight `fights` times (attacking only) at battle speed `speed` and log how long each took in real
+        /// seconds, from the first press to the result screen. For checking how fast farming feels.
+        /// </summary>
+        public static void TimeFights(string monsterId, string zoneId, string roomId, int fights = 3, int speed = 1) =>
+            GameRoot.I.StartCoroutine(TimeFightsLoop(monsterId, zoneId, roomId, fights, speed));
+
+        static IEnumerator TimeFightsLoop(string monsterId, string zoneId, string roomId, int fights, int speed)
+        {
+            Saves.BattleSpeed = speed;
+            var times = new List<string>();
+            for (int n = 0; n < fights; n++)
+            {
+                Session.Player.Data.Hp = Session.Player.MaxHp;
+                Fight(monsterId, zoneId, roomId);
+                while (!(Screen is BattleScreen)) yield return null;
+                while (Screen is BattleScreen && !Press(0)) yield return null;
+                var t0 = Time.realtimeSinceStartup;
+                var turns = 1;
+                var slow = false;
+                while (Screen is BattleScreen)
+                {
+                    if (Press(0)) turns++;
+                    // Fx.SlowMo's 0.3x: the finishing blow's slow motion.
+                    slow |= Mathf.Abs(Anim.TimeScale - 0.3f) < 0.01f;
+                    yield return null;
+                }
+                times.Add($"{Time.realtimeSinceStartup - t0:0.0}s/{turns}t{(slow ? " slow-mo" : "")}");
+            }
+            Debug.Log($"drakepg: {monsterId} at x{speed}: {string.Join(", ", times)}");
+        }
+
+        /// <summary>
+        /// Battle: press button `press` and trace the hero's face against the chest (px across, the bend's head lag and
+        /// hair drag) every 1/60 s of game time for `seconds`. Logs how far it travels and how often it turns back: a
+        /// head that bounces turns back many times.
+        /// </summary>
+        public static void HeadTrace(int press = 0, float seconds = 2.5f) => GameRoot.I.StartCoroutine(HeadTraceLoop(press, seconds));
+
+        static IEnumerator HeadTraceLoop(int press, float seconds)
+        {
+            var hero = Field("hero");
+            var bend = (hero?.GetType().GetField("Fig").GetValue(hero) as Figure)?.Bend;
+            if (bend == null) yield break;
+            var h = (float)typeof(Bend).GetField("height", Any).GetValue(bend);
+            Time.captureFramerate = 60;
+            Press(press);
+            var xs = new List<float>();
+            var ys = new List<float>();
+            var drags = new List<float>();
+            var lags = new List<float>();
+            float Spring(string name) { var sp = typeof(Bend).GetField(name, Any).GetValue(bend); return (float)sp.GetType().GetField("X").GetValue(sp); }
+            float Value(string name) => (float)typeof(Bend).GetField(name, Any).GetValue(bend);
+            for (int i = 0; i < seconds * 60; i++)
+            {
+                yield return null;
+                // The two springs that can wobble: the loose parts' drag (px) and the head's lag behind the body's tilt (degrees).
+                drags.Add(Spring("dragX") * Design.PixelsPerUnit);
+                lags.Add(Spring("head") - (Value("shift") * 0.5f + Spring("lean")));
+                var face = bend.At(new Vector2(0, h * 0.92f), out _);
+                var chest = bend.At(new Vector2(0, h * 0.68f), out _);
+                xs.Add((face.x - chest.x) * Design.PixelsPerUnit);
+                ys.Add((face.y - chest.y) * Design.PixelsPerUnit);
+            }
+            Time.captureFramerate = 0;
+            Debug.Log($"drakepg: head trace {xs.Count} frames: across {Wobble(xs)}; up-down {Wobble(ys)}; drag {Wobble(drags)}; head lag (deg) {Wobble(lags)}");
+            System.IO.File.WriteAllText(System.IO.Path.Combine(Application.temporaryCachePath, "head_trace.txt"),
+                string.Join("\n", xs.ConvertAll(x => x.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))));
+        }
+
+        /// <summary>A trace's range, distance travelled and how many times it turned back (moves under 0.05 px ignored).</summary>
+        static string Wobble(List<float> xs)
+        {
+            float path = 0, min = float.MaxValue, max = float.MinValue;
+            int turns = 0, dir = 0;
+            for (int i = 1; i < xs.Count; i++)
+            {
+                var d = xs[i] - xs[i - 1];
+                path += Mathf.Abs(d);
+                min = Mathf.Min(min, xs[i]);
+                max = Mathf.Max(max, xs[i]);
+                if (Mathf.Abs(d) < 0.05f) continue;
+                var s = d > 0 ? 1 : -1;
+                if (dir != 0 && s != dir) turns++;
+                dir = s;
+            }
+            return $"range {min:0.0}..{max:0.0} px, travelled {path:0} px, turned back {turns} times";
+        }
+
         /// <summary>Close the top menu.</summary>
         public static void Close() => UiModal.Top?.Close();
 

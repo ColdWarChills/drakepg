@@ -279,7 +279,7 @@ namespace Drakepg
         public static void HitStop(float ms)
         {
             Anim.TimeScale = 0.02f;
-            FxRunner.EndHitStopIn(ms / 1000f);
+            FxRunner.EndHitStopIn(ms / 1000f / Anim.Speed);
         }
 
         // --- Spells ---

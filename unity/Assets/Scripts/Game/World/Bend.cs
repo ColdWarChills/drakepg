@@ -122,7 +122,7 @@ namespace Drakepg
         {
             if (art == null) return;
             if (frozen) return;
-            var dt = Mathf.Min(Time.deltaTime, 0.1f) * Anim.TimeScale;
+            var dt = Mathf.Min(Time.deltaTime, 0.1f) * Anim.TimeScale * Anim.Speed;
             if (restIn > 0 && (restIn -= dt) <= 0)
             {
                 Lean = Crouch = 0;
@@ -131,7 +131,8 @@ namespace Drakepg
             // Movement in the figure's own space, for the loose parts' drag.
             var pos = transform.position;
             var vel = Vector3.zero;
-            if (hasLast && dt > 0) vel = art.InverseTransformVector(pos - lastPos) / Mathf.Max(Time.deltaTime, 0.001f);
+            // Per second of game time, so x2 battle speed doesn't double the drag.
+            if (hasLast && dt > 0) vel = art.InverseTransformVector(pos - lastPos) / (Mathf.Max(Time.deltaTime, 0.001f) * Anim.Speed);
             lastPos = pos;
             hasLast = true;
             // Small steps keep the springs steady at low frame rates.
@@ -155,12 +156,13 @@ namespace Drakepg
             var settle = Idle ? 0.04f + 0.06f * (1 - breath) + 0.15f * hurt : 0;
             crouch.Step(Crouch + settle, 22, 0.7f, dt);
             lean.Step(Lean + (Idle ? 6 * hurt : 0), 17, 0.5f, dt);
-            // Hair and cloth trail behind the motion and swing past when it stops.
-            var limit = height * 0.07f;
-            dragX.Step(Mathf.Clamp(-vel.x * 0.022f, -limit, limit), 12, 0.32f, dt);
-            dragY.Step(Mathf.Clamp(-vel.y * 0.012f, -limit, limit), 12, 0.32f, dt);
+            // Hair and cloth trail behind the motion and settle with a small swing when it stops. Damped hard: a swingy
+            // drag (and head) made the face bob back and forth with every lunge (designer, 2026-10-26).
+            var limit = height * 0.045f;
+            dragX.Step(Mathf.Clamp(-vel.x * 0.022f, -limit, limit), 12, 0.65f, dt);
+            dragY.Step(Mathf.Clamp(-vel.y * 0.012f, -limit, limit), 12, 0.65f, dt);
             // The head follows the body's tilt late.
-            head.Step(BodyTilt(shift, lean.X), 10, 0.38f, dt);
+            head.Step(BodyTilt(shift, lean.X), 14, 0.7f, dt);
         }
 
         /// <summary>Forward-lean rotation times a scale (bone frame), as the shader's (m00, m01, m10, m11).</summary>
@@ -216,7 +218,7 @@ namespace Drakepg
             float w2 = Smooth(shoulder - b, shoulder + b, p.y);
             float w1 = Mathf.Clamp01(1 - w0 - w2);
             var q = w0 * (Mul(a0, p) + new Vector2(t01.x, t01.y)) + w1 * (Mul(a1, p) + new Vector2(t01.z, t01.w)) + w2 * (Mul(a2, p) + new Vector2(t2.x, t2.y));
-            var loose = Smooth(shoulder - 2 * b, height, p.y) * (0.5f + 0.5f * Mathf.Clamp01(Mathf.Abs(p.x) / wave.w));
+            var loose = Smooth(shoulder - 2 * b, height, p.y) * (0.15f + 0.85f * Mathf.Clamp01(Mathf.Abs(p.x) / wave.w));
             q += (new Vector2(t2.z, t2.w) + new Vector2(wave.x * Mathf.Sin(wave.y + p.y * wave.z), 0)) * loose;
             degrees = w0 * th0 + w1 * (th0 + th1) + w2 * (th0 + th1 + th2);
             return q;

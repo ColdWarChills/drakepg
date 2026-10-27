@@ -74,6 +74,9 @@ namespace Drakepg
             public bool First, Last;
             /// <summary>The blow that ends the fight (slow motion, the camera closes in, a gush).</summary>
             public bool Finisher;
+            /// <summary>A finisher with the full show (the scene darkens, slow motion, the camera closes in): a boss going
+            /// down, or the hero. Trash dies with one long freeze, so farming stays quick.</summary>
+            public bool Grand;
             public static readonly Chain Single = new Chain { First = true, Last = true };
         }
 
@@ -296,6 +299,8 @@ namespace Drakepg
             bottomHud.style.translate = new Translate(0, HudOff.y);
             DrawStatus();
             DrawBottomPanel();
+            Anim.Speed = Saves.BattleSpeed;
+            DrawSpeedButton();
             RefreshBars(false);
             // A tower twist's starting statuses show from the first moment.
             if (battle.StartEvents.Count > 0) SyncStatuses();
@@ -389,6 +394,8 @@ namespace Drakepg
         {
             hero?.Apply();
             foe?.Apply();
+            // Battle speed works while a turn plays too.
+            if (InputEnabled && Keys.Pressed(Key.S)) ToggleSpeed();
             if (!InputEnabled || busy) return;
             Key[] keys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5, Key.Digit6 };
             for (int i = 0; i < keys.Length; i++)
@@ -1093,6 +1100,25 @@ namespace Drakepg
             bottomHud.Add(menu);
         }
 
+        Label speedLabel;
+
+        /// <summary>The battle speed toggle (x1 / x2, kept in the browser like the sound setting): top center, between the
+        /// two panels, so it can be pressed while a turn plays. Key S.</summary>
+        void DrawSpeedButton()
+        {
+            var b = new FeltButton(Root, Design.Width / 2, 40, $"x{Saves.BattleSpeed}", ToggleSpeed, 104, 46, null, "fast", null, null, 9, 0, "S", 21, 20);
+            speedLabel = b.Q<Label>();
+            Tooltip.Attach(b, "Battle speed", "x2 plays fights twice as fast.");
+        }
+
+        void ToggleSpeed()
+        {
+            Saves.BattleSpeed = Saves.BattleSpeed == 2 ? 1 : 2;
+            Saves.SaveSettings();
+            Anim.Speed = Saves.BattleSpeed;
+            if (speedLabel != null) speedLabel.text = $"x{Saves.BattleSpeed}";
+        }
+
         /// <summary>All bars caught up with the battle (the start, the end of a turn).</summary>
         void RefreshBars(bool animate = true)
         {
@@ -1482,7 +1508,8 @@ namespace Drakepg
 
         async Task Play(BattleEvent e, BattleEvent prev, BattleEvent next)
         {
-            await PlayEvent(e, new Chain { First = !SameMove(prev, e), Last = next == null || !SameMove(e, next), Finisher = finishers.Contains(e) });
+            await PlayEvent(e, new Chain { First = !SameMove(prev, e), Last = next == null || !SameMove(e, next), Finisher = finishers.Contains(e),
+                Grand = finishers.Contains(e) && (monster.Boss || e.Source == "enemy") });
             // An enemy action resolves the player's guard and the boss's wind-up.
             var enemyActed = e.Kind == "windup" || ((e.Kind == "hit" || e.Kind == "miss" || e.Kind == "buff") && e.Source == "enemy");
             if (!enemyActed) return;
@@ -1931,7 +1958,7 @@ namespace Drakepg
                         var body = BodyOf("enemy");
                         var colors = m.Element != null ? ColorsOf(m.Element) : new[] { 0xffffffL, m.Look.Color, m.Look.Accent };
                         PushLog($"{enemyName} is defeated!");
-                        Fx.HitStop(m.Boss ? 260 : 160);
+                        Fx.HitStop(m.Boss ? 260 : 90);
                         Fx.WhiteFlash(f.Fig, 140);
                         var bend = f.Fig.Bend;
                         if (bend != null)
@@ -2070,16 +2097,16 @@ namespace Drakepg
             // Drawn key poses for this weapon kind (wind-up, lunge step, strike), when the hero has them: the arms and
             // legs move between them, the bend and the weapon's turn add the in-between motion.
             var posed = PoseOf(f, kind, "wind") != null && PoseOf(f, kind, "strike") != null;
-            if (chain.Finisher)
+            if (chain.Grand)
             {
                 // The last blow: the scene darkens and the camera leans in as it winds up, a glint, then it strikes.
                 Dim(0.35f, 0.18f);
                 ViewIn((home + target.x) / 2, GroundY - 150, 1.08f, 0.2f);
             }
             if (posed) SwapPose(f, source, PoseOf(f, kind, "wind"));
-            await Anticipate(f, dir, b.Antic + (chain.Finisher ? 0.06f : 0), b.Hold + (chain.Finisher ? 0.06f : 0), chain.Finisher ? 1 : b.Power, posed,
+            await Anticipate(f, dir, b.Antic + (chain.Grand ? 0.06f : 0), b.Hold + (chain.Grand ? 0.06f : 0), chain.Grand ? 1 : b.Power, posed,
                 posed ? 14 : b.Back);
-            if (chain.Finisher)
+            if (chain.Grand)
             {
                 var tip = BladeTip(f);
                 if (tip.HasValue) Fx.Glint(World, tip.Value.x, tip.Value.y, 0xffffff, 2);
@@ -2501,7 +2528,7 @@ namespace Drakepg
                     // Monsters take longer to wind up, so you can see them coming; big ones longest (timing sells weight).
                     var monsterBlow = style.Kind == "enemy-melee";
                     var heavyMonster = monsterBlow && (monster.Boss || monster.Look.Scale >= 1.25);
-                    if (chain.Finisher)
+                    if (chain.Grand)
                     {
                         // The last blow: the scene darkens and the camera leans in as it winds up, a glint, then it strikes.
                         Dim(0.35f, 0.18f);
@@ -2525,7 +2552,7 @@ namespace Drakepg
                 case "heavy":
                 {
                     // Crouch, leap, crash down.
-                    if (chain.Finisher)
+                    if (chain.Grand)
                     {
                         Dim(0.35f, 0.18f);
                         ViewIn((home + target.x) / 2, GroundY - 170, 1.08f, 0.2f);
@@ -2733,8 +2760,10 @@ namespace Drakepg
             Sfx.Play(big ? "crit" : "hit");
             if (e.Element != null && !dull && Sfx.ElementSfx.TryGetValue(e.Element, out var elementSound)) Sfx.Play(elementSound);
             Fx.WhiteFlash(f.Fig, big ? 140 : 100, 0xffffff, palette != null && !dull ? palette[1] : (long?)null);
-            // The freeze grows with the blow; the camera is knocked the way the blow travels and springs back.
-            Fx.HitStop(quick ? 40 : e.Crit ? 150 : big ? 130 : Mathf.Min(150, 70 + weight * 120));
+            // The freeze grows with the blow (long ones only against bosses: trash fights keep moving); the camera is
+            // knocked the way the blow travels and springs back.
+            var stop = quick ? 40 : e.Crit ? 150 : big ? 130 : Mathf.Min(150, 70 + weight * 120);
+            Fx.HitStop(monster.Boss ? stop : Mathf.Min(stop, 70));
             GameRoot.I.Shake(e.Crit ? 0.14f : 0.09f, ((guarded || dull ? 0.001f : 0.002f) + weight * (quick ? 0.005f : 0.011f)) * Design.Width);
             var kickPx = (guarded || dull ? 2 : 4 + weight * 14 + (e.Crit ? 4 : 0)) * (quick ? 0.5f : 1);
             GameRoot.I.Kick(kickPx * dir, big ? 2 : 1);
@@ -2781,7 +2810,7 @@ namespace Drakepg
                 Fx.Bleed(World, x - 40 * dir, y + Random.Range(-20f, 20f), dir, MonsterBlood, amount, GroundY, GroundOrder);
                 if ((MonsterBlood?.Kind ?? "liquid") == "liquid") Anim.After(0.06f, () => Sfx.Play("splat"));
             }
-            if (chain.Finisher) FinishingBlow(targetSide, x, y, dir, style, e);
+            if (chain.Finisher) FinishingBlow(targetSide, x, y, dir, style, e, chain.Grand);
 
             var color2 = e.Element != null ? Palette.ElementText(e.Element) : magic ? Palette.TextMagic : e.Source == "enemy" ? Palette.TextBad : Color.white;
             var tags = string.Join(" ", new[] { e.Crit ? "CRIT!" : "", e.Effect != null ? EffectTags[e.Effect] : "", guarded ? "Guarded" : "" }.Where(s => s != ""));
@@ -2792,17 +2821,21 @@ namespace Drakepg
         }
 
         /// <summary>
-        /// The blow that ends the fight: a longer freeze, then slow motion while the camera closes in on the one going
-        /// down, a white flash, a second slash and a ring across the ground. ("defeated" plays the fall and resets the camera.)
+        /// The blow that ends the fight: a longer freeze, a white flash, a second slash and a ring across the ground.
+        /// `grand` (a boss or the hero going down): then slow motion while the camera closes in on the one going down.
+        /// ("defeated" plays the fall and resets the camera.)
         /// </summary>
-        void FinishingBlow(string targetSide, float x, float y, int dir, Style style, BattleEvent e)
+        void FinishingBlow(string targetSide, float x, float y, int dir, Style style, BattleEvent e, bool grand)
         {
             long color = e.Element != null ? style.Colors[1] : 0xffe08a;
-            Fx.HitStop(170);
-            Fx.SlowMo(0.3f, 950);
-            Dim(0, 0.6f);
-            ViewIn(x - 70 * dir, GroundY - 150, 1.2f, 0.14f);
-            GameRoot.I.Flash(0.1f, new Color(1, 1, 1, 0.55f));
+            Fx.HitStop(grand ? 170 : 120);
+            if (grand)
+            {
+                Fx.SlowMo(0.3f, 950);
+                Dim(0, 0.6f);
+                ViewIn(x - 70 * dir, GroundY - 150, 1.2f, 0.14f);
+            }
+            GameRoot.I.Flash(0.1f, new Color(1, 1, 1, grand ? 0.55f : 0.35f));
             if (style.Kind == "slash" || style.Kind == "heavy") Fx.Slash(World, x, y, dir, color, -0.6f, true);
             Fx.CritFlare(World, x, y, color);
             Fx.Shockwave(World, x, GroundY, color, 5, 0.3f);

@@ -12,21 +12,26 @@ namespace Drakepg
         const string Key = "drakepg.save";
         const string StoryKey = "drakepg.storyText";
         const string MuteKey = "drakepg.muted";
+        const string SpeedKey = "drakepg.battleSpeed";
 
         /// <summary>Show the full story dialogue for quests (off: one short line).</summary>
         public static bool StoryText;
         public static bool Muted;
+        /// <summary>How fast battles play: 1 or 2 (the x2 button in battle).</summary>
+        public static int BattleSpeed = 1;
 
         public static void Init()
         {
             StoryText = PlayerPrefs.GetInt(StoryKey, 0) == 1;
             Muted = PlayerPrefs.GetInt(MuteKey, 0) == 1;
+            BattleSpeed = PlayerPrefs.GetInt(SpeedKey, 1) == 2 ? 2 : 1;
         }
 
         public static void SaveSettings()
         {
             PlayerPrefs.SetInt(StoryKey, StoryText ? 1 : 0);
             PlayerPrefs.SetInt(MuteKey, Muted ? 1 : 0);
+            PlayerPrefs.SetInt(SpeedKey, BattleSpeed);
             PlayerPrefs.Save();
         }
 

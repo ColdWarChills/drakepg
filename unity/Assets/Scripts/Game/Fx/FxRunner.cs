@@ -78,7 +78,7 @@ namespace Drakepg
                 slowUntil = 0;
                 if (stopUntil <= 0) Anim.TimeScale = 1;
             }
-            float dt = Time.deltaTime * (Fx.ParticlesFollowHitStop ? Anim.TimeScale : 1);
+            float dt = Time.deltaTime * (Fx.ParticlesFollowHitStop ? Anim.TimeScale : 1) * Anim.Speed;
             for (int i = systems.Count - 1; i >= 0; i--)
             {
                 if (i >= systems.Count) continue;

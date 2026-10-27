@@ -63,6 +63,8 @@ ICONS = {
     "back": f'<g {G} fill="none" stroke-width="2.8"><path d="M26 16 H8 M14 9 L7 16 L14 23"/></g>',
     # More (next page): three dots.
     "more": f'<g fill="{INK}"><circle cx="7" cy="16" r="3"/><circle cx="16" cy="16" r="3"/><circle cx="25" cy="16" r="3"/></g>',
+    # Battle speed: two arrowheads, fast-forward.
+    "fast": f'<g {G} fill="{CREAM}"><path d="M4 8 L15 16 L4 24 Z"/><path d="M16 8 L27 16 L16 24 Z"/></g>',
     # Items in battle: a potion bottle.
     "potion": f'<g {G}><path d="M13 4 H19 V10 C25 12 27 17 26 22 C25 27 21 29 16 29 C11 29 7 27 6 22 C5 17 7 12 13 10 Z" '
               f'fill="#c8452f"/><path d="M12 4 H20" fill="none" stroke-width="3.2"/><path d="M10 19 C13 21 19 21 22 19" '
