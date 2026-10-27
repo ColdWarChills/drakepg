@@ -10,7 +10,7 @@ For the Spire (`docs/TOWER_SPEC.md`). Written 2026-10-27 (designer: "make a docu
 | `npc_spire_warden` | NPC sprite | Qwen, `redo_art.py` (NEW) | Done (seed 4242) | Spire Foot, x 830, beside the door | Stands; hops when you talk to him (`NpcHop`). Built to take the bend rig later (rules below). Later: his staff lantern glows. |
 | `bg_spire_thornwood` | Battle background | Qwen, `redo_art.py` (NEW) | Done (seed 4243): roots through the stone, green lanterns | Floors 1-10 (`FlightDef.background`) | Still picture, raised 90 px under the battle HUD. Fighters bend and move in front of it. |
 | `bg_spire_fen` | Battle background | Qwen | Done (seed 4242): a flooded hall; fighters stand ankle-deep at the pool's edge | Floors 11-20 | Same. |
-| `bg_spire_frostfang` | Battle background | Qwen | Done (seed 4242, second prompt: the first tries grew green hills inside the hall until the prompt said "no trees, no plants, no hills inside it") | Floors 21-30 | Same. |
+| `bg_spire_frostfang` | Battle background | Qwen edit of `bg_spire_thornwood` (`scripts/spire_frost.py edit`) | Done (edit seed 4242) | Floors 21-30 | Same. |
 | `mark` | UI icon | Hand SVG, `scripts/ui_icons.py` | Done | Spire header (vendor prices and the result screen can use it next) | Still; the result screen counts the marks up. |
 | `spire` | UI icon | Hand SVG | Done | Not placed yet: the map's Spire badge or a floor-list tab, later | Still. |
 | `cache` | UI icon | Hand SVG | Done | Vendor: Sigil cache rows | Still. |
@@ -18,6 +18,8 @@ For the Spire (`docs/TOWER_SPEC.md`). Written 2026-10-27 (designer: "make a docu
 | `twist_hulking`, `twist_frenzied`, `twist_warded`, `twist_venomous`, `twist_ironhide` | UI icons (the Elite affixes as twists) | Hand SVG | Done | Same as above (Elite lines in battle can use them later) | Still. |
 | Fury, Hardened, Regrowth | Twists that start a status | Existing `status_war_cry`, `status_iron_skin`, `status_regen` | Reused | Same as above, plus the status chip in battle | Still. |
 | Twist effects in battle | Particles and glows | Code (`Fx`), no art | Notes only (below) | Battle | See "Twist effects". |
+
+The ice hall took three rounds (designer: "the ice biome... needs rework, try to maintain the style"). Text alone first grew green hills inside the hall, then gave a rendered stone hall (smooth gradients, realistic blocks) that didn't read as paper. What worked: a **Qwen edit of the picked Thornwood hall** ("turn this hall into the frozen top hall... keep everything else exactly the same: the same layered paper-cut style"), so the paper layers, light and layout carry over; the frozen trees and icicles read as cut white paper. A new drawing with two finished cutout pictures as style references (`spire_frost.py refs`) also worked once in two tries. A style LoRA wasn't needed; it stays the fallback if a new biome can't be reached by editing a finished picture. **Rule for new backgrounds of a set: edit a finished, liked picture of the set rather than prompting from scratch.**
 
 Review sheets of the tries are made with `redo_art.py sheet` (art/redo/_sheet.png) and `ui_icons.py sheet`; the first icon draft of Veil, Shell and Venomous read as a "C", a car and a pendant at small size and were redrawn (a ring with a bright gap, a shield with three charges, two fangs with a drop).
 
@@ -44,6 +46,10 @@ The game draws one picture per character and moves it in code. In battle every f
 - **Room backgrounds** (Spire Foot): the walk band is the bottom 30% (design y 590-700): flat, open, no props in it. Exits sit where the art has a door or path: Spire Foot's way back is the bottom edge (a `down` exit), Brindlemoor's door to it is the cottage door at x 247. Lanterns, fires and windows are glow candidates: Spire Foot's two door lanterns sit at about x 552 and 728, y 432 (design px).
 - **Battle backgrounds** (the three Spire halls): drawn 90 px higher than the screen (`BgRaise`), so the fighters' feet (design y 500) stand on art y 590. Keep the **floor band flat and empty from art y 500 to the bottom**, and the **middle third calm** (the hero stands near x 330, the monster near x 950, and the "Next:" tag and the monster's panel sit above them). Nothing bright or high-contrast right behind the fighters' heads. Interiors need the "the whole picture is the inside of the hall... no open sky" wording, or the style's sky leaks in (the caves taught that).
 - Backgrounds don't move. Life comes from code on top: ambient particles (`dust`, `embers`, `fireflies`, `leaves`, `mist`, `rain`, `snow`), glows and the fighters.
+
+### The monster's sheet in battle (2026-10-27)
+
+Designer: "icons with resistance need overhaul, I see too much info on the screen at once." The sheet now holds two quiet rows instead of a line per fact: the monster's element, its weak spots and its resists as icons (`el_<element>`, `spot_blunt`, `spot_poison`, two short words between them), and a badge per rule it plays by (Elite affix, tower twists, signature move, Heroic move, loot). Hovering or tapping any icon or badge puts its words and numbers in the log's place ("Weak to Water (-50): Water hits deal 50% more damage."). Only what counts down during the fight keeps a line (a shell's pips, a Lucky Impling's escape). Twists and traits are still spelled out in the log when the fight starts.
 
 ### UI icons
 

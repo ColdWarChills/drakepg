@@ -508,48 +508,106 @@ namespace Drakepg
             enemyHp = new FeltBar(enemyHud, EnemyPanelX + 38, 84, 370, 26, Felt.Hp, "", 23, 17);
             Felt.Token(enemyHud, EnemyPanelX + 32, 84, 38, Felt.Heart, Felt.RedFelt, 1, HeartInk);
 
+            // Two quiet rows instead of a line per fact: its element, weak spots and resists as icons, then a badge for each
+            // rule it plays by (Elite affix, tower twists, signature move, Heroic move, loot). Hover or tap any of them
+            // for the words and numbers, in the log's place.
             var y = 124f;
             if (hasAffinities)
             {
-                Felt.Icon(enemyHud, EnemyPanelX + 20, y - 12, 24, "flame", true);
                 affinityY = y;
                 DrawAffinities();
                 y += LineStep;
             }
-            if (affix != null) EnemyLine(ref y, "star", $"{affix.Name}: {affix.Description}", 16, Felt.Gold);
-            // A Shell twist is already the shell line below.
-            foreach (var id in (m.Tower?.Twists ?? new List<string>()).Where(t => Db.Twist(t).Shell == null))
+            var badges = Badges(affix, heroic);
+            if (badges.Count > 0)
             {
-                var tw = Db.Twist(id);
-                EnemyLine(ref y, Felt.HasIcon(tw.Icon ?? "") ? tw.Icon : "star", $"{tw.Name}: {tw.Text}", 15, Felt.Gold);
+                DrawBadges(y, badges);
+                y += LineStep;
             }
+            // Lines only for what counts down during the fight.
             if (m.Shell != null)
             {
                 shellLine = EnemyLine(ref y, "shield", "", 16, Felt.Magic);
                 RefreshShell();
             }
-            if (m.Trait != null) EnemyLine(ref y, "star", m.Trait, 17, Felt.Trait);
-            if (heroic != "") EnemyLine(ref y, "star", heroic, 16, Felt.Gold);
             if (m.EscapeAfter.HasValue && m.EscapeAfter > 0)
             {
                 escapeLine = EnemyLine(ref y, "boot", "", 16);
                 RefreshEscape();
             }
-            if (m.Lucky && m.Loot != null) DrawLuckyLine(LineX, y);
-            else if (m.Loot != null) DrawLootLine(LineX, y, m.Loot);
 
             playerStatusRow = StatusRow(heroHud, 18, 16 + 122 + 12);
             enemyStatusRow = StatusRow(enemyHud, EnemyPanelX + 4, 16 + panelH + 12);
             DrawIntentTag(16 + panelH);
         }
 
-        /// <summary>The enemy's sheet: 100 px plus a line for each of affinities, affix, shell, trait, heroic, escape, loot.</summary>
+        /// <summary>The enemy's sheet: 100 px plus a line for the affinity icons, the badges, the shell and the escape countdown.</summary>
         float EnemyPanelHeight()
         {
             var m = monster;
-            var lines = (AffinityParts().Count > 0 ? 1 : 0) + (m.Elite != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (m.Tower?.Twists.Count(t => Db.Twist(t).Shell == null) ?? 0)
-                        + (m.IsHeroic && m.Heroic != null ? 1 : 0) + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + (m.Loot != null ? 1 : 0);
+            var affix = m.Elite != null ? Db.Affix(m.Elite.Affix) : null;
+            var heroic = m.IsHeroic && m.Heroic != null ? $"Heroic: {m.Heroic.Text}" : "";
+            var lines = (AffinityParts().Count > 0 ? 1 : 0) + (Badges(affix, heroic).Count > 0 ? 1 : 0) + (m.Shell != null ? 1 : 0)
+                        + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0);
             return 100 + lines * LineStep;
+        }
+
+        /// <summary>A badge on the enemy's sheet: its icon, a ring in its kind's color, and what hovering it says.</summary>
+        struct BadgeInfo
+        {
+            public string Icon, Note;
+            public Color Ring;
+        }
+
+        /// <summary>The rules this monster plays by, one badge each: Elite affix, tower twists (a Shell is its own line), its signature move, its Heroic move, its loot.</summary>
+        List<BadgeInfo> Badges(EliteAffixDef affix, string heroic)
+        {
+            var m = monster;
+            var list = new List<BadgeInfo>();
+            if (affix != null)
+                list.Add(new BadgeInfo { Icon = Felt.HasIcon("twist_" + affix.Id) ? "twist_" + affix.Id : "star", Note = $"Elite, {affix.Name}: {affix.Description}", Ring = Felt.Gold });
+            foreach (var id in m.Tower?.Twists ?? new List<string>())
+            {
+                var tw = Db.Twist(id);
+                if (tw.Shell != null) continue;
+                list.Add(new BadgeInfo { Icon = TowerPanel.IconOf(tw), Note = $"{tw.Name}: {tw.Text}", Ring = Felt.Gold });
+            }
+            if (m.Trait != null) list.Add(new BadgeInfo { Icon = "star", Note = m.Trait, Ring = Felt.Trait });
+            if (heroic != "") list.Add(new BadgeInfo { Icon = "star", Note = heroic, Ring = Felt.Gold });
+            if (m.Lucky && m.Loot != null) list.Add(new BadgeInfo { Icon = "bag", Note = LuckyNote(), Ring = Felt.OnFelt(Design.Css("#ff9550")) });
+            else if (m.Loot != null) list.Add(new BadgeInfo { Icon = "bag", Note = LootNote(m.Loot), Ring = Felt.TextDim });
+            return list;
+        }
+
+        /// <summary>The badge row, centered on y: small felt squares with an icon each; hover or tap one for its note.</summary>
+        void DrawBadges(float y, List<BadgeInfo> badges)
+        {
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            Ui.Place(row, EnemyPanelX + 22, y, 0, 0.5f);
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            foreach (var info in badges)
+            {
+                var b = new VisualElement { pickingMode = PickingMode.Position };
+                b.style.width = 34;
+                b.style.height = 28;
+                b.style.marginRight = 7;
+                b.style.backgroundColor = Design.Hex(0x2e2944);
+                Ui.Round(b, 7);
+                Ui.Border(b, 1.5f, PanelKit.WithAlpha(info.Ring, 0.8f));
+                b.AddToClassList(FeltPass.Keep);
+                var ic = Felt.Icon(null, 0, 0, 22, info.Icon, true);
+                ic.style.position = Position.Relative;
+                ic.style.marginLeft = 4.5f;
+                ic.style.marginTop = 1.5f;
+                b.Add(ic);
+                var note = info.Note;
+                b.RegisterCallback<PointerEnterEvent>(_ => ShowNote(note, 17));
+                b.RegisterCallback<PointerDownEvent>(_ => ShowNote(note, 17));
+                b.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
+                row.Add(b);
+            }
+            enemyHud.Add(row);
         }
 
         /// <summary>
@@ -797,17 +855,6 @@ namespace Drakepg
 
         static string Pct1(double v) => $"{Math.Round(v * 1000) / 10}%";
 
-        /// <summary>A hover-able info line (bag icon): shows `details` on the scroll while hovered or pressed.</summary>
-        void InfoLine(float x, float y, string rich, string details)
-        {
-            Felt.Icon(enemyHud, EnemyPanelX + 20, y - 12, 24, "bag", true);
-            var line = PaperLine(enemyHud, x, y, rich, 16, maxWidth: 358);
-            line.pickingMode = PickingMode.Position;
-            line.RegisterCallback<PointerEnterEvent>(_ => ShowNote(details, 15));
-            line.RegisterCallback<PointerDownEvent>(_ => ShowNote(details, 15));
-            line.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
-        }
-
         /// <summary>One line on the scroll, wrapping at its width.</summary>
         Label LogLabel(string text, float size)
         {
@@ -855,19 +902,18 @@ namespace Drakepg
             });
         }
 
-        /// <summary>"Loot  ✦ Sigil 10%  ·  Gold x5": a Lucky Impling's payout. Hover or tap for the Sigil odds.</summary>
-        void DrawLuckyLine(float x, float y)
+        /// <summary>A Lucky Impling's payout, for its loot badge: the Sigil odds and the gold.</summary>
+        string LuckyNote()
         {
             var l = Db.B.Lucky;
-            var rich = Ui.Colored("Loot ", Felt.TextDim) + Ui.Colored($" ✦ Sigil {Pct1(l.SigilChance)} ", Felt.OnFelt(Design.Css("#ff9550"))) + Ui.Colored($" ·  Gold x{l.Gold} ", Felt.Gold);
             var tiers = string.Join(", ", Items.SigilTiers.Select(t => $"{Items.SigilNames[t]} {Pct1(l.SigilTiers[t])}"));
-            var details = string.Join("\n", $"{Pct1(l.SigilChance)}: a Sigil piece of this area's gear (no normal gear drops).", $"Which Sigil: {tiers}.",
+            return string.Join("\n", $"Loot: ✦ Sigil {Pct1(l.SigilChance)} · Gold x{l.Gold}.",
+                $"{Pct1(l.SigilChance)}: a Sigil piece of this area's gear (no normal gear drops).", $"Which Sigil: {tiers}.",
                 $"Always: about {l.Gold}x the gold of the monsters here.");
-            InfoLine(x, y, rich, details);
         }
 
-        /// <summary>"Gear  Rare 1%  Uncommon 5%  Common 6%": this fight's drop odds, luck included. Hover or tap for the items.</summary>
-        void DrawLootLine(float x, float y, string tableId)
+        /// <summary>This fight's drop odds (luck included) and the items, for its loot badge.</summary>
+        string LootNote(string tableId)
         {
             var m = monster;
             var source = m.Boss ? "boss" : m.Elite != null ? "elite" : m.ChestLoot ? "chest" : "mob";
@@ -876,32 +922,26 @@ namespace Drakepg
             var luck = Loot.PityBonus(misses);
             string Pct(double v) => v >= 0.1 ? $"{Math.Round(v * 100)}%" : $"{(v * 100).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)}%";
             var label = new Dictionary<string, string> { ["rare"] = "Rare", ["uncommon"] = "Uncommon", ["common"] = "Common" };
-            var color = new Dictionary<string, Color> { ["rare"] = Felt.Gold, ["uncommon"] = Felt.Good, ["common"] = Felt.Text };
-            var rich = Ui.Colored("Gear ", Felt.TextDim);
-            foreach (var t in Loot.Tiers)
-                if (odds[t] > 0) rich += Ui.Colored($" {label[t]} {Pct(odds[t])}{(t == "rare" && luck > 0 ? " (luck)" : "")} ", color[t]);
             // Elites and bosses: a chance at a piece of the area's set on top.
             var table = Db.LootTable(tableId);
             var setChance = table.Set != null && (source == "elite" || source == "boss") ? Cheats.Boosted(Db.B.SetDrop[source]) : 0;
-            if (setChance > 0) rich += Ui.Colored($" · Set {Pct(setChance)} ", Felt.OnFelt(SetText));
             // Guild gather hunts: this area's hunt item, on top of everything else.
             var gather = Guild.GatherHere(battle.Player, zone.Id);
-            foreach (var g in gather) rich += Ui.Colored($" · {Db.Item(g.hunt.ItemId).Name} {Pct(g.chance)} ", Felt.Good);
 
             string Names(string t) => string.Join(", ", table.Tiers[t].Select(e => Db.Item(e.ItemId).Name));
             var pityText = luck > 0
                 ? $"Rolled rarest first. Luck: +{Pct(luck)} Rare after {misses} kills here without one."
                 : $"Rolled rarest first. {misses} kills here without a Rare; after {Db.B.Loot.PityAfter}, the Rare chance rises.";
-            var lines = Loot.Tiers.Where(t => odds[t] > 0).Select(t => $"{label[t]} {Pct(odds[t])}: {Names(t)}").ToList();
+            var lines = Loot.Tiers.Where(t => odds[t] > 0).Select(t => $"{label[t]} {Pct(odds[t])}{(t == "rare" && luck > 0 ? " (luck)" : "")}: {Names(t)}").ToList();
             if (setChance > 0) lines.Add($"Set {Pct(setChance)} (extra): {string.Join(", ", Db.Set(table.Set).Pieces.Select(id => Db.Item(id).Name))}");
             lines.AddRange(gather.Select(g => $"{Db.Item(g.hunt.ItemId).Name} {Pct(g.chance)} (extra): your Guild hunt in {zone.Name}."));
             lines.Add(pityText);
-            InfoLine(x, y, rich, string.Join("\n", lines));
+            return string.Join("\n", lines);
         }
 
         /// <summary>
-        /// "[Earth]  Weak [Fire] [Wind] [Blunt] · Resists [Water]": the monster's element, weak spots, resists and absorbs,
-        /// each a chip washed in its color (empty if it has none).
+        /// "(its element)  Weak (fire)(wind)(hammer)  Resists (water)": the monster's element, weak spots, resists and
+        /// absorbs as icons, two short words between them; hover or tap an icon for its number (empty if it has none).
         /// </summary>
         List<VisualElement> AffinityParts()
         {
@@ -915,40 +955,63 @@ namespace Drakepg
             var strong = elements.Where(e => R(e) + all >= 25 && R(e) > 0 && R(e) + all <= 100).ToList();
             var absorbs = elements.Where(e => R(e) + all > 100).ToList();
             var parts = new List<VisualElement>();
-            var seed = 80;
+            string Label(string e) => Db.Data.ElementLabels[e];
             void Word(string text)
             {
-                var w = FlowText(text, 17, Felt.TextDim);
-                w.style.marginLeft = parts.Count > 0 ? 8 : 0;
-                w.style.marginRight = 6;
+                var w = FlowText(text, 15, Felt.TextDim);
+                w.style.marginLeft = parts.Count > 0 ? 6 : 0;
+                w.style.marginRight = 4;
                 parts.Add(w);
             }
-            void Chip(string text, Color c)
+            void Token(string icon, string note)
             {
-                var chip = Felt.Chip(text, c, 15, seed++);
-                chip.style.marginRight = 5;
-                parts.Add(chip);
+                var t = Felt.Icon(null, 0, 0, 25, icon, true);
+                t.style.position = Position.Relative;
+                t.style.marginRight = 3;
+                t.pickingMode = PickingMode.Position;
+                t.RegisterCallback<PointerEnterEvent>(_ => ShowNote(note, 17));
+                t.RegisterCallback<PointerDownEvent>(_ => ShowNote(note, 17));
+                t.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
+                parts.Add(t);
             }
-            if (m.Element != null) Chip(Db.Data.ElementLabels[m.Element], Palette.ElementText(m.Element));
-            void Group(string label, List<string> list)
+            if (m.Element != null)
             {
-                if (list.Count == 0) return;
-                Word(label);
-                foreach (var e in list) Chip(Db.Data.ElementLabels[e], Palette.ElementText(e));
+                Token("el_" + m.Element, $"Its element: {Label(m.Element)}. Its own attacks are {Label(m.Element)}.");
+                var gap = new VisualElement { pickingMode = PickingMode.Ignore };
+                gap.style.width = 6;
+                parts.Add(gap);
             }
-            Group("Weak", weak);
-            // Weak spots besides elements: Blunt skills and Poison.
-            var spots = new List<(string label, Color color)>();
-            if (m.WeakTo?.Blunt > 0) spots.Add(("Blunt", Design.Hex(0x9a7048)));
-            if (m.WeakTo?.Poison > 0) spots.Add(("Poison", Design.Css("#8fe36b")));
+            // Weak spots: the elements, then Blunt skills and Poison.
+            var spots = new List<(string icon, string note)>();
+            foreach (var e in weak)
+                spots.Add(("el_" + e, $"Weak to {Label(e)} ({JsMath.Str(R(e) + all)}): {Label(e)} hits deal {JsMath.Str(-(R(e) + all))}% more damage."));
+            if (m.WeakTo?.Blunt > 0) spots.Add(("spot_blunt", $"Weak to Blunt: Blunt skills deal {JsMath.Str(m.WeakTo.Blunt.Value)}% more damage."));
+            if (m.WeakTo?.Poison > 0) spots.Add(("spot_poison", $"Weak to Poison: its poison ticks hurt {JsMath.Str(m.WeakTo.Poison.Value)}% more."));
             if (spots.Count > 0)
             {
-                if (weak.Count == 0) Word("Weak");
-                foreach (var s in spots) Chip(s.label, s.color);
+                Word("Weak");
+                foreach (var (icon, note) in spots) Token(icon, note);
             }
-            Group("Resists", strong);
-            Group("Absorbs", absorbs);
-            if (all != 0) Chip($"All {(all > 0 ? "+" : "")}{JsMath.Str(all)}", Design.Hex(0xc9a520));
+            if (strong.Count > 0)
+            {
+                Word("Resists");
+                foreach (var e in strong)
+                {
+                    var r = R(e) + all;
+                    Token("el_" + e, r >= 100 ? $"Immune to {Label(e)}: {Label(e)} hits do nothing." : $"Resists {Label(e)} ({JsMath.Str(r)}): {Label(e)} hits deal {JsMath.Str(r)}% less.");
+                }
+            }
+            if (absorbs.Count > 0)
+            {
+                Word("Absorbs");
+                foreach (var e in absorbs) Token("el_" + e, $"Absorbs {Label(e)}: {Label(e)} hits heal it.");
+            }
+            if (all != 0)
+            {
+                var chip = Felt.Chip($"All {(all > 0 ? "+" : "")}{JsMath.Str(all)}", Design.Hex(0xc9a520), 14, 80);
+                chip.style.marginLeft = 4;
+                parts.Add(chip);
+            }
             return parts;
         }
 
@@ -958,12 +1021,12 @@ namespace Drakepg
             if (affinityY <= 0) return;
             affinityRow?.RemoveFromHierarchy();
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(row, LineX, affinityY, 0, 0.5f);
+            Ui.Place(row, EnemyPanelX + 22, affinityY, 0, 0.5f);
             row.style.flexDirection = FlexDirection.Row;
             row.style.alignItems = Align.Center;
             foreach (var part in AffinityParts()) row.Add(part);
             enemyHud.Add(row);
-            FitWidth(row, 358);
+            FitWidth(row, 386);
             affinityRow = row;
         }
 

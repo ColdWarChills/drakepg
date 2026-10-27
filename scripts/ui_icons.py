@@ -285,6 +285,31 @@ STATUSES = {
 ICONS.update({f"skill_{k}": v for k, v in SKILLS.items()})
 ICONS.update({f"status_{k}": v for k, v in STATUSES.items()})
 
+# --- Elements and weak spots (`el_<element>`, `spot_blunt`, `spot_poison`): the monster panel's weak and resist row ---
+ICONS.update({
+    "el_fire": f'<g {G}><path d="{FLAME_PATH}" fill="{FIRE}"/><path d="M16 15 C18.5 18.5 20.5 20 20.5 23 C20.5 26 18.5 27.5 16 27.5 '
+               f'C13.5 27.5 11.5 26 11.5 23 C11.5 20.5 14 18 16 15 Z" fill="{FLAME}" stroke-width="1.6"/></g>',
+    "el_water": f'<g {G}><path d="{DROP}" fill="{WATER}"/><path d="M11.5 20 C11.5 23 13 25 15.5 25.5" fill="none" stroke="{CREAM}" '
+                f'stroke-width="2"/></g>',
+    "el_ice": f'<g {G}><path d="M16 3 L27 9.5 V22.5 L16 29 L5 22.5 V9.5 Z" fill="{ICE}"/>'
+              f'<path d="M16 3 V29 M5 9.5 L27 22.5 M27 9.5 L5 22.5" fill="none" stroke-width="1.6"/></g>',
+    "el_wind": f'<path d="M4 11 H19 C23.5 11 24 5.5 20.5 5.5 M4 17 H24.5 C29 17 29.5 23.5 25.5 23.5 M4 23 H14" fill="none" '
+               f'stroke="{INK}" stroke-width="5" stroke-linecap="round"/>'
+               f'<path d="M4 11 H19 C23.5 11 24 5.5 20.5 5.5 M4 17 H24.5 C29 17 29.5 23.5 25.5 23.5 M4 23 H14" fill="none" '
+               f'stroke="{WIND}" stroke-width="2.4" stroke-linecap="round"/>',
+    "el_earth": f'<g {G}><path d="M3 27 L11 12 L15.5 18 L21 7 L29 27 Z" fill="{EARTH}"/>'
+                f'<path d="M18.5 12 L21 7 L23.5 12 L21 13.5 Z" fill="{CREAM}" stroke-width="1.6"/></g>',
+    "el_energy": f'<path d="M18.5 3 L7 18 H15 L13 29 L25 13 H17 Z" fill="{ENERGY}" {G}/>',
+    "el_light": f'<g {G}><path d="M16 2.5 V7 M16 25 V29.5 M2.5 16 H7 M25 16 H29.5 M6.5 6.5 L9.5 9.5 M22.5 22.5 L25.5 25.5 '
+                f'M25.5 6.5 L22.5 9.5 M9.5 22.5 L6.5 25.5" fill="none"/><circle cx="16" cy="16" r="7" fill="{LIGHT}"/></g>',
+    "el_dark": f'<path d="M20 3.5 C12 4.5 6.5 10.5 6.5 17 C6.5 24 12.5 29.5 20 29 C14 26.5 11 21.5 11 16.5 C11 11 14 6 20 3.5 Z" '
+               f'fill="{DARK}" {G}/>',
+    "spot_blunt": f'<g {G}><path d="M15 13 L21 28" fill="none" stroke-width="3.4"/><path d="M5 9 L19 4 L22 12 L8 17 Z" fill="{STEEL}"/></g>',
+    "spot_poison": f'<g {G}><path d="M16 9 C20 15 23 18.5 23 22.5 C23 26.5 20 29 16 29 C12 29 9 26.5 9 22.5 C9 18.5 12 15 16 9 Z" '
+                   f'fill="{VENOM}"/><circle cx="21.5" cy="5.5" r="2.2" fill="{VENOM}" stroke-width="1.6"/>'
+                   f'<circle cx="26" cy="10" r="1.6" fill="{VENOM}" stroke-width="1.4"/></g>',
+})
+
 # --- The Spire (docs/SPIRE_ASSETS.md): its currency, the tower, Sigil caches, one icon per kind of twist ---
 GOLD = "#d9a93a"
 ICONS.update({
