@@ -7,7 +7,9 @@
      Every piece is drawn in code (SVG shapes behind plain HTML); the art behind is the game's own.
      Rendered and put side by side by scripts/ui_styles.py.
      Round 2 (designer: "C and D both look interesting, could you make more samples"): three more of each,
-     C: chunky, bubble, sticker; D: poster, night, collage. -->
+     C: chunky, bubble, sticker; D: poster, night, collage.
+     Round 3 (designer: "maybe night and gold. Most of these look tooo mobile like"): night and gold made calmer for a
+     PC screen: engraved (same layout), glass (a command menu instead of big buttons), hotbar (a row of action slots). -->
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&family=Lilita+One&family=Baloo+2:wght@600;700;800&family=Cinzel:wght@700;800&family=Anton&display=block" rel="stylesheet">
 <style>
   @font-face { font-family: Alegreya; font-weight: 700; src: url(../../unity/Assets/Resources/Fonts/Alegreya-Bold.ttf); }
@@ -598,6 +600,163 @@ SKINS.collage = {
   },
 };
 
+// N2) Engraved: night and gold, calmer: square boxes with a thin double gold line and corner brackets, a gold rule
+// under the title, underlined tabs, a wine-red main button, carved caps for names and buttons, a plain sans for numbers.
+SKINS.engraved = {
+  name: 'Engraved', darkUi: true, keyInk: '#d9b45f', xFont: 'Cinzel',
+  dim: 'background: rgba(8,10,18,.55);',
+  css: `
+    body { font-family: 'Alegreya Sans'; font-weight: 700; color: #e6dcc6; }
+    .title { font-family: Cinzel; font-weight: 700; font-size: 32px; color: #d9b45f; letter-spacing: 3px; }
+    .name { font-family: Cinzel; font-weight: 700; color: #efe3c4; letter-spacing: .5px; }
+    .name .dim { font-family: 'Alegreya Sans'; }
+    .dim { color: #8b90a3; } .good { color: #93c97f; } .bad { color: #e57a69; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn { font-family: Cinzel; font-weight: 700; letter-spacing: 1px; }
+    .k-tab .center, .k-tabOn .center { font-size: 16px !important; }
+    .k-btn { color: #e6d3a0; } .k-btnP { color: #f6e3b0; } .k-tab { color: #7f869b; } .k-tabOn { color: #d9b45f; } .k-btnOff { color: #565d73; } .k-btnOff img.ico { opacity: .4; }
+    .k-btnP .row { font-size: 30px !important; }
+    .bar .t { color: #fff; font-size: 14px; text-shadow: 0 1px 2px #000; }
+    .chip { color: #fff; }
+    .slot .qty { color: #e6dcc6; } .slot .lbl { color: #4a5168; font-family: Cinzel; font-size: 11px; letter-spacing: 1px; }`,
+  shape(k, w, h) {
+    const N = '#131826', N2 = '#1a2031', N3 = '#0c1019', G = '#d9b45f';
+    const box = (i = 0) => `M${i} ${i} H${w - i} V${h - i} H${i} Z`;
+    const drop = (dy, sd, op) => `<path d="${box()}" transform="translate(0 ${dy})" fill="#000" opacity="${op}" filter="url(#b${sd})"/>`;
+    const line = (i, op, sw = 1) => `<path d="${box(i)}" fill="none" stroke="${G}" stroke-width="${sw}" stroke-opacity="${op}"/>`;
+    const dia = (x, y, r) => `<path d="M${x} ${y - r} L${x + r} ${y} L${x} ${y + r} L${x - r} ${y} Z" fill="${G}"/>`;
+    /** L-shaped brackets on the four corners, `i` in from the edge. */
+    const corners = (i, L, sw = 2) => [[i, i, 1, 1], [w - i, i, -1, 1], [w - i, h - i, -1, -1], [i, h - i, 1, -1]]
+      .map(([x, y, dx, dy]) => `<path d="M${x} ${y + dy * L} V${y} H${x + dx * L}" fill="none" stroke="${G}" stroke-width="${sw}"/>`).join('');
+    switch (k) {
+      case 'panel': return drop(10, 9, .6) + `<path d="${box()}" fill="${N}"/>` + line(8, .75, 1.2) + line(12, .25) + corners(3, 28, 2.5) +
+        `<path d="M40 72 H${w - 40}" stroke="${G}" stroke-opacity=".4"/>` + dia(40, 72, 4) + dia(w - 40, 72, 4);
+      case 'hud': case 'tag': return drop(6, 6, .55) + `<path d="${box()}" fill="${N}" fill-opacity=".94"/>` + line(5, .55) + corners(2, 14, 2);
+      case 'section': return `<path d="${box()}" fill="${N3}" fill-opacity=".7"/>` + line(.5, .14);
+      case 'slot': return `<path d="${box(.5)}" fill="${N3}" stroke="#2a3044"/>`;
+      case 'slotOn': return `<path d="${box(.75)}" fill="${N3}" stroke="${G}" stroke-width="1.5"/>` + line(4, .3);
+      case 'tab': return '';
+      case 'tabOn': return `<path d="M8 ${h - 1} H${w - 8}" stroke="${G}" stroke-width="1.5"/>` + dia(w / 2, h - 1, 4);
+      case 'btn': return `<path d="${box(.5)}" fill="${N2}"/>` + line(.5, .55) + line(3.5, .15);
+      case 'btnP': return drop(5, 4, .5) + `<path d="${box()}" fill="#5e1f24"/>` + line(.75, 1, 1.5) + line(5, .45) + corners(-4, 12, 1.5);
+      case 'btnOff': return `<path d="${box(.5)}" fill="${N3}" stroke="#2a3044"/>`;
+      case 'x': return `<path d="${box(.5)}" fill="${N2}"/>` + line(.5, .6);
+      case 'track': return `<path d="${box(.5)}" fill="#090c14" stroke="${G}" stroke-opacity=".3"/>`;
+      case 'fillHp': return `<path d="${box()}" fill="#b2413a"/>`;
+      case 'fillMp': return `<path d="${box()}" fill="#3a6fb8"/>`;
+      case 'fillGood': return `<path d="${box()}" fill="#6aa55a"/>`;
+      case 'chip': return `<path d="${box()}" fill="var(--c)"/>`;
+      case 'log': return `<path d="${box()}" fill="${N}" fill-opacity=".9"/>` + line(5, .3) + corners(2, 14, 1.5);
+      case 'board': return `<path d="M-20 0 H${w + 20} V${h + 20} H-20 Z" fill="#0e121c" opacity=".96"/><path d="M-20 0 H${w + 20}" stroke="${G}" stroke-width="1.2" stroke-opacity=".8"/><path d="M-20 4 H${w + 20}" stroke="${G}" stroke-opacity=".25"/>`;
+      case 'key': return `<path d="${box(.5)}" fill="#0e121c" stroke="${G}" stroke-opacity=".8"/>`;
+    }
+    return '';
+  },
+};
+
+// N3) Glass menu: the console-RPG take: rounded glass windows (navy fading down, a thin gold line and a faint one inside)
+// over the scene, the actions as a command menu with a pointer instead of big buttons, the game's serif for words.
+SKINS.glass = {
+  name: 'Glass menu', darkUi: true, xFont: 'Alegreya', actions: 'menu',
+  dim: 'background: rgba(8,12,28,.42);',
+  css: `
+    body { font-family: 'Alegreya Sans'; font-weight: 700; color: #eef0f6; }
+    .title { font-family: Alegreya; font-weight: 800; font-size: 34px; color: #e9d397; }
+    .name { font-family: Alegreya; font-weight: 800; color: #f4ecd6; }
+    .name .dim { font-family: 'Alegreya Sans'; }
+    .dim { color: #9aa3bf; } .good { color: #96d886; } .bad { color: #ff8a78; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn, .k-cmd, .k-cmdOn, .k-cmdOff { font-family: Alegreya; font-weight: 800; }
+    .k-tab { color: #9aa3bf; } .k-tabOn, .k-btnP { color: #fff; } .k-btn { color: #e9d397; } .k-btnOff, .k-cmdOff { opacity: .4; }
+    .bar .t { color: #fff; font-size: 14px; text-shadow: 0 1px 2px #000a; }
+    .chip { color: #fff; }
+    .slot .qty { color: #fff; text-shadow: 0 1px 2px #000; } .slot .lbl { color: #5c6789; font-size: 12px; }`,
+  shape(k, w, h, s) {
+    const G = '#d8c48c', id = 'g' + s;
+    const glass = (r, op) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26355f" stop-opacity="${op}"/><stop offset="1" stop-color="#0b1230" stop-opacity="${op}"/></linearGradient>` +
+      `<path d="${rr(w, h, r)}" fill="url(#${id})"/><path d="${rr(w, h, r, -.75)}" fill="none" stroke="${G}" stroke-width="1.5"/><path d="${rr(w, h, r, -4)}" fill="none" stroke="${G}" stroke-opacity=".22"/>`;
+    /** The selection: a lighter blue fading out to the right (gold over navy goes grey), the white pointer on the left. */
+    const sel = (pointer) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4f6fcf" stop-opacity=".85"/><stop offset="1" stop-color="#4f6fcf" stop-opacity=".05"/></linearGradient>` +
+      `<path d="${rr(w, h, 4)}" fill="url(#${id})"/>` + (pointer ? `<path d="M9 ${h / 2 - 8} L21 ${h / 2} L9 ${h / 2 + 8} Z" fill="#fff"/>` : '');
+    const drop = (r, dy, sd, op) => `<path d="${rr(w, h, r)}" transform="translate(0 ${dy})" fill="#000" opacity="${op}" filter="url(#b${sd})"/>`;
+    switch (k) {
+      case 'panel': return drop(10, 8, 8, .4) + glass(10, .92);
+      case 'hud': case 'tag': case 'log': case 'menu': return drop(8, 5, 5, .3) + glass(8, .88);
+      case 'section': return `<path d="${rr(w, h, 6)}" fill="#070c22" fill-opacity=".5"/>`;
+      case 'slot': return `<path d="${rr(w, h, 5, -.5)}" fill="#070c22" fill-opacity=".55" stroke="#c9d3ea" stroke-opacity=".14"/>`;
+      case 'slotOn': return `<path d="${rr(w, h, 5, -1)}" fill="${G}" fill-opacity=".12" stroke="${G}" stroke-width="2"/>`;
+      case 'tabOn': return sel(false);
+      case 'cmdOn': return sel(true);
+      case 'btn': return `<path d="${rr(w, h, 5, -.5)}" fill="#0b1230" fill-opacity=".6" stroke="${G}" stroke-opacity=".5"/>`;
+      case 'btnP': return sel(false) + `<path d="${rr(w, h, 4, -.75)}" fill="none" stroke="${G}" stroke-width="1.5"/>`;
+      case 'btnOff': return `<path d="${rr(w, h, 5, -.5)}" fill="none" stroke="#5c6789" stroke-opacity=".5"/>`;
+      case 'x': return `<circle cx="${w / 2}" cy="${h / 2}" r="${w / 2 - 1}" fill="#0b1230" fill-opacity=".6" stroke="${G}" stroke-width="1.5"/>`;
+      case 'track': return `<path d="${rr(w, h, h / 2, -.5)}" fill="#050920" fill-opacity=".8" stroke="#c9d3ea" stroke-opacity=".25"/>`;
+      case 'fillHp': return `<path d="${rr(w, h, h / 2)}" fill="#d24f45"/>`;
+      case 'fillMp': return `<path d="${rr(w, h, h / 2)}" fill="#4a8ae0"/>`;
+      case 'fillGood': return `<path d="${rr(w, h, h / 2)}" fill="#7cc46a"/>`;
+      case 'chip': return `<path d="${rr(w, h, h / 2)}" fill="var(--c)"/>`;
+      case 'board': return `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070b1c" stop-opacity="0"/><stop offset=".45" stop-color="#070b1c" stop-opacity=".7"/><stop offset="1" stop-color="#070b1c" stop-opacity=".85"/></linearGradient>` +
+        `<path d="M-20 -70 H${w + 20} V${h + 20} H-20 Z" fill="url(#${id})"/>`;
+    }
+    return '';
+  },
+};
+
+// N4) Quiet hotbar: as little frame as it takes: flat dark boxes with a gold hairline top and bottom, the name plates
+// fading out toward the middle, the actions as a row of equal slots (a PC hotbar), the main one marked by a gold edge.
+SKINS.hotbar = {
+  name: 'Quiet hotbar', darkUi: true, xFont: 'Alegreya Sans', actions: 'hotbar',
+  dim: 'background: rgba(8,10,18,.5);',
+  css: `
+    body { font-family: 'Alegreya Sans'; font-weight: 700; color: #e9e4d8; }
+    .title { font-family: Cinzel; font-weight: 700; font-size: 30px; color: #f1e7cf; letter-spacing: 4px; }
+    .name { font-family: Cinzel; font-weight: 700; color: #f1e7cf; letter-spacing: 1px; }
+    .name .dim { font-family: 'Alegreya Sans'; letter-spacing: 0; }
+    .dim { color: #858b9c; } .good { color: #8fc97c; } .bad { color: #e8735f; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn, .k-hot, .k-hotOn, .k-hotOff { font-family: 'Alegreya Sans'; font-weight: 800; letter-spacing: .5px; }
+    .k-tab { color: #7d8395; } .k-tabOn, .k-btn { color: #f1e7cf; } .k-btnP { color: #17130a; } .k-btnP img.ico { filter: brightness(0); }
+    .k-btnOff, .k-hotOff { opacity: .45; } .k-hotOn, .k-hotOn .dim { color: #d4ae5c; }
+    .bar .t { color: #fff; font-size: 14px; text-shadow: 0 1px 2px #000; }
+    .chip { color: #fff; }
+    .slot .qty { color: #e9e4d8; } .slot .lbl { color: #4b5163; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }`,
+  shape(k, w, h, s, el) {
+    const G = '#d4ae5c', id = 'g' + s, D = '#0b0e17';
+    const box = (i = 0) => `M${i} ${i} H${w - i} V${h - i} H${i} Z`;
+    const hair = (y, op = .85) => `<rect x="0" y="${y}" width="${w}" height="1.5" fill="${G}" fill-opacity="${op}"/>`;
+    switch (k) {
+      case 'panel': return `<path d="${box()}" transform="translate(0 10)" fill="#000" opacity=".45" filter="url(#b9)"/><path d="${box()}" fill="#10141f" fill-opacity=".96"/>` +
+        hair(0) + hair(h - 1.5) + `<rect x="38" y="66" width="44" height="2" fill="${G}"/>`;
+      case 'hud': {
+        // Runs off the screen edge, solid under the plate and fading out past it toward the middle; a gold hairline
+        // under it fades the same way.
+        const right = el.offsetLeft > 640, x0 = right ? -110 : -18, x1 = right ? w + 18 : w + 110, solid = (w + 18) / (x1 - x0);
+        const grad = (gid, col, a) => `<linearGradient id="${gid}" x1="${right ? 1 : 0}" y1="0" x2="${right ? 0 : 1}" y2="0"><stop offset="0" stop-color="${col}" stop-opacity="${a}"/><stop offset="${solid.toFixed(3)}" stop-color="${col}" stop-opacity="${a * .85}"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient>`;
+        return grad(id, D, .9) + grad(id + 'l', G, .9) + `<rect x="${x0}" y="-16" width="${x1 - x0}" height="${h + 16}" fill="url(#${id})"/><rect x="${x0}" y="${h - 1.5}" width="${x1 - x0}" height="1.5" fill="url(#${id}l)"/>`;
+      }
+      case 'section': return `<path d="${box()}" fill="#171c2a"/>`;
+      case 'slot': return `<path d="${box()}" fill="#1d2333"/>`;
+      case 'slotOn': return `<path d="${box(.75)}" fill="#1d2333" stroke="${G}" stroke-width="1.5"/>`;
+      case 'tabOn': return `<rect x="10" y="${h - 3}" width="${w - 20}" height="2" fill="${G}"/>`;
+      case 'btn': return `<path d="${box()}" fill="#222839"/>`;
+      case 'btnP': return `<path d="${box()}" fill="${G}"/>`;
+      case 'btnOff': return `<path d="${box()}" fill="#171b27"/>`;
+      case 'x': return `<path d="${box(.5)}" fill="none" stroke="#3a4157"/>`;
+      case 'track': return `<path d="${box()}" fill="#07090f" fill-opacity=".85"/>`;
+      case 'fillHp': return `<path d="${box()}" fill="#c4453c"/>`;
+      case 'fillMp': return `<path d="${box()}" fill="#3f78c8"/>`;
+      case 'fillGood': return `<path d="${box()}" fill="#74b062"/>`;
+      case 'chip': return `<path d="${box()}" fill="var(--c)"/>`;
+      case 'tag': return `<path d="${box()}" fill="${D}" fill-opacity=".9"/><rect width="3" height="${h}" fill="${G}"/>`;
+      case 'log': return `<rect width="2" height="${h}" fill="${G}" fill-opacity=".7"/>`;
+      case 'hot': return `<path d="${box(.5)}" fill="#151a27" fill-opacity=".94" stroke="#2b3245"/>`;
+      case 'hotOn': return `<path d="${box(1)}" fill="#1b2133" stroke="${G}" stroke-width="2"/><rect x="0" y="${h - 4}" width="${w}" height="4" fill="${G}"/>`;
+      case 'hotOff': return `<path d="${box()}" fill="#11141d" fill-opacity=".85"/>`;
+      case 'board': return `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${D}" stop-opacity="0"/><stop offset=".35" stop-color="${D}" stop-opacity=".82"/><stop offset="1" stop-color="${D}" stop-opacity=".92"/></linearGradient>` +
+        `<path d="M-20 -40 H${w + 20} V${h + 20} H-20 Z" fill="url(#${id})"/>`;
+    }
+    return '';
+  },
+};
+
 const SKIN = SKINS[STYLE];
 document.getElementById('skin').textContent = SKIN.css;
 
@@ -710,12 +869,30 @@ function battleScreen() {
   piece('board', 0, 548, 1280, 172);
   piece('log', 20, 572, 520, 128, document.body,
     `<div style="padding:16px 20px;font-size:18px;line-height:1.5;font-weight:700"><div class="dim">Thornback Boar uses Thorn Charge: 12 damage.</div><div>You use Heavy Strike: <span class="bad">15 damage</span>.</div></div>`);
+  if (SKIN.actions === 'menu') return commandMenu();
+  if (SKIN.actions === 'hotbar') return hotbar();
   button(562, 572, 220, 126, 'Attack', document.body, { kind: 'btnP', size: 38, ico: 'sword', keyN: 1 });
   button(804, 574, 146, 56, 'Skills', document.body, { size: 22, ico: 'book', sub: '1 new', keyN: 2 });
   button(966, 574, 146, 56, 'Items', document.body, { size: 22, ico: 'potion', keyN: 3 });
   button(1128, 574, 132, 56, 'Defend', document.body, { size: 22, ico: 'shield', keyN: 4 });
   button(804, 644, 146, 52, 'Flee', document.body, { size: 21, ico: 'boot', sub: '90%', keyN: 5 });
   button(966, 644, 146, 52, 'Swap', document.body, { kind: 'btnOff', size: 21, ico: 'swap', sub: 'No spare', keyN: 6 });
+}
+// The same six actions for the skins that lay them out their own way: [label, icon, key, sub, selected, off].
+const ACTIONS = [['Attack', 'sword', 1, '', true], ['Skills', 'book', 2, '1 new'], ['Items', 'potion', 3], ['Defend', 'shield', 4],
+  ['Flee', 'boot', 5, '90%'], ['Swap', 'swap', 6, 'No spare', false, true]];
+/** A console-RPG command menu: one window, three by two, the pointer on the selected command. */
+function commandMenu() {
+  piece('menu', 562, 566, 698, 138, document.body);
+  ACTIONS.forEach(([t, ic, n, sub, on, off], i) => piece(on ? 'cmdOn' : off ? 'cmdOff' : 'cmd', 576 + (i % 3) * 224, 584 + Math.floor(i / 3) * 54, 214, 46, document.body,
+    `<div class="row" style="height:100%;padding:0 14px 0 30px;font-size:22px;gap:10px">${icon(ic, 24)}<span>${t}</span>` +
+    `<span class="row dim" style="margin-left:auto;font-size:15px;gap:10px;font-family:'Alegreya Sans'">${sub || ''}<span style="opacity:.7">${n}</span></span></div>`));
+}
+/** A PC hotbar: six equal slots, icon over the word, the key in the corner. */
+function hotbar() {
+  ACTIONS.forEach(([t, ic, n, sub, on, off], i) => piece(on ? 'hotOn' : off ? 'hotOff' : 'hot', 562 + i * 116, 578, 106, 112, document.body,
+    `<div class="col" style="height:100%;gap:3px;padding-top:4px">${icon(ic, 40)}<div style="font-size:19px">${t}</div><div class="dim" style="font-size:13px;height:15px">${sub || ''}</div></div>` +
+    `<div class="abs dim" style="left:8px;top:5px;font-size:14px">${n}</div>`));
 }
 
 (SCREEN === 'bag' ? bagScreen : battleScreen)();

@@ -1,6 +1,6 @@
 """Render the UI style rounds (art/ui/styles.html) with headless Edge at 2x and put four styles of a screen side by
 side: art/tests/sheets/ui_<sheet>_<screen>.webp (2x2, each style at 1280x720 with its name). Sheets: `styles` (round 1,
-A-D), `toon` (round 2, more of C), `bold` (round 2, more of D). One style at full size: open the page itself
+A-D), `toon` (round 2, more of C), `bold` (round 2, more of D), `night` (round 3, calmer D3). One style at full size: open the page itself
 (styles.html?screen=bag&style=paper).
 
     python scripts/ui_styles.py             # every sheet and screen
@@ -23,6 +23,7 @@ SHEETS_OF = {
     "styles": {"paper": "A  Cut paper", "felt": "B  Felt, calmer", "toon": "C  Cartoon card", "bold": "D  Bold graphic"},
     "toon": {"toon": "C1  Cartoon card", "chunky": "C2  Chunky mobile", "bubble": "C3  Soft bubble", "sticker": "C4  Sticker"},
     "bold": {"bold": "D1  Bold graphic", "poster": "D2  Poster, light", "night": "D3  Night and gold", "collage": "D4  Tilted collage"},
+    "night": {"night": "N1  Night and gold (D3)", "engraved": "N2  Engraved", "glass": "N3  Glass menu", "hotbar": "N4  Quiet hotbar"},
 }
 
 
