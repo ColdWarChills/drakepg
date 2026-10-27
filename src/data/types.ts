@@ -440,6 +440,8 @@ export interface TwistDef {
   id: string;
   name: string;
   text: string;
+  /** UI icon (`scripts/ui_icons.py`); the star when missing. */
+  icon: string;
   affix?: string;
   unshakable?: boolean;
   /** Every element +`BALANCE.tower.veil.up` resist (at most 100), this one -`down`. */
@@ -472,6 +474,8 @@ export interface FlightDef {
   /** Where the 10th floor's Sigil piece comes from. */
   lootTable: string;
   sigil: 'dawn' | 'dusk' | 'eclipse';
+  /** Battle background of its floors (a hall inside the Spire), then the area's as a fallback. */
+  background: ArtRef;
 }
 
 /** A row of the tower vendor (src/data/tower.ts); `kind` decides what it sells. */

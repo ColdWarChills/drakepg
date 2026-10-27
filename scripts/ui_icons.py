@@ -285,6 +285,62 @@ STATUSES = {
 ICONS.update({f"skill_{k}": v for k, v in SKILLS.items()})
 ICONS.update({f"status_{k}": v for k, v in STATUSES.items()})
 
+# --- The Spire (docs/SPIRE_ASSETS.md): its currency, the tower, Sigil caches, one icon per kind of twist ---
+GOLD = "#d9a93a"
+ICONS.update({
+    # Marks: a gold token stamped with a star.
+    "mark": f'<g {G}><circle cx="16" cy="16" r="12.5" fill="{GOLD}"/><path d="{_star(16, 16, 7.5, 3.2, 5)}" fill="{CREAM}"/></g>',
+    # The Spire: a crenellated tower with a door and a window.
+    "spire": f'<g {G}><path d="M10 9 V4 H13 V6.5 H15 V4 H17 V6.5 H19 V4 H22 V9 Z" fill="{STONE}"/>'
+             f'<path d="M11 29 L12 9 H20 L21 29 Z" fill="{STONE}"/><path d="M14 29 V25 C14 22.5 18 22.5 18 25 V29" fill="#7a5232"/>'
+             f'<path d="M15 13 H17 V17 H15 Z" fill="{INK}" stroke-width="1"/></g>',
+    # A Sigil cache: a chest with a star clasp.
+    "cache": f'<g {G}><path d="M5 15 C5 8.5 27 8.5 27 15 Z" fill="#c09060"/><path d="M5 15 H27 V27 H5 Z" fill="#a8764a"/>'
+             f'<path d="{_star(16, 17, 4.6, 2, 5)}" fill="{GOLD}" stroke-width="1.6"/></g>',
+    # Unshakable: an anchor.
+    "twist_unshakable": f'<g {G} fill="none"><circle cx="16" cy="6.5" r="3" fill="{STEEL}"/><path d="M16 9.5 V27.5" stroke-width="3"/>'
+                        f'<path d="M10 14 H22"/><path d="M5.5 19.5 C6.5 25.5 11.5 28 16 27.5 C20.5 28 25.5 25.5 26.5 19.5"/>'
+                        f'<path d="M3.5 21.5 L5.5 18.5 L8.5 20.5 M28.5 21.5 L26.5 18.5 L23.5 20.5"/></g>',
+    # Short Fuse: a bomb with a short burning fuse.
+    "twist_short_fuse": f'<g {G}><circle cx="14" cy="19" r="9" fill="#4a4a5a"/><path d="M20 12 C21 9 22.5 8 24.5 7" fill="none"/>'
+                        f'<path d="{_star(25.5, 5.5, 4, 1.4, 4, 0.4)}" fill="{FLAME}" stroke-width="1.6"/>'
+                        f'<path d="M10 15 C11 13.5 12.5 13 14 13" fill="none" stroke="{CREAM}" stroke-width="1.8"/></g>',
+    # No Potions: a potion bottle struck through.
+    "twist_no_potions": f'<g {G}><path d="M13 4 H19 V10 C25 12 27 17 26 22 C25 27 21 29 16 29 C11 29 7 27 6 22 C5 17 7 12 13 10 Z" '
+                        f'fill="#c8452f"/><path d="M12 4 H20" fill="none" stroke-width="3.2"/></g>'
+                        f'<path d="M5 27 L27 5" stroke="{INK}" stroke-width="6" stroke-linecap="round"/>'
+                        f'<path d="M5 27 L27 5" stroke="{CREAM}" stroke-width="2.8" stroke-linecap="round"/>',
+    # Element Veil: a ring closed all around but one gap, where the one weak element shines through.
+    "twist_veil": f'<path d="M24.5 7.5 A11.5 11.5 0 1 0 28 17" fill="none" stroke="{INK}" stroke-width="6.4" stroke-linecap="round"/>'
+                  f'<path d="M24.5 7.5 A11.5 11.5 0 1 0 28 17" fill="none" stroke="#9fb8e6" stroke-width="3.6" stroke-linecap="round"/>'
+                  f'<path d="{_star(27, 11.5, 7, 2.8, 4, 0.4)}" fill="{FLAME}" {G} stroke-width="1.8"/>',
+    # Element Shell: a shield holding three charges (the hits that break it).
+    "twist_shell": f'<g {G}><path d="{SHIELD}" fill="#8fa3b8"/><circle cx="10.5" cy="15" r="2.4" fill="{CREAM}"/>'
+                   f'<circle cx="16" cy="15" r="2.4" fill="{CREAM}"/><circle cx="21.5" cy="15" r="2.4" fill="{CREAM}"/></g>',
+    # Ambush: eyes glowing in a bush.
+    "twist_ambush": f'<g {G}><path d="M3.5 27 C2.5 19 7.5 14 11.5 16 C12.5 9.5 20 8.5 22 13.5 C27 12 30 18.5 28.5 27 Z" fill="#4f7a4a"/>'
+                    f'<path d="M10 20.5 C11.5 18.5 14 18.5 15 20.5 C13.5 22 11.5 22 10 20.5 Z" fill="{FLAME}" stroke-width="1.6"/>'
+                    f'<path d="M17 20.5 C18 18.5 20.5 18.5 22 20.5 C20.5 22 18.5 22 17 20.5 Z" fill="{FLAME}" stroke-width="1.6"/></g>',
+    # The Elite affixes as twists. Hulking: a heart with a plus (more HP).
+    "twist_hulking": f'<g {G}><path d="{HEART}" fill="{BLOOD}"/><path d="{PLUS.format(x=14, y=9)}" fill="{CREAM}" stroke-width="1.6"/></g>',
+    # Frenzied: three claw slashes.
+    "twist_frenzied": f'<path d="M7 6 L13 26 M14 4.5 L19 25 M21 6 L25 22" fill="none" stroke="{INK}" stroke-width="5" stroke-linecap="round"/>'
+                      f'<path d="M7 6 L13 26 M14 4.5 L19 25 M21 6 L25 22" fill="none" stroke="{BLOOD}" stroke-width="2.4" stroke-linecap="round"/>',
+    # Warded: a shield with a rune star (resists everything a little).
+    "twist_warded": f'<g {G}><path d="{SHIELD}" fill="#7a6bb0"/><path d="{_star(16, 15, 6, 2.2, 4)}" fill="{CREAM}" stroke-width="1.6"/></g>',
+    # Venomous: two fangs and a drop of venom.
+    "twist_venomous": f'<g {G}><path d="M4 5 H28" fill="none" stroke-width="2.8"/>'
+                      f'<path d="M6 5 H13 C12.5 11 11 15 9.5 18.5 C8 15 7 10.5 6 5 Z" fill="{CREAM}"/>'
+                      f'<path d="M19 5 H26 C25 10.5 24 15 22.5 18.5 C21 15 19.5 11 19 5 Z" fill="{CREAM}"/>'
+                      f'<path d="M16 17.5 C18.5 21 19.5 23 19.5 24.5 C19.5 26.7 18 28 16 28 C14 28 12.5 26.7 12.5 24.5 C12.5 23 13.5 21 16 17.5 Z" '
+                      f'fill="{VENOM}"/></g>',
+    # Ironhide: a riveted iron plate.
+    "twist_ironhide": f'<g {G}><rect x="5.5" y="6.5" width="21" height="19" rx="4" fill="{STEEL}"/>'
+                      f'<path d="M10 12 L15 9.5" fill="none" stroke="{CREAM}" stroke-width="2"/></g>'
+                      f'<g fill="{INK}"><circle cx="9.5" cy="21.5" r="1.5"/><circle cx="22.5" cy="21.5" r="1.5"/>'
+                      f'<circle cx="22.5" cy="10.5" r="1.5"/></g>',
+})
+
 SHEET = """<!doctype html><html><head><meta charset="utf-8"><style>
 body {{ margin: 0; background: #1f2738; font: 11px sans-serif; color: #fff4dc; }}
 .row {{ display: flex; flex-wrap: wrap; width: {w}px; }}

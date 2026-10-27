@@ -12,33 +12,35 @@ const t = BALANCE.tower;
 
 export const TWISTS: TwistDef[] = [
   // The Elite affixes, without the Elite's own size-up.
-  ...ELITE_AFFIXES.map((a) => ({ id: a.id, name: a.name, text: a.description, affix: a.id })),
-  { id: 'unshakable', name: 'Unshakable', text: 'Immune to stun and Freeze.', unshakable: true },
-  { id: 'short_fuse', name: 'Short Fuse', text: `Enrages from turn ${t.shortFuse}.`, shortFuse: true },
-  { id: 'no_potions', name: 'No Potions', text: "Items can't be used in this fight.", noItems: true },
-  { id: 'fury', name: 'Fury', text: 'Starts with War Cry (+30% damage).', starts: [{ status: 'war_cry', turns: 3, self: true }] },
-  { id: 'hardened', name: 'Hardened', text: 'Starts with Iron Skin (40% less damage taken).', starts: [{ status: 'iron_skin', turns: 3, self: true }] },
-  { id: 'regrowth', name: 'Regrowth', text: 'Starts with Regen (8% of its HP each turn).', starts: [{ status: 'regen', turns: 5, self: true }] },
-  { id: 'ambush_shock', name: 'Ambush: Shock', text: 'You start Shocked (+15% damage taken).', starts: [{ status: 'shock', turns: 3 }] },
-  { id: 'ambush_burn', name: 'Ambush: Burn', text: 'You start burning.', starts: [{ status: 'burn', turns: 3 }] },
+  ...ELITE_AFFIXES.map((a) => ({ id: a.id, name: a.name, text: a.description, icon: `twist_${a.id}`, affix: a.id })),
+  { id: 'unshakable', name: 'Unshakable', text: 'Immune to stun and Freeze.', icon: 'twist_unshakable', unshakable: true },
+  { id: 'short_fuse', name: 'Short Fuse', text: `Enrages from turn ${t.shortFuse}.`, icon: 'twist_short_fuse', shortFuse: true },
+  { id: 'no_potions', name: 'No Potions', text: "Items can't be used in this fight.", icon: 'twist_no_potions', noItems: true },
+  { id: 'fury', name: 'Fury', text: 'Starts with War Cry (+30% damage).', icon: 'status_war_cry', starts: [{ status: 'war_cry', turns: 3, self: true }] },
+  { id: 'hardened', name: 'Hardened', text: 'Starts with Iron Skin (40% less damage taken).', icon: 'status_iron_skin', starts: [{ status: 'iron_skin', turns: 3, self: true }] },
+  { id: 'regrowth', name: 'Regrowth', text: 'Starts with Regen (8% of its HP each turn).', icon: 'status_regen', starts: [{ status: 'regen', turns: 5, self: true }] },
+  { id: 'ambush_shock', name: 'Ambush: Shock', text: 'You start Shocked (+15% damage taken).', icon: 'twist_ambush', starts: [{ status: 'shock', turns: 3 }] },
+  { id: 'ambush_burn', name: 'Ambush: Burn', text: 'You start burning.', icon: 'twist_ambush', starts: [{ status: 'burn', turns: 3 }] },
   ...ELEMENTS.map((e) => ({
     id: `veil_${e}`,
     name: `${ELEMENT_LABELS[e]} Veil`,
-    text: `Every element resisted ${t.veil.up} more (at most 100), except ${ELEMENT_LABELS[e]}: ${t.veil.down} less.`,
+    text: `Resists every element +${t.veil.up}, except ${ELEMENT_LABELS[e]} (-${t.veil.down}).`,
+    icon: 'twist_veil',
     veil: e,
   })),
   ...ELEMENTS.map((e) => ({
     id: `shell_${e}`,
     name: `${ELEMENT_LABELS[e]} Shell`,
-    text: `Takes ${Math.round(t.shell.reduction * 100)}% less damage until hit ${t.shell.hits} times with ${ELEMENT_LABELS[e]}; grows back once at half HP.`,
+    text: `${Math.round(t.shell.reduction * 100)}% less damage until hit ${t.shell.hits} times with ${ELEMENT_LABELS[e]}; grows back at half HP.`,
+    icon: 'twist_shell',
     shell: { element: e, hits: t.shell.hits },
   })),
 ];
 
 export const FLIGHTS: FlightDef[] = [
-  { id: 'thornwood', name: 'Thornwood Flight', first: 1, last: 10, opensAfter: 'heart_of_thorns', marks: 10, lootTable: 'thornwood', sigil: 'dawn' },
-  { id: 'fen', name: 'Fen Flight', first: 11, last: 20, opensAfter: 'eye_of_the_storm', marks: 20, lootTable: 'fen', sigil: 'dawn' },
-  { id: 'frostfang', name: 'Frostfang Flight', first: 21, last: 30, opensAfter: 'the_frozen_roost', marks: 30, lootTable: 'frostfang', sigil: 'dusk' },
+  { id: 'thornwood', name: 'Thornwood Flight', first: 1, last: 10, opensAfter: 'heart_of_thorns', marks: 10, lootTable: 'thornwood', sigil: 'dawn', background: ['bg_spire_thornwood', 'bg_thornwood'] },
+  { id: 'fen', name: 'Fen Flight', first: 11, last: 20, opensAfter: 'eye_of_the_storm', marks: 20, lootTable: 'fen', sigil: 'dawn', background: ['bg_spire_fen', 'bg_fen_road'] },
+  { id: 'frostfang', name: 'Frostfang Flight', first: 21, last: 30, opensAfter: 'the_frozen_roost', marks: 30, lootTable: 'frostfang', sigil: 'dusk', background: ['bg_spire_frostfang', 'bg_frostfang_pass'] },
 ];
 
 const f = (floor: number, monsterId: string, level: number, twists: string[], heroic?: boolean): FloorDef => ({ floor, monsterId, level, twists, ...(heroic ? { heroic } : {}) });

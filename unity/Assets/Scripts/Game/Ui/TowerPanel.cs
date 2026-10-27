@@ -16,7 +16,6 @@ namespace Drakepg
         const float W = 1180, H = 650;
         const float CardW = 545, CardH = 72, CardStep = 78, ListY = 142;
         static readonly Color ActiveButton = Design.Hex(0x6b5320);
-        static readonly Color MarkColor = Design.Hex(0xc9a227);
 
         static string rememberedTab;
 
@@ -31,6 +30,9 @@ namespace Drakepg
             player.RestoreFull();
             GameRoot.I.Go(new BattleScreen(setup), 0.2f);
         }
+
+        /// <summary>A twist's icon, or the star while it has none.</summary>
+        public static string IconOf(TwistDef tw) => tw.Icon != null && Felt.HasIcon(tw.Icon) ? tw.Icon : "star";
 
         /// <summary>"Dawn" for dawn.</summary>
         static string SigilName(string tier) => char.ToUpperInvariant(tier[0]) + tier.Substring(1);
@@ -72,7 +74,7 @@ namespace Drakepg
                 var t = player.Data.Tower;
 
                 // Header: marks, best floor, the Warden's line.
-                Felt.Icon(c, 40, 44, 30, "star", true).style.unityBackgroundImageTintColor = MarkColor;
+                Felt.Icon(c, 38, 40, 34, "mark", true);
                 Ui.Text(c, 78, 44, $"{t.Marks} marks", 24, Palette.TextGold, true);
                 Ui.Text(c, 78, 74, t.Best == 0 ? "No floor cleared yet." : $"Best floor: {t.Best} / {Tower.LastFloor}", 15, Palette.TextDim);
                 var line = warden.Dialogue != null && warden.Dialogue.Count > 0 ? warden.Dialogue[0] : "";
@@ -233,7 +235,15 @@ namespace Drakepg
             var name = def.IsHeroic ? def.Name : def.Name;
             Ui.Text(card, 140, 7, name, 18, boss ? Palette.TextGold : Palette.Text, true);
             Ui.Text(card, CardW - 14, 12, $"Lv {def.Level}{(def.Tough ? " · Tough" : "")}", 15, Palette.TextDim, ax: 1);
-            Ui.Text(card, 140, 30, string.Join("  ·  ", def.Tower.Twists.Select(id => Db.Twist(id).Name)), 15, Felt.Gold);
+            // Twists: each its icon and name.
+            var tx = 140f;
+            foreach (var id in def.Tower.Twists)
+            {
+                var tw = Db.Twist(id);
+                Felt.Icon(card, tx, 31, 18, IconOf(tw), true);
+                Ui.Text(card, tx + 22, 30, tw.Name, 15, Felt.Gold);
+                tx += 22 + tw.Name.Length * 7.6f + 14;
+            }
             var state = cleared ? "✔ Cleared" : isNext ? $"Next: {RewardText(floor)}" : open ? RewardText(floor) : "Locked";
             Ui.Text(card, 140, 50, state, 14, cleared ? Palette.TextGood : isNext ? Palette.TextGold : Palette.TextDim);
             card.RegisterCallback<PointerUpEvent>(e =>
@@ -251,7 +261,7 @@ namespace Drakepg
             Ui.Rect(c, x, y, CardW, 62, Design.Hex(0x241e2e), 10, 2, PanelKit.WithAlpha(Palette.PanelBorder, 0.45f));
             var def = row.ItemId != null ? Db.Item(row.ItemId) : null;
             if (def != null) ItemUi.Icon(c, x + 36, y + 31, 48, def);
-            else Felt.Icon(c, x + 14, y + 9, 44, "star", true).style.unityBackgroundImageTintColor = MarkColor;
+            else Felt.Icon(c, x + 14, y + 9, 44, "cache", true);
             var kind = row.Entry.Kind == "set" ? $"{Db.Set(row.Entry.Set).Name} set, rolled like a boss drop"
                 : row.Entry.Kind == "cache" ? $"A random weapon of the area with a {SigilName(row.Entry.Sigil)} Sigil"
                 : $"Skill book, read at level {Books.ReadLevelOf(Books.BookSkill(def))}";

@@ -308,6 +308,8 @@ namespace Drakepg.Rules
     public class TwistDef
     {
         public string Id, Name, Text, Affix, Veil;
+        /// <summary>UI icon (scripts/ui_icons.py); the star when missing.</summary>
+        public string Icon;
         public bool Unshakable, ShortFuse, NoItems;
         public TwistShell Shell;
         public List<Apply> Starts;
@@ -332,6 +334,8 @@ namespace Drakepg.Rules
     {
         public string Id, Name, OpensAfter, LootTable, Sigil;
         public int First, Last, Marks;
+        /// <summary>Battle background of its floors (a hall inside the Spire), then the area's as a fallback.</summary>
+        [JsonConverter(typeof(OneOrManyConverter<string>))] public List<string> Background;
     }
 
     public class VendorDef

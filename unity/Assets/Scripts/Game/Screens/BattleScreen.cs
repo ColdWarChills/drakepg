@@ -259,7 +259,9 @@ namespace Drakepg
             else if (monster.Boss && !Quests.NeedsKill(Session.Player, monster.Id) && !Travel.IsGuard(Db.Room(back.RoomId))) battle.RewardScale = Db.B.BossRepeatRewards;
             busy = true;
 
-            Backdrop.Draw(World, zone.Background, zone.Backdrop, BgRaise);
+            // Tower floors are fought in the Spire's hall for their flight.
+            var background = back.TowerFloor > 0 ? Tower.FlightOf(back.TowerFloor).Background ?? zone.Background : zone.Background;
+            Backdrop.Draw(World, background, zone.Backdrop, BgRaise);
             var foeFigure = Figure.Create(World, Design.Width + 200, GroundY, monster.Look, -1);
             Stage(foeFigure);
             hero = new Fighter { Fig = Figure.Create(World, -200, GroundY, PlayerLook, 1, Session.Player.Weapon, Session.Player.WeaponSigil), X = -200, Base = (float)PlayerLook.Scale * StageScale };
@@ -515,10 +517,11 @@ namespace Drakepg
                 y += LineStep;
             }
             if (affix != null) EnemyLine(ref y, "star", $"{affix.Name}: {affix.Description}", 16, Felt.Gold);
-            foreach (var id in m.Tower?.Twists ?? new List<string>())
+            // A Shell twist is already the shell line below.
+            foreach (var id in (m.Tower?.Twists ?? new List<string>()).Where(t => Db.Twist(t).Shell == null))
             {
                 var tw = Db.Twist(id);
-                EnemyLine(ref y, "star", $"{tw.Name}: {tw.Text}", 15, Felt.Gold);
+                EnemyLine(ref y, Felt.HasIcon(tw.Icon ?? "") ? tw.Icon : "star", $"{tw.Name}: {tw.Text}", 15, Felt.Gold);
             }
             if (m.Shell != null)
             {
@@ -544,7 +547,7 @@ namespace Drakepg
         float EnemyPanelHeight()
         {
             var m = monster;
-            var lines = (AffinityParts().Count > 0 ? 1 : 0) + (m.Elite != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (m.Tower?.Twists.Count ?? 0)
+            var lines = (AffinityParts().Count > 0 ? 1 : 0) + (m.Elite != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (m.Tower?.Twists.Count(t => Db.Twist(t).Shell == null) ?? 0)
                         + (m.IsHeroic && m.Heroic != null ? 1 : 0) + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + (m.Loot != null ? 1 : 0);
             return 100 + lines * LineStep;
         }

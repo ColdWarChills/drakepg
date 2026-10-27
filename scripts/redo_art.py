@@ -84,6 +84,11 @@ ICON_FRAME = ("Centered, seen from the front, the whole item visible and filling
 
 # Art with no old prompt (designs from docs/ART_PLAN.md and the game data). key: (aspect, subject, pose)
 ROAD_FLOOR = "The bottom 30% of the image is a flat, open dirt road running across the full width."
+# The Spire's battle halls: interiors need the "no sky" wording or the style's sky and hills leak in (the caves taught it).
+SPIRE_HALL = ("The whole picture is the inside of the hall: grey stone walls on the left and right, a dark vaulted stone "
+              "ceiling across the top; the outside shows only through the arched windows, there is no open sky above the "
+              "hall. The bottom 30% of the image is a flat, open flagstone floor running across the full width, with "
+              "nothing standing on it; the middle of the picture stays calm and open.")
 NEW = {
     # Title screen: no dragon (docs/ART_PLAN.md); the upper middle stays calm for the logo.
     "bg_title": ("16:9", "Title screen scene at dusk: an old road winding through layered green hills toward a small "
@@ -125,6 +130,22 @@ NEW = {
                       "the door, faded blue banners with a simple gold star hanging from the stones, ivy climbing the "
                       "walls; a low town wall and a few red rooftops on the left, green hills and pines behind. "
                       "The bottom 30% of the image is a flat, open cobbled square running across the full width."),
+    # Battle halls inside the Spire, one per flight (docs/SPIRE_ASSETS.md): open floor, calm middle.
+    "bg_spire_thornwood": ("16:9", "Inside the lowest hall of an ancient round stone tower: thick tree roots and moss "
+                           "break through the grey stone walls and the cracks of the floor, two tall arched windows "
+                           "let in green forest light, a few hanging lanterns of green glass, worn stone steps "
+                           "spiralling up along the back wall. " + SPIRE_HALL),
+    "bg_spire_fen": ("16:9", "Inside a middle hall of an ancient round stone tower, half flooded: a thin sheet of still "
+                     "water lies over the flagstones, reeds and lily pads grow from cracks along the walls, damp moss "
+                     "on the stones, blue-green light from tall arched windows, hanging lanterns mirrored in the water, "
+                     "worn stone steps spiralling up along the back wall. " + SPIRE_HALL),
+    # Winter needs the "no green" line (Frostfang rooms, 2026-10-19): the first tries grew green hills inside the hall.
+    "bg_spire_frostfang": ("16:9", "Inside the top hall of an ancient round stone tower high in snowy mountains: "
+                           "frost and long icicles on the grey stone walls and pillars, drifts of snow along the floor "
+                           "edges under tall arched windows that show white peaks and a pale winter sky, cold blue "
+                           "light, two iron braziers with small orange flames by the walls, worn stone steps rising "
+                           "along the back wall. Only snow, ice, frosted grey stone and iron inside the hall: no trees, "
+                           "no plants, no grass and no hills anywhere inside it. " + SPIRE_HALL),
     "npc_spire_warden": ("3:4", "A stern, tall old tower warden, short trimmed grey beard, a long slate-grey coat "
                          "with gold trim over dark chain mail, a faded blue sash with a small gold star, a ring of "
                          "heavy iron keys on his belt, holding a tall iron-shod staff topped with a small brass "
