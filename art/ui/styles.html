@@ -1,0 +1,427 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- UI style round (2026-10-27, designer: "still unsure if this is the right look"): the bag and the battle screen,
+     same content and layout, in four hand-drawn skins: styles.html?screen=bag|battle&style=paper|felt|toon|bold.
+     Every piece is drawn in code (SVG shapes behind plain HTML); the art behind is the game's own.
+     Rendered and put side by side by scripts/ui_styles.py. -->
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=block" rel="stylesheet">
+<style>
+  @font-face { font-family: Alegreya; font-weight: 700; src: url(../../unity/Assets/Resources/Fonts/Alegreya-Bold.ttf); }
+  @font-face { font-family: Alegreya; font-weight: 800; src: url(../../unity/Assets/Resources/Fonts/Alegreya-ExtraBold.ttf); }
+  @font-face { font-family: 'Alegreya Sans'; font-weight: 500; src: url(../../unity/Assets/Resources/Fonts/AlegreyaSans-Medium.ttf); }
+  @font-face { font-family: 'Alegreya Sans'; font-weight: 700; src: url(../../unity/Assets/Resources/Fonts/AlegreyaSans-Bold.ttf); }
+  @font-face { font-family: 'Alegreya Sans'; font-weight: 800; src: url(../../unity/Assets/Resources/Fonts/AlegreyaSans-ExtraBold.ttf); }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1280px; height: 720px; overflow: hidden; position: relative; background: #111; }
+  .abs { position: absolute; }
+  .piece { isolation: isolate; }
+  .piece > svg.bg { position: absolute; left: 0; top: 0; overflow: visible; z-index: -1; pointer-events: none; }
+  .row { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .center { display: flex; align-items: center; justify-content: center; }
+  .col { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  img.ico { width: 22px; height: 22px; object-fit: contain; }
+  .slot img.item { position: absolute; inset: 7px; width: calc(100% - 14px); height: calc(100% - 14px); object-fit: contain; }
+  .slot img.wpn { transform: rotate(40deg) scale(1.25); }
+  .slot .qty { position: absolute; right: 6px; bottom: 3px; font-size: 15px; font-weight: 800; }
+  .slot .lbl { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; text-align: center; line-height: 1.05; }
+  .bar { overflow: visible; }
+  .bar .t { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 800; z-index: 2; }
+</style>
+<style id="skin"></style>
+</head>
+<body>
+<script>
+const Q = new URLSearchParams(location.search);
+const SCREEN = Q.get('screen') || 'bag', STYLE = Q.get('style') || 'paper';
+const ART = '../../src/assets/art/', ICONS = '../../unity/Assets/Resources/UiIcons/', ICONS_LIGHT = '../../unity/Assets/Resources/UiIconsLight/';
+const NS = 'http://www.w3.org/2000/svg';
+
+function rng(seed) { let s = (seed * 9301 + 49297) % 233280 + 1; return () => ((s = (s * 16807) % 2147483647) / 2147483647); }
+function div(cls, css, parent, html) {
+  const d = document.createElement('div');
+  if (cls) d.className = cls;
+  if (css) d.style.cssText = css;
+  if (html !== undefined) d.innerHTML = html;
+  (parent || document.body).appendChild(d);
+  return d;
+}
+const at = (x, y, w, h) => `left:${x}px;top:${y}px;width:${w}px;height:${h}px;`;
+let seedN = 1;
+/** A piece of UI: a box whose background is drawn by the skin (`kind`), content as HTML on top. */
+function piece(kind, x, y, w, h, parent, html = '', cls = '') {
+  const d = div(`abs piece k-${kind} ${cls}`, at(x, y, w, h), parent, html);
+  d.dataset.k = kind; d.dataset.seed = seedN++;
+  return d;
+}
+const art = (k) => ART + k + '@2x.webp';
+function icon(name, size = 22, light) {
+  const dark = light ?? SKIN.darkUi;
+  return `<img class="ico" style="width:${size}px;height:${size}px" src="${(dark ? ICONS_LIGHT : ICONS) + name}.png">`;
+}
+const P = (pts) => 'M' + pts.map((p) => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L') + ' Z';
+
+// ---- Shape helpers ----
+/** A scissor cut: straight cuts of uneven length, each a hair off the line (the backgrounds' cut paper). */
+function cut(w, h, seed, { j = 1.2, seg = 40, pad = 0, snip = 3 } = {}) {
+  const R = rng(seed), pts = [], x0 = -pad, y0 = -pad, x1 = w + pad, y1 = h + pad;
+  const edge = (ax, ay, bx, by) => {
+    const len = Math.hypot(bx - ax, by - ay), nx = -(by - ay) / len, ny = (bx - ax) / len;
+    for (let t = 0; t < 1;) {
+      const o = (R() - 0.5) * 2 * j;
+      pts.push([ax + (bx - ax) * t + nx * o, ay + (by - ay) * t + ny * o]);
+      t += (seg * (0.6 + R() * 0.9)) / len;
+    }
+  };
+  const c = snip;
+  edge(x0 + c, y0, x1 - c, y0); edge(x1, y0 + c, x1, y1 - c); edge(x1 - c, y1, x0 + c, y1); edge(x0, y1 - c, x0, y0 + c);
+  return P(pts);
+}
+function rr(w, h, r, pad = 0) {
+  const x = -pad, y = -pad, W = w + pad * 2, H = h + pad * 2; r = Math.min(r + pad, W / 2, H / 2);
+  return `M${x + r} ${y} H${x + W - r} A${r} ${r} 0 0 1 ${x + W} ${y + r} V${y + H - r} A${r} ${r} 0 0 1 ${x + W - r} ${y + H} H${x + r} A${r} ${r} 0 0 1 ${x} ${y + H - r} V${y + r} A${r} ${r} 0 0 1 ${x + r} ${y} Z`;
+}
+/** Corners cut off at top-left and bottom-right (`a`), optional slant of the sides (`s`). */
+function chamfer(w, h, a = 16, s = 0, pad = 0) {
+  const x = -pad, y = -pad, W = w + pad * 2, H = h + pad * 2;
+  return P([[x + a + s, y], [x + W, y], [x + W - s, y + H - a], [x + W - a - s, y + H], [x, y + H], [x + s, y + a]]);
+}
+const slant = (w, h, s = 12, pad = 0) => P([[s - pad, -pad], [w + pad, -pad], [w - s + pad, h + pad], [-pad, h + pad]]);
+const blurDef = (id, sd) => `<filter id="${id}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${sd}"/></filter>`;
+
+// ---- Skins ----
+const SKINS = {};
+
+// A) Cut paper: the backgrounds' own medium. Cream sheets on a coloured sheet, soft shadows between layers,
+// no outlines and no stitches; buttons are two sheets thick, tabs one; slots are pressed in.
+SKINS.paper = {
+  name: 'Cut paper', darkUi: false,
+  dim: 'background: rgba(34,28,20,.38);',
+  css: `
+    body { font-family: 'Alegreya Sans'; color: #3a2b1f; }
+    .title { font-family: Alegreya; font-weight: 800; font-size: 34px; color: #3a2b1f; }
+    .name { font-family: Alegreya; font-weight: 800; }
+    .dim { color: #7d6a52; } .good { color: #3f7d3a; } .bad { color: #b3402f; }
+    .k-btnP { color: #fbf1dc; } .k-tabOn { color: #f6ecd6; } .k-tab { color: #5b4934; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn { font-family: Alegreya; font-weight: 800; }
+    .bar .t { color: #fff7e6; text-shadow: 0 1px 0 rgba(40,20,10,.6); }
+    .slot .qty { color: #3a2b1f; } .slot .lbl { color: #9c8768; }
+    .chip { color: #fff7e6; font-weight: 800; }`,
+  shape(k, w, h, s) {
+    const sh = (path, dx, dy, sd, op) => `<path d="${path}" transform="translate(${dx} ${dy})" fill="#2a1d10" opacity="${op}" filter="url(#b${sd})"/>`;
+    const C = { cream: '#f6ecd6', kraft: '#e6d2a8', green: '#5b8a57', greenD: '#46704a', red: '#c8473a', redD: '#8f2f25', sand: '#e3c88f', sandD: '#ad8b53', hole: '#e1cca1', ink: '#3a2b1f' };
+    const top = cut(w, h, s);
+    switch (k) {
+      case 'panel': {
+        const back = cut(w, h, s + 7, { pad: 9, j: 1.6 });
+        return sh(back, 4, 9, 8, .45) + `<path d="${back}" fill="${C.green}"/>` + sh(top, 2, 4, 3, .35) + `<path d="${top}" fill="${C.cream}"/>`;
+      }
+      case 'section': return sh(top, 1, 2, 1.5, .25) + `<path d="${top}" fill="${C.kraft}"/>`;
+      case 'hud': return sh(top, 3, 6, 5, .4) + `<path d="${cut(w, h, s + 3, { pad: 6 })}" fill="${C.green}"/>` + sh(top, 1, 3, 2, .3) + `<path d="${top}" fill="${C.cream}"/>`;
+      case 'slot': case 'slotOn': {
+        const id = 'c' + s, hole = cut(w, h, s, { j: .8, seg: 30 });
+        let out = '';
+        if (k === 'slotOn') { const ring = cut(w, h, s + 2, { pad: 5 }); out += sh(ring, 1, 3, 2, .35) + `<path d="${ring}" fill="${C.red}"/>`; }
+        return out + `<clipPath id="${id}"><path d="${hole}"/></clipPath><path d="${hole}" fill="#cdb489"/>` +
+          `<path d="${hole}" transform="translate(1.5 3)" fill="${k === 'slotOn' ? C.cream : C.hole}" clip-path="url(#${id})"/>`;
+      }
+      case 'tab': return sh(top, 1, 2, 1.5, .25) + `<path d="${top}" fill="${C.sand}"/>`;
+      case 'tabOn': return sh(top, 1, 3, 2, .35) + `<path d="${top}" fill="${C.greenD}"/>`;
+      case 'btn': case 'btnP': {
+        const [f, d] = k === 'btnP' ? [C.red, C.redD] : [C.sand, C.sandD];
+        return sh(top, 2, 7, 4, .4) + `<path d="${cut(w, h, s + 1)}" transform="translate(0 5)" fill="${d}"/>` + `<path d="${top}" fill="${f}"/>`;
+      }
+      case 'btnOff': return `<path d="${top}" fill="#d9c7a3" opacity=".75"/>`;
+      case 'x': return sh(top, 1, 4, 2, .35) + `<path d="${cut(w, h, s, { seg: 12 })}" fill="${C.red}"/>`;
+      case 'track': return `<path d="${cut(w, h, s, { j: .7, seg: 50, snip: 1 })}" fill="#4a3a2b"/>`;
+      case 'fillHp': return `<path d="${cut(w, h, s, { j: .9, seg: 30, snip: 1 })}" fill="#c84a3a"/>`;
+      case 'fillMp': return `<path d="${cut(w, h, s, { j: .9, seg: 30, snip: 1 })}" fill="#3e6fb5"/>`;
+      case 'fillGood': return `<path d="${cut(w, h, s, { j: .6, seg: 30, snip: 1 })}" fill="#5b8a57"/>`;
+      case 'chip': return sh(top, 1, 2, 1, .3) + `<path d="${cut(w, h, s, { seg: 16 })}" fill="var(--c)"/>`;
+      case 'tag': return sh(top, 2, 4, 3, .4) + `<path d="${top}" fill="${C.cream}"/>`;
+      case 'board': {
+        const hill = []; const R = rng(s); for (let x = -10; x <= w + 10; x += 40) hill.push([x, (R() * 10) + Math.sin(x / 140) * 6]);
+        const d1 = P([...hill, [w + 10, h + 10], [-10, h + 10]]);
+        return sh(d1, 0, -4, 6, .4) + `<path d="${d1}" fill="${C.green}"/><path d="${d1}" transform="translate(0 14)" fill="${C.greenD}"/>`;
+      }
+      case 'log': return sh(top, 2, 4, 3, .35) + `<path d="${top}" fill="${C.cream}"/>`;
+      case 'key': return `<circle cx="${w / 2}" cy="${h / 2}" r="${w / 2}" fill="${C.ink}"/>`;
+    }
+    return '';
+  },
+};
+
+// B) Felt, calmer: the current kit with the navy swapped for a forest felt that belongs to the world, stitches only
+// on the outer edge of big patches, slots as plain pressed felt, tabs flat and the buttons the only thick pieces.
+SKINS.felt = {
+  name: 'Felt, calmer', darkUi: true,
+  dim: 'background: rgba(14,22,16,.42);',
+  css: `
+    body { font-family: 'Alegreya Sans'; color: #f1e6cc; }
+    .title { font-family: Alegreya; font-weight: 800; font-size: 34px; color: #f6ecd6; }
+    .name { font-family: Alegreya; font-weight: 800; }
+    .dim { color: #b9b08f; } .good { color: #9fd38b; } .bad { color: #f08a72; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn { font-family: Alegreya; font-weight: 800; }
+    .k-btn { color: #3a2a1a; } .k-btnP { color: #fff1dc; } .k-tab { color: #c9c1a2; } .k-tabOn { color: #3a2a1a; }
+    .k-btn img.ico, .k-tabOn img.ico, .k-tag img.ico, .k-log img.ico { filter: brightness(0) saturate(100%) invert(14%) sepia(20%) saturate(900%) hue-rotate(350deg); }
+    .bar .t { color: #fff4dc; text-shadow: 0 1px 0 #10180f, 0 -1px 0 #10180f, 1px 0 0 #10180f, -1px 0 0 #10180f; }
+    .slot .qty { color: #f1e6cc; } .slot .lbl { color: #8fa08c; }
+    .k-tag, .k-log { color: #3a2a1a; } .k-tag .dim, .k-log .dim { color: #7c6a50; } .k-log .bad { color: #b3402f; }
+    .k-btnOff { color: #c9c1a2; }
+    .chip { color: #fff4dc; font-weight: 800; }`,
+  shape(k, w, h, s) {
+    const F = '#33503f', FD = '#284234', SL = '#1f3328', ST = '#eadfc4', SAND = '#dcc79c', SANDD = '#a88d5f', RED = '#b9473b', REDD = '#7d2b22';
+    const shadow = (d, dy, sd, op) => `<path d="${d}" transform="translate(0 ${dy})" fill="#08100a" opacity="${op}" filter="url(#b${sd})"/>`;
+    const stitch = (d, col = ST) => `<path d="${d}" fill="none" stroke="#0a120c" stroke-width="2.4" stroke-dasharray="8 6" opacity=".4" transform="translate(0 1.5)"/><path d="${d}" fill="none" stroke="${col}" stroke-width="2.2" stroke-dasharray="8 6" stroke-linecap="round"/>`;
+    switch (k) {
+      case 'panel': case 'hud': return shadow(rr(w, h, 20), 8, 9, .55) + `<path d="${rr(w, h, 20)}" fill="${FD}"/><path d="${rr(w, h, 17, -3)}" fill="${F}"/>` + stitch(rr(w, h, 12, -10));
+      case 'section': return `<path d="${rr(w, h, 14)}" fill="${FD}"/>`;
+      case 'slot': return `<path d="${rr(w, h, 10)}" fill="${SL}"/><path d="${rr(w, h, 10)}" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="3" transform="translate(0 1.5)" clip-path="inset(0)"/>`;
+      case 'slotOn': return `<path d="${rr(w, h, 12, 4)}" fill="#e9c46a"/><path d="${rr(w, h, 10)}" fill="${SL}"/>`;
+      case 'tab': return '';
+      case 'tabOn': return `<path d="${rr(w, h, h / 2)}" fill="${SAND}"/>`;
+      case 'btn': case 'btnP': {
+        const [f, d] = k === 'btnP' ? [RED, REDD] : [SAND, SANDD];
+        return shadow(rr(w, h, 12), 7, 4, .5) + `<path d="${rr(w, h, 12)}" transform="translate(0 5)" fill="${d}"/><path d="${rr(w, h, 12)}" fill="${f}"/>` + stitch(rr(w, h, 8, -5), k === 'btnP' ? '#f3dcc8' : '#8a6c43');
+      }
+      case 'btnOff': return `<path d="${rr(w, h, 12)}" fill="#55665a" opacity=".6"/>`;
+      case 'x': return `<circle cx="${w / 2}" cy="${h / 2 + 3}" r="${w / 2}" fill="${REDD}"/><circle cx="${w / 2}" cy="${h / 2}" r="${w / 2}" fill="${RED}"/>`;
+      case 'track': return `<path d="${rr(w, h, h / 2)}" fill="#16231b"/>`;
+      case 'fillHp': return `<path d="${rr(w, h, h / 2)}" fill="#c9503d"/>`;
+      case 'fillMp': return `<path d="${rr(w, h, h / 2)}" fill="#4a7fc4"/>`;
+      case 'fillGood': return `<path d="${rr(w, h, h / 2)}" fill="#8cc06f"/>`;
+      case 'chip': return `<path d="${rr(w, h, 7)}" fill="var(--c)"/>`;
+      case 'tag': case 'log': return shadow(rr(w, h, 12), 5, 4, .45) + `<path d="${rr(w, h, 12)}" fill="#efe3c6"/>` + stitch(rr(w, h, 8, -6), '#b49a6d');
+      case 'board': return shadow(`M-10 0 H${w + 10} V${h + 10} H-10 Z`, -4, 6, .5) + `<path d="M-10 0 H${w + 10} V${h + 10} H-10 Z" fill="${FD}"/>` + stitch(`M0 10 H${w}`);
+      case 'key': return `<circle cx="${w / 2}" cy="${h / 2}" r="${w / 2}" fill="#efe3c6"/>`;
+    }
+    return '';
+  },
+};
+
+// C) Cartoon card: the characters' own language. Warm white cards with the same thick dark outline the sprites
+// have, flat bright fills, chunky buttons standing on a dark lip, round pill tabs.
+SKINS.toon = {
+  name: 'Cartoon card', darkUi: false,
+  dim: 'background: rgba(40,30,22,.32); backdrop-filter: blur(3px);',
+  css: `
+    body { font-family: Fredoka, 'Alegreya Sans'; font-weight: 500; color: #2b211c; }
+    .title { font-family: Fredoka; font-weight: 700; font-size: 34px; }
+    .name { font-family: Fredoka; font-weight: 700; }
+    .dim { color: #84705e; } .good { color: #2e8a4e; } .bad { color: #d2452e; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn { font-family: Fredoka; font-weight: 700; } .k-btnOff { color: #a8957c; }
+    .k-btnP { color: #fff; } .k-tabOn { color: #fff; } .k-tab { color: #6f5d4d; }
+    .k-btnP img.ico, .k-tabOn img.ico { filter: brightness(0) invert(1); }
+    .bar .t { color: #fff; font-family: Fredoka; font-weight: 700; text-shadow: 0 1.5px 0 #2b211c, 0 -1px 0 #2b211c, 1px 0 0 #2b211c, -1px 0 0 #2b211c; }
+    .slot .qty { color: #2b211c; font-family: Fredoka; font-weight: 700; } .slot .lbl { color: #b49f84; }
+    .chip { color: #fff; font-family: Fredoka; font-weight: 700; }`,
+  shape(k, w, h, s) {
+    const O = '#2b211c', W = '#fff7e8';
+    // The outline marks what you can click (buttons, slots); boards and cards you only read are flat with a soft shadow.
+    const card = (r, fill, lip = 5, sw = 3.5) => `<path d="${rr(w, h, r)}" transform="translate(0 ${lip})" fill="${O}"/><path d="${rr(w, h, r)}" fill="${fill}" stroke="${O}" stroke-width="${sw}"/>`;
+    const flat = (r, fill, dy = 6, sd = 6) => `<path d="${rr(w, h, r)}" transform="translate(0 ${dy})" fill="#2b211c" opacity=".3" filter="url(#b${sd})"/><path d="${rr(w, h, r)}" fill="${fill}"/>`;
+    switch (k) {
+      case 'panel': return flat(28, W, 12, 9);
+      case 'hud': return flat(22, W, 6, 5);
+      case 'section': return `<path d="${rr(w, h, 18)}" fill="#f6e6c8"/>`;
+      case 'slot': return `<path d="${rr(w, h, 14)}" fill="#efdcbc"/><path d="${rr(w, h, 14)}" fill="none" stroke="#dcc39b" stroke-width="2.5"/>`;
+      case 'slotOn': return `<path d="${rr(w, h, 14)}" transform="translate(0 4)" fill="${O}"/><path d="${rr(w, h, 14)}" fill="#ffd45c" stroke="${O}" stroke-width="3.5"/>`;
+      case 'tab': return '';
+      case 'tabOn': return `<path d="${rr(w, h, h / 2)}" transform="translate(0 3)" fill="${O}"/><path d="${rr(w, h, h / 2)}" fill="#2f9c8c" stroke="${O}" stroke-width="3"/>`;
+      case 'btn': return card(16, W);
+      case 'btnP': return card(18, '#f2643a', 6, 4);
+      case 'btnOff': return `<path d="${rr(w, h, 16)}" fill="#e9dcc6" stroke="#cdb99c" stroke-width="3"/>`;
+      case 'x': return `<circle cx="${w / 2}" cy="${h / 2 + 4}" r="${w / 2}" fill="${O}"/><circle cx="${w / 2}" cy="${h / 2}" r="${w / 2}" fill="#f2643a" stroke="${O}" stroke-width="3"/>`;
+      case 'track': return `<path d="${rr(w, h, h / 2)}" fill="#5a4a40" stroke="${O}" stroke-width="3"/>`;
+      case 'fillHp': return `<path d="${rr(w, h, h / 2)}" fill="#ef5a43"/><path d="M${h / 2} 4 H${w - h / 2}" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>`;
+      case 'fillMp': return `<path d="${rr(w, h, h / 2)}" fill="#3d8be0"/><path d="M${h / 2} 4 H${w - h / 2}" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>`;
+      case 'fillGood': return `<path d="${rr(w, h, h / 2)}" fill="#3fb36b"/>`;
+      case 'chip': return `<path d="${rr(w, h, h / 2)}" fill="var(--c)" stroke="${O}" stroke-width="2.5"/>`;
+      case 'tag': case 'log': return flat(18, W, 4, 4);
+      case 'board': return `<path d="M-10 0 H${w + 10} V${h + 10} H-10 Z" transform="translate(0 -6)" fill="#000" opacity=".25" filter="url(#b6)"/><path d="M-10 0 H${w + 10} V${h + 10} H-10 Z" fill="#6b5546"/>`;
+      case 'key': return `<circle cx="${w / 2}" cy="${h / 2}" r="${w / 2}" fill="${O}"/>`;
+    }
+    return '';
+  },
+};
+
+// D) Bold graphic: Persona 5's hierarchy in the game's colours. Ink-black slabs with cut corners, one red accent,
+// slanted tabs and buttons, big condensed capitals; the cream line marks the one panel that matters.
+SKINS.bold = {
+  name: 'Bold graphic', darkUi: true,
+  dim: 'background: linear-gradient(105deg, rgba(20,16,14,.15) 0 18%, rgba(20,16,14,.62) 18% 100%);',
+  css: `
+    body { font-family: 'Barlow Condensed', 'Alegreya Sans'; font-weight: 600; color: #f3e9d2; letter-spacing: .2px; }
+    .title { font-family: 'Barlow Condensed'; font-weight: 800; font-size: 42px; text-transform: uppercase; letter-spacing: 1px; font-style: italic; }
+    .name { font-family: 'Barlow Condensed'; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+    .dim { color: #a59a8b; } .good { color: #8fdc7a; } .bad { color: #ff6a5c; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn { font-family: 'Barlow Condensed'; font-weight: 800; text-transform: uppercase; font-style: italic; letter-spacing: .5px; }
+    .k-btnOff { color: #8d847a; }
+    .k-btn { color: #1c1917; } .k-btn img.ico { filter: brightness(0); } .k-btnP { color: #fff; } .k-tab { color: #a59a8b; } .k-tabOn { color: #fff; }
+    .bar .t { color: #fff; font-family: 'Barlow Condensed'; font-weight: 800; text-shadow: 0 0 3px #000, 0 1px 0 #000; }
+    .slot .qty { color: #f3e9d2; font-family: 'Barlow Condensed'; font-weight: 800; } .slot .lbl { color: #6d655c; text-transform: uppercase; }
+    .chip { color: #fff; font-weight: 800; text-transform: uppercase; }
+    .k-tag, .k-log { color: #1c1917; } .k-tag .dim, .k-log .dim { color: #6d655c; } .k-tag img.ico, .k-log img.ico { filter: brightness(0); }`,
+  shape(k, w, h, s) {
+    const K = '#1c1917', K2 = '#2a2522', RED = '#e2363b', CR = '#f3e9d2';
+    switch (k) {
+      case 'panel': return `<path d="${chamfer(w, h, 28)}" transform="translate(-12 12)" fill="${RED}"/><path d="${chamfer(w, h, 28)}" fill="${K}"/><path d="${chamfer(w, h, 22, 0, -8)}" fill="none" stroke="${CR}" stroke-width="1.5" opacity=".7"/>`;
+      case 'hud': return `<path d="${chamfer(w, h, 18)}" transform="translate(-7 7)" fill="${RED}"/><path d="${chamfer(w, h, 18)}" fill="${K}"/>`;
+      case 'section': return `<path d="${chamfer(w, h, 12)}" fill="${K2}"/>`;
+      case 'slot': return `<path d="${chamfer(w, h, 8)}" fill="#2f2a26"/>`;
+      case 'slotOn': return `<path d="${chamfer(w, h, 8, 0, 4)}" fill="${RED}"/><path d="${chamfer(w, h, 8)}" fill="#2f2a26"/><path d="${chamfer(w, h, 8, 0, 2)}" fill="none" stroke="${CR}" stroke-width="2.5"/>`;
+      case 'tab': return '';
+      case 'tabOn': return `<path d="${slant(w, h, 10)}" fill="${RED}"/>`;
+      case 'btn': return `<path d="${slant(w, h, 12)}" transform="translate(5 5)" fill="#000" opacity=".55"/><path d="${slant(w, h, 12)}" fill="${CR}"/>`;
+      case 'btnP': return `<path d="${slant(w, h, 18)}" transform="translate(8 8)" fill="#000" opacity=".6"/><path d="${slant(w, h, 18)}" fill="${RED}"/><path d="${slant(w, h, 18, -6)}" fill="none" stroke="#fff" stroke-width="2" opacity=".85"/>`;
+      case 'btnOff': return `<path d="${slant(w, h, 12)}" fill="#4a4440" opacity=".7"/>`;
+      case 'x': return `<path d="${slant(w, h, 8)}" fill="${RED}"/>`;
+      case 'track': return `<path d="${slant(w, h, 6)}" fill="#3a3430"/>`;
+      case 'fillHp': return `<path d="${slant(w, h, 6)}" fill="${RED}"/>`;
+      case 'fillMp': return `<path d="${slant(w, h, 6)}" fill="#2f7fe0"/>`;
+      case 'fillGood': return `<path d="${slant(w, h, 4)}" fill="#7cc76a"/>`;
+      case 'chip': return `<path d="${slant(w, h, 6)}" fill="var(--c)"/>`;
+      case 'tag': case 'log': return `<path d="${chamfer(w, h, 12)}" transform="translate(5 5)" fill="#000" opacity=".5"/><path d="${chamfer(w, h, 12)}" fill="${CR}"/>`;
+      case 'board': return `<path d="M-20 30 L${w + 20} 0 V${h + 20} H-20 Z" fill="${K}"/><path d="M-20 30 L${w + 20} 0" stroke="${RED}" stroke-width="6"/>`;
+      case 'key': return `<rect width="${w}" height="${h}" fill="${RED}" transform="rotate(-8 ${w / 2} ${h / 2})"/>`;
+    }
+    return '';
+  },
+};
+
+const SKIN = SKINS[STYLE];
+document.getElementById('skin').textContent = SKIN.css;
+
+// ---- Shared widgets ----
+function bar(x, y, w, h, frac, kind, text, parent) {
+  const b = piece('track', x, y, w, h, parent, '', 'bar');
+  if (frac > 0) piece(kind, 0, 0, Math.max(h, w * frac), h, b);
+  if (text) div('t', '', b, text);
+  return b;
+}
+function button(x, y, w, h, label, parent, { kind = 'btn', size = 22, ico, sub, keyN } = {}) {
+  const b = piece(kind, x, y, w, h, parent, `<div class="col" style="height:100%;gap:2px"><div class="row" style="font-size:${size}px;gap:9px">${ico ? icon(ico, size * 1.05, kind === 'btnP' ? true : undefined) : ''}<span>${label}</span></div>${sub ? `<div style="font-size:14px;opacity:.75;font-family:inherit">${sub}</div>` : ''}</div>`);
+  if (keyN) piece('key', -8, -8, 24, 24, b, `<div class="center" style="height:100%;font-size:13px;font-weight:800;color:${STYLE === 'felt' ? '#3a2a1a' : '#fff'}">${keyN}</div>`);
+  return b;
+}
+function chip(x, y, label, color, parent, ico) {
+  const w = 14 + label.length * 8.6 + (ico ? 22 : 0);
+  const c = piece('chip', x, y, w, 26, parent, `<div class="row chip" style="height:100%;padding:0 8px;gap:5px;font-size:15px">${ico ? icon(ico, 17, true) : ''}${label}</div>`);
+  c.style.setProperty('--c', color);
+  return w;
+}
+
+// ---- Bag screen ----
+function bagScreen() {
+  div('abs', at(0, 0, 1280, 720) + `background:url(${ART}bg_brindlemoor@2x.webp) center/cover`);
+  div('abs', at(0, 0, 1280, 720) + SKIN.dim);
+  const W = 1120, H = 610, pan = piece('panel', 80, 56, W, H);
+
+  div('abs title', at(36, 18, 300, 44), pan, 'Inventory');
+  div('abs row', `right:92px;top:28px;font-size:24px;font-weight:800;`, pan,
+    `<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:#e8b93a;box-shadow:inset 0 -3px 0 #b98a1d"></span>300 g`);
+  piece('x', W - 70, 22, 42, 42, pan, `<div class="center" style="height:100%;font-size:22px;font-weight:800;color:#fff;font-family:${STYLE === 'bold' ? 'Barlow Condensed' : 'Alegreya'}">✕</div>`);
+
+  // Hero and the worn gear.
+  const hero = piece('section', 28, 84, 330, 392, pan);
+  div('abs', at(88, 34, 154, 330) + `background:url(${art('char_hero_leather_armor')}) center bottom/contain no-repeat`, hero);
+  const worn = [['icon_leather_cap', 'Helm'], ['icon_leather_armor', 'Body'], ['icon_leather_gloves', 'Gloves'], ['icon_leather_boots', 'Boots']];
+  worn.forEach(([k, l], i) => slot(14, 16 + i * 92, 66, k, l, hero));
+  const right = [['wpn_thornheart_blade', 'Weapon', 'u'], [null, 'Spare'], ['icon_oak_pendant', 'Neck'], ['icon_fox_ring', 'Ring', 'u'], [null, 'Ring']];
+  right.forEach(([k, l, g], i) => slot(250, 10 + i * 76, 66, k, l, hero, { grade: g }));
+
+  const stats = div('abs', at(36, 490, 320, 110) + 'display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;font-size:18px;font-weight:700;', pan);
+  [['sword', '32-38'], ['star', 'Crit 9.5%'], ['shield', 'DEF 11·14·7'], ['potion', 'HP 176 · MP 34']].forEach(([ic, t]) => div('row', '', stats, icon(ic, 20) + t));
+
+  // Tabs and the grid.
+  const tabs = ['All', 'Weapons', 'Armor', 'Jewelry', 'Items'];
+  let tx = 384;
+  tabs.forEach((t, i) => {
+    const w = 22 + t.length * 11;
+    piece(i === 0 ? 'tabOn' : 'tab', tx, 84, w, 34, pan, `<div class="center" style="height:100%;font-size:18px">${t}</div>`);
+    tx += w + 6;
+  });
+  const items = [['icon_health_potion', 7], ['icon_mana_potion', 4], ['icon_recall_scroll', 5], ['wpn_iron_sword', 0, 'u'], ['icon_scale_coif', 0],
+    ['icon_thornwarden_gloves', 0, 'r'], ['icon_copper_band', 0], ['wpn_tusk_dagger', 0], ['icon_travel_garb', 0, 'u']];
+  for (let i = 0; i < 30; i++) {
+    const it = items[i];
+    slot(384 + (i % 6) * 74, 132 + Math.floor(i / 6) * 74, 66, it?.[0], '', pan, { qty: it?.[1], grade: it?.[2], on: i === 3 });
+  }
+  button(384, 520, 150, 46, 'Sort: Newest', pan, { size: 18 });
+  div('abs dim', `left:${384 + 6 * 74 - 8 - 100}px;top:532px;width:100px;text-align:right;font-size:18px;font-weight:700`, pan, '9 / 30');
+
+  // The item card.
+  const card = piece('section', 860, 84, 232, 498, pan);
+  const frame = piece('slotOn', 76, 18, 80, 80, card);
+  div('abs', 'inset:6px;' + `background:url(${art('wpn_iron_sword')}) center/contain no-repeat;transform:rotate(40deg) scale(1.2)`, frame);
+  div('abs name', at(0, 114, 232, 30) + 'text-align:center;font-size:26px', card, 'Iron Sword');
+  div('abs good', at(0, 146, 232, 22) + 'text-align:center;font-size:17px;font-weight:800', card, 'Fine · 62%');
+  div('abs dim', at(0, 170, 232, 22) + 'text-align:center;font-size:16px', card, 'Sword · Melee');
+  const ln = (y, label, value, roll, delta) => {
+    div('abs row', at(18, y, 196, 24) + 'justify-content:space-between;font-size:18px;font-weight:700', card, `<span>${label}</span><span>${value}${delta ? ` <span class="${delta[0] === '+' ? 'good' : 'bad'}" style="font-size:15px">${delta}</span>` : ''}</span>`);
+    if (roll !== undefined) bar(18, y + 28, 196, 8, roll, 'fillGood', '', card);
+  };
+  ln(210, 'Damage', '18-22', undefined, '+3');
+  ln(250, 'Crit', '+4%', .8);
+  ln(300, 'Max HP', '+12', .35, '-6');
+  div('abs dim', at(18, 352, 196, 40) + 'font-size:15px;line-height:1.25', card, 'Compared with your Thornheart Blade');
+  button(18, 400, 196, 44, 'Equip', card, { kind: 'btnP', size: 21 });
+  button(18, 456, 196, 34, 'Sell · 34 g', card, { size: 16 });
+}
+function slot(x, y, s, key, label, parent, { qty, grade, on } = {}) {
+  const sl = piece(on ? 'slotOn' : 'slot', x, y, s, s, parent, '', 'slot');
+  if (key) div('', '', sl, `<img class="item ${key.startsWith('wpn_') ? 'wpn' : ''}" src="${art(key)}">`);
+  else if (label) div('lbl', '', sl, label);
+  if (qty) div('qty', '', sl, qty);
+  if (grade) {
+    const col = { u: '#4f9a4a', r: '#3f74c8' }[grade];
+    div('abs', `left:6px;top:6px;width:9px;height:9px;border-radius:50%;background:${col};box-shadow:0 0 0 2px ${SKIN.darkUi ? '#1b1b1b' : '#fff8'}`, sl);
+  }
+  return sl;
+}
+
+// ---- Battle screen ----
+function battleScreen() {
+  div('abs', at(0, 0, 1280, 720) + `background:url(parts/battle_scene.webp) center/cover`);
+  // Hero.
+  const hero = piece('hud', 18, 16, 420, 124);
+  div('abs row name', at(22, 12, 300, 34) + 'font-size:28px', hero, `Wanderer <span class="dim" style="font-size:18px;font-weight:700">Lv 6</span>`);
+  bar(22, 54, 376, 26, 148 / 176, 'fillHp', '148 / 176', hero);
+  bar(22, 88, 376, 20, 22 / 34, 'fillMp', '22 / 34', hero);
+  let cx = 18; cx += chip(cx, 150, 'War Cry 2', '#c58a1c', document.body, 'status_war_cry') + 8; chip(cx, 150, 'Bleed 1', '#b23a2f', document.body, 'status_bleed');
+  // Monster.
+  const mon = piece('hud', 842, 16, 420, 150);
+  div('abs row name', at(22, 12, 360, 34) + 'font-size:28px', mon, `Thornback Boar <span class="dim" style="font-size:18px;font-weight:700">Lv 2</span>`);
+  bar(22, 54, 376, 26, 1, 'fillHp', '46 / 46', mon);
+  div('abs row', at(22, 96, 380, 30) + 'font-size:18px;font-weight:700;gap:6px', mon,
+    `<span class="dim" style="margin-right:4px">Weak</span>${icon('el_water', 26, false)}${icon('el_wind', 26, false)}${icon('el_energy', 26, false)}<span style="width:22px"></span>${icon('star', 24)}${icon('bag', 24)}`);
+  // Next move, over the monster.
+  piece('tag', 820, 232, 252, 42, document.body, `<div class="row" style="height:100%;padding:0 16px;font-size:18px;font-weight:800">${icon('claw', 22)}Next: Thorn Charge <span class="dim">~18</span></div>`);
+  // Board, log and actions.
+  piece('board', 0, 548, 1280, 172);
+  piece('log', 20, 572, 520, 128, document.body,
+    `<div style="padding:16px 20px;font-size:18px;line-height:1.5;font-weight:700"><div class="dim">Thornback Boar uses Thorn Charge: 12 damage.</div><div>You use Heavy Strike: <span class="bad">15 damage</span>.</div></div>`);
+  button(562, 572, 220, 126, 'Attack', document.body, { kind: 'btnP', size: 38, ico: 'sword', keyN: 1 });
+  button(804, 574, 146, 56, 'Skills', document.body, { size: 22, ico: 'book', sub: '1 new', keyN: 2 });
+  button(966, 574, 146, 56, 'Items', document.body, { size: 22, ico: 'potion', keyN: 3 });
+  button(1128, 574, 132, 56, 'Defend', document.body, { size: 22, ico: 'shield', keyN: 4 });
+  button(804, 644, 146, 52, 'Flee', document.body, { size: 21, ico: 'boot', sub: '90%', keyN: 5 });
+  button(966, 644, 146, 52, 'Swap', document.body, { kind: 'btnOff', size: 21, ico: 'swap', sub: 'No spare', keyN: 6 });
+}
+
+(SCREEN === 'bag' ? bagScreen : battleScreen)();
+
+// Draw every piece's background now that sizes are known.
+for (const d of document.querySelectorAll('.piece')) {
+  const w = d.offsetWidth, h = d.offsetHeight, s = +d.dataset.seed;
+  const inner = SKIN.shape(d.dataset.k, w, h, s * 13);
+  if (!inner) continue;
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', 'bg'); svg.setAttribute('width', w); svg.setAttribute('height', h);
+  svg.innerHTML = `<defs>${[1, 1.5, 2, 3, 4, 5, 6, 8, 9].map((v) => blurDef('b' + v, v)).join('')}</defs>` + inner;
+  d.prepend(svg);
+}
+</script>
+</body>
+</html>
