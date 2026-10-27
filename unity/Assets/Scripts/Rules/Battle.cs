@@ -798,6 +798,8 @@ namespace Drakepg.Rules
             }
             var heroic = m.IsHeroic ? Books.HeroicBook(Player) : null;
             if (heroic != null) items.Add(new ItemGrant { ItemId = heroic });
+            // A rare Anchor Stone (undoes a worse rework roll at the shop counter).
+            if (rng.Chance(Cheats.Boosted(B.Rework.AnchorDrop[source]))) items.Add(new ItemGrant { ItemId = Rework.AnchorStone });
             return new Rewards { Xp = xp, Gold = Gold(), Items = items };
         }
 

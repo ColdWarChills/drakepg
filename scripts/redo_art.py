@@ -173,14 +173,8 @@ NEW = {
                              "and a small green glowing heartwood gem in the crossguard, shown alone as a game item."),
     "icon_recall_scroll": ("1:1", "A single rolled parchment scroll tied with a red ribbon and a small wax seal shaped like a "
                            "little house, a faint golden glow around it, shown alone as a game inventory icon."),
-    "icon_stone_of_might": ("1:1", "A single smooth river stone with a glowing red-orange rune of a sword carved into it, "
-                            "shown alone as a game inventory icon."),
-    "icon_stone_of_precision": ("1:1", "A single smooth river stone with a glowing yellow rune of a target eye carved into "
-                                "it, shown alone as a game inventory icon."),
-    "icon_stone_of_warding": ("1:1", "A single smooth river stone with a glowing blue rune of a shield carved into it, "
-                              "shown alone as a game inventory icon."),
-    "icon_stone_of_vigor": ("1:1", "A single smooth river stone with a glowing green rune of a heart carved into it, "
-                            "shown alone as a game inventory icon."),
+    "icon_anchor_stone": ("1:1", "A single smooth river stone with a glowing blue rune of a shield carved into it, "
+                          "shown alone as a game inventory icon."),
     "icon_briarberry": ("1:1", "A small cluster of dark purple-red berries on a thorny bramble twig with two leaves, shown "
                         "alone as a game inventory icon."),
     "icon_scorched_twig": ("1:1", "A single short, thick forked branch, charred black and cracked like charcoal, glowing "

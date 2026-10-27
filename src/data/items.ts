@@ -930,6 +930,15 @@ export const ITEMS: ItemDef[] = [
     iconColor: 0xe8d9a8,
     effect: 'recall',
   },
+  // A rare drop for the shop counter's rework (src/game/Rework.ts). A material: no bag slot.
+  {
+    id: 'anchor_stone',
+    type: 'material',
+    name: 'Anchor Stone',
+    description: 'Undoes a worse rework roll at a shop counter: the line keeps its old value.',
+    price: 100,
+    iconColor: 0x1e88e5,
+  },
   // Helms, gloves, boots, rings, necklaces and set pieces (src/data/equipment.ts)
   ...EQUIPMENT,
   // Materials (src/data/crafting.ts)

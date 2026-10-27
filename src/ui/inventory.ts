@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { featureOn } from '../game/Features';
 import { bookSkill, readBook, readLevelOf } from '../game/Books';
-import { keepRework, rework, reworkLines, reworkPrice } from '../game/Rework';
+import { anchor, ANCHOR_STONE, canAnchor, rework, reworkLines, reworkPrice } from '../game/Rework';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
@@ -334,7 +334,7 @@ class InventoryView {
         ? 'Shop gear is always Standard (0%). Gear from monsters can roll better.'
         : this.mode === 'sell'
           ? 'Better grades sell for more, Sigils far more. Locked items are never sold.'
-          : 'Roll a line again for gold, then keep the new value or the old. Each rework of a piece costs more.';
+          : 'Roll a line again for gold: the new value replaces the old. Each rework of a piece costs more.';
     c.add(addText(scene, 30, 196, hint, { size: 16, color: COLORS.textDim, wrap: 260 }));
 
     if (this.mode === 'sell') {
@@ -483,28 +483,34 @@ class InventoryView {
     this.render();
   }
 
-  /** Pay, roll the line again and ask which value to keep (closing the question keeps the better one). */
+  /** Pay and roll the line again: the new value replaces the old, unless an Anchor Stone undoes a worse roll. */
   private startRework(gear: Gear, key: RollKey): void {
     const r = rework(this.player, gear, key);
     if (!r) return;
     const { scene } = this;
-    play(scene, 'coin');
-    // The gold is gone already: the shop behind shows it.
-    this.render();
-    const keep = (value: number) => {
-      keepRework(gear, key, value);
-      play(scene, value > r.before ? 'levelup' : 'click');
-      ask.close();
-      this.changed();
-    };
-    const ask: Modal = new Modal(scene, 460, 270, 'Rework', () => keep(Math.max(r.before, r.after)));
+    play(scene, r.after > r.before ? 'levelup' : 'coin');
+    this.changed();
+    const line = `${ROLL_LABELS[key]}: ${r.before}% → ${r.after}%`;
+    if (!canAnchor(this.player, r)) {
+      toast(scene, line, r.after >= r.before ? COLORS.textGood : COLORS.textBad);
+      return;
+    }
+    // A worse roll and an Anchor Stone in the pouch: keep the new value (closing does that too) or undo it.
+    const ask: Modal = new Modal(scene, 460, 290, 'Rework', () => {});
     const c = ask.content;
+    c.add(addText(scene, 230, 100, line, { size: 26, bold: true, color: COLORS.textBad }).setOrigin(0.5));
+    c.add(addText(scene, 230, 140, `Anchor Stones: ${this.player.countItem(ANCHOR_STONE)}`, { size: 16, color: COLORS.textDim }).setOrigin(0.5));
+    c.add(new Button(scene, 125, 215, `Keep ${r.after}%`, () => ask.close(), { width: 190, height: 60, fontSize: 20 }));
     c.add(
-      addText(scene, 230, 105, `${ROLL_LABELS[key]}: ${r.before}% → ${r.after}%`, { size: 26, bold: true, color: r.after >= r.before ? COLORS.textGood : COLORS.textBad }).setOrigin(0.5),
+      new Button(scene, 335, 215, `Undo: ${r.before}%`, () => {
+        anchor(this.player, gear, key, r.before);
+        play(scene, 'levelup');
+        ask.close();
+        this.changed();
+      }, { width: 190, height: 60, fontSize: 20, sublabel: '1 Anchor Stone' }),
     );
-    c.add(new Button(scene, 125, 195, `Keep ${r.after}%`, () => keep(r.after), { width: 190, height: 56, fontSize: 20 }));
-    c.add(new Button(scene, 335, 195, `Keep ${r.before}%`, () => keep(r.before), { width: 190, height: 56, fontSize: 20 }));
   }
+
 
   private equip(entry: Extract<Entry, { kind: 'gear' }>, slot?: EquipSlot): void {
     if (!this.player.equip(entry.gear.uid, slot)) return;
@@ -649,6 +655,8 @@ class InventoryView {
           card.add(b);
           y += 36;
         }
+        card.add(addText(scene, left, y, `Anchor Stones: ${this.player.countItem(ANCHOR_STONE)} (undo a bad roll)`, { size: 14, color: COLORS.textDim }));
+        y += 22;
       }
       // Mods: the blue lines.
       for (const m of modLines(traits)) {
@@ -662,7 +670,8 @@ class InventoryView {
     }
 
     y += 6;
-    line(entry.def.description, COLORS.textDim, 15);
+    // Potions, materials and books already show their description as their item line.
+    if (!['consumable', 'material', 'book'].includes(entry.def.type)) line(entry.def.description, COLORS.textDim, 15);
     if (entry.kind === 'gear' && entry.slot === 'spare') {
       line('Spare weapon: its lines count once it is in your hand. Swap in battle (costs your turn) or here.', COLORS.textMagic, 15);
     }

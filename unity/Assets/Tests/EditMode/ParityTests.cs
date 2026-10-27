@@ -178,6 +178,7 @@ namespace Drakepg.Tests
 
             var reworker = HeroFor("warrior", 3);
             reworker.Data.Gold = 5000;
+            reworker.AddItem(Rework.AnchorStone, 2);
             var piece = reworker.Data.Equipment["weapon"];
             var steps = new List<object>();
             for (int i = 0; i < 8; i++)
@@ -185,13 +186,14 @@ namespace Drakepg.Tests
                 var key = i % 2 == 0 ? "damage" : "crit";
                 var price = Rework.Price(piece);
                 var r = Rework.Run(reworker, piece, key, rng);
-                if (r != null && i % 3 != 2) Rework.Keep(piece, key, r.Value.after);
-                steps.Add(r != null ? (object)new { price, before = r.Value.before, after = r.Value.after } : new { price });
+                var anchored = r != null && Rework.CanAnchor(reworker, r.Value.before, r.Value.after) && Rework.Anchor(reworker, piece, key, r.Value.before);
+                steps.Add(r != null ? (object)new { price, before = r.Value.before, after = r.Value.after, anchored } : new { price });
             }
             var rw = x["rework"];
             Assert.IsTrue(JToken.DeepEquals(rw["steps"], ToJson(steps)), $"rework steps\nTS {rw["steps"]}\nC# {ToJson(steps)}");
             Assert.IsTrue(JToken.DeepEquals(rw["gear"], ToJson(piece)), $"reworked gear\nTS {rw["gear"]}\nC# {ToJson(piece)}");
             Assert.AreEqual((double)rw["gold"], reworker.Data.Gold, "gold after reworking");
+            Assert.AreEqual((int)rw["anchors"], reworker.CountItem(Rework.AnchorStone), "Anchor Stones left");
         }
 
         [Test]

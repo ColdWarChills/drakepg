@@ -140,7 +140,13 @@
   },
   "rework": {
    "base": 30,
-   "growth": 1.5
+   "growth": 1.5,
+   "anchorDrop": {
+    "mob": 0.02,
+    "elite": 0.1,
+    "boss": 0.2,
+    "chest": 0.05
+   }
   },
   "statPointsPerLevel": 3,
   "defendDamage": 0.4,
@@ -2606,6 +2612,14 @@
    "price": 20,
    "iconColor": 15260072,
    "effect": "recall"
+  },
+  {
+   "id": "anchor_stone",
+   "type": "material",
+   "name": "Anchor Stone",
+   "description": "Undoes a worse rework roll at a shop counter: the line keeps its old value.",
+   "price": 100,
+   "iconColor": 2001125
   },
   {
    "id": "leather_cap",

@@ -72,9 +72,10 @@ export const BALANCE = {
   },
   /**
    * Rework at the shop counter (src/game/Rework.ts): a line rolled again costs `base` gold x the gear's tier, times
-   * `growth` for every earlier rework of that piece.
+   * `growth` for every earlier rework of that piece. `anchorDrop`: the chance a kill drops an Anchor Stone (which
+   * undoes a worse roll), by kind of monster.
    */
-  rework: { base: 30, growth: 1.5 },
+  rework: { base: 30, growth: 1.5, anchorDrop: { mob: 0.02, elite: 0.1, boss: 0.2, chest: 0.05 } },
   /** Free stat points per level up (class growth is added on top). */
   statPointsPerLevel: 3,
   /** Damage taken while defending is multiplied by this. */

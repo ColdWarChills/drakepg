@@ -91,10 +91,11 @@ namespace Drakepg.Rules
         public MilestoneTuning Milestone;
     }
 
-    /// <summary>Rework at the shop counter (BALANCE.rework): base gold x tier, x growth per earlier rework.</summary>
+    /// <summary>Rework at the shop counter (BALANCE.rework): base gold x tier, x growth per earlier rework; the Anchor Stone's drop chance by kind of monster.</summary>
     public class ReworkTuning
     {
         public double Base, Growth;
+        public Dictionary<string, double> AnchorDrop;
     }
 
     public class TowerCurve

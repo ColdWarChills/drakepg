@@ -576,7 +576,7 @@ namespace Drakepg
                 }
                 var hint = mode == "buy" ? "Shop gear is always Standard (0%). Gear from monsters can roll better."
                     : mode == "sell" ? "Better grades sell for more, Sigils far more. Locked items are never sold."
-                    : "Roll a line again for gold, then keep the new value or the old. Each rework of a piece costs more.";
+                    : "Roll a line again for gold: the new value replaces the old. Each rework of a piece costs more.";
                 Ui.Text(c, 30, 196, hint, 16, Palette.TextDim, wrap: 260);
 
                 if (mode == "sell")
@@ -801,28 +801,33 @@ namespace Drakepg
                 Render();
             }
 
-            /// <summary>Pay, roll the line again and ask which value to keep (closing the question keeps the better one).</summary>
+            /// <summary>Pay and roll the line again: the new value replaces the old, unless an Anchor Stone undoes a worse roll.</summary>
             void StartRework(Gear piece, string key)
             {
                 var res = Rework.Run(player, piece, key, rng);
                 if (res == null) return;
                 var (before, after) = res.Value;
-                Sfx.Play("coin");
-                // The gold is gone already: the shop behind shows it.
-                Render();
-                UiModal ask = null;
-                void Keep(double value)
+                Sfx.Play(after > before ? "levelup" : "coin");
+                Changed();
+                var line = $"{ItemUi.RollLabel(key)}: {N(before)}% → {N(after)}%";
+                if (!Rework.CanAnchor(player, before, after))
                 {
-                    Rework.Keep(piece, key, value);
-                    Sfx.Play(value > before ? "levelup" : "click");
+                    Ui.Toast(line, after >= before ? Palette.TextGood : Palette.TextBad);
+                    return;
+                }
+                // A worse roll and an Anchor Stone in the pouch: keep the new value (closing does that too) or undo it.
+                var ask = new UiModal(460, 290, "Rework", () => { });
+                var c = ask.Content;
+                Ui.Text(c, 230, 100, line, 26, Palette.TextBad, true, 0.5f, 0.5f);
+                Ui.Text(c, 230, 140, $"Anchor Stones: {player.CountItem(Rework.AnchorStone)}", 16, Palette.TextDim, false, 0.5f, 0.5f);
+                new UiButton(c, 125, 215, $"Keep {N(after)}%", () => ask.Close(), 190, 60, 20);
+                new UiButton(c, 335, 215, $"Undo: {N(before)}%", () =>
+                {
+                    Rework.Anchor(player, piece, key, before);
+                    Sfx.Play("levelup");
                     ask.Close();
                     Changed();
-                }
-                ask = new UiModal(460, 270, "Rework", () => Keep(Math.Max(before, after)));
-                var c = ask.Content;
-                Ui.Text(c, 230, 105, $"{ItemUi.RollLabel(key)}: {N(before)}% → {N(after)}%", 26, after >= before ? Palette.TextGood : Palette.TextBad, true, 0.5f, 0.5f);
-                new UiButton(c, 125, 195, $"Keep {N(after)}%", () => Keep(after), 190, 56, 20);
-                new UiButton(c, 335, 195, $"Keep {N(before)}%", () => Keep(before), 190, 56, 20);
+                }, 190, 60, 20, "1 Anchor Stone");
             }
 
             /// <summary>`from`: where the item was let go (a drag), else its grid cell.</summary>
@@ -1125,6 +1130,7 @@ namespace Drakepg
                             new UiButton(row, 159, 15, $"Rework {ItemUi.RollLabel(key)}: {N(price)} g", () => StartRework(piece, key), 318, 30, 14)
                                 .SetEnabled(player.Gold >= price);
                         }
+                        Line($"Anchor Stones: {player.CountItem(Rework.AnchorStone)} (undo a bad roll)", Palette.TextDim, 14);
                     }
                     // Mods: the blue lines.
                     foreach (var m in ItemUi.ModLines(traits))
@@ -1138,7 +1144,8 @@ namespace Drakepg
                 }
 
                 Row(body, 6);
-                Line(entry.Def.Description ?? "", Palette.TextDim, 15);
+                // Potions and materials already show their description as their item line.
+                if (entry.Def.Type != "consumable" && entry.Def.Type != "material") Line(entry.Def.Description ?? "", Palette.TextDim, 15);
                 if (entry.IsGear && entry.Slot == "spare")
                     Line("Spare weapon: its lines count once it is in your hand. Swap in battle (costs your turn) or here.", Palette.TextMagic, 15);
 

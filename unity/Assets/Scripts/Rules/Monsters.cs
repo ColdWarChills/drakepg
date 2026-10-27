@@ -232,11 +232,17 @@ namespace Drakepg.Rules
         }
     }
 
-    /// <summary>Rework at the shop counter, a port of src/game/Rework.ts: pay gold to roll a line again, keep new or old.</summary>
+    /// <summary>
+    /// Rework at the shop counter, a port of src/game/Rework.ts: pay gold to roll a line again; the new value replaces the
+    /// old, and an Anchor Stone (a rare drop) puts the old one back after a worse roll.
+    /// </summary>
     public static class Rework
     {
         /// <summary>The lines the counter can rework (Special chance and jewelry Power can't be).</summary>
         public static readonly string[] Lines = { "damage", "crit", "defense", "hp" };
+
+        /// <summary>Undoes a worse rework roll. A material: no bag slot.</summary>
+        public const string AnchorStone = "anchor_stone";
 
         public static List<string> ReworkLines(Gear gear) => Items.RollKeys(Items.GearDef(gear), gear.Sigil).Where(k => Lines.Contains(k)).ToList();
 
@@ -246,16 +252,27 @@ namespace Drakepg.Rules
 
         public static bool CanRework(Player player, Gear gear, string key) => ReworkLines(gear).Contains(key) && player.Gold >= Price(gear);
 
-        /// <summary>Pay and roll the line again; the piece keeps its old value until `Keep`. Null if you can't.</summary>
+        /// <summary>Pay and roll the line again; the new value replaces the old. Null if you can't.</summary>
         public static (double before, double after)? Run(Player player, Gear gear, string key, IRng rng)
         {
             if (!CanRework(player, gear, key)) return null;
             player.Data.Gold -= Price(gear);
             gear.Reworks = (gear.Reworks ?? 0) + 1;
-            return (gear.Roll(key), Items.RollQuality(rng));
+            var before = gear.Roll(key);
+            gear.Rolls[key] = Items.RollQuality(rng);
+            return (before, gear.Rolls[key]);
         }
 
-        /// <summary>Set the value the player kept.</summary>
-        public static void Keep(Gear gear, string key, double value) => gear.Rolls[key] = value;
+        /// <summary>An Anchor Stone can undo this roll: it came out worse and the player has one.</summary>
+        public static bool CanAnchor(Player player, double before, double after) => after < before && player.CountItem(AnchorStone) > 0;
+
+        /// <summary>Use an Anchor Stone to put the old value back. False if there is none.</summary>
+        public static bool Anchor(Player player, Gear gear, string key, double before)
+        {
+            if (player.CountItem(AnchorStone) <= 0) return false;
+            player.RemoveItem(AnchorStone, 1);
+            gear.Rolls[key] = before;
+            return true;
+        }
     }
 }

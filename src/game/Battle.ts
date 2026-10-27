@@ -7,6 +7,7 @@ import { grantFor } from './Items';
 import { featureOn } from './Features';
 import { huntDrops } from './Guild';
 import { questWantsItem } from './Quests';
+import { ANCHOR_STONE } from './Rework';
 import { rollLoot } from './Loot';
 import { luckySigil } from './Lucky';
 import { statFor, type Player, type Rewards } from './Player';
@@ -773,6 +774,8 @@ export class Battle {
     }
     const heroic = m.isHeroic ? heroicBook(this.player) : null;
     if (heroic) items.push({ itemId: heroic });
+    // A rare Anchor Stone (undoes a worse rework roll at the shop counter).
+    if (chance(this.rng, boosted(BALANCE.rework.anchorDrop[source]))) items.push({ itemId: ANCHOR_STONE });
     return { xp, gold: gold(), items };
   }
 }

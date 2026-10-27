@@ -35,7 +35,7 @@ namespace Drakepg.EditorTools
 
         public class Stats
         {
-            public double Minutes, Fights, Deaths, Flees, Rests, Potions, LevelIn, LevelOut, GoldOut, Gear, Books, PotionGold, Inn, Read, Lost, Rework, Avoided;
+            public double Minutes, Fights, Deaths, Flees, Rests, Potions, LevelIn, LevelOut, GoldOut, Gear, Books, PotionGold, Inn, Read, Lost, Rework, Anchors, Avoided;
             /// <summary>The tower: best floor at the chapter's end, fights and losses there, marks earned, gold the vendor took, farming rounds when stuck.</summary>
             public double TowerBest, TowerFights, TowerLosses, Marks, VendorGold, TowerFarms;
             /// <summary>Floors that beat the bot ("F9 Ash Imp" -> losses).</summary>
@@ -575,9 +575,9 @@ namespace Drakepg.EditorTools
             }
 
             /// <summary>
-            /// Spare gold goes into reworking at the shop counter: roll the worn line with the lowest roll again and keep
-            /// the better value, until every line is 75% or better or the next rework would dip into `reserve` (each
-            /// rework of a piece costs more).
+            /// Spare gold goes into reworking at the shop counter: roll the worn line with the lowest roll again (an
+            /// Anchor Stone undoes a worse roll), until every line is 75% or better or the next rework would dip into
+            /// `reserve` (each rework of a piece costs more).
             /// </summary>
             void ReworkGear(double reserve)
             {
@@ -592,7 +592,7 @@ namespace Drakepg.EditorTools
                     var res = Rework.Run(P, worst.gear, worst.key, rng);
                     if (res == null) return;
                     S.Rework += price;
-                    Rework.Keep(worst.gear, worst.key, Math.Max(res.Value.before, res.Value.after));
+                    if (Rework.CanAnchor(P, res.Value.before, res.Value.after) && Rework.Anchor(P, worst.gear, worst.key, res.Value.before)) S.Anchors++;
                 }
             }
 
@@ -902,7 +902,7 @@ namespace Drakepg.EditorTools
                     double A(Func<Stats, double> f) => list.Average(f);
                     sb.AppendLine($"  {classId,-8} {A(s => s.Minutes),3:0} min, {A(s => s.Fights),3:0} fights, {A(s => s.Deaths):0.0} deaths, {A(s => s.Flees):0.0} fled, {A(s => s.Avoided):0.0} avoided, " +
                         $"{A(s => s.Rests):0} rests, {A(s => s.Potions):0} potions, level {A(s => s.LevelIn):0.0} -> {A(s => s.LevelOut):0.0}; " +
-                        $"spent {A(s => s.Gear):0} g gear, {A(s => s.Books):0} g books, {A(s => s.PotionGold):0} g potions, {A(s => s.Rework):0} g rework, {A(s => s.Inn):0} g inn; " +
+                        $"spent {A(s => s.Gear):0} g gear, {A(s => s.Books):0} g books, {A(s => s.PotionGold):0} g potions, {A(s => s.Rework):0} g rework ({A(s => s.Anchors):0.0} Anchor Stones used), {A(s => s.Inn):0} g inn; " +
                         $"{A(s => s.Read):0.0} books read, {A(s => s.GoldOut):0} g left, {A(s => s.Lost):0.0} drops lost");
                     var bosses = list.SelectMany(s => s.Bosses).GroupBy(b => b.Split(':')[0]).Select(g => $"{g.Key}: {string.Join(", ", g.Select(b => b.Split(':')[1].Trim()))}");
                     foreach (var b in bosses) sb.AppendLine($"           {b}");
