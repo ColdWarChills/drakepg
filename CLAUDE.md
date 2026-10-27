@@ -6,11 +6,12 @@ Browser turn-based RPG. Phaser 4 + TypeScript + Vite. See README.md for layout a
 - `npm run dev` / `npm run build` (build runs `tsc --noEmit` first) / `npm run typecheck`
 - `npm run sim`: headless balance check (scripts/sim.ts). Run it after tuning monsters, skills, items or `BALANCE`.
 - `npm run pace`: headless pacing estimate (scripts/pace.ts): rooms, fights, level at each boss, rough minutes per chapter. Run it after changing rooms or quests.
+- The codex: double-click `codex.bat` (or `npm run dev`, then `/codex.html`; `src/codex/`, dev server only): the designer's page with every monster's stats live from `src/data`, the docs, and their notes. Notes are saved to `docs/NOTES.md` and `docs/MONSTER_NOTES.md` (`codexNotes` in vite.config.ts).
 - Unity playthrough: `Drakepg.EditorTools.Playthrough.Run(20)` through the Unity MCP's `execute_code` (`unity/Assets/Editor/Playthrough.cs`): a bot that plays the whole story paying its own way (gold, potions, HP between fights, deaths and who caused them). Run it after changing the economy, drops, shops or monsters. Calls over ~30 s time out the MCP but keep running.
 
 ## Working across chats
 Several chats (in the browser and on the PC) work on this repo and can't see each other. The repo is the only shared memory.
-- **Start:** `git fetch`, then merge `origin/claude/sweet-cray-w6r64t` (the default branch, which GitHub Pages deploys) into your branch. Read `docs/PLANS.md` before planning anything.
+- **Start:** `git fetch`, then merge `origin/claude/sweet-cray-w6r64t` (the default branch, which GitHub Pages deploys) into your branch. Read `docs/PLANS.md` before planning anything, and the designer's notes `docs/NOTES.md` and `docs/MONSTER_NOTES.md` if they exist (written on the codex page; turn what they decide into PLANS entries, don't rewrite their notes).
 - **Decisions:** when the user decides or proposes something, write it into `docs/PLANS.md` (Decided / Proposed / Open). When you build something from it, remove it there and log it in `docs/IMPROVEMENTS_2026-10.md`.
 - **Finish:** nothing counts as done on a side branch. When the user OKs the work, merge it into the default branch (PR or local merge) and push, with `docs/PLANS.md` up to date. Never leave finished work only on a `claude/*` branch.
 - If the user says "handoff", update `docs/PLANS.md`, merge and push, then reply with a short summary.

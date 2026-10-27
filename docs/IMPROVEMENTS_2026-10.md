@@ -360,3 +360,12 @@ From the designer ("harder dungeons, maybe like TOA in summoners war... progress
 - Icons on paper use the dark set; skill drawings tinted by element keep the light set with a darker tint. Buttons and chips pick cream or ink text by how dark their paper is (`Felt.IsDark`). The kit keeps its felt-era names (Felt, FeltButton, FeltBar, FeltPass).
 - Checked in play mode: battle, room HUD, bag, shop, character, spellbook, map, guild board, the Spire, the result screen, hero creation and class pick.
 
+
+## The codex: a page for monsters, plans and notes (2026-10-27)
+
+- **Asked (designer, 2026-10-27):** "a table of all the monsters and stats of them... a web page for my own... that would also be updated. Some planning too. maybe a spot where I could write."
+- **Built:** `codex.html` (double-click `codex.bat`, which starts the dev server and opens the page; or `npm run dev`, then http://localhost:5173/codex.html; code in `src/codex/`). It imports `src/data` directly, so it always shows the data of the checkout and reloads by itself when a chat changes it. Dev server only: `npm run build` leaves it out, so it never reaches GitHub Pages.
+  - **Monsters:** every monster in one table with its art, level, where it lives (first room, Spire floors), HP, average hit (usual and biggest move, before the hero's defense), defense, element, weak spots and resists as the game's icons, XP and gold. Search, filters (area, kind, element), sort by any number. A click opens the details: moves (power, hit, odds or signature, wind-ups, statuses), second form, shell, Heroic moves, stats, every place it spawns (with spawn share), drops, gear table with the real per-kill odds (`tierOdds`), and a note.
+  - **Plans:** any doc in `docs/` (PLANS.md first) with a section list, search, and filters for the **Open / Proposed / Decided / Playtest / To do** points (each shown with its parents for context).
+  - **Notes:** a free pad saved to `docs/NOTES.md` as you type, and the list of monster notes (`docs/MONSTER_NOTES.md`, one line per monster). The dev server writes them (`codexNotes` in `vite.config.ts`); a save that finds the file changed by a chat meanwhile asks first (monster notes merge by themselves).
+- Look: the game's cut paper colors, its fonts (Alegreya, Almendra, Kalam for handwriting) and the Unity UI icons.
