@@ -180,9 +180,11 @@ export const MONSTERS: MonsterDef[] = [
     stats: { str: 3, int: 9, dex: 8, end: 4 },
     damage: [10, 14],
     element: 'fire',
-    // Fire only feeds it. Douse it with ice or water.
+    // Fire only feeds it. Douse it with ice or water; a crushing blow or poison works too, so every class has
+    // an answer from level 1 (Heavy Strike is Blunt, Gas Shot poisons).
     defense: { melee: 4, pierce: 4, magic: 8 },
     resists: { fire: 100, earth: 25, wind: 25, ice: -75, water: -50 },
+    weakTo: { blunt: 50, poison: 100 },
     trait: 'Flares up once when hurt: +30% damage.',
     attacks: [
       { name: 'Flare Up', damageType: 'magic', power: 0, weight: 1, hpBelow: 0.5, applies: [{ status: 'war_cry', turns: 3, self: true }] },

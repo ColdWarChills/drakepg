@@ -5957,6 +5957,10 @@
     "ice": -75,
     "water": -50
    },
+   "weakTo": {
+    "blunt": 50,
+    "poison": 100
+   },
    "trait": "Flares up once when hurt: +30% damage.",
    "attacks": [
     {
