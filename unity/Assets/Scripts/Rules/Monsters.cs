@@ -54,6 +54,31 @@ namespace Drakepg.Rules
             return copy;
         }
 
+        /// <summary>Only an affix's own effects (a tower twist): no Elite size-up, rewards or name change.</summary>
+        public static MonsterDef ApplyAffix(MonsterDef def, string affixId)
+        {
+            var a = Db.Affix(affixId);
+            var defense = new Dictionary<string, double>();
+            foreach (var kv in def.Defense) defense[kv.Key] = JsMath.Round(kv.Value * (1 + (a.Defense ?? 0)));
+            var resists = def.Resists != null ? new Dictionary<string, double>(def.Resists) : new Dictionary<string, double>();
+            if (a.Resists != null) foreach (var kv in a.Resists) resists[kv.Key] = (resists.TryGetValue(kv.Key, out var v) ? v : 0) + kv.Value;
+            var copy = def.Clone();
+            copy.Hp = JsMath.Round(def.Hp * (1 + (a.Hp ?? 0)));
+            copy.Damage = Range(def.Damage, 1 + (a.Damage ?? 0));
+            copy.Defense = defense;
+            copy.Resists = resists;
+            copy.Attacks = def.Attacks.Select(atk =>
+            {
+                var extra = (a.Applies ?? new List<Apply>()).Where(x => !(atk.Applies?.Any(y => y.Status == x.Status) ?? false)).ToList();
+                if (!(atk.Power > 0 && extra.Count > 0)) return atk;
+                var c = atk.Clone();
+                c.Applies = new List<Apply>(atk.Applies ?? new List<Apply>());
+                c.Applies.AddRange(extra);
+                return c;
+            }).ToList();
+            return copy;
+        }
+
         // --- Heroic ---
 
         public static MonsterDef MakeHeroic(MonsterDef def)

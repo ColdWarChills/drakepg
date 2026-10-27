@@ -293,6 +293,58 @@ namespace Drakepg.Rules
         public List<MonsterAttack> Attacks;
     }
 
+    /// <summary>What a tower floor changes about its fight (src/data/types.ts `TowerFight`).</summary>
+    public class TowerFight
+    {
+        public int Floor;
+        public List<string> Twists = new List<string>();
+        public int? EnrageAt;
+        public bool NoItems;
+        /// <summary>Statuses at the start: `Self` on the monster, else on the hero.</summary>
+        public List<Apply> Starts;
+    }
+
+    /// <summary>A tower twist (src/data/tower.ts): one rule on top of a floor's monster.</summary>
+    public class TwistDef
+    {
+        public string Id, Name, Text, Affix, Veil;
+        public bool Unshakable, ShortFuse, NoItems;
+        public TwistShell Shell;
+        public List<Apply> Starts;
+    }
+
+    public class TwistShell
+    {
+        public string Element;
+        public int Hits;
+    }
+
+    public class FloorDef
+    {
+        public int Floor;
+        public string MonsterId;
+        public int Level;
+        public List<string> Twists = new List<string>();
+        public bool Heroic;
+    }
+
+    public class FlightDef
+    {
+        public string Id, Name, OpensAfter, LootTable, Sigil;
+        public int First, Last, Marks;
+    }
+
+    public class VendorDef
+    {
+        public int MinFloor;
+        /// <summary>set, cache or books.</summary>
+        public string Kind;
+        public string Set, LootTable, Sigil;
+        public List<string> Elements;
+        public int Marks;
+        public double Gold;
+    }
+
     public class MonsterShell
     {
         public string Name, Element;
@@ -333,6 +385,8 @@ namespace Drakepg.Rules
         public string Trait;
         public HeroicDef Heroic;
         public bool IsHeroic;
+        /// <summary>Only on tower floor copies made by `Tower.FloorMonster`.</summary>
+        public TowerFight Tower;
 
         /// <summary>A shallow copy, like `{ ...def }`.</summary>
         public MonsterDef Clone() => (MonsterDef)MemberwiseClone();

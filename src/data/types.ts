@@ -414,6 +414,79 @@ export interface MonsterDef {
   heroic?: { text: string; attacks: MonsterAttack[] };
   /** Only on Heroic copies made by `makeHeroic`. */
   isHeroic?: boolean;
+  /** Only on tower floor copies made by `floorMonster` (src/game/Tower.ts). */
+  tower?: TowerFight;
+}
+
+/** What a tower floor changes about its fight. */
+export interface TowerFight {
+  floor: number;
+  /** Twist ids, shown as chips (src/data/tower.ts). */
+  twists: string[];
+  /** Enrages from this turn instead of `BALANCE.enrage`'s. */
+  enrageAt?: number;
+  /** Items can't be used. */
+  noItems?: boolean;
+  /** Statuses at the start: `self` on the monster, else on the hero. */
+  starts?: Apply[];
+}
+
+/**
+ * A tower twist (src/data/tower.ts): one rule on top of a floor's monster, shown before you go in and in battle.
+ * Each field is an existing mechanic: an Elite affix, stun immunity, extra resists, a shell, starting statuses,
+ * an earlier enrage or no items.
+ */
+export interface TwistDef {
+  id: string;
+  name: string;
+  text: string;
+  affix?: string;
+  unshakable?: boolean;
+  /** Every element +`BALANCE.tower.veil.up` resist (at most 100), this one -`down`. */
+  veil?: Element;
+  shell?: { element: Element; hits: number };
+  starts?: Apply[];
+  shortFuse?: boolean;
+  noItems?: boolean;
+}
+
+export interface FloorDef {
+  floor: number;
+  monsterId: string;
+  level: number;
+  twists: string[];
+  /** Bosses fight as their Heroic version. */
+  heroic?: boolean;
+}
+
+/** Ten floors that open together after a story quest. */
+export interface FlightDef {
+  id: string;
+  name: string;
+  first: number;
+  last: number;
+  /** Quest whose completion opens it. */
+  opensAfter: string;
+  /** Marks per floor (x2 on a 5th floor, x3 on a 10th). */
+  marks: number;
+  /** Where the 10th floor's Sigil piece comes from. */
+  lootTable: string;
+  sigil: 'dawn' | 'dusk' | 'eclipse';
+}
+
+/** A row of the tower vendor (src/data/tower.ts); `kind` decides what it sells. */
+export interface VendorDef {
+  minFloor: number;
+  /** `set`: any piece of `set`, rolled like a boss drop. `cache`: a weapon from `lootTable` with a `sigil`. `books`: the Light and Dark family books and Wards of your class. */
+  kind: 'set' | 'cache' | 'books';
+  set?: string;
+  lootTable?: string;
+  sigil?: 'dawn' | 'dusk' | 'eclipse';
+  /** `books`: these elements' family books and Wards. */
+  elements?: Element[];
+  marks: number;
+  /** Gold on top of the marks; books add their own gold price. */
+  gold: number;
 }
 
 /**
@@ -507,7 +580,9 @@ export type NpcRole =
   | { kind: 'inn' }
   | { kind: 'forge'; recipes: string[] }
   /** The Adventurers' Guild board: hunts and ranks (src/game/Guild.ts). Every clerk shares one board. */
-  | { kind: 'guild' };
+  | { kind: 'guild' }
+  /** The tower's Warden: the floor list and the vendor (src/game/Tower.ts). */
+  | { kind: 'tower' };
 
 /** A system that opens up later in the game (src/data/features.ts). */
 export interface FeatureDef {

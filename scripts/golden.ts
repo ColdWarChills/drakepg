@@ -18,6 +18,7 @@ import { rollChestLoot } from '../src/game/Chests';
 import { hone, reinforce } from '../src/game/Forge';
 import { Player } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
+import { buyFromVendor, clearFloor, floorMonster, lastFloor } from '../src/game/Tower';
 
 const OUT = process.argv[2] ?? 'unity/Assets/Tests/EditMode/golden.json';
 const SEEDS = 12;
@@ -130,6 +131,8 @@ for (const cls of ['warrior', 'mage', 'rogue'] as ClassId[]) {
     cases.push({ name: `books ${id}`, cls, chapter: 3, monster: () => db.monster(id), zoneId: 'frostfang', books: [`ice_${family}`, `fire_${family}`, 'ice_ward', 'meditate'] });
   }
   cases.push({ name: 'books mire_toad', cls, chapter: 2, monster: () => db.monster('mire_toad'), zoneId: 'fen', books: [`water_${family}`, 'play_dead'] });
+  // The tower (docs/TOWER_SPEC.md): every kind of twist, Heroic bosses moved up.
+  for (const n of [2, 6, 8, 9, 10, 12, 15, 17, 19, 24, 29, 30]) cases.push({ name: `tower ${n}`, cls, chapter: n <= 10 ? 2 : 3, monster: () => floorMonster(n) });
 }
 
 const fights = [];
@@ -191,6 +194,13 @@ const extras: Record<string, unknown> = {};
   takeHunt(guild, board1[2]);
   refreshBoard(guild, rng);
   extras.guild = { board1, board2: guild.data.guild.board, hunts: guild.data.guild.hunts };
+  // The tower: first clears up the whole Spire, then the vendor.
+  const climber = heroFor('mage', 3);
+  climber.data.gold = 100000;
+  const clears = [];
+  for (let f = 1; f <= lastFloor(); f++) clears.push(clearFloor(climber, f, rng));
+  const buys = ['set:thornwarden_helm', 'cache:thornwood', 'cache:frostfang', 'book:dark_bolt', 'set:frostward_ring', 'book:dark_bolt'].map((k) => buyFromVendor(climber, k, rng));
+  extras.tower = { clears, buys, tower: climber.data.tower, gold: climber.data.gold, gear: climber.data.gear.slice(-7) };
 }
 
 mkdirSync(dirname(OUT), { recursive: true });

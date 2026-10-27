@@ -17,6 +17,7 @@ import { LOOT_TABLES } from '../src/data/loot';
 import { rollGear, type GearDef, type SigilTier } from '../src/game/Items';
 import { Player, xpToNext } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
+import { flightOf, floorMonster } from '../src/game/Tower';
 import { learnBooks, pickLoadout } from './bookplay';
 
 const RUNS = Number(process.argv[2] ?? 400);
@@ -246,8 +247,8 @@ function fight(row: Row, classId: ClassId, rng: Rng, random = false): Result {
   const { level, monster: monsterId, elite, gear, potions } = row;
   const potion = row.potion ?? 'health_potion';
   const res: Result = { wins: 0, turns: 0, hpLeft: 0, potions: 0 };
-  const base = row.zone ? makeImpling(db.zone(row.zone)) : db.monster(monsterId);
-  const monster = elite ? makeElite(base, elite) : row.heroic ? makeHeroic(base) : base;
+  const base = row.tower ? floorMonster(row.tower) : row.zone ? makeImpling(db.zone(row.zone)) : db.monster(monsterId);
+  const monster = row.tower ? base : elite ? makeElite(base, elite) : row.heroic ? makeHeroic(base) : base;
   for (let i = 0; i < RUNS; i++) {
     const p = makePlayer(classId, level, gear, potions, potion, monster, row.noBooks);
     if (row.losses) p.data.bossGrit[monster.id] = row.losses;
@@ -289,6 +290,8 @@ interface Row {
   zone?: string;
   /** Level skills only, no books. */
   noBooks?: boolean;
+  /** A tower floor: its monster with the floor's level and twists (`monster` is just the label). */
+  tower?: number;
 }
 
 function table(title: string, rows: Row[]): void {
@@ -561,6 +564,25 @@ table('Heroic rematches with the area set and jewelry (3 potions): the challenge
 ]);
 
 // --- Build variety (docs/BUILD_VARIETY_SPEC.md) ---
+
+// The tower (docs/TOWER_SPEC.md): every floor with the gear a careful player has when its flight opens (that chapter's
+// shop gear, lines rerolled to 75%) and with farmed gear a level later (the area set and jewelry, Dawn Sigils, 75%).
+const TOWER_KITS: { flight: string; level: number; open: Loadout; farm: Loadout; potion: string }[] = [
+  { flight: 'thornwood', level: 6, open: { ...SHOP, label: 'open', quality: 75 }, farm: { ...THORN_SET, label: 'farm', quality: 75, sigil: 'dawn' }, potion: 'health_potion' },
+  { flight: 'fen', level: 11, open: { ...SHOP2, label: 'open', quality: 75 }, farm: { ...STORM_SET, label: 'farm', quality: 75, sigil: 'dawn' }, potion: GREATER },
+  { flight: 'frostfang', level: 16, open: { ...SHOP3, label: 'open', quality: 75 }, farm: { ...FROST_SET, label: 'farm', quality: 75, sigil: 'dawn' }, potion: SUPERIOR },
+];
+table(
+  'Tower floors (fresh HP, 3 potions): open = shop gear at 75% when the flight opens, farm = area set, jewelry, Dawn Sigils, 75%, a level later',
+  db.floors().flatMap((f) => {
+    const k = TOWER_KITS.find((x) => x.flight === flightOf(f.floor).id)!;
+    const label = `F${f.floor} ${f.monsterId}`.slice(0, 20);
+    return [
+      { monster: label, tower: f.floor, level: k.level, gear: k.open, potions: 3, potion: k.potion },
+      { monster: label, tower: f.floor, level: k.level + 1, gear: k.farm, potions: 3, potion: k.potion },
+    ];
+  }),
+);
 
 table('Story bosses: level skills only (-books) vs the books a player could have read before the boss (3 potions)', [
   { monster: 'thornheart', level: 5, gear: SHOP, potions: 3, noBooks: true },

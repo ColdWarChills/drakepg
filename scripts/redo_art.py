@@ -118,6 +118,17 @@ NEW = {
     "npc_guild_edda": ("3:4", "A sturdy older Adventurers' Guild clerk woman from a mountain village, silver hair in "
                        "two thick braids, red cheeks, a dark green waistcoat with brass buttons over a thick cream "
                        "wool sweater, fur-lined boots, holding a heavy ledger."),
+    # The tower (docs/TOWER_SPEC.md): its room behind Brindlemoor and its Warden.
+    "bg_spire_foot": ("16:9", "The foot of a tall, ancient grey stone tower beside a small market town: the round "
+                      "tower base fills the middle of the picture and rises out of the top edge, a big arched wooden "
+                      "door with iron bands at its foot, two iron lanterns either side of it, worn stone steps up to "
+                      "the door, faded blue banners with a simple gold star hanging from the stones, ivy climbing the "
+                      "walls; a low town wall and a few red rooftops on the left, green hills and pines behind. "
+                      "The bottom 30% of the image is a flat, open cobbled square running across the full width."),
+    "npc_spire_warden": ("3:4", "A stern, tall old tower warden, short trimmed grey beard, a long slate-grey coat "
+                         "with gold trim over dark chain mail, a faded blue sash with a small gold star, a ring of "
+                         "heavy iron keys on his belt, holding a tall iron-shod staff topped with a small brass "
+                         "lantern."),
     # Weapons from the first batch had one shared prompt template; their subjects, from the item text.
     "wpn_training_sword": ("9:16", "A single plain, slightly blunt short training sword with a simple iron crossguard "
                            "and a leather-wrapped grip, shown alone as a game item."),

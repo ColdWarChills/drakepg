@@ -48,6 +48,10 @@ namespace Drakepg
         public bool Heroic;
         public string RoomId;
         public float X, Y;
+        /// <summary>A tower floor (0 = none): its monster, twists and pay come from Tower.cs.</summary>
+        public int TowerFloor;
+        /// <summary>Tower fights start at full HP and MP; these come back afterwards.</summary>
+        public double EntryHp, EntryMp;
     }
 
     /// <summary>A quest or hunt counter a kill advanced.</summary>
@@ -74,6 +78,18 @@ namespace Drakepg
         public Location Wake;
         /// <summary>Defeat against a boss: grit you now have (0-1).</summary>
         public double? Grit;
+        /// <summary>A tower floor's outcome (null for other fights).</summary>
+        public TowerOutcome Tower;
+    }
+
+    public class TowerOutcome
+    {
+        public int Floor;
+        /// <summary>A first clear's pay; null for a loss or a practice run.</summary>
+        public FloorClear Clear;
+        /// <summary>The floor to climb next, if open.</summary>
+        public int? Next;
+        public List<string> Twists = new List<string>();
     }
 
     /// <summary>The game's random numbers (defaultRng in the web version): a fresh seed per play session.</summary>

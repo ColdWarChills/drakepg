@@ -6,6 +6,7 @@ import { PROMOTIONS } from '../data/guild';
 import { LOOT_TABLES } from '../data/loot';
 import { MAP_AREAS } from '../data/map';
 import { QUESTS } from '../data/quests';
+import { VENDOR } from '../data/tower';
 import type { BookDef, ClassId, Element, ItemDef, NpcRole, RoomDef, SkillDef } from '../data/types';
 import { ROOMS } from '../data/world';
 import { boosted } from './cheats';
@@ -185,5 +186,6 @@ function buildSources(): Map<string, string[]> {
     const area = MAP_AREAS.find((a) => a.id === t.id)?.name ?? t.id;
     for (const e of t.books ?? []) familyAndWard(e).forEach((id) => add(id, `Elites in ${area}`));
   }
+  for (const v of VENDOR) for (const e of v.elements ?? []) familyAndWard(e).forEach((id) => add(id, `The Spire's vendor, from floor ${v.minFloor}`));
   return out;
 }

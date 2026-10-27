@@ -6,6 +6,7 @@ import type { EquipSlot } from '../data/types';
 import { sanitizeGuild } from './Guild';
 import { ALL_SLOTS, fitsSlot, isGearDef, sanitizeTraits, type Gear } from './Items';
 import { emptyEquipment, Player, STAT_KEYS, type PlayerData } from './Player';
+import { lastFloor, type TowerState } from './Tower';
 import { areaTown, RECALL_SCROLL } from './Travel';
 
 interface SaveFile {
@@ -103,6 +104,7 @@ export const SaveSystem = {
  *             drops them); the rank they would have earned is given from how far the story got.
  * v15 -> v16: skill books (`learned`, `bookPity`). Levels now teach 6 skills per class; the rest are books. Nobody loses
  *             a skill: every skill the old level lists had taught by the hero's level is learned.
+ * v16 -> v17: the tower (`tower`: best floor and marks); sanitize() starts it empty.
  */
 /** The level lists before skill books (save v15 and older): what an old character already knows. */
 const OLD_LEVEL_SKILLS: Record<string, [string, number][]> = {
@@ -188,7 +190,15 @@ function migrate(file: SaveFile): SaveFile | null {
     p.bookPity = {};
     file.version = 16;
   }
+  if (file.version < 17) file.version = 17;
   return file;
+}
+
+/** Best floor within the tower's floors, whole non-negative marks. */
+function sanitizeTower(raw: unknown): TowerState {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Partial<TowerState>;
+  const whole = (v: unknown, max: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(max, Math.floor(v))) : 0);
+  return { best: whole(r.best, lastFloor()), marks: whole(r.marks, Number.MAX_SAFE_INTEGER) };
 }
 
 /** Kill counters for loot tables that still exist. */
@@ -299,6 +309,7 @@ function sanitize(raw: Partial<PlayerData>): PlayerData {
       ? [...new Set(raw.learned.filter((id): id is string => typeof id === 'string' && db.hasSkill(id) && readableBy(db.skill(id), classId)))]
       : [],
     bookPity: sanitizePity(raw.bookPity),
+    tower: sanitizeTower(raw.tower),
   };
 
   const player = new Player(data);

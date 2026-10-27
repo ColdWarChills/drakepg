@@ -18,6 +18,27 @@ export function rollElite(rng: Rng = defaultRng, questWantsOne = false): string 
   return list[randInt(rng, 0, list.length - 1)].id;
 }
 
+/** Only an affix's own effects on `def` (a tower twist): no Elite size-up, rewards or name change. */
+export function applyAffix(def: MonsterDef, affixId: string): MonsterDef {
+  const a = db.affix(affixId);
+  const range = (r: [number, number], m: number): [number, number] => [Math.round(r[0] * m), Math.round(r[1] * m)];
+  const defense: Defenses = {};
+  for (const [type, v] of Object.entries(def.defense) as [keyof Defenses, number][]) defense[type] = Math.round(v * (1 + (a.defense ?? 0)));
+  const resists: Resists = { ...def.resists };
+  for (const [key, v] of Object.entries(a.resists ?? {}) as [keyof Resists, number][]) resists[key] = (resists[key] ?? 0) + v;
+  return {
+    ...def,
+    hp: Math.round(def.hp * (1 + (a.hp ?? 0))),
+    damage: range(def.damage, 1 + (a.damage ?? 0)),
+    defense,
+    resists,
+    attacks: def.attacks.map((atk) => {
+      const extra = (a.applies ?? []).filter((x) => !atk.applies?.some((y) => y.status === x.status));
+      return atk.power > 0 && extra.length ? { ...atk, applies: [...(atk.applies ?? []), ...extra] } : atk;
+    }),
+  };
+}
+
 /** The Elite version of `def` with the given affix. Its guaranteed gear drop comes from `def.loot`. */
 export function makeElite(def: MonsterDef, affixId: string): MonsterDef {
   const a = db.affix(affixId);

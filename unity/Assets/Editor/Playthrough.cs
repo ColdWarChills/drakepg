@@ -36,6 +36,10 @@ namespace Drakepg.EditorTools
         public class Stats
         {
             public double Minutes, Fights, Deaths, Flees, Rests, Potions, LevelIn, LevelOut, GoldOut, Gear, Books, PotionGold, Inn, Read, Lost, Stones, Avoided;
+            /// <summary>The tower: best floor at the chapter's end, fights and losses there, marks earned, gold the vendor took, farming rounds when stuck.</summary>
+            public double TowerBest, TowerFights, TowerLosses, Marks, VendorGold, TowerFarms;
+            /// <summary>Floors that beat the bot ("F9 Ash Imp" -> losses).</summary>
+            public Dictionary<string, int> TowerWalls = new Dictionary<string, int>();
             /// <summary>Who beat the hero: "Monster Lx (elite) vs hero Ly" -> times.</summary>
             public Dictionary<string, int> Killers = new Dictionary<string, int>();
             public List<string> Bosses = new List<string>();
@@ -609,6 +613,110 @@ namespace Drakepg.EditorTools
                 }
             }
 
+            // --- The tower (docs/TOWER_SPEC.md) ---
+
+            /// <summary>
+            /// Climb every open floor: three tries each (fresh HP, potions used up for real), the vendor before each floor.
+            /// Stuck: farm the area's monsters (drops, gold) and try again, at most twice; then leave it for later.
+            /// </summary>
+            public void Climb()
+            {
+                if (!Features.On(P, "tower") || Tower.NextFloor(P) == null) return;
+                WalkTo("spire_foot");
+                int farms = 0;
+                for (int guard = 0; guard < 120; guard++)
+                {
+                    var n = Tower.NextFloor(P);
+                    if (n == null) break;
+                    Vendor();
+                    var won = false;
+                    for (int tries = 0; tries < 3 && !won; tries++) won = TowerFight(n.Value);
+                    if (won) continue;
+                    if (++farms > 2) break;
+                    S.TowerFarms++;
+                    FarmFlight(Tower.FlightOf(n.Value));
+                    WalkTo("spire_foot");
+                }
+                S.TowerBest = P.Data.Tower.Best;
+            }
+
+            /// <summary>One try at a floor: full HP and MP in, the HP you came with out; a first clear pays.</summary>
+            bool TowerFight(int n)
+            {
+                var def = Tower.FloorMonster(n);
+                var hp = P.Hp;
+                var mp = P.Mp;
+                // Top up potions for the fight like a player would (the town is next door).
+                P.RestoreFull();
+                WieldAgainst(def);
+                P.Data.Loadout = PickLoadout(P, def);
+                var b = new Battle(P, def, rng);
+                int turns = 0;
+                for (; !b.IsOver && turns < 80; turns++) Act(b);
+                S.TowerFights++;
+                Clock += T.Fight + turns * T.Turn;
+                P.Data.Hp = hp;
+                P.Data.Mp = mp;
+                P.ClampVitals();
+                if (b.State != "victory")
+                {
+                    S.TowerLosses++;
+                    var wall = $"F{n} {def.Name}";
+                    S.TowerWalls[wall] = (S.TowerWalls.TryGetValue(wall, out var w) ? w : 0) + 1;
+                    return false;
+                }
+                var clear = Tower.ClearFloor(P, n, rng);
+                if (clear != null) S.Marks += clear.Marks;
+                ReadAll();
+                EquipUpgrades();
+                return true;
+            }
+
+            /// <summary>Farm the flight's area for gear and gold: about a dozen fights in its rooms.</summary>
+            void FarmFlight(FlightDef flight)
+            {
+                var start = S.Fights;
+                bool Wants(RoomDef room) => room.ZoneId != null && (room.MonsterCount ?? 0) > 0 && Monsters.ZoneLootTable(Db.Zone(room.ZoneId)) == flight.LootTable;
+                FarmFor("tower farm", Wants, () => S.Fights - start >= 12);
+                // Spend what came in: the shops on the way back.
+                WalkTo("brindlemoor");
+            }
+
+            /// <summary>The Warden's vendor: set pieces that are upgrades, Sigil caches and books when marks and gold allow.</summary>
+            void Vendor()
+            {
+                for (int i = 0; i < 12; i++)
+                {
+                    var now = Score();
+                    VendorRow pick = null;
+                    foreach (var row in Tower.VendorStock(P))
+                    {
+                        if (P.Data.Tower.Marks < row.Marks || P.Gold < row.Gold + 200) continue;
+                        if (row.Entry.Kind == "books")
+                        {
+                            var skill = Books.BookSkill(Db.Item(row.ItemId));
+                            if ((skill.Kind == "damage" || skill.Kind == "heal") && Books.CanRead(P, skill) == "ok") pick = row;
+                        }
+                        else if (row.Entry.Kind == "cache") pick ??= row;
+                        else
+                        {
+                            // A set piece at 0% rolls as a stand-in: buy it if even that is an upgrade.
+                            var trial = P.MakeGear(row.ItemId);
+                            P.Data.Gear.Add(trial);
+                            var (s, _) = TryOn(trial);
+                            P.Data.Gear.Remove(trial);
+                            if (s > now * 1.02) pick ??= row;
+                        }
+                    }
+                    if (pick == null) return;
+                    var gold = P.Gold;
+                    if (Tower.BuyFromVendor(P, pick.Key, rng) != "ok") return;
+                    S.VendorGold += gold - P.Gold;
+                    ReadAll();
+                    EquipUpgrades();
+                }
+            }
+
             // --- Quests and the Guild (pace.ts) ---
 
             public void Quest(QuestDef q)
@@ -729,7 +837,7 @@ namespace Drakepg.EditorTools
         static readonly string[] ChapterNames = { "Prologue", "Chapter 1", "Chapter 2", "Chapter 3" };
 
         /// <summary>Play `runs` heroes of each class from the road to the end of the story; returns the report.</summary>
-        public static string Run(int runs = 5, int seed = 1234, bool verbose = false)
+        public static string Run(int runs = 5, int seed = 1234, bool verbose = false, bool climb = true)
         {
             if (!Db.Loaded) Db.Load(Resources.Load<TextAsset>("Data/game").text);
             var chapters = new List<List<QuestDef>> { new List<QuestDef>(), new List<QuestDef>() };
@@ -762,6 +870,7 @@ namespace Drakepg.EditorTools
                                 bot.WalkTo("brindlemoor");
                             }
                             foreach (var q in chapters[c]) bot.Quest(q);
+                            if (climb) bot.Climb();
                         }
                         catch (Exception e)
                         {
@@ -801,6 +910,14 @@ namespace Drakepg.EditorTools
                     foreach (var b in bosses) sb.AppendLine($"           {b}");
                     var killers = list.SelectMany(s => s.Killers).GroupBy(kv => kv.Key).Select(g => (who: g.Key, n: g.Sum(kv => kv.Value))).OrderByDescending(x => x.n).Take(6);
                     if (killers.Any()) sb.AppendLine($"           deaths: {string.Join(", ", killers.Select(x => $"{x.who} x{x.n}"))}");
+                    if (list.Any(s => s.TowerFights > 0))
+                    {
+                        var bests = list.Select(s => (int)s.TowerBest).OrderBy(b => b).ToList();
+                        sb.AppendLine($"           tower: best floor {bests.First()}-{bests.Last()} (median {bests[bests.Count / 2]}), {A(s => s.TowerFights):0} fights, {A(s => s.TowerLosses):0.0} lost, " +
+                            $"{A(s => s.TowerFarms):0.0} farm trips, {A(s => s.Marks):0} marks, {A(s => s.VendorGold):0} g at the vendor");
+                        var walls = list.SelectMany(s => s.TowerWalls).GroupBy(kv => kv.Key).Select(g => (who: g.Key, n: g.Sum(kv => kv.Value))).OrderByDescending(x => x.n).Take(6);
+                        if (walls.Any()) sb.AppendLine($"           tower losses: {string.Join(", ", walls.Select(x => $"{x.who} x{x.n}"))}");
+                    }
                     if (verbose)
                         foreach (var s in list)
                             sb.AppendLine($"           sold {s.Sold:0} g; bought {string.Join(" ", s.Bought)}; wearing {s.Kit}");

@@ -32,6 +32,10 @@ namespace Drakepg.Rules
         public List<MapAreaDef> MapAreas;
         public Dictionary<string, PromotionDef> Promotions;
         public List<ChapterStart> ChapterStarts;
+        public List<TwistDef> Twists = new List<TwistDef>();
+        public List<FloorDef> Floors = new List<FloorDef>();
+        public List<FlightDef> Flights = new List<FlightDef>();
+        public List<VendorDef> Vendor = new List<VendorDef>();
     }
 
     /// <summary>
@@ -56,6 +60,7 @@ namespace Drakepg.Rules
         static Dictionary<string, LootTableDef> lootTables;
         static Dictionary<string, FeatureDef> features;
         static Dictionary<string, SetDef> sets;
+        static Dictionary<string, TwistDef> twists;
 
         public static bool Loaded => Data != null;
 
@@ -75,6 +80,7 @@ namespace Drakepg.Rules
             lootTables = Index("loot table", Data.LootTables, x => x.Id);
             features = Index("feature", Data.Features, x => x.Id);
             sets = Index("set", Data.Sets, x => x.Id);
+            twists = Index("tower twist", Data.Twists, x => x.Id);
             Guild.ClearCache();
         }
 
@@ -94,6 +100,7 @@ namespace Drakepg.Rules
 
         public static ItemDef Item(string id) => Get("item", items, id);
         public static SkillDef Skill(string id) => Get("skill", skills, id);
+        public static TwistDef Twist(string id) => Get("tower twist", twists, id);
         public static MonsterDef Monster(string id) => Get("monster", monsters, id);
         public static ZoneDef Zone(string id) => Get("zone", zones, id);
         public static RoomDef Room(string id) => Get("room", rooms, id);

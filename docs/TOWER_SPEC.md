@@ -1,6 +1,6 @@
 # Tower spec: harder floors, first-clear rewards, a vendor
 
-**Draft 2026-10-27, for the designer's review before building.** From the designer's proposal in `docs/PLANS.md` ("Harder dungeons: a tower", like Summoners War's Trial of Ascension) and the defaults they picked: fresh HP per floor, first-clear rewards, a twist on every floor, a tower-currency vendor. Numbers are starting points: `npm run sim` and the Unity playthrough bot decide the final ones (all in `BALANCE` or `src/data/`). Names are placeholders.
+**Built 2026-10-27** (rules in both versions, UI in Unity), for the designer's playtest. From the designer's proposal in `docs/PLANS.md` ("Harder dungeons: a tower", like Summoners War's Trial of Ascension) and the defaults they picked: fresh HP per floor, first-clear rewards, a twist on every floor, a tower-currency vendor. The floor list, levels and scaling below are the built ones (tuned with `npm run sim` and the Unity playthrough bot; see "What the checks said"). Names are placeholders.
 
 Goal: hard content to gear up for. The playthrough bot (2026-10-27) found story bosses fall on the first try, drops beat every shop piece after Chapter 1, and gold piles up (7-9k by the end of Chapter 3). The tower is the exam; zones, Elites and Heroic rematches stay the farm.
 
@@ -16,56 +16,57 @@ Goal: hard content to gear up for. The playthrough bot (2026-10-27) found story 
 ## Where it is
 
 - A new quiet room, **Spire Foot**, through a back exit in Brindlemoor (a door in the town art, like the Fen and Frostfang exits). The **Warden** stands there: "Climb" opens the floor list, "Trade" opens the vendor.
-- Art: one room background, the Warden, one tower-interior battle background (local Qwen, round-15 look). Until it exists: shapes and the monster's own zone background.
+- The door is the cottage door at the left of Brindlemoor's art (no gate: before the Thornheart falls the room is there, the Warden isn't).
+- Art: the room background and the Warden (local Qwen, round-15 look). Battles use the flight's area background (Thornwood, Fen, Frostfang); a tower-interior battle background is a later option.
 
 ## Flights and floors
 
 | Flight | Floors | Opens after | Floor levels | Hero level when it opens (playthrough) |
 | --- | --- | --- | --- | --- |
-| Thornwood | 1-10 | The Thornheart | 6-10 | 5-6 |
-| Fen | 11-20 | The Stormcoil | 12-16 | 10-13 |
-| Frostfang | 21-30 | The Frostbinder | 17-21 | 14-17 |
+| Thornwood | 1-10 | The Thornheart | 6-12 | 5-6 |
+| Fen | 11-20 | The Stormcoil | 12-21 | 11-12 |
+| Frostfang | 21-30 | The Frostbinder | 17-24 | 16-17 |
 
-A flight's first floors are a step up from the chapter; its last ones need farmed gear. Levelling past an old flight makes it easier, like any old zone (accepted: early floors become quick marks).
+The first floors of a flight are a step up from the chapter; its last ones need a farming trip. Levelling past an old flight makes it easier, like any old zone (accepted: early floors become quick marks). Levels are not in order: a Tough monster is hard at a lower level (an Ash Imp at 7 is a wall, a Spark Wisp at 10 is not).
 
-**Scaling (no HP sponges):** a floor monster is its normal self moved up to the floor's level: damage +8% per level, HP +4% per level, defenses +1 per level (`BALANCE.tower.perLevel`). The difficulty comes from twists and damage, not long fights (the advisor's "lethality contract" note). Bosses use the Heroic version (`makeHeroic`: extra move, x1.25 damage) moved to the floor's level.
+**Scaling:** a floor monster keeps its strength against monsters of its own level. HP and damage are multiplied by `curve[floor level] / curve[its level]`, where the curve is a normal monster's HP and average hit per level, fit from the monster list (`BALANCE.tower.curve`; past level 12, where no monsters exist yet, +10% HP and +7% damage a level). Defense +0.5 per level. (The draft's flat +8%/+4% per level left floors trivial; one compound rate made level-8 monsters moved to 15 into 790-HP sponges: the monster list's own curve is steep up to level 8 and flat after.) Bosses use the Heroic version (`makeHeroic`: extra move, x1.25 damage) moved to the floor's level.
 
-### Floors (draft)
+### Floors (built)
 
-One twist per floor up to floor 8, two from floor 9, three on 29.
+The draft used the gate guards (Millstone Crab, Dusk Wraith, Hedge Troll), but each is weak to one class's first skill only, so their floors were one-class floors (the Wraith: Light, which only the Mage has then). Flight 1 now takes two Fen monsters as a preview of Chapter 2 instead.
 
 | Floor | Monster | Lv | Twists | Question it asks |
 | --- | --- | --- | --- | --- |
-| 1 | Bramble Bandit | 6 | Frenzied | Can you take a hit? |
-| 2 | Thornback Boar | 6 | Short fuse | Kill it fast |
-| 3 | Ash Imp | 7 | Fury | Ice, Water, Blunt or Poison |
-| 4 | Mossling | 7 | Hulking | Sustain |
-| 5 | Barkshell Beetle | 8 | Warded | Fire or Wind through +25 resists |
-| 6 | Hedge Troll | 8 | Venomous | Poison it before it poisons you |
-| 7 | Millstone Crab | 9 | Veil (Wind) | Bring Wind |
-| 8 | Dusk Wraith | 9 | No potions | Heals and Wards instead |
-| 9 | Ash Imp | 10 | Unshakable, Short fuse | No stun; burst |
-| 10 | Heroic Thornheart | 10 | Hardened | Boss with Iron Skin |
+| 1 | Mossling | 6 | Frenzied | Warm-up |
+| 2 | Thornback Boar | 6 | Short Fuse | Kill it fast |
+| 3 | Bramble Bandit | 7 | Hulking | Sustain |
+| 4 | Mire Toad | 7 | Venomous | Poison it first, or outlast it |
+| 5 | Barkshell Beetle (Tough) | 7 | Warded | Fire or Wind through +25 resists |
+| 6 | Spark Wisp | 10 | Wind Veil | Bring Wind |
+| 7 | Ash Imp (Tough) | 7 | Fury | Ice, Water, Blunt or Poison |
+| 8 | Bramble Bandit | 10 | No Potions | Heals and Wards instead of potions |
+| 9 | Ash Imp (Tough) | 8 | Unshakable, Short Fuse | No stun; burst it |
+| 10 | Heroic Thornheart | 12 | Hardened | Boss with Iron Skin |
 | 11 | Mire Toad | 12 | Hulking | Sustain |
-| 12 | Spark Wisp | 12 | Ambush (Shock) | Start hurt |
+| 12 | Spark Wisp | 13 | Ambush: Shock | Start hurt |
 | 13 | Bog Lurker | 13 | Ironhide | Magic or Sunder |
-| 14 | Sunken Revenant | 13 | Veil (Light) | Bring Light |
-| 15 | Heroic Bogmother | 14 | No potions | Mini-boss on your own heals |
-| 16 | Volt Eel | 14 | Unshakable, Frenzied | No stun, hits hard |
-| 17 | Stormscale Drakeling | 15 | Shell (Water, 3 hits) | Water hits to crack it |
-| 18 | Spark Wisp | 15 | Short fuse, Venomous | Race |
+| 14 | Sunken Revenant | 14 | Light Veil | Bring Light |
+| 15 | Heroic Bogmother | 16 | No Potions | Mini-boss on your own heals |
+| 16 | Volt Eel (Tough) | 18 | Unshakable, Frenzied | No stun, hits hard |
+| 17 | Stormcrest Heron (Tough) | 17 | Water Shell | Water hits to crack it |
+| 18 | Spark Wisp | 18 | Short Fuse, Venomous | Race |
 | 19 | Sunken Revenant | 16 | Regrowth, Warded | Out-damage its Regen |
-| 20 | Heroic Stormcoil | 16 | Fury | Boss with War Cry |
+| 20 | Heroic Stormcoil | 21 | Fury | Boss with War Cry |
 | 21 | Drift Wolf | 17 | Frenzied | Take a hit |
-| 22 | Crag Ram | 17 | Ironhide | Magic or Sunder |
-| 23 | Gust Sprite | 18 | Veil (Earth) | Bring Earth |
-| 24 | Ember Salamander | 18 | Ambush (Burn) | Start burning |
+| 22 | Crag Ram | 18 | Ironhide | Magic or Sunder |
+| 23 | Gust Sprite | 18 | Earth Veil | Bring Earth |
+| 24 | Ember Salamander | 19 | Ambush: Burn | Start burning |
 | 25 | Heroic Old Snowmaw | 19 | Regrowth | Fire through the shell, fast |
-| 26 | Glacier Golem | 19 | Unshakable, Hulking | Long fight without stuns |
-| 27 | Rime Acolyte | 20 | No potions, Warded | Sustain without potions |
-| 28 | Vent Wyrmling | 20 | Shell (Ice, 3 hits), Frenzied | Ice hits first |
-| 29 | Drift Wolf | 21 | Short fuse, Venomous, Fury | Everything at once |
-| 30 | Heroic Frostbinder | 21 | Hardened, No potions | The final exam |
+| 26 | Glacier Golem (Tough) | 21 | Unshakable, Hulking | Long fight without stuns |
+| 27 | Rime Acolyte | 22 | No Potions, Warded | Sustain without potions |
+| 28 | Vent Tortoise (Tough) | 21 | Ice Shell, Frenzied | Ice hits first |
+| 29 | Drift Wolf | 24 | Short Fuse, Venomous, Fury | Everything at once |
+| 30 | Heroic Frostbinder | 23 | Hardened, No Potions | The final exam |
 
 ## Twists
 
@@ -110,14 +111,38 @@ Stock opens with your best floor. Gear is rolled like a boss drop (not shop 0%),
 
 The gold side is sized from the playthrough's gold left at each chapter's end (~400 g, ~2-3k, ~7-9k): a full Frostward set from the vendor costs 8,000 g. The Light and Dark books get their first source this way (they have none today, read level 16).
 
-## Difficulty targets (sim, smart bot)
+## What the checks said (2026-10-27)
 
-| Kit | Floors 1-4 | 5-8 | 9 | Boss floor |
-| --- | --- | --- | --- | --- |
-| What a careful player has at the flight's opening (the playthrough bot's gear) | 90%+ | 55-85% | 30-60% | 20-45% |
-| After farming: the area set, a Dawn Sigil weapon, 75%+ rolls | 100% | 90%+ | 75%+ | 65%+ |
+**Targets** (sim, smart bot): with what a careful player has when a flight opens, floors 1-4 90%+, 5-8 55-85%, 9 30-60%, the boss floor 20-45%; after farming (the area set and jewelry, Dawn Sigils, 75% rolls) 100% / 90%+ / 75%+ / 65%+. A floor nobody beats with farmed gear is a bug.
 
-The random-button bot should lose most boss floors even after farming: twists reward reading them. Each floor's right counter (element, Ward, spare weapon) should move its win rate clearly; a floor no class can beat with farmed gear is a bug.
+**Sim** (`npm run sim`, "Tower floors", win % Warrior / Mage / Rogue, opening gear -> farmed gear):
+
+| Floor | Opening gear | Farmed gear |
+| --- | --- | --- |
+| 1-4 | 89-100% | 100% |
+| 5 Barkshell Beetle | 86 / 97 / 61 | 100% |
+| 7 Ash Imp | 29 / 93 / 16 | 99-100% |
+| 9 Ash Imp | 13 / 39 / 4 | 93 / 100 / 95 |
+| 10 Heroic Thornheart | 13 / 5 / 20 | 100% |
+| 17 Stormcrest Heron | 8 / 23 / 69 | 97-100% |
+| 19 Sunken Revenant | 13 / 31 / 14 | 99-100% |
+| 20 Heroic Stormcoil | 1 / 0 / 14 | 97-99% |
+| 26 Glacier Golem | 30 / 95 / 1 | 100% |
+| 28 Vent Tortoise | 4 / 2 / 19 | 90 / 98 / 100 |
+| 30 Heroic Frostbinder | 0 / 2 / 1 | 74 / 97 / 91 |
+
+The random-button bot loses most top floors even with farmed gear (Frostbinder 28-56%): the twists reward reading them. Some floors are walls for one class (the Golem's armor for a Rogue, Light Veil for a Warrior): those are the farming targets.
+
+**Unity playthrough bot** (6 heroes per class; after each chapter's boss it climbs, 3 tries a floor, farms the area twice when stuck, buys from the vendor):
+
+| | After Chapter 1 | After Chapter 2 | After Chapter 3 |
+| --- | --- | --- | --- |
+| Best floor (median) | 9-10 (range 4-10) | 19-20 (13-20) | 30 (25-30) |
+| Tower fights / losses | 14-20 / 4-11 | 16-18 / 6-9 | 14-21 / 4-10 |
+| Farming trips | 1-2 | 1-2 | 1-2 |
+| Gold at the vendor | ~50 | 2,000-2,500 | 2,900-3,600 |
+
+The walls it hit most: the Heroic bosses, the Ash Imp floors (Warriors and Rogues), the Stormcrest Heron's Water Shell, the Vent Tortoise's Ice Shell. The vendor takes 2-3.5k gold a chapter from Chapter 2 on, but heroes still end Chapter 3 with 7-11k: the gold surplus (PLANS, "Playthrough") is eased, not solved. The bot plays carefully (heals first, swaps weapons, rerolls with stones), so real players will need more farming.
 
 ## Save, unlock, rules
 
@@ -129,17 +154,17 @@ The random-button bot should lose most boss floors even after farming: twists re
 ## UI (Unity)
 
 - **Floor list** (Warden, "Climb"): three flight tabs; locked ones say "Opens after The Stormcoil". Each floor is a card: number, monster picture and level, twist chips, first-clear reward, a check when cleared. The next floor is highlighted with an **Enter** button.
-- **Battle:** twist chips on the monster panel; "Floor 7" in the boss-style name banner.
+- **Battle:** a line per twist on the monster panel (with starting statuses as chips from the first moment), "Floor 7" next to the level, "FLOOR 10 · HEROIC BOSS" on the boss banner.
 - **Result:** win: "Floor 7 cleared!", marks and items, then **Next floor** or **Back**. Loss: what beat you and the twists again (losses must say why), then **Retry** or **Back**.
-- **Vendor** ("Trade"): the shop panel with prices in marks and gold.
+- **Vendor** (the Trade tab): rows with the item, what it is, its price in marks and gold, and Buy.
 - Phaser: no tower (like the spellbook).
 
-## Checks before calling it done
+## Checks done
 
-- Golden tests: a tower fight per twist kind (1296 fights still match).
-- `npm run sim`: a "Tower floors" table per class and kit (opening kit, farmed kit), smart and random bot.
-- Playthrough bot: after each chapter's boss it climbs its flight with what it has, farms Elites and Heroic rematches if stuck, and buys from the vendor; report the best floor per chapter and the gold the vendor took.
-- In Unity: every twist chip, a win and a loss result, the vendor, a save from v16 loading.
+- Golden tests: 12 tower floors per class (every kind of twist, Heroic bosses moved up) plus a climb through all 30 floors and vendor purchases: 1728 fights match TypeScript and C#.
+- `npm run sim`: the "Tower floors" table (above).
+- Playthrough bot (`Editor/Playthrough.cs`): climbs after each chapter (above).
+- In Unity: the "New!" popup, Spire Foot and the Warden, the floor list, a floor fight with its twist line and starting-status chip, a first-clear win, a boss-floor win with its Sigil piece, a loss with Retry, the vendor.
 
 ## Not in this build
 

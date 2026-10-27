@@ -18,6 +18,7 @@ namespace Drakepg.Rules
         public Dictionary<string, FamilyTuning> Families;
         public WardTuning Ward;
         public FreezeTuning Freeze;
+        public TowerTuning Tower;
         public double DefendDamage, DefendMp, MaxPlayerResist, MinResist;
 
         public Dictionary<string, double> GearRolls;
@@ -76,6 +77,39 @@ namespace Drakepg.Rules
     public class FreezeTuning
     {
         public double PerStat, Max;
+    }
+
+    /// <summary>The tower (BALANCE.tower): the level curve, twist numbers and first-clear pay.</summary>
+    public class TowerTuning
+    {
+        public TowerCurve Curve;
+        public double DefensePerLevel;
+        public int ShortFuse;
+        public VeilTuning Veil;
+        public ShellTuning Shell;
+        public MilestoneTuning Milestone;
+        public int Stones;
+    }
+
+    public class TowerCurve
+    {
+        public double[] Hp, Damage;
+    }
+
+    public class VeilTuning
+    {
+        public double Up, Down;
+    }
+
+    public class ShellTuning
+    {
+        public int Hits;
+        public double Reduction, ReformAt;
+    }
+
+    public class MilestoneTuning
+    {
+        public int Fifth, Tenth;
     }
 
     public class SigilTuning

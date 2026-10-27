@@ -71,6 +71,11 @@ namespace Drakepg
                 title.style.opacity = Mathf.Clamp01(t);
             }, Ease.BackOut, 0.1f);
 
+            if (data.Tower != null)
+            {
+                TowerResult(cx, won);
+                return;
+            }
             if (won)
             {
                 var rewards = data.Rewards;
@@ -300,6 +305,65 @@ namespace Drakepg
                 if (to > 0) Sfx.Play("coin");
                 Anim.Float(1, 1.25f, 0.09f, s => text.style.scale = new Scale(new Vector3(s, s, 1)), Ease.Linear, yoyo: true);
             });
+        }
+
+        /// <summary>A tower floor's result: marks and items on a first clear, the twists again on a loss; Next floor / Retry and Back.</summary>
+        void TowerResult(float cx, bool won)
+        {
+            var t = data.Tower;
+            var player = Session.Player;
+            if (won)
+            {
+                Anim.After(0.25f, () => Fx.Confetti(World));
+                Sfx.Play("victory");
+                Ui.Text(Root, cx, 240, $"Floor {t.Floor} cleared!", 28, Palette.Text, true, 0.5f, 0.5f);
+                if (t.Clear != null)
+                {
+                    var marks = Ui.Text(Root, cx, 290, "+0 marks", 30, Palette.TextGold, true, 0.5f, 0.5f);
+                    CountUp(marks, t.Clear.Marks, " marks", 0.4f);
+                    // Stones as one line; gear (the Sigil piece) revealed like a drop.
+                    var stones = t.Clear.Items.Where(g => Db.Item(g.ItemId).Type == "stone").ToList();
+                    if (stones.Count > 0) Ui.Text(Root, cx, 336, $"+{Db.B.Tower.Stones} of each roll stone", 22, Palette.TextMagic, true, 0.5f, 0.5f);
+                    var gear = t.Clear.Items.Where(g => Db.Item(g.ItemId).IsGear).ToList();
+                    if (gear.Count > 0) DropReveal(cx, 360, gear, data.Lost);
+                }
+                else Ui.Text(Root, cx, 290, "Practice run: this floor paid out on its first clear.", 20, Palette.TextDim, false, 0.5f, 0.5f);
+                var hasGear = t.Clear?.Items.Any(g => Db.Item(g.ItemId).IsGear) == true;
+                Ui.Text(Root, cx, hasGear ? 470 : 400, $"Marks: {player.Data.Tower.Marks}   ·   Best floor: {player.Data.Tower.Best} / {Tower.LastFloor}", 19, Palette.TextDim, false, 0.5f, 0.5f);
+                if (t.Next is int next) TowerButtons("Next floor", () => TowerPanel.StartFloor(player, next), 560);
+                else ContinueButton("Back", data.Back, 560);
+            }
+            else
+            {
+                GameRoot.I.Shake(0.3f, 8);
+                var lines = new List<string> { $"{Capitalize(The(data.MonsterName))} got the better of you on floor {t.Floor}.", "" };
+                lines.AddRange(t.Twists.Select(Db.Twist).Select(tw => $"{tw.Name}: {tw.Text}"));
+                lines.Add("");
+                lines.Add("Your HP is back where it was. Change skills or gear, or go again.");
+                Ui.Text(Root, cx, 340, string.Join("\n", lines), 22, ax: 0.5f, ay: 0.5f, align: TextAnchor.MiddleCenter, wrap: 640);
+                TowerButtons("Retry", () => TowerPanel.StartFloor(player, t.Floor), 540);
+            }
+        }
+
+        /// <summary>Two buttons: `main` (also Space or Enter) and Back to the room.</summary>
+        void TowerButtons(string label, Action main, float y)
+        {
+            var gone = false;
+            Action Once(Action a) => () =>
+            {
+                if (gone) return;
+                gone = true;
+                a();
+            };
+            go = Once(main);
+            var a1 = new UiButton(Root, Design.Width / 2 - 160, y, label, go, 280, 64);
+            var a2 = new UiButton(Root, Design.Width / 2 + 160, y, "Back", Once(() => GameRoot.I.Go(new RoomScreen(data.Back))), 280, 64);
+            foreach (var b in new[] { a1, a2 })
+            {
+                b.style.opacity = 0;
+                Anim.Float(0, 1, 0.3f, a => b.style.opacity = a, Ease.Linear, 0.7f);
+            }
+            keysFrom = Time.time + 0.7f;
         }
 
         void ContinueButton(string label, RoomArrival back, float y)

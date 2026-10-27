@@ -185,6 +185,9 @@ namespace Drakepg.Rules
                 foreach (var e in t.Books ?? new List<string>())
                     foreach (var id in FamilyAndWard(e)) Add(id, $"Elites in {area}");
             }
+            foreach (var v in Db.Data.Vendor)
+                foreach (var e in v.Elements ?? new List<string>())
+                    foreach (var id in FamilyAndWard(e)) Add(id, $"The Spire's vendor, from floor {v.MinFloor}");
             sourceIndex = output;
             indexedData = Db.Data;
         }

@@ -25,6 +25,7 @@ import {
 } from './Items';
 import type { GuildState } from './Guild';
 import { setBonusTotals, type SetBonusTotals } from './Sets';
+import { emptyTower, type TowerState } from './Tower';
 import type {
   ArmorDef,
   ClassDef,
@@ -119,6 +120,8 @@ export interface PlayerData {
   learned: string[];
   /** Elite kills without a book drop, per loot table (`BALANCE.books.drop`). Added in save version 16. */
   bookPity: Record<string, number>;
+  /** The tower: highest floor cleared and marks (src/game/Tower.ts). Added in save version 17. */
+  tower: TowerState;
 }
 
 export interface Rewards {
@@ -177,6 +180,7 @@ export class Player {
       guild: { rank: 0, points: 0, board: [], hunts: [], done: 0 },
       learned: [],
       bookPity: {},
+      tower: emptyTower(),
     });
     player.data.loadout = player.defaultLoadout();
     player.data.equipment.weapon = player.makeGear(cls.weapon);

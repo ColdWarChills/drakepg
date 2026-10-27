@@ -1487,6 +1487,7 @@ namespace Drakepg
                 : kind == "forge" ? "Forge"
                 : kind == "inn" ? "Rest"
                 : kind == "guild" ? "Hunts"
+                : kind == "tower" ? "Climb"
                 : "Talk";
             var marker = npc.Marker;
             var above = marker != null && marker.style.display != DisplayStyle.None
@@ -2000,6 +2001,14 @@ namespace Drakepg
                 player.Facing = npc.X < player.X ? -1 : 1;
                 NpcHop(npc);
                 GuildPanel.OpenGuild(P, npc.Def, Refresh, r => HuntTurnedIn(r, npc));
+                return;
+            }
+            if (role.Kind == "tower")
+            {
+                moveTarget = null;
+                player.Facing = npc.X < player.X ? -1 : 1;
+                NpcHop(npc);
+                TowerPanel.Open(P, npc.Def, Refresh);
                 return;
             }
 

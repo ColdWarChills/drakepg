@@ -106,8 +106,12 @@ namespace Drakepg.Rules
             this.rng = rng ?? new SystemRng();
             Enemy = new Enemy { Def = monster, Hp = monster.Hp, MaxHp = monster.Hp };
             Shell = monster.Shell?.Hits ?? 0;
+            foreach (var a in monster.Tower?.Starts ?? new List<Apply>()) PushApply(StartEvents, "enemy", a, monster.Element, "magic");
             Intent = PickIntent();
         }
+
+        /// <summary>Statuses a tower twist put on either side before the first turn (for the battle log).</summary>
+        public readonly List<BattleEvent> StartEvents = new List<BattleEvent>();
 
         public bool IsOver => State != "player_turn";
 
@@ -229,7 +233,7 @@ namespace Drakepg.Rules
         public bool CanUseItem(string itemId)
         {
             var item = Db.Item(itemId);
-            if (IsOver || item.Type != "consumable" || Player.CountItem(itemId) == 0) return false;
+            if (IsOver || (Enemy.Def.Tower?.NoItems ?? false) || item.Type != "consumable" || Player.CountItem(itemId) == 0) return false;
             var p = Player;
             return (item.Restore.Hp is double h && h != 0 && p.Hp < p.MaxHp) || (item.Restore.Mp is double m && m != 0 && p.Mp < p.MaxMp);
         }
@@ -411,21 +415,12 @@ namespace Drakepg.Rules
 
         public double Enrage => EnrageAt(Turn);
 
-        double EnrageAt(int turn)
-        {
-            var e = B.Enrage;
-            var at = Enemy.Def.Boss ? e.BossTurns : e.Turns;
-            return Math.Max(0, turn - at + 1) * e.Step;
-        }
+        double EnrageAt(int turn) => Math.Max(0, turn - EnrageTurn + 1) * B.Enrage.Step;
 
-        public int TurnsToEnrage
-        {
-            get
-            {
-                var e = B.Enrage;
-                return Math.Max(0, (Enemy.Def.Boss ? e.BossTurns : e.Turns) - Turn);
-            }
-        }
+        /// <summary>The turn the enemy starts to enrage: bosses later, a tower's Short Fuse sooner.</summary>
+        public int EnrageTurn => Enemy.Def.Tower?.EnrageAt ?? (int)(Enemy.Def.Boss ? B.Enrage.BossTurns : B.Enrage.Turns);
+
+        public int TurnsToEnrage => Math.Max(0, EnrageTurn - Turn);
 
         /// <summary>Rough damage of the enemy's next move (average roll, no crit, before Defend). Null if it doesn't hit.</summary>
         public double? IntentDamage()
@@ -531,19 +526,21 @@ namespace Drakepg.Rules
             CheckPhase(events);
             var grit = Player.Data.BossGrit;
             var id = Enemy.Def.Id;
+            // Tower bosses are an exam: no grit either way.
+            var gritBoss = Enemy.Def.Boss && Enemy.Def.Tower == null;
             if (Enemy.Hp <= 0)
             {
                 events.Add(new BattleEvent { Kind = "defeated", Side = "enemy" });
                 State = "victory";
                 Rewards = RollRewards();
-                if (Enemy.Def.Boss) grit.Remove(id);
+                if (gritBoss) grit.Remove(id);
                 return true;
             }
             if (Player.IsDead)
             {
                 events.Add(new BattleEvent { Kind = "defeated", Side = "player" });
                 State = "defeat";
-                if (Enemy.Def.Boss) grit[id] = (grit.TryGetValue(id, out var g) ? g : 0) + 1;
+                if (gritBoss) grit[id] = (grit.TryGetValue(id, out var g) ? g : 0) + 1;
                 return true;
             }
             return false;
@@ -553,7 +550,7 @@ namespace Drakepg.Rules
         {
             get
             {
-                if (!Enemy.Def.Boss) return 0;
+                if (!Enemy.Def.Boss || Enemy.Def.Tower != null) return 0;
                 var g = B.Grit;
                 return Math.Min(g.Max, (Player.Data.BossGrit.TryGetValue(Enemy.Def.Id, out var n) ? n : 0) * g.Step);
             }
@@ -757,6 +754,8 @@ namespace Drakepg.Rules
         Rewards RollRewards()
         {
             var m = Enemy.Def;
+            // Tower floors pay through the tower (first clears), not per fight.
+            if (m.Tower != null) return new Rewards { Xp = 0, Gold = 0 };
             var source = m.Boss ? "boss" : m.Elite != null ? "elite" : m.ChestLoot ? "chest" : "mob";
             var materials = Features.On(Player, "materials");
             var extras = Features.On(Player, "sigils");

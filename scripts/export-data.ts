@@ -21,6 +21,7 @@ import { QUESTS } from '../src/data/quests';
 import { SETS } from '../src/data/sets';
 import { SKILLS } from '../src/data/skills';
 import { STATUSES } from '../src/data/statuses';
+import { FLIGHTS, FLOORS, TWISTS, VENDOR } from '../src/data/tower';
 import { INN_SPAWN, ROOMS, START, TOWN_START, ZONES } from '../src/data/world';
 import { CHAPTER_STARTS } from '../src/game/cheats';
 
@@ -57,6 +58,10 @@ const data = {
   mapAreas: MAP_AREAS,
   promotions: PROMOTIONS,
   chapterStarts: CHAPTER_STARTS,
+  twists: TWISTS,
+  floors: FLOORS,
+  flights: FLIGHTS,
+  vendor: VENDOR,
 };
 
 mkdirSync(dirname(OUT), { recursive: true });

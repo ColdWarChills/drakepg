@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -46,7 +47,9 @@ namespace Drakepg.Tests
                 case "heroic thornheart": return Monsters.MakeHeroic(Db.Monster("thornheart"));
                 case "heroic stormcoil": return Monsters.MakeHeroic(Db.Monster("stormcoil"));
                 case "impling fen": return Monsters.MakeImpling(Db.Zone("fen"));
-                default: return Db.Monster(name.StartsWith("books ") ? name.Substring(6) : name);
+                default:
+                    if (name.StartsWith("tower ")) return Tower.FloorMonster(int.Parse(name.Substring(6)));
+                    return Db.Monster(name.StartsWith("books ") ? name.Substring(6) : name);
             }
         }
 
@@ -158,6 +161,20 @@ namespace Drakepg.Tests
             Guild.RefreshBoard(guild, rng);
             Assert.AreEqual(string.Join(",", x["guild"]["board1"].Select(t => (string)t)), string.Join(",", board1), "first board");
             Assert.AreEqual(string.Join(",", x["guild"]["board2"].Select(t => (string)t)), string.Join(",", guild.Data.Guild.Board), "second board");
+
+            var climber = HeroFor("mage", 3);
+            climber.Data.Gold = 100000;
+            var clears = new List<FloorClear>();
+            for (int f = 1; f <= Tower.LastFloor; f++) clears.Add(Tower.ClearFloor(climber, f, rng));
+            var buys = new[] { "set:thornwarden_helm", "cache:thornwood", "cache:frostfang", "book:dark_bolt", "set:frostward_ring", "book:dark_bolt" }
+                .Select(k => Tower.BuyFromVendor(climber, k, rng)).ToList();
+            var t = x["tower"];
+            Assert.IsTrue(JToken.DeepEquals(t["clears"], ToJson(clears)), $"tower clears\nTS {t["clears"]}\nC# {ToJson(clears)}");
+            Assert.AreEqual(string.Join(",", t["buys"].Select(v => (string)v)), string.Join(",", buys), "vendor results");
+            Assert.IsTrue(JToken.DeepEquals(t["tower"], ToJson(climber.Data.Tower)), $"tower state\nTS {t["tower"]}\nC# {ToJson(climber.Data.Tower)}");
+            Assert.AreEqual((double)t["gold"], climber.Data.Gold, "gold after the vendor");
+            var towerGear = climber.Data.Gear.Skip(Math.Max(0, climber.Data.Gear.Count - 7)).ToList();
+            Assert.IsTrue(JToken.DeepEquals(t["gear"], ToJson(towerGear)), $"tower gear\nTS {t["gear"]}\nC# {ToJson(towerGear)}");
         }
 
         [Test]

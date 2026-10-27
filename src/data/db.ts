@@ -11,8 +11,9 @@ import { QUESTS } from './quests';
 import { SETS } from './sets';
 import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
+import { FLIGHTS, FLOORS, TWISTS, VENDOR } from './tower';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, ItemDef, StoneDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SetDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, FlightDef, FloorDef, ItemDef, TwistDef, VendorDef, StoneDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SetDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 const GEAR_TYPES: ItemDef['type'][] = ['weapon', 'armor', 'accessory'];
 const isGearType = (t: ItemDef['type']) => GEAR_TYPES.includes(t);
@@ -40,6 +41,7 @@ const recipes = index('recipe', RECIPES);
 const lootTables = index('loot table', LOOT_TABLES);
 const features = index('feature', FEATURES);
 const sets = index('set', SETS);
+const twists = index('tower twist', TWISTS);
 
 function get<T>(kind: string, map: Map<string, T>, id: string): T {
   const def = map.get(id);
@@ -72,6 +74,10 @@ export const db = {
   hasMonster: (id: string) => monsters.has(id),
   hasLootTable: (id: string) => lootTables.has(id),
   hasSkill: (id: string) => skills.has(id),
+  twist: (id: string): TwistDef => get('tower twist', twists, id),
+  floors: (): readonly FloorDef[] => FLOORS,
+  flights: (): readonly FlightDef[] => FLIGHTS,
+  vendor: (): readonly VendorDef[] => VENDOR,
 };
 
 /** Catch broken cross-references (e.g. a drop pointing at a deleted item) at startup. */
@@ -178,5 +184,24 @@ export function validateData(): void {
       if (npc.role.kind === 'forge') npc.role.recipes.forEach((id) => db.recipe(id));
       if (npc.feature) db.feature(npc.feature);
     }
+  }
+  // The tower: floors 1..N in order, each in one flight, with known monsters and twists.
+  FLOORS.forEach((f, i) => {
+    if (f.floor !== i + 1) throw new Error(`Tower floor ${f.floor} is out of order (expected ${i + 1})`);
+    db.monster(f.monsterId);
+    f.twists.forEach((id) => db.twist(id));
+    if (!FLIGHTS.some((fl) => f.floor >= fl.first && f.floor <= fl.last)) throw new Error(`Tower floor ${f.floor} is in no flight`);
+  });
+  for (const t of TWISTS) {
+    if (t.affix) db.affix(t.affix);
+    checkApplies(t.starts);
+  }
+  for (const fl of FLIGHTS) {
+    db.quest(fl.opensAfter);
+    db.lootTable(fl.lootTable);
+  }
+  for (const v of VENDOR) {
+    if (v.set) db.set(v.set);
+    if (v.lootTable) db.lootTable(v.lootTable);
   }
 }

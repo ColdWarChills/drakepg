@@ -25,6 +25,12 @@ export const FEATURES: FeatureDef[] = [
     unlockedBy: 'heart_of_thorns',
   },
   {
+    id: 'tower',
+    name: 'The Spire',
+    text: 'The Warden has opened the Spire behind Brindlemoor: floor after floor of hard fights, each with a twist. First clears pay marks for his wares.',
+    unlockedBy: 'heart_of_thorns',
+  },
+  {
     id: 'materials',
     name: 'Materials',
     text: 'Monsters now drop parts and elemental essences. They sit in their own pouch (Inventory, Materials tab). Keep them: they will matter soon.',

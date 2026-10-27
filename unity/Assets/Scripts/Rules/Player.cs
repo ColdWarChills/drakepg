@@ -46,6 +46,8 @@ namespace Drakepg.Rules
         public List<string> Learned = new List<string>();
         /// <summary>Elite kills without a book drop, per loot table. Save v16.</summary>
         public Dictionary<string, double> BookPity = new Dictionary<string, double>();
+        /// <summary>The tower: highest floor cleared and marks (Tower.cs). Save v17.</summary>
+        public TowerState Tower = new TowerState();
     }
 
     public class Rewards

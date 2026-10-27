@@ -249,10 +249,12 @@ namespace Drakepg
         public override void Enter()
         {
             zone = Db.Zone(back.ZoneId);
-            var baseDef = back.Mimic ? Monsters.MakeMimic(zone, Rng) : Monsters.IsLucky(back.MonsterId) ? Monsters.MakeImpling(zone) : Db.Monster(back.MonsterId);
-            monster = back.Elite != null ? Monsters.MakeElite(baseDef, back.Elite) : back.Heroic ? Monsters.MakeHeroic(baseDef) : baseDef;
-            battle = new Battle(Session.Player, monster, Rng) { ZoneId = back.ZoneId };
-            if (monster.IsHeroic) battle.RewardScale = Db.B.Heroic.Rewards;
+            var baseDef = back.TowerFloor > 0 ? Tower.FloorMonster(back.TowerFloor)
+                : back.Mimic ? Monsters.MakeMimic(zone, Rng) : Monsters.IsLucky(back.MonsterId) ? Monsters.MakeImpling(zone) : Db.Monster(back.MonsterId);
+            monster = back.TowerFloor > 0 ? baseDef : back.Elite != null ? Monsters.MakeElite(baseDef, back.Elite) : back.Heroic ? Monsters.MakeHeroic(baseDef) : baseDef;
+            battle = new Battle(Session.Player, monster, Rng) { ZoneId = back.TowerFloor > 0 ? null : back.ZoneId };
+            if (back.TowerFloor > 0) { }
+            else if (monster.IsHeroic) battle.RewardScale = Db.B.Heroic.Rewards;
             // A boss no quest wants is a rematch, except a gate guard: that's only ever fought until beaten.
             else if (monster.Boss && !Quests.NeedsKill(Session.Player, monster.Id) && !Travel.IsGuard(Db.Room(back.RoomId))) battle.RewardScale = Db.B.BossRepeatRewards;
             busy = true;
@@ -293,8 +295,16 @@ namespace Drakepg
             DrawStatus();
             DrawBottomPanel();
             RefreshBars(false);
+            // A tower twist's starting statuses show from the first moment.
+            if (battle.StartEvents.Count > 0) SyncStatuses();
             var elite = monster.Elite != null ? Db.Affix(monster.Elite.Affix) : null;
-            PushLog(monster.Boss
+            if (monster.Tower != null)
+            {
+                PushLog($"Floor {monster.Tower.Floor}: {monster.Name} (Lv {monster.Level}). {string.Join(" ", monster.Tower.Twists.Select(id => Db.Twist(id)).Select(tw => $"{tw.Name}: {tw.Text}"))}");
+                foreach (var e in battle.StartEvents.Where(e => e.Kind == "status"))
+                    PushLog(e.Target == "enemy" ? $"{monster.Name} starts with {Db.Status(e.Status).Name}." : $"You start with {Db.Status(e.Status).Name}.");
+            }
+            else PushLog(monster.Boss
                 ? $"{monster.Name} awakens! There is no running from this fight.{(battle.Grit > 0 ? $" Your grit from earlier tries: +{Math.Round(battle.Grit * 100)}% damage." : "")}"
                 : elite != null
                     ? $"An Elite {monster.Name} (Lv {monster.Level}) blocks your path! {elite.Name}: {elite.Description}"
@@ -344,7 +354,9 @@ namespace Drakepg
             const float w = 1500, h = 110, y = 250;
             var band = Felt.MakePatch(Root, (Design.Width - w) / 2, y, w, h, 61,
                 new Felt.Patch { Cloth = Felt.RedFelt, Thread = Felt.RedStitch, Inset = 9, Radius = 14, Dash = 9, Gap = 6, ThreadWidth = 2.6f }, -3, false);
-            var kind = Ui.Text(band.Content, w / 2, 26, monster.IsHeroic ? "HEROIC BOSS" : "BOSS", 20, Felt.Cream, false, 0.5f, 0.5f);
+            var kindText = monster.IsHeroic ? "HEROIC BOSS" : "BOSS";
+            if (monster.Tower != null) kindText = $"FLOOR {monster.Tower.Floor}  ·  {kindText}";
+            var kind = Ui.Text(band.Content, w / 2, 26, kindText, 20, Felt.Cream, false, 0.5f, 0.5f);
             Fonts.Heavy(kind);
             kind.style.letterSpacing = 6;
             kind.style.opacity = 0.85f;
@@ -488,7 +500,7 @@ namespace Drakepg
             // Status names (the highest text, at GroundY - 280) start under the panel and its status chips.
             enemyTextShift = Mathf.Clamp(16 + panelH + 50 - (GroundY - 280), 0, 90);
             // One tag: an Elite or boss already reads as dangerous, and the weakness line shows the counter.
-            var tag = m.IsHeroic ? "Heroic" : m.Boss ? "Boss" : affix != null ? "Elite" : m.Lucky ? "Lucky" : m.Tough ? "Tough" : "";
+            var tag = m.Tower != null ? $"Floor {m.Tower.Floor}" : m.IsHeroic ? "Heroic" : m.Boss ? "Boss" : affix != null ? "Elite" : m.Lucky ? "Lucky" : m.Tough ? "Tough" : "";
             var headColor = m.Boss ? Felt.Bad : affix != null ? Felt.Gold : m.Lucky ? Felt.OnFelt(LuckyText) : m.Tough ? Felt.OnFelt(ToughText) : Felt.Text;
             NameRow(enemyHud, EnemyPanelX + 22, 44, m.Name, string.Join("  ·  ", new[] { $"Lv {m.Level}", tag }.Where(s => s != "")), headColor, 386);
             enemyHp = new FeltBar(enemyHud, EnemyPanelX + 38, 84, 370, 26, Felt.Hp, "", 23, 17);
@@ -503,6 +515,11 @@ namespace Drakepg
                 y += LineStep;
             }
             if (affix != null) EnemyLine(ref y, "star", $"{affix.Name}: {affix.Description}", 16, Felt.Gold);
+            foreach (var id in m.Tower?.Twists ?? new List<string>())
+            {
+                var tw = Db.Twist(id);
+                EnemyLine(ref y, "star", $"{tw.Name}: {tw.Text}", 15, Felt.Gold);
+            }
             if (m.Shell != null)
             {
                 shellLine = EnemyLine(ref y, "shield", "", 16, Felt.Magic);
@@ -527,7 +544,7 @@ namespace Drakepg
         float EnemyPanelHeight()
         {
             var m = monster;
-            var lines = (AffinityParts().Count > 0 ? 1 : 0) + (m.Elite != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0)
+            var lines = (AffinityParts().Count > 0 ? 1 : 0) + (m.Elite != null ? 1 : 0) + (m.Shell != null ? 1 : 0) + (m.Trait != null ? 1 : 0) + (m.Tower?.Twists.Count ?? 0)
                         + (m.IsHeroic && m.Heroic != null ? 1 : 0) + (m.EscapeAfter.HasValue && m.EscapeAfter > 0 ? 1 : 0) + (m.Loot != null ? 1 : 0);
             return 100 + lines * LineStep;
         }
@@ -2753,8 +2770,36 @@ namespace Drakepg
 
         // --- Outcome ---
 
+        /// <summary>A tower floor: the first clear pays, HP and MP go back to what you came in with, no inn on a loss.</summary>
+        void FinishTower()
+        {
+            var player = battle.Player;
+            var won = battle.State == "victory";
+            var clear = won ? Tower.ClearFloor(player, back.TowerFloor, Rng) : null;
+            player.Data.Hp = back.EntryHp;
+            player.Data.Mp = back.EntryMp;
+            player.ClampVitals();
+            Saves.Save(player);
+            var arrival = RoomArrival.Battle(back.RoomId, won ? "victory" : "fled", back.X, back.Y);
+            if (battle.State == "fled")
+            {
+                GameRoot.I.Go(new RoomScreen(arrival));
+                return;
+            }
+            GameRoot.I.Go(new ResultScreen(new BattleResult
+            {
+                Outcome = won ? "victory" : "defeat", MonsterName = monster.Name, Rewards = new Rewards(), Lost = clear?.Lost ?? new List<ItemGrant>(), Back = arrival,
+                Tower = new TowerOutcome { Floor = back.TowerFloor, Clear = clear, Next = Tower.NextFloor(player), Twists = monster.Tower.Twists },
+            }));
+        }
+
         void Finish()
         {
+            if (back.TowerFloor > 0)
+            {
+                FinishTower();
+                return;
+            }
             var player = battle.Player;
             var monsterName = monster.Name;
             var backTo = RoomArrival.Battle(back.RoomId, "victory", back.X, back.Y);

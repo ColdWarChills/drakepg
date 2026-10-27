@@ -322,6 +322,8 @@ export const ROOMS: RoomDef[] = [
       { side: 'right', to: 'thornwood_path', label: 'Thornwood' },
       // The north gate to the Frostfangs: the arched door in the town wall at the right of the art.
       { side: 'back', x: 1108, to: 'frostfang_pass', label: 'Frostfang Pass', requiresQuest: 'cold_scale', blocker: 'snowdrift' },
+      // The cottage door at the left of the art leads out to the Spire (its Warden comes with the tower feature).
+      { side: 'back', x: 247, to: 'spire_foot', label: 'The Spire' },
     ],
     npcs: [
       {
@@ -406,6 +408,33 @@ export const ROOMS: RoomDef[] = [
         look: { shape: 'humanoid', color: 0x2e7d5b, accent: 0xf0d9a8, scale: 1, art: 'npc_guild_tamsin' },
         role: { kind: 'guild' },
         dialogue: ["Adventurers' Guild. Pick a notice, bring proof, get paid. Do enough and the Guild ranks you up."],
+      },
+    ],
+  },
+  {
+    // The tower (docs/TOWER_SPEC.md): the Warden runs the floors and the vendor (src/game/Tower.ts).
+    id: 'spire_foot',
+    name: 'Spire Foot',
+    map: { area: 'thornwood', x: 0, y: 0 },
+    background: ['bg_spire_foot', 'bg_brindlemoor'],
+    backdrop: { kind: 'town', shade: 0.2 },
+    walk: [590, 700],
+    ambient: ['dust'],
+    exits: [{ side: 'down', x: 640, to: 'brindlemoor', label: 'Brindlemoor' }],
+    npcs: [
+      {
+        id: 'spire_warden',
+        name: 'Osric',
+        title: 'Spire Warden',
+        x: 830,
+        y: 610,
+        look: { shape: 'humanoid', color: 0x4a4e69, accent: 0xc9a227, scale: 1.05, art: 'npc_spire_warden' },
+        role: { kind: 'tower' },
+        feature: 'tower',
+        dialogue: [
+          'Thirty floors, and something waiting on every one. Nobody climbs it by luck.',
+          'Clear a floor once and I pay in marks. Spend them here, with a little gold.',
+        ],
       },
     ],
   },

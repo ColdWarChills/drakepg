@@ -123,6 +123,8 @@ export class Battle {
   private defending = false;
   private readonly cooldowns = new Map<string, number>();
   private readonly effects: Record<Side, ActiveStatus[]> = { player: [], enemy: [] };
+  /** Statuses a tower twist put on either side before the first turn (for the battle log). */
+  readonly startEvents: BattleEvent[] = [];
 
   constructor(
     readonly player: Player,
@@ -131,6 +133,7 @@ export class Battle {
   ) {
     this.enemy = { def: monster, hp: monster.hp, maxHp: monster.hp };
     this.shell = monster.shell?.hits ?? 0;
+    for (const a of monster.tower?.starts ?? []) this.pushApply(this.startEvents, 'enemy', a, monster.element, 'magic');
     this.intent = this.pickIntent();
   }
 
@@ -252,7 +255,7 @@ export class Battle {
   /** False if the item is missing or would restore nothing (e.g. a health potion at full HP). */
   canUseItem(itemId: string): boolean {
     const item = db.item(itemId);
-    if (this.isOver || item.type !== 'consumable' || this.player.countItem(itemId) === 0) return false;
+    if (this.isOver || this.enemy.def.tower?.noItems || item.type !== 'consumable' || this.player.countItem(itemId) === 0) return false;
     const p = this.player;
     return Boolean((item.restore.hp && p.hp < p.maxHp) || (item.restore.mp && p.mp < p.maxMp));
   }
@@ -425,15 +428,18 @@ export class Battle {
   }
 
   private enrageAt(turn: number): number {
+    return Math.max(0, turn - this.enrageTurn + 1) * BALANCE.enrage.step;
+  }
+
+  /** The turn the enemy starts to enrage: bosses later, a tower's Short Fuse sooner. */
+  get enrageTurn(): number {
     const e = BALANCE.enrage;
-    const at = this.enemy.def.boss ? e.bossTurns : e.turns;
-    return Math.max(0, turn - at + 1) * e.step;
+    return this.enemy.def.tower?.enrageAt ?? (this.enemy.def.boss ? e.bossTurns : e.turns);
   }
 
   /** Player turns left before the enemy enrages (0 = already enraged). */
   get turnsToEnrage(): number {
-    const e = BALANCE.enrage;
-    return Math.max(0, (this.enemy.def.boss ? e.bossTurns : e.turns) - this.turn);
+    return Math.max(0, this.enrageTurn - this.turn);
   }
 
   /** Rough damage of the enemy's next move against the player (average roll, no crit, before Defend). Null if it doesn't hit. */
@@ -519,18 +525,20 @@ export class Battle {
     this.checkPhase(events);
     const grit = this.player.data.bossGrit;
     const id = this.enemy.def.id;
+    // Tower bosses are an exam: no grit either way.
+    const gritBoss = this.enemy.def.boss && !this.enemy.def.tower;
     if (this.enemy.hp <= 0) {
       events.push({ kind: 'defeated', side: 'enemy' });
       this.state = 'victory';
       this.rewards = this.rollRewards();
-      if (this.enemy.def.boss) delete grit[id];
+      if (gritBoss) delete grit[id];
       return true;
     }
     if (this.player.isDead) {
       events.push({ kind: 'defeated', side: 'player' });
       this.state = 'defeat';
       // Losing to a boss makes the next attempt a little easier.
-      if (this.enemy.def.boss) grit[id] = (grit[id] ?? 0) + 1;
+      if (gritBoss) grit[id] = (grit[id] ?? 0) + 1;
       return true;
     }
     return false;
@@ -538,7 +546,7 @@ export class Battle {
 
   /** Boss grit: extra damage against this boss from earlier losses (0 for other monsters). */
   get grit(): number {
-    if (!this.enemy.def.boss) return 0;
+    if (!this.enemy.def.boss || this.enemy.def.tower) return 0;
     const g = BALANCE.grit;
     return Math.min(g.max, (this.player.data.bossGrit[this.enemy.def.id] ?? 0) * g.step);
   }
@@ -726,6 +734,8 @@ export class Battle {
 
   private rollRewards(): Rewards {
     const m = this.enemy.def;
+    // Tower floors pay through the tower (first clears), not per fight.
+    if (m.tower) return { xp: 0, gold: 0, items: [] };
     const source = m.boss ? 'boss' : m.elite ? 'elite' : m.chestLoot ? 'chest' : 'mob';
     // Materials, Sigils and mods only drop once their chapter has unlocked them.
     const materials = featureOn(this.player, 'materials');

@@ -8,7 +8,7 @@ export const DESIGN = { width: GAME_WIDTH, height: GAME_HEIGHT } as const;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 16;
+export const SAVE_VERSION = 17;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -52,6 +52,26 @@ export const BALANCE = {
   ward: { resist: 40, turns: 3, mpCost: 6, cooldown: 5 },
   /** Ice's Freeze: the skill's effect chance + `perStat` per point of the stat it uses, cut by the target's Ice resist, at most `max`. */
   freeze: { perStat: 0.0025, max: 0.4 },
+  /**
+   * The tower (src/data/tower.ts, docs/TOWER_SPEC.md). A floor monster moved up to the floor's level keeps its
+   * strength against monsters of its own level: HP and damage x `curve[floor level] / curve[its level]` (a normal
+   * monster's HP and average hit per level, fit from monsters.ts; past level 12, +10% HP and +7% damage a level), and
+   * `defensePerLevel` more defense. Twists: `shortFuse` (enrage turn), `veil` (resist up for
+   * every element, down for one), `shell`. First clears pay marks (`milestone` multiplies the 5th and 10th floors')
+   * and `stones` of each roll stone on a 5th floor.
+   */
+  tower: {
+    curve: {
+      hp: [34, 46, 56, 85, 125, 170, 190, 220, 240, 260, 270, 285, 314, 345, 380, 418, 460, 506, 557, 613, 674, 741, 815, 897, 987],
+      damage: [5.5, 6, 7, 9, 11, 13.5, 14.75, 16, 17.3, 18.5, 20, 21, 22.5, 24.1, 25.8, 27.6, 29.5, 31.6, 33.8, 36.2, 38.7, 41.4, 44.3, 47.4, 50.7],
+    },
+    defensePerLevel: 0.5,
+    shortFuse: 6,
+    veil: { up: 50, down: 25 },
+    shell: { hits: 3, reduction: 0.5, reformAt: 0.5 },
+    milestone: { fifth: 2, tenth: 3 },
+    stones: 3,
+  },
   /** Free stat points per level up (class growth is added on top). */
   statPointsPerLevel: 3,
   /** Damage taken while defending is multiplied by this. */

@@ -148,6 +148,8 @@ namespace Drakepg.Rules
                 Guild = Guild.Sanitize(raw.Guild),
                 Learned = (raw.Learned ?? new List<string>()).Where(id => Db.HasSkill(id) && Books.ReadableBy(Db.Skill(id), classId)).Distinct().ToList(),
                 BookPity = (raw.BookPity ?? new Dictionary<string, double>()).Where(kv => Db.HasLootTable(kv.Key) && Finite(kv.Value) && kv.Value > 0).ToDictionary(kv => kv.Key, kv => Math.Floor(kv.Value)),
+                // v16 -> v17: the tower starts empty.
+                Tower = new TowerState { Best = Math.Max(0, Math.Min(Tower.LastFloor, raw.Tower?.Best ?? 0)), Marks = Math.Max(0, raw.Tower?.Marks ?? 0) },
             };
 
             var player = new Player(data);
