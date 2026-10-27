@@ -8,7 +8,7 @@ export const DESIGN = { width: GAME_WIDTH, height: GAME_HEIGHT } as const;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 17;
+export const SAVE_VERSION = 18;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -57,8 +57,7 @@ export const BALANCE = {
    * strength against monsters of its own level: HP and damage x `curve[floor level] / curve[its level]` (a normal
    * monster's HP and average hit per level, fit from monsters.ts; past level 12, +10% HP and +7% damage a level), and
    * `defensePerLevel` more defense. Twists: `shortFuse` (enrage turn), `veil` (resist up for
-   * every element, down for one), `shell`. First clears pay marks (`milestone` multiplies the 5th and 10th floors')
-   * and `stones` of each roll stone on a 5th floor.
+   * every element, down for one), `shell`. First clears pay marks (`milestone` multiplies the 5th and 10th floors').
    */
   tower: {
     curve: {
@@ -69,9 +68,13 @@ export const BALANCE = {
     shortFuse: 6,
     veil: { up: 50, down: 25 },
     shell: { hits: 3, reduction: 0.5, reformAt: 0.5 },
-    milestone: { fifth: 2, tenth: 3 },
-    stones: 3,
+    milestone: { fifth: 3, tenth: 3 },
   },
+  /**
+   * Rework at the shop counter (src/game/Rework.ts): a line rolled again costs `base` gold x the gear's tier, times
+   * `growth` for every earlier rework of that piece.
+   */
+  rework: { base: 30, growth: 1.5 },
   /** Free stat points per level up (class growth is added on top). */
   statPointsPerLevel: 3,
   /** Damage taken while defending is multiplied by this. */

@@ -365,10 +365,6 @@ export const ROOMS: RoomDef[] = [
             'apprentice_hood',
             'apprentice_wraps',
             'apprentice_slippers',
-            'stone_of_might',
-            'stone_of_precision',
-            'stone_of_warding',
-            'stone_of_vigor',
             'book_field_dressing',
           ],
         },
@@ -721,7 +717,6 @@ export const ROOMS: RoomDef[] = [
           kind: 'shop',
           books: ['water', 'energy'],
           stock: [
-            'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor',
             'recall_scroll',
             'health_potion',
             'mana_potion',
@@ -1020,7 +1015,6 @@ export const ROOMS: RoomDef[] = [
           kind: 'shop',
           books: ['ice'],
           stock: [
-            'stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor',
             'recall_scroll',
             'superior_health_potion',
             'superior_mana_potion',

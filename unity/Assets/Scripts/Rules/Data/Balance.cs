@@ -19,6 +19,7 @@ namespace Drakepg.Rules
         public WardTuning Ward;
         public FreezeTuning Freeze;
         public TowerTuning Tower;
+        public ReworkTuning Rework;
         public double DefendDamage, DefendMp, MaxPlayerResist, MinResist;
 
         public Dictionary<string, double> GearRolls;
@@ -88,7 +89,12 @@ namespace Drakepg.Rules
         public VeilTuning Veil;
         public ShellTuning Shell;
         public MilestoneTuning Milestone;
-        public int Stones;
+    }
+
+    /// <summary>Rework at the shop counter (BALANCE.rework): base gold x tier, x growth per earlier rework.</summary>
+    public class ReworkTuning
+    {
+        public double Base, Growth;
     }
 
     public class TowerCurve

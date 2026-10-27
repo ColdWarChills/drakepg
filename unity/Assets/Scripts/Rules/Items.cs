@@ -35,6 +35,8 @@ namespace Drakepg.Rules
         public string Uid, ItemId;
         public bool? Locked;
         public bool? IsNew;
+        /// <summary>Times reworked at a shop counter (each one costs more: Rework). Null = 0.</summary>
+        public int? Reworks;
     }
 
     /// <summary>Something handed to the player: a consumable (no rolls), or gear with its rolls decided.</summary>

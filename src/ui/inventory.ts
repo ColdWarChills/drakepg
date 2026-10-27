@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
 import { featureOn } from '../game/Features';
 import { bookSkill, readBook, readLevelOf } from '../game/Books';
-import { reroll, rerollableLines, stoneFor, stonesNeeded } from '../game/Stones';
+import { keepRework, rework, reworkLines, reworkPrice } from '../game/Rework';
 import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
-import type { BookDef, ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, ScrollDef, StoneDef } from '../data/types';
-import { ALL_SLOTS, EQUIP_SLOTS, fitsSlot, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, ROLL_LABELS, SLOT_LABELS, type Gear, type GearDef, type GearTraits } from '../game/Items';
+import type { BookDef, ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, ScrollDef } from '../data/types';
+import { ALL_SLOTS, EQUIP_SLOTS, fitsSlot, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, ROLL_LABELS, SLOT_LABELS, type Gear, type GearDef, type GearTraits, type RollKey } from '../game/Items';
 import { activeSetBonuses, setCounts } from '../game/Sets';
 import type { Player } from '../game/Player';
 import { Button } from './Button';
@@ -41,13 +41,13 @@ import { RES } from './view';
  * - bag:  hero with 8 equipment slots around it on the left; equip by double-click, the card's button, or drag.
  * - shop: Buy (the merchant's stock, always Standard) and Sell (your bag) on the left.
  */
-type Mode = 'bag' | 'buy' | 'sell';
+type Mode = 'bag' | 'buy' | 'sell' | 'rework';
 type Tab = 'all' | 'weapon' | 'armor' | 'accessory' | 'consumable' | 'material';
 type SortMode = 'newest' | 'grade' | 'type' | 'value';
 
 type Entry =
   | { kind: 'gear'; key: string; gear: Gear; def: GearDef; slot: EquipSlot | null }
-  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef | StoneDef | ScrollDef | BookDef; qty: number }
+  | { kind: 'stack'; key: string; def: ConsumableDef | MaterialDef | ScrollDef | BookDef; qty: number }
   | { kind: 'stock'; key: string; def: ItemDef };
 
 const W = 1240;
@@ -94,7 +94,7 @@ const SORTS: { sort: SortMode; label: string }[] = [
   { sort: 'type', label: 'Type' },
   { sort: 'value', label: 'Value' },
 ];
-const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, accessory: 2, consumable: 3, book: 4, scroll: 5, stone: 6, material: 7 };
+const TYPE_ORDER: Record<ItemDef['type'], number> = { weapon: 0, armor: 1, accessory: 2, consumable: 3, book: 4, scroll: 5, material: 6 };
 /** Grades below this are offered by "Sell junk" (Standard and Fair). */
 const JUNK_BELOW = 40;
 
@@ -152,10 +152,16 @@ class InventoryView {
   private bagEntries(): Entry[] {
     const p = this.player;
     const gear: Entry[] = p.data.gear.map((g) => ({ kind: 'gear', key: g.uid, gear: g, def: gearDef(g), slot: null }));
-    const stacks: Entry[] = p.data.inventory.map((e) => ({ kind: 'stack', key: `stack:${e.itemId}`, def: db.item(e.itemId) as ConsumableDef | MaterialDef | StoneDef | ScrollDef, qty: e.qty }));
+    const stacks: Entry[] = p.data.inventory.map((e) => ({ kind: 'stack', key: `stack:${e.itemId}`, def: db.item(e.itemId) as ConsumableDef | MaterialDef | ScrollDef, qty: e.qty }));
     // Newest first; uids count up.
     gear.reverse();
     return [...gear, ...stacks];
+  }
+
+  /** Rework: the worn pieces first, then the bag's gear; only pieces with a line the counter can roll. */
+  private reworkEntries(): Entry[] {
+    const worn = this.heroSlots.map((s) => this.equippedEntry(s)).filter((e): e is Entry => !!e);
+    return [...worn, ...this.bagEntries()].filter((e) => e.kind === 'gear' && reworkLines(e.gear).length > 0);
   }
 
   private equippedEntry(slot: EquipSlot): Entry | null {
@@ -165,10 +171,12 @@ class InventoryView {
 
   private shown(): Entry[] {
     const all: Entry[] =
-      this.mode === 'buy' ? this.stock.map((id) => ({ kind: 'stock', key: `stock:${id}`, def: db.item(id) })) : this.bagEntries();
+      this.mode === 'buy'
+        ? this.stock.map((id) => ({ kind: 'stock', key: `stock:${id}`, def: db.item(id) }))
+        : this.mode === 'rework' ? this.reworkEntries() : this.bagEntries();
     // Materials live in their own pouch (no bag slots), so only their tab shows them.
-    // Stones and scrolls sit with the potions under Items.
-    const tabOf = (t: ItemDef['type']) => (t === 'stone' || t === 'scroll' || t === 'book' ? 'consumable' : t);
+    // Scrolls and books sit with the potions under Items.
+    const tabOf = (t: ItemDef['type']) => (t === 'scroll' || t === 'book' ? 'consumable' : t);
     const filtered = remembered.tab === 'all' ? all.filter((e) => e.def.type !== 'material') : all.filter((e) => tabOf(e.def.type) === remembered.tab);
     // Sigils rank above every grade: Eclipse 300+, Dusk 200+, Dawn 100+.
     const sigilRank = (e: Entry) => (e.kind === 'gear' && e.gear.sigil ? (SIGIL_TIERS.indexOf(e.gear.sigil) + 1) * 100 : 0);
@@ -311,20 +319,22 @@ class InventoryView {
     const { scene, player } = this;
     const c = this.modal.content;
     c.add(addText(scene, 30, 70, `Gold: ${player.gold}`, { size: 26, bold: true, color: COLORS.textGold }));
-    (['buy', 'sell'] as const).forEach((m, i) => {
+    ([['buy', 'Buy'], ['sell', 'Sell'], ['rework', 'Rework']] as const).forEach(([m, label], i) => {
       c.add(
-        new Button(scene, 90 + i * 130, 150, m === 'buy' ? 'Buy' : 'Sell', () => {
+        new Button(scene, 62 + i * 96, 150, label, () => {
           this.mode = m;
           this.page = 0;
           this.selected = null;
           this.render();
-        }, { width: 120, height: 48, color: this.mode === m ? 0x6b5320 : COLORS.button }),
+        }, { width: 90, height: 48, fontSize: 20, color: this.mode === m ? 0x6b5320 : COLORS.button }),
       );
     });
     const hint =
       this.mode === 'buy'
         ? 'Shop gear is always Standard (0%). Gear from monsters can roll better.'
-        : 'Better grades sell for more, Sigils far more. Locked items are never sold.';
+        : this.mode === 'sell'
+          ? 'Better grades sell for more, Sigils far more. Locked items are never sold.'
+          : 'Roll a line again for gold, then keep the new value or the old. Each rework of a piece costs more.';
     c.add(addText(scene, 30, 196, hint, { size: 16, color: COLORS.textDim, wrap: 260 }));
 
     if (this.mode === 'sell') {
@@ -473,6 +483,29 @@ class InventoryView {
     this.render();
   }
 
+  /** Pay, roll the line again and ask which value to keep (closing the question keeps the better one). */
+  private startRework(gear: Gear, key: RollKey): void {
+    const r = rework(this.player, gear, key);
+    if (!r) return;
+    const { scene } = this;
+    play(scene, 'coin');
+    // The gold is gone already: the shop behind shows it.
+    this.render();
+    const keep = (value: number) => {
+      keepRework(gear, key, value);
+      play(scene, value > r.before ? 'levelup' : 'click');
+      ask.close();
+      this.changed();
+    };
+    const ask: Modal = new Modal(scene, 460, 270, 'Rework', () => keep(Math.max(r.before, r.after)));
+    const c = ask.content;
+    c.add(
+      addText(scene, 230, 105, `${ROLL_LABELS[key]}: ${r.before}% → ${r.after}%`, { size: 26, bold: true, color: r.after >= r.before ? COLORS.textGood : COLORS.textBad }).setOrigin(0.5),
+    );
+    c.add(new Button(scene, 125, 195, `Keep ${r.after}%`, () => keep(r.after), { width: 190, height: 56, fontSize: 20 }));
+    c.add(new Button(scene, 335, 195, `Keep ${r.before}%`, () => keep(r.before), { width: 190, height: 56, fontSize: 20 }));
+  }
+
   private equip(entry: Extract<Entry, { kind: 'gear' }>, slot?: EquipSlot): void {
     if (!this.player.equip(entry.gear.uid, slot)) return;
     play(this.scene, 'equip');
@@ -574,7 +607,7 @@ class InventoryView {
       card.add(sig);
       headY += sig.height + 2;
     }
-    const kind = isGearDef(entry.def) ? kindLabel(entry.def) : { material: 'Material', stone: 'Roll stone', consumable: 'Potion', scroll: 'Scroll', book: 'Skill book' }[entry.def.type]!;
+    const kind = isGearDef(entry.def) ? kindLabel(entry.def) : { material: 'Material', consumable: 'Potion', scroll: 'Scroll', book: 'Skill book' }[entry.def.type]!;
     // Gear shows its tier, which also sets how many modifier lines it can carry.
     const tiered = isGearDef(entry.def) ? `Tier ${entry.def.tier} ${kind}` : kind;
     const worn = entry.kind === 'gear' && entry.slot ? (entry.slot === 'spare' ? ' · Spare' : ' · Equipped') : '';
@@ -603,20 +636,16 @@ class InventoryView {
         card.add(addText(scene, CARD_X + CARD_W - 20, y, `${r.quality}%`, { size: 15, color: COLORS.textDim }).setOrigin(1, 0));
         y += 24;
       }
-      // Roll stones: re-roll a line right here (in the bag only).
-      if (this.mode === 'bag' && entry.kind === 'gear') {
+      // The shop counter's rework: a button per line it can roll again.
+      if (this.mode === 'rework' && entry.kind === 'gear') {
         const gear = entry.gear;
-        const need = stonesNeeded(gear);
-        for (const key of rerollableLines(gear)) {
-          const stone = stoneFor(key)!;
-          const have = this.player.countItem(stone.id);
-          const b = new Button(scene, left + 159, y + 15, `Re-roll ${ROLL_LABELS[key]}: ${need} ${stone.name}${need > 1 ? 's' : ''} (have ${have})`, () => {
-            const r = reroll(this.player, gear, key);
-            if (!r) return;
-            play(scene, r.after > r.before ? 'levelup' : 'click');
-            toast(scene, `${ROLL_LABELS[key]}: ${r.before}% -> ${r.after}%`, r.after >= r.before ? COLORS.textGood : COLORS.textBad);
-            this.changed();
-          }, { width: 318, height: 30, fontSize: 13 }).setEnabled(have >= need);
+        const price = reworkPrice(gear);
+        for (const key of reworkLines(gear)) {
+          const b = new Button(scene, left + 159, y + 15, `Rework ${ROLL_LABELS[key]}: ${price} g`, () => this.startRework(gear, key), {
+            width: 318,
+            height: 30,
+            fontSize: 14,
+          }).setEnabled(this.player.gold >= price);
           card.add(b);
           y += 36;
         }

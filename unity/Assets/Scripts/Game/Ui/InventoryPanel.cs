@@ -276,12 +276,12 @@ namespace Drakepg
 
             static readonly Dictionary<string, int> TypeOrder = new Dictionary<string, int>
             {
-                ["weapon"] = 0, ["armor"] = 1, ["accessory"] = 2, ["consumable"] = 3, ["book"] = 4, ["scroll"] = 5, ["stone"] = 6, ["material"] = 7,
+                ["weapon"] = 0, ["armor"] = 1, ["accessory"] = 2, ["consumable"] = 3, ["book"] = 4, ["scroll"] = 5, ["material"] = 6,
             };
 
             static readonly Dictionary<string, string> NonGearKind = new Dictionary<string, string>
             {
-                ["material"] = "Material", ["stone"] = "Roll stone", ["consumable"] = "Potion", ["scroll"] = "Scroll", ["book"] = "Skill book",
+                ["material"] = "Material", ["consumable"] = "Potion", ["scroll"] = "Scroll", ["book"] = "Skill book",
             };
 
             /// <summary>Remembered while the game runs, so the inventory reopens the way you left it.</summary>
@@ -351,6 +351,14 @@ namespace Drakepg
                 return list;
             }
 
+            /// <summary>Rework: the worn pieces first, then the bag's gear; only pieces with a line the counter can roll.</summary>
+            List<Entry> ReworkEntries()
+            {
+                var list = HeroSlots.Select(EquippedEntry).Where(e => e != null).ToList();
+                list.AddRange(BagEntries().Where(e => e.IsGear));
+                return list.Where(e => Rework.ReworkLines(e.Gear).Count > 0).ToList();
+            }
+
             Entry EquippedEntry(string slot)
             {
                 var g = Worn(slot);
@@ -361,10 +369,10 @@ namespace Drakepg
             {
                 var all = mode == "buy"
                     ? stock.Select(id => new Entry { Kind = EntryKind.Stock, Key = "stock:" + id, Def = Db.Item(id) }).ToList()
-                    : BagEntries();
+                    : mode == "rework" ? ReworkEntries() : BagEntries();
                 // Materials live in their own pouch (no bag slots), so only their tab shows them.
-                // Stones and scrolls sit with the potions under Items.
-                string TabOf(string t) => t == "stone" || t == "scroll" || t == "book" ? "consumable" : t;
+                // Scrolls and books sit with the potions under Items.
+                string TabOf(string t) => t == "scroll" || t == "book" ? "consumable" : t;
                 var filtered = rememberedTab == "all"
                     ? all.Where(e => e.Def.Type != "material").ToList()
                     : all.Where(e => TabOf(e.Def.Type) == rememberedTab).ToList();
@@ -554,21 +562,21 @@ namespace Drakepg
             {
                 var c = Modal.Content;
                 Ui.Text(c, 30, 70, $"Gold: {N(player.Gold)}", 26, Palette.TextGold, true);
-                var modes = new[] { "buy", "sell" };
+                var modes = new[] { ("buy", "Buy"), ("sell", "Sell"), ("rework", "Rework") };
                 for (int i = 0; i < modes.Length; i++)
                 {
-                    var m = modes[i];
-                    new UiButton(c, 90 + i * 130, 150, m == "buy" ? "Buy" : "Sell", () =>
+                    var (m, label) = modes[i];
+                    new UiButton(c, 62 + i * 96, 150, label, () =>
                     {
                         mode = m;
                         page = 0;
                         selected = null;
                         Render();
-                    }, 120, 48, 22, null, mode == m ? ActiveButton : Palette.Button);
+                    }, 90, 48, 20, null, mode == m ? ActiveButton : Palette.Button);
                 }
-                var hint = mode == "buy"
-                    ? "Shop gear is always Standard (0%). Gear from monsters can roll better."
-                    : "Better grades sell for more, Sigils far more. Locked items are never sold.";
+                var hint = mode == "buy" ? "Shop gear is always Standard (0%). Gear from monsters can roll better."
+                    : mode == "sell" ? "Better grades sell for more, Sigils far more. Locked items are never sold."
+                    : "Roll a line again for gold, then keep the new value or the old. Each rework of a piece costs more.";
                 Ui.Text(c, 30, 196, hint, 16, Palette.TextDim, wrap: 260);
 
                 if (mode == "sell")
@@ -791,6 +799,30 @@ namespace Drakepg
             {
                 onChange?.Invoke();
                 Render();
+            }
+
+            /// <summary>Pay, roll the line again and ask which value to keep (closing the question keeps the better one).</summary>
+            void StartRework(Gear piece, string key)
+            {
+                var res = Rework.Run(player, piece, key, rng);
+                if (res == null) return;
+                var (before, after) = res.Value;
+                Sfx.Play("coin");
+                // The gold is gone already: the shop behind shows it.
+                Render();
+                UiModal ask = null;
+                void Keep(double value)
+                {
+                    Rework.Keep(piece, key, value);
+                    Sfx.Play(value > before ? "levelup" : "click");
+                    ask.Close();
+                    Changed();
+                }
+                ask = new UiModal(460, 270, "Rework", () => Keep(Math.Max(before, after)));
+                var c = ask.Content;
+                Ui.Text(c, 230, 105, $"{ItemUi.RollLabel(key)}: {N(before)}% → {N(after)}%", 26, after >= before ? Palette.TextGood : Palette.TextBad, true, 0.5f, 0.5f);
+                new UiButton(c, 125, 195, $"Keep {N(after)}%", () => Keep(after), 190, 56, 20);
+                new UiButton(c, 335, 195, $"Keep {N(before)}%", () => Keep(before), 190, 56, 20);
             }
 
             /// <summary>`from`: where the item was let go (a drag), else its grid cell.</summary>
@@ -1082,26 +1114,16 @@ namespace Drakepg
                         if (r.Quality > 0) Ui.Rect(row, 178, 5, (float)Math.Min(100, r.Quality), 8, ItemUi.QualityColor(r.Quality));
                         Ui.Text(row, CardW - 40, 0, $"{N(r.Quality)}%", 15, Palette.TextDim, ax: 1);
                     }
-                    // Roll stones: re-roll a line right here (in the bag only).
-                    if (mode == "bag" && entry.IsGear)
+                    // The shop counter's rework: a button per line it can roll again.
+                    if (mode == "rework" && entry.IsGear)
                     {
                         var piece = entry.Gear;
-                        var need = Stones.StonesNeeded(piece);
-                        foreach (var key in Stones.RerollableLines(piece))
+                        var price = Rework.Price(piece);
+                        foreach (var key in Rework.ReworkLines(piece))
                         {
-                            var stone = Stones.StoneFor(key);
-                            var have = player.CountItem(stone.Id);
                             var row = Row(body, 36);
-                            var label = ItemUi.RollLabel(key);
-                            new UiButton(row, 159, 15, $"Re-roll {label}: {need} {stone.Name}{(need > 1 ? "s" : "")} (have {have})", () =>
-                            {
-                                var res = Stones.Reroll(player, piece, key, rng);
-                                if (res == null) return;
-                                var (before, after) = res.Value;
-                                Sfx.Play(after > before ? "levelup" : "click");
-                                Ui.Toast($"{label}: {N(before)}% -> {N(after)}%", after >= before ? Palette.TextGood : Palette.TextBad);
-                                Changed();
-                            }, 318, 30, 13).SetEnabled(have >= need);
+                            new UiButton(row, 159, 15, $"Rework {ItemUi.RollLabel(key)}: {N(price)} g", () => StartRework(piece, key), 318, 30, 14)
+                                .SetEnabled(player.Gold >= price);
                         }
                     }
                     // Mods: the blue lines.

@@ -321,9 +321,7 @@ namespace Drakepg
                 {
                     var marks = Ui.Text(Root, cx, 290, "+0 marks", 30, Palette.TextGold, true, 0.5f, 0.5f);
                     CountUp(marks, t.Clear.Marks, " marks", 0.4f);
-                    // Stones as one line; gear (the Sigil piece) revealed like a drop.
-                    var stones = t.Clear.Items.Where(g => Db.Item(g.ItemId).Type == "stone").ToList();
-                    if (stones.Count > 0) Ui.Text(Root, cx, 336, $"+{Db.B.Tower.Stones} of each roll stone", 22, Palette.TextMagic, true, 0.5f, 0.5f);
+                    // Gear (the Sigil piece) revealed like a drop.
                     var gear = t.Clear.Items.Where(g => Db.Item(g.ItemId).IsGear).ToList();
                     if (gear.Count > 0) DropReveal(cx, 360, gear, data.Lost);
                 }

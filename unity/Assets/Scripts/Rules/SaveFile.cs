@@ -34,6 +34,7 @@ namespace Drakepg.Rules
                 // Older formats were only ever written by the web version, which upgrades them on load first.
                 if (file.Version > Db.Data.SaveVersion || file.Version < 15) return null;
                 if (file.Version < 16) MigrateToBooks(file.Player);
+                if (file.Version < 18) RefundStones(file.Player);
                 return new Player(Sanitize(file.Player));
             }
             catch (Exception)
@@ -62,6 +63,22 @@ namespace Drakepg.Rules
             p.BookPity = new Dictionary<string, double>();
         }
 
+        /// <summary>The roll stones of save v17 and older, paid back at their shop price.</summary>
+        static readonly string[] OldStones = { "stone_of_might", "stone_of_precision", "stone_of_warding", "stone_of_vigor" };
+        const double OldStonePrice = 30;
+
+        /// <summary>
+        /// v17 -> v18 (like SaveSystem.ts): roll stones are gone (gear is reworked for gold at the shop counter), so each
+        /// stone in the bag is paid back at its old price.
+        /// </summary>
+        static void RefundStones(PlayerData p)
+        {
+            if (p.Inventory == null) return;
+            var stones = p.Inventory.Where(e => e != null && OldStones.Contains(e.ItemId)).Sum(e => Math.Max(0, e.Qty));
+            p.Inventory = p.Inventory.Where(e => e == null || !OldStones.Contains(e.ItemId)).ToList();
+            p.Gold = (Finite(p.Gold) ? p.Gold : 0) + stones * OldStonePrice;
+        }
+
         static bool Finite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
 
         static Gear SanitizeGear(Gear raw, string slot = null)
@@ -73,6 +90,7 @@ namespace Drakepg.Rules
             Items.SanitizeTraits(def, raw, gear);
             if (raw.Locked == true) gear.Locked = true;
             if (raw.IsNew == true) gear.IsNew = true;
+            if (raw.Reworks >= 1) gear.Reworks = Math.Min(1000, raw.Reworks.Value);
             return gear;
         }
 

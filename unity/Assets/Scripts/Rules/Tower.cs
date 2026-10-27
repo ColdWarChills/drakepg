@@ -32,8 +32,8 @@ namespace Drakepg.Rules
 
     /// <summary>
     /// The tower (docs/TOWER_SPEC.md, data in src/data/tower.ts), a port of src/game/Tower.ts: floors cleared in order,
-    /// each one fight against a known monster moved up to the floor's level, with twists. First clears pay marks (and
-    /// stones or a Sigil piece on 5th and 10th floors); marks and gold buy from the Warden's vendor.
+    /// each one fight against a known monster moved up to the floor's level, with twists. First clears pay marks (more
+    /// on 5th and 10th floors, and a Sigil piece on 10th); marks and gold buy from the Warden's vendor.
     /// </summary>
     public static class Tower
     {
@@ -139,11 +139,6 @@ namespace Drakepg.Rules
             {
                 var fl = FlightOf(n);
                 items.Add(SigilPiece(fl.LootTable, fl.Sigil, rng, false));
-            }
-            else if (n % 5 == 0)
-            {
-                foreach (var stone in Db.Stones())
-                    for (int i = 0; i < T.Stones; i++) items.Add(new ItemGrant { ItemId = stone.Id });
             }
             var (_, lost) = player.GrantRewards(new Rewards { Xp = 0, Gold = 0, Items = items }, true);
             return new FloorClear { Floor = n, Marks = marks, Items = items, Lost = lost };

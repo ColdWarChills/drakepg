@@ -185,7 +185,7 @@ namespace Drakepg.Rules
     }
 
     /// <summary>
-    /// Every item kind in one class (weapon, armor, accessory, consumable, material, stone, scroll); `Type` says which.
+    /// Every item kind in one class (weapon, armor, accessory, consumable, material, scroll, book); `Type` says which.
     /// </summary>
     public class ItemDef
     {
@@ -212,8 +212,6 @@ namespace Drakepg.Rules
         public double? Hp, Mp, Crit;
         // consumable
         public Restore Restore;
-        // stone
-        public string Line;
         // scroll
         public string Effect;
         // book: the skill it teaches

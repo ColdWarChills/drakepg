@@ -88,7 +88,7 @@ Data (`TWISTS` in `src/data/tower.ts`), each with a name and one line of text. S
 | | Thornwood flight | Fen flight | Frostfang flight |
 | --- | --- | --- | --- |
 | Marks per floor | 10 | 20 | 30 |
-| Floor 5/15/25 | x2 marks + 3 of each roll stone | x2 + 3 of each | x2 + 3 of each |
+| Floor 5/15/25 | x3 marks (was x2 + 3 of each roll stone until the shop counter's rework replaced stones, 2026-10-27) | x3 | x3 |
 | Floor 10/20/30 | x3 marks + a Dawn Sigil piece (Thornwood table) | x3 + a Dawn Sigil piece (Fen table) | x3 + a Dusk Sigil piece (Frostfang table) |
 | Marks per flight | 130 | 260 | 390 |
 

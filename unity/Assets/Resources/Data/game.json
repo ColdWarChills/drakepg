@@ -1,5 +1,5 @@
 {
- "saveVersion": 17,
+ "saveVersion": 18,
  "balance": {
   "restoreAfterBattle": false,
   "innCost": 5,
@@ -134,10 +134,13 @@
     "reformAt": 0.5
    },
    "milestone": {
-    "fifth": 2,
+    "fifth": 3,
     "tenth": 3
-   },
-   "stones": 3
+   }
+  },
+  "rework": {
+   "base": 30,
+   "growth": 1.5
   },
   "statPointsPerLevel": 3,
   "defendDamage": 0.4,
@@ -2603,42 +2606,6 @@
    "price": 20,
    "iconColor": 15260072,
    "effect": "recall"
-  },
-  {
-   "id": "stone_of_might",
-   "type": "stone",
-   "name": "Stone of Might",
-   "description": "Re-rolls the Damage line of a weapon to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.",
-   "price": 30,
-   "iconColor": 15022389,
-   "line": "damage"
-  },
-  {
-   "id": "stone_of_precision",
-   "type": "stone",
-   "name": "Stone of Precision",
-   "description": "Re-rolls the Crit chance line of a weapon to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.",
-   "price": 30,
-   "iconColor": 16635957,
-   "line": "crit"
-  },
-  {
-   "id": "stone_of_warding",
-   "type": "stone",
-   "name": "Stone of Warding",
-   "description": "Re-rolls the Defense line of a piece of armor to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.",
-   "price": 30,
-   "iconColor": 2001125,
-   "line": "defense"
-  },
-  {
-   "id": "stone_of_vigor",
-   "type": "stone",
-   "name": "Stone of Vigor",
-   "description": "Re-rolls the Max HP line of a piece of armor to a new random value (it can go up or down; high rolls are rare). Takes one stone per gear tier.",
-   "price": 30,
-   "iconColor": 4431943,
-   "line": "hp"
   },
   {
    "id": "leather_cap",
@@ -8954,10 +8921,6 @@
        "apprentice_hood",
        "apprentice_wraps",
        "apprentice_slippers",
-       "stone_of_might",
-       "stone_of_precision",
-       "stone_of_warding",
-       "stone_of_vigor",
        "book_field_dressing"
       ]
      },
@@ -9694,10 +9657,6 @@
        "energy"
       ],
       "stock": [
-       "stone_of_might",
-       "stone_of_precision",
-       "stone_of_warding",
-       "stone_of_vigor",
        "recall_scroll",
        "health_potion",
        "mana_potion",
@@ -10337,10 +10296,6 @@
        "ice"
       ],
       "stock": [
-       "stone_of_might",
-       "stone_of_precision",
-       "stone_of_warding",
-       "stone_of_vigor",
        "recall_scroll",
        "superior_health_potion",
        "superior_mana_potion",

@@ -13,7 +13,7 @@ namespace Drakepg.EditorTools
     /// its HP and MP between fights (campfires and inns heal, potions cost gold), wakes at the inn when it loses, equips
     /// better drops, sells the rest and reads the books it finds. Quests, bosses and Guild ranks as in pace.ts. It plays
     /// carefully: heals to 80% before Tough monsters, Elites and bosses, holds the bag weapon a monster resists least,
-    /// walks around a monster that beat it twice, and puts spare gold into roll stones.
+    /// walks around a monster that beat it twice, and puts spare gold into reworking its gear at the shop counter.
     /// From a chat: <c>Drakepg.EditorTools.Playthrough.Run(20)</c> through the MCP's execute_code (edit mode is fine,
     /// ~15 s); the report goes to the editor log and the returned string. Test a data change by editing Db in the same
     /// call and restoring it in a finally (a call over ~30 s times out the MCP but keeps running and blocks the editor).
@@ -35,7 +35,7 @@ namespace Drakepg.EditorTools
 
         public class Stats
         {
-            public double Minutes, Fights, Deaths, Flees, Rests, Potions, LevelIn, LevelOut, GoldOut, Gear, Books, PotionGold, Inn, Read, Lost, Stones, Avoided;
+            public double Minutes, Fights, Deaths, Flees, Rests, Potions, LevelIn, LevelOut, GoldOut, Gear, Books, PotionGold, Inn, Read, Lost, Rework, Avoided;
             /// <summary>The tower: best floor at the chapter's end, fights and losses there, marks earned, gold the vendor took, farming rounds when stuck.</summary>
             public double TowerBest, TowerFights, TowerLosses, Marks, VendorGold, TowerFarms;
             /// <summary>Floors that beat the bot ("F9 Ash Imp" -> losses).</summary>
@@ -528,7 +528,7 @@ namespace Drakepg.EditorTools
                     if (potion != null) Stock(potion, 4);
                     var mana = stock.Select(Db.Item).Where(d => d.Type == "consumable" && d.Restore?.Mp > 0).OrderByDescending(d => d.Restore.Mp).FirstOrDefault();
                     if (mana != null && P.Data.ClassId == "mage") Stock(mana, 2);
-                    Reroll(stock, reserve + 300);
+                    ReworkGear(reserve + 300);
                 }
                 if (P.Hp < P.MaxHp || P.Mp < P.MaxMp) Inn();
             }
@@ -575,26 +575,24 @@ namespace Drakepg.EditorTools
             }
 
             /// <summary>
-            /// Spare gold goes into roll stones: reroll the worn line with the lowest roll until every line is 75% or better
-            /// (a reroll is a fresh roll, so it can also come out worse), keeping `reserve`.
+            /// Spare gold goes into reworking at the shop counter: roll the worn line with the lowest roll again and keep
+            /// the better value, until every line is 75% or better or the next rework would dip into `reserve` (each
+            /// rework of a piece costs more).
             /// </summary>
-            void Reroll(List<string> stock, double reserve)
+            void ReworkGear(double reserve)
             {
                 for (int i = 0; i < 300; i++)
                 {
                     var worst = Items.EquipSlots.Select(slot => P.Data.Equipment[slot]).Where(g => g != null)
-                        .SelectMany(g => Stones.RerollableLines(g).Where(k => stock.Contains(Stones.StoneFor(k).Id)).Select(k => (gear: g, key: k)))
+                        .SelectMany(g => Rework.ReworkLines(g).Select(k => (gear: g, key: k)))
                         .OrderBy(x => x.gear.Roll(x.key)).FirstOrDefault();
                     if (worst.gear == null || worst.gear.Roll(worst.key) >= 75) return;
-                    var stone = Stones.StoneFor(worst.key);
-                    var need = Stones.StonesNeeded(worst.gear) - P.CountItem(stone.Id);
-                    if (P.Gold - reserve < need * stone.Price) return;
-                    for (int n = 0; n < need; n++)
-                    {
-                        if (P.Buy(stone.Id) != "ok") return;
-                        S.Stones += stone.Price;
-                    }
-                    Stones.Reroll(P, worst.gear, worst.key, rng);
+                    var price = Rework.Price(worst.gear);
+                    if (P.Gold - reserve < price) return;
+                    var res = Rework.Run(P, worst.gear, worst.key, rng);
+                    if (res == null) return;
+                    S.Rework += price;
+                    Rework.Keep(worst.gear, worst.key, Math.Max(res.Value.before, res.Value.after));
                 }
             }
 
@@ -904,7 +902,7 @@ namespace Drakepg.EditorTools
                     double A(Func<Stats, double> f) => list.Average(f);
                     sb.AppendLine($"  {classId,-8} {A(s => s.Minutes),3:0} min, {A(s => s.Fights),3:0} fights, {A(s => s.Deaths):0.0} deaths, {A(s => s.Flees):0.0} fled, {A(s => s.Avoided):0.0} avoided, " +
                         $"{A(s => s.Rests):0} rests, {A(s => s.Potions):0} potions, level {A(s => s.LevelIn):0.0} -> {A(s => s.LevelOut):0.0}; " +
-                        $"spent {A(s => s.Gear):0} g gear, {A(s => s.Books):0} g books, {A(s => s.PotionGold):0} g potions, {A(s => s.Stones):0} g stones, {A(s => s.Inn):0} g inn; " +
+                        $"spent {A(s => s.Gear):0} g gear, {A(s => s.Books):0} g books, {A(s => s.PotionGold):0} g potions, {A(s => s.Rework):0} g rework, {A(s => s.Inn):0} g inn; " +
                         $"{A(s => s.Read):0.0} books read, {A(s => s.GoldOut):0} g left, {A(s => s.Lost):0.0} drops lost");
                     var bosses = list.SelectMany(s => s.Bosses).GroupBy(b => b.Split(':')[0]).Select(g => $"{g.Key}: {string.Join(", ", g.Select(b => b.Split(':')[1].Trim()))}");
                     foreach (var b in bosses) sb.AppendLine($"           {b}");

@@ -17,6 +17,7 @@ import { makeImpling } from '../src/game/Lucky';
 import { rollChestLoot } from '../src/game/Chests';
 import { hone, reinforce } from '../src/game/Forge';
 import { Player } from '../src/game/Player';
+import { keepRework, rework, reworkPrice } from '../src/game/Rework';
 import { seeded, type Rng } from '../src/game/rng';
 import { buyFromVendor, clearFloor, floorMonster, lastFloor } from '../src/game/Tower';
 
@@ -201,6 +202,18 @@ const extras: Record<string, unknown> = {};
   for (let f = 1; f <= lastFloor(); f++) clears.push(clearFloor(climber, f, rng));
   const buys = ['set:thornwarden_helm', 'cache:thornwood', 'cache:frostfang', 'book:dark_bolt', 'set:frostward_ring', 'book:dark_bolt'].map((k) => buyFromVendor(climber, k, rng));
   extras.tower = { clears, buys, tower: climber.data.tower, gold: climber.data.gold, gear: climber.data.gear.slice(-7) };
+  // Rework at the shop counter: the price rises per piece; some new rolls kept, some not.
+  const reworker = heroFor('warrior', 3);
+  reworker.data.gold = 5000;
+  const piece = reworker.data.equipment.weapon!;
+  const steps = Array.from({ length: 8 }, (_, i) => {
+    const key = i % 2 === 0 ? 'damage' : 'crit';
+    const price = reworkPrice(piece);
+    const r = rework(reworker, piece, key, rng);
+    if (r && i % 3 !== 2) keepRework(piece, key, r.after);
+    return r ? { price, before: r.before, after: r.after } : { price };
+  });
+  extras.rework = { steps, gear: piece, gold: reworker.data.gold };
 }
 
 mkdirSync(dirname(OUT), { recursive: true });

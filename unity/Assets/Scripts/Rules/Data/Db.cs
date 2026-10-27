@@ -112,7 +112,6 @@ namespace Drakepg.Rules
         public static LootTableDef LootTable(string id) => Get("loot table", lootTables, id);
         public static FeatureDef Feature(string id) => Get("feature", features, id);
         public static SetDef Set(string id) => Get("set", sets, id);
-        public static List<ItemDef> Stones() => Data.Items.Where(i => i.Type == "stone").ToList();
         public static List<FeatureDef> Features() => Data.Features;
         public static List<EliteAffixDef> Affixes() => Data.Affixes;
         public static List<QuestDef> Quests() => Data.Quests;

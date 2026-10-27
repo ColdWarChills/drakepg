@@ -37,12 +37,11 @@ namespace Drakepg
         /// <summary>"Dawn" for dawn.</summary>
         static string SigilName(string tier) => char.ToUpperInvariant(tier[0]) + tier.Substring(1);
 
-        /// <summary>"10 marks", "20 marks + 3 of each roll stone", "30 marks + a Dawn Sigil piece".</summary>
+        /// <summary>"10 marks", "30 marks" (5th floors), "30 marks + a Dawn Sigil piece".</summary>
         public static string RewardText(int floor)
         {
             var marks = $"{Tower.MarksFor(floor)} marks";
             if (floor % 10 == 0) return $"{marks} + a {SigilName(Tower.FlightOf(floor).Sigil)} Sigil piece";
-            if (floor % 5 == 0) return $"{marks} + {Db.B.Tower.Stones} of each roll stone";
             return marks;
         }
 

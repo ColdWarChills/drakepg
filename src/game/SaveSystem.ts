@@ -105,7 +105,13 @@ export const SaveSystem = {
  * v15 -> v16: skill books (`learned`, `bookPity`). Levels now teach 6 skills per class; the rest are books. Nobody loses
  *             a skill: every skill the old level lists had taught by the hero's level is learned.
  * v16 -> v17: the tower (`tower`: best floor and marks); sanitize() starts it empty.
+ * v17 -> v18: roll stones are gone (gear is reworked for gold at the shop counter, `Gear.reworks`): each stone in the
+ *             bag is paid back at its old price.
  */
+/** The roll stones of save v17 and older, paid back at their shop price. */
+const OLD_STONES = ['stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor'];
+const OLD_STONE_PRICE = 30;
+
 /** The level lists before skill books (save v15 and older): what an old character already knows. */
 const OLD_LEVEL_SKILLS: Record<string, [string, number][]> = {
   warrior: [['heavy_strike', 1], ['second_wind', 2], ['war_cry', 3], ['skull_splitter', 4], ['shield_bash', 6], ['sunder', 8], ['iron_skin', 10], ['cleave', 12], ['bloodlust', 14], ['earthshaker', 16], ['rallying_roar', 18], ['titans_wrath', 20]],
@@ -191,6 +197,14 @@ function migrate(file: SaveFile): SaveFile | null {
     file.version = 16;
   }
   if (file.version < 17) file.version = 17;
+  if (file.version < 18) {
+    const p = file.player as Partial<PlayerData>;
+    const inventory = Array.isArray(p.inventory) ? p.inventory : [];
+    const stones = inventory.filter((e) => OLD_STONES.includes(e?.itemId)).reduce((n, e) => n + (Number.isFinite(e.qty) ? Math.max(0, e.qty) : 0), 0);
+    p.inventory = inventory.filter((e) => !OLD_STONES.includes(e?.itemId));
+    p.gold = (typeof p.gold === 'number' && Number.isFinite(p.gold) ? p.gold : 0) + stones * OLD_STONE_PRICE;
+    file.version = 18;
+  }
   return file;
 }
 
@@ -231,6 +245,7 @@ function sanitizeGear(raw: unknown, slot?: EquipSlot): Gear | null {
   const gear: Gear = { uid: g.uid, itemId: g.itemId, ...sanitizeTraits(def, g) };
   if (g.locked === true) gear.locked = true;
   if (g.isNew === true) gear.isNew = true;
+  if (typeof g.reworks === 'number' && Number.isFinite(g.reworks) && g.reworks >= 1) gear.reworks = Math.min(1000, Math.floor(g.reworks));
   return gear;
 }
 

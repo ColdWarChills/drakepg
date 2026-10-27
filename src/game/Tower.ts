@@ -13,8 +13,8 @@ import { randInt, type Rng } from './rng';
 
 /**
  * The tower (docs/TOWER_SPEC.md, data in src/data/tower.ts): floors cleared in order, each one fight against a known
- * monster moved up to the floor's level, with twists. The first clear of a floor pays marks (and stones or a Sigil
- * piece on 5th and 10th floors); marks and gold buy from the Warden's vendor. `PlayerData.tower` (save v17).
+ * monster moved up to the floor's level, with twists. The first clear of a floor pays marks (more on 5th and 10th
+ * floors, and a Sigil piece on 10th); marks and gold buy from the Warden's vendor. `PlayerData.tower` (save v17).
  */
 
 export interface TowerState {
@@ -120,8 +120,6 @@ export function clearFloor(player: Player, n: number, rng: Rng): FloorClear | nu
   if (n % 10 === 0) {
     const fl = flightOf(n);
     items.push(sigilPiece(fl.lootTable, fl.sigil, rng, false));
-  } else if (n % 5 === 0) {
-    for (const stone of db.stones()) for (let i = 0; i < BALANCE.tower.stones; i++) items.push({ itemId: stone.id });
   }
   const { lost } = player.grantRewards({ xp: 0, gold: 0, items }, true);
   return { floor: n, marks, items, lost };

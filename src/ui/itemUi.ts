@@ -241,7 +241,7 @@ export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): P
     g.lineStyle(2 * s, shade(color, 0.55)).lineBetween(-12 * s, -8 * s, 12 * s, -8 * s).lineBetween(-12 * s, 0, 8 * s, 0);
     g.fillStyle(0xb03a2e).fillCircle(8 * s, 10 * s, 7 * s);
     g.fillStyle(0xffffff, 0.35).fillCircle(6 * s, 8 * s, 2 * s);
-  } else if (def.type === 'material' || def.type === 'stone') {
+  } else if (def.type === 'material') {
     // A faceted chunk.
     const pts = [[0, -24], [20, -8], [14, 20], [-14, 20], [-20, -8]].map(([x, y]) => new Phaser.Math.Vector2(x * s, y * s));
     g.fillStyle(color).fillPoints(pts, true);
@@ -346,7 +346,6 @@ export function itemLines(def: ItemDef, g: GearTraits = { rolls: {} }): string[]
     }
     case 'consumable':
     case 'material':
-    case 'stone':
     case 'book':
       return [def.description];
     case 'scroll':

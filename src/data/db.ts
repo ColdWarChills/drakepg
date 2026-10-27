@@ -13,7 +13,7 @@ import { SKILLS } from './skills';
 import { STATUSES } from './statuses';
 import { FLIGHTS, FLOORS, TWISTS, VENDOR } from './tower';
 import { ROOMS, ZONES } from './world';
-import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, FlightDef, FloorDef, ItemDef, TwistDef, VendorDef, StoneDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SetDef, SkillDef, StatusDef, ZoneDef } from './types';
+import type { Apply, ClassDef, ClassId, EliteAffixDef, FeatureDef, FlightDef, FloorDef, ItemDef, TwistDef, VendorDef, LootTableDef, MonsterDef, QuestDef, RecipeDef, RoomDef, SetDef, SkillDef, StatusDef, ZoneDef } from './types';
 
 const GEAR_TYPES: ItemDef['type'][] = ['weapon', 'armor', 'accessory'];
 const isGearType = (t: ItemDef['type']) => GEAR_TYPES.includes(t);
@@ -62,7 +62,6 @@ export const db = {
   recipe: (id: string): RecipeDef => get('recipe', recipes, id),
   lootTable: (id: string): LootTableDef => get('loot table', lootTables, id),
   feature: (id: string): FeatureDef => get('feature', features, id),
-  stones: (): StoneDef[] => ITEMS.filter((i): i is StoneDef => i.type === 'stone'),
   set: (id: string): SetDef => get('set', sets, id),
   features: (): readonly FeatureDef[] => FEATURES,
   affixes: (): readonly EliteAffixDef[] => ELITE_AFFIXES,

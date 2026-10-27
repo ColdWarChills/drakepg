@@ -104,6 +104,8 @@ export interface Gear extends GearTraits {
   locked?: boolean;
   /** Not looked at in the inventory yet. */
   isNew?: boolean;
+  /** Times reworked at a shop counter (each one costs more: src/game/Rework.ts). Missing = 0. */
+  reworks?: number;
 }
 
 /** Something handed to the player: a consumable, or gear with its rolls already decided. */

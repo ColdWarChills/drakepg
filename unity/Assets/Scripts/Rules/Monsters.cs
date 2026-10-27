@@ -232,26 +232,30 @@ namespace Drakepg.Rules
         }
     }
 
-    /// <summary>Roll stones, a port of src/game/Stones.ts.</summary>
-    public static class Stones
+    /// <summary>Rework at the shop counter, a port of src/game/Rework.ts: pay gold to roll a line again, keep new or old.</summary>
+    public static class Rework
     {
-        public static ItemDef StoneFor(string key) => Db.Stones().FirstOrDefault(s => s.Line == key);
-        public static int StonesNeeded(Gear gear) => Items.GearDef(gear).Tier;
-        public static List<string> RerollableLines(Gear gear) => Items.RollKeys(Items.GearDef(gear), gear.Sigil).Where(k => StoneFor(k) != null).ToList();
+        /// <summary>The lines the counter can rework (Special chance and jewelry Power can't be).</summary>
+        public static readonly string[] Lines = { "damage", "crit", "defense", "hp" };
 
-        public static bool CanReroll(Player player, Gear gear, string key)
+        public static List<string> ReworkLines(Gear gear) => Items.RollKeys(Items.GearDef(gear), gear.Sigil).Where(k => Lines.Contains(k)).ToList();
+
+        /// <summary>Gold for this piece's next rework: base x tier, x growth for every earlier rework.</summary>
+        public static double Price(Gear gear) =>
+            JsMath.Round(Db.B.Rework.Base * Items.GearDef(gear).Tier * Math.Pow(Db.B.Rework.Growth, gear.Reworks ?? 0));
+
+        public static bool CanRework(Player player, Gear gear, string key) => ReworkLines(gear).Contains(key) && player.Gold >= Price(gear);
+
+        /// <summary>Pay and roll the line again; the piece keeps its old value until `Keep`. Null if you can't.</summary>
+        public static (double before, double after)? Run(Player player, Gear gear, string key, IRng rng)
         {
-            var stone = StoneFor(key);
-            return stone != null && RerollableLines(gear).Contains(key) && player.CountItem(stone.Id) >= StonesNeeded(gear);
+            if (!CanRework(player, gear, key)) return null;
+            player.Data.Gold -= Price(gear);
+            gear.Reworks = (gear.Reworks ?? 0) + 1;
+            return (gear.Roll(key), Items.RollQuality(rng));
         }
 
-        public static (double before, double after)? Reroll(Player player, Gear gear, string key, IRng rng)
-        {
-            if (!CanReroll(player, gear, key)) return null;
-            player.RemoveItem(StoneFor(key).Id, StonesNeeded(gear));
-            var before = gear.Roll(key);
-            gear.Rolls[key] = Items.RollQuality(rng);
-            return (before, gear.Rolls[key]);
-        }
+        /// <summary>Set the value the player kept.</summary>
+        public static void Keep(Gear gear, string key, double value) => gear.Rolls[key] = value;
     }
 }

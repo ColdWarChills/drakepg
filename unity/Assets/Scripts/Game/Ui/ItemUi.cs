@@ -328,7 +328,7 @@ namespace Drakepg
                 g.FillRect(Shade(color, 0.6f), -20 * s, -24 * s, 6 * s, 46 * s);
                 g.FillRect(Design.Hex(0xc9a84a), 12 * s, -4 * s, 6 * s, 8 * s);
             }
-            else if (def.Type == "material" || def.Type == "stone")
+            else if (def.Type == "material")
             {
                 // A faceted chunk.
                 var pts = Pts(s, 0, -24, 20, -8, 14, 20, -14, 20, -20, -8);
@@ -580,7 +580,6 @@ namespace Drakepg
                 }
                 case "consumable":
                 case "material":
-                case "stone":
                     lines.Add(def.Description ?? "");
                     break;
                 case "book":

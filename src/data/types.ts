@@ -286,12 +286,6 @@ export interface MaterialDef extends ItemBase {
   type: 'material';
 }
 
-/** Roll stone: re-rolls one quality line of a weapon or armor (src/game/Stones.ts). Stacks in the bag. */
-export interface StoneDef extends ItemBase {
-  type: 'stone';
-  line: 'damage' | 'crit' | 'defense' | 'hp';
-}
-
 /** Recall Scroll: takes you to the last town you visited (src/game/Travel.ts). Not usable in battle. Stacks in the bag. */
 export interface ScrollDef extends ItemBase {
   type: 'scroll';
@@ -304,7 +298,7 @@ export interface BookDef extends ItemBase {
   skillId: string;
 }
 
-export type ItemDef = WeaponDef | ArmorDef | AccessoryDef | ConsumableDef | MaterialDef | StoneDef | ScrollDef | BookDef;
+export type ItemDef = WeaponDef | ArmorDef | AccessoryDef | ConsumableDef | MaterialDef | ScrollDef | BookDef;
 
 /** What a set bonus gives. All of it is shown on the item card and the Character panel. */
 export interface SetBonus {

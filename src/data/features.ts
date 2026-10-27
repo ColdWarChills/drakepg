@@ -44,7 +44,7 @@ export const FEATURES: FeatureDef[] = [
     name: "Hulda's forge",
     text: 'Hulda the smith has opened her forge in Brindlemoor: craft gear from materials, reinforce it up to +10, hone its quality and salvage what you do not need.',
     unlockedBy: 'eye_of_the_storm',
-    // Crafting is off for now: gear gets stronger with stones from the shops instead.
+    // Crafting is off for now: gear gets stronger by reworking it at the shop counters instead (src/game/Rework.ts).
     disabled: true,
   },
   {
