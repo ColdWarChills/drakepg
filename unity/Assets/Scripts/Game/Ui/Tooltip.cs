@@ -11,7 +11,7 @@ namespace Drakepg
     /// </summary>
     public static class Tooltip
     {
-        const float Width = 300, Gap = 8, Margin = 8;
+        const float Width = 330, Gap = 8, Margin = 8;
         static readonly Color Fill = new Color(0.12f, 0.15f, 0.22f, 0.97f);
 
         static VisualElement box;

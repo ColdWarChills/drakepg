@@ -51,6 +51,15 @@ The game draws one picture per character and moves it in code. In battle every f
 
 Designer: "icons with resistance need overhaul, I see too much info on the screen at once." The sheet now holds two quiet rows instead of a line per fact: the monster's element, its weak spots and its resists as icons (`el_<element>`, `spot_blunt`, `spot_poison`, two short words between them), and a badge per rule it plays by (Elite affix, tower twists, signature move, Heroic move, loot). Hovering or tapping any icon or badge opens a tooltip right by it (`Ui/Tooltip.cs`: a bold title and a line or two, under the thing or above it near the bottom edge), e.g. "Weak to Water: Water hits deal 50% more damage (its Water resist is -50)." The status chips, the shell line and the floor list's twists use the same tooltip. A shell says its hits in words ("Ice Shell: 3 Ice hits to break it · 50% less damage"); the diamond pips were cryptic. Only what counts down during the fight keeps a line (a shell's pips, a Lucky Impling's escape). Twists and traits are still spelled out in the log when the fight starts.
 
+### Tooltip wording (2026-10-27, designer: "too much text, be concise and to the point", settled with the design advisor)
+
+- **A title and one short line**: the title names the thing, the line says the effect in under about 8 words ("Weak to Water" / "Takes 50% more from Water."). Like Slay the Spire's keyword pop-ups (from memory).
+- **The effect, not the stat behind it**: "Takes 50% less from Fire", never the resist number.
+- **No how-to that holds everywhere** ("any Ice hit counts: a skill or a weapon"): teach it once, not in every tooltip.
+- **Parallel wording** so pairs scan together: "Takes 50% more from…" / "Takes 50% less from…".
+- **A second sentence only if it changes a decision**: "Regrows at 50% HP." stays; item lists and roll explanations go (loot is one line of odds, plus luck only while it's working).
+- **The line says the state, the tooltip says the rule**: "Ice Shell: 3 Ice hits to break" on the panel; "Takes 50% less until 3 more Ice hits. Regrows at 50% HP." on hover.
+
 ### UI icons
 
 - **Never AI** (PLANS, Art: "the UI is never AI-generated"). Hand-written SVG in `scripts/ui_icons.py`: a 32x32 viewBox, ink `#2a1d16` outlines 2.4 wide, flat fills from the paper palette, the wobble filter. Rendered by headless Edge to 128 px PNGs: the ink set (`UiIcons/`) for sand and cream felt, the light set (`UiIconsLight/`, `--light`) for navy felt.

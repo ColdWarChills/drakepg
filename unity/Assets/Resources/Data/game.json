@@ -12528,7 +12528,7 @@
   {
    "id": "unshakable",
    "name": "Unshakable",
-   "text": "Immune to stun and Freeze.",
+   "text": "Can't be stunned or frozen.",
    "icon": "twist_unshakable",
    "unshakable": true
   },
@@ -12542,14 +12542,14 @@
   {
    "id": "no_potions",
    "name": "No Potions",
-   "text": "Items can't be used in this fight.",
+   "text": "No items this fight.",
    "icon": "twist_no_potions",
    "noItems": true
   },
   {
    "id": "fury",
    "name": "Fury",
-   "text": "Starts with War Cry (+30% damage).",
+   "text": "Starts with War Cry.",
    "icon": "status_war_cry",
    "starts": [
     {
@@ -12562,7 +12562,7 @@
   {
    "id": "hardened",
    "name": "Hardened",
-   "text": "Starts with Iron Skin (40% less damage taken).",
+   "text": "Starts with Iron Skin.",
    "icon": "status_iron_skin",
    "starts": [
     {
@@ -12575,7 +12575,7 @@
   {
    "id": "regrowth",
    "name": "Regrowth",
-   "text": "Starts with Regen (8% of its HP each turn).",
+   "text": "Starts with Regen.",
    "icon": "status_regen",
    "starts": [
     {
@@ -12588,7 +12588,7 @@
   {
    "id": "ambush_shock",
    "name": "Ambush: Shock",
-   "text": "You start Shocked (+15% damage taken).",
+   "text": "You start Shocked.",
    "icon": "twist_ambush",
    "starts": [
     {
@@ -12600,7 +12600,7 @@
   {
    "id": "ambush_burn",
    "name": "Ambush: Burn",
-   "text": "You start burning.",
+   "text": "You start Burning.",
    "icon": "twist_ambush",
    "starts": [
     {
@@ -12612,63 +12612,63 @@
   {
    "id": "veil_fire",
    "name": "Fire Veil",
-   "text": "Resists every element +50, except Fire (-25).",
+   "text": "Resists every element but Fire.",
    "icon": "twist_veil",
    "veil": "fire"
   },
   {
    "id": "veil_water",
    "name": "Water Veil",
-   "text": "Resists every element +50, except Water (-25).",
+   "text": "Resists every element but Water.",
    "icon": "twist_veil",
    "veil": "water"
   },
   {
    "id": "veil_ice",
    "name": "Ice Veil",
-   "text": "Resists every element +50, except Ice (-25).",
+   "text": "Resists every element but Ice.",
    "icon": "twist_veil",
    "veil": "ice"
   },
   {
    "id": "veil_wind",
    "name": "Wind Veil",
-   "text": "Resists every element +50, except Wind (-25).",
+   "text": "Resists every element but Wind.",
    "icon": "twist_veil",
    "veil": "wind"
   },
   {
    "id": "veil_earth",
    "name": "Earth Veil",
-   "text": "Resists every element +50, except Earth (-25).",
+   "text": "Resists every element but Earth.",
    "icon": "twist_veil",
    "veil": "earth"
   },
   {
    "id": "veil_energy",
    "name": "Energy Veil",
-   "text": "Resists every element +50, except Energy (-25).",
+   "text": "Resists every element but Energy.",
    "icon": "twist_veil",
    "veil": "energy"
   },
   {
    "id": "veil_light",
    "name": "Light Veil",
-   "text": "Resists every element +50, except Light (-25).",
+   "text": "Resists every element but Light.",
    "icon": "twist_veil",
    "veil": "light"
   },
   {
    "id": "veil_dark",
    "name": "Dark Veil",
-   "text": "Resists every element +50, except Dark (-25).",
+   "text": "Resists every element but Dark.",
    "icon": "twist_veil",
    "veil": "dark"
   },
   {
    "id": "shell_fire",
    "name": "Fire Shell",
-   "text": "50% less damage until hit 3 times with Fire; grows back at half HP.",
+   "text": "Takes 50% less until 3 Fire hits. Regrows at half HP.",
    "icon": "twist_shell",
    "shell": {
     "element": "fire",
@@ -12678,7 +12678,7 @@
   {
    "id": "shell_water",
    "name": "Water Shell",
-   "text": "50% less damage until hit 3 times with Water; grows back at half HP.",
+   "text": "Takes 50% less until 3 Water hits. Regrows at half HP.",
    "icon": "twist_shell",
    "shell": {
     "element": "water",
@@ -12688,7 +12688,7 @@
   {
    "id": "shell_ice",
    "name": "Ice Shell",
-   "text": "50% less damage until hit 3 times with Ice; grows back at half HP.",
+   "text": "Takes 50% less until 3 Ice hits. Regrows at half HP.",
    "icon": "twist_shell",
    "shell": {
     "element": "ice",
@@ -12698,7 +12698,7 @@
   {
    "id": "shell_wind",
    "name": "Wind Shell",
-   "text": "50% less damage until hit 3 times with Wind; grows back at half HP.",
+   "text": "Takes 50% less until 3 Wind hits. Regrows at half HP.",
    "icon": "twist_shell",
    "shell": {
     "element": "wind",
@@ -12708,7 +12708,7 @@
   {
    "id": "shell_earth",
    "name": "Earth Shell",
-   "text": "50% less damage until hit 3 times with Earth; grows back at half HP.",
+   "text": "Takes 50% less until 3 Earth hits. Regrows at half HP.",
    "icon": "twist_shell",
    "shell": {
     "element": "earth",
@@ -12718,7 +12718,7 @@
   {
    "id": "shell_energy",
    "name": "Energy Shell",
-   "text": "50% less damage until hit 3 times with Energy; grows back at half HP.",
+   "text": "Takes 50% less until 3 Energy hits. Regrows at half HP.",
    "icon": "twist_shell",
    "shell": {
     "element": "energy",
@@ -12728,7 +12728,7 @@
   {
    "id": "shell_light",
    "name": "Light Shell",
-   "text": "50% less damage until hit 3 times with Light; grows back at half HP.",
+   "text": "Takes 50% less until 3 Light hits. Regrows at half HP.",
    "icon": "twist_shell",
    "shell": {
     "element": "light",
@@ -12738,7 +12738,7 @@
   {
    "id": "shell_dark",
    "name": "Dark Shell",
-   "text": "50% less damage until hit 3 times with Dark; grows back at half HP.",
+   "text": "Takes 50% less until 3 Dark hits. Regrows at half HP.",
    "icon": "twist_shell",
    "shell": {
     "element": "dark",

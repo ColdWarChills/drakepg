@@ -534,7 +534,7 @@ namespace Drakepg
             if (m.EscapeAfter.HasValue && m.EscapeAfter > 0)
             {
                 escapeLine = EnemyLine(ref y, "boot", "", 16);
-                Tooltip.Attach(escapeLine, "Runs away", "When the count runs out it flees with its loot. A stun or Freeze holds it in place for a turn.");
+                Tooltip.Attach(escapeLine, "Runs away", "Flees when the count ends. Stuns pause it.");
                 RefreshEscape();
             }
 
@@ -567,7 +567,7 @@ namespace Drakepg
             var m = monster;
             var list = new List<BadgeInfo>();
             if (affix != null)
-                list.Add(new BadgeInfo { Icon = Felt.HasIcon("twist_" + affix.Id) ? "twist_" + affix.Id : "star", Title = $"Elite: {affix.Name}", Note = affix.Description, Ring = Felt.Gold });
+                list.Add(new BadgeInfo { Icon = Felt.HasIcon("twist_" + affix.Id) ? "twist_" + affix.Id : "star", Title = $"Elite · {affix.Name}", Note = affix.Description, Ring = Felt.Gold });
             foreach (var id in m.Tower?.Twists ?? new List<string>())
             {
                 var tw = Db.Twist(id);
@@ -830,16 +830,16 @@ namespace Drakepg
             weaponTag = row;
         }
 
-        /// <summary>"Frost Shell: 3 Fire hits to break it · 80% less damage", then "broken!".</summary>
+        /// <summary>"Frost Shell: 3 Fire hits to break", then "broken!" (the tooltip has the damage cut).</summary>
         void RefreshShell()
         {
             var shell = monster.Shell;
             if (shell == null || shellLine == null) return;
             var left = battle.Shell;
             var element = Db.Data.ElementLabels[shell.Element];
-            var regrow = shell.ReformAt.HasValue ? $" Grows back once at {Math.Round(shell.ReformAt.Value * 100)}% HP." : "";
+            var regrow = shell.ReformAt.HasValue ? $" Regrows at {Math.Round(shell.ReformAt.Value * 100)}% HP." : "";
             shellLine.text = left > 0
-                ? $"{shell.Name}: {left} {element} hit{(left == 1 ? "" : "s")} to break it · {Math.Round(shell.Reduction * 100)}% less damage"
+                ? $"{shell.Name}: {left} {element} hit{(left == 1 ? "" : "s")} to break"
                 : $"{shell.Name}: broken!{(shellRegrew ? "" : regrow)}";
         }
 
@@ -849,11 +849,10 @@ namespace Drakepg
             var shell = monster.Shell;
             var left = battle.Shell;
             var element = Db.Data.ElementLabels[shell.Element];
-            var regrow = shell.ReformAt.HasValue ? $" It grows back once at {Math.Round(shell.ReformAt.Value * 100)}% HP." : "";
-            var a = "AEIOU".IndexOf(element[0]) >= 0 ? "an" : "a";
+            var regrow = shell.ReformAt.HasValue ? $" Regrows at {Math.Round(shell.ReformAt.Value * 100)}% HP." : "";
             return (shell.Name, left > 0
-                ? $"Takes {Math.Round(shell.Reduction * 100)}% less damage until it's hit {left} more time{(left == 1 ? "" : "s")} with {element}: {a} {element} skill, or attacks with {a} {element} weapon.{regrow}"
-                : $"Broken: it takes full damage now.{(shellRegrew ? "" : regrow)}");
+                ? $"Takes {Math.Round(shell.Reduction * 100)}% less until {left} more {element} hit{(left == 1 ? "" : "s")}.{regrow}"
+                : $"Broken: full damage.{(shellRegrew ? "" : regrow)}");
         }
 
         /// <summary>"Runs away in 2 turns. A stun holds it."</summary>
@@ -918,13 +917,10 @@ namespace Drakepg
         string LuckyNote()
         {
             var l = Db.B.Lucky;
-            var tiers = string.Join(", ", Items.SigilTiers.Select(t => $"{Items.SigilNames[t]} {Pct1(l.SigilTiers[t])}"));
-            return string.Join("\n", $"Loot: ✦ Sigil {Pct1(l.SigilChance)} · Gold x{l.Gold}.",
-                $"{Pct1(l.SigilChance)}: a Sigil piece of this area's gear (no normal gear drops).", $"Which Sigil: {tiers}.",
-                $"Always: about {l.Gold}x the gold of the monsters here.");
+            return $"✦ Sigil piece {Pct1(l.SigilChance)} · {l.Gold}x gold.";
         }
 
-        /// <summary>This fight's drop odds (luck included) and the items, for its loot badge.</summary>
+        /// <summary>This fight's drop odds (luck included), for its loot badge: one line, the items show when they drop.</summary>
         string LootNote(string tableId)
         {
             var m = monster;
@@ -940,15 +936,12 @@ namespace Drakepg
             // Guild gather hunts: this area's hunt item, on top of everything else.
             var gather = Guild.GatherHere(battle.Player, zone.Id);
 
-            string Names(string t) => string.Join(", ", table.Tiers[t].Select(e => Db.Item(e.ItemId).Name));
-            var pityText = luck > 0
-                ? $"Rolled rarest first. Luck: +{Pct(luck)} Rare after {misses} kills here without one."
-                : $"Rolled rarest first. {misses} kills here without a Rare; after {Db.B.Loot.PityAfter}, the Rare chance rises.";
-            var lines = Loot.Tiers.Where(t => odds[t] > 0).Select(t => $"{label[t]} {Pct(odds[t])}{(t == "rare" && luck > 0 ? " (luck)" : "")}: {Names(t)}").ToList();
-            if (setChance > 0) lines.Add($"Set {Pct(setChance)} (extra): {string.Join(", ", Db.Set(table.Set).Pieces.Select(id => Db.Item(id).Name))}");
-            lines.AddRange(gather.Select(g => $"{Db.Item(g.hunt.ItemId).Name} {Pct(g.chance)} (extra): your Guild hunt in {zone.Name}."));
-            lines.Add(pityText);
-            return string.Join("\n", lines);
+            var parts = Loot.Tiers.Where(t => odds[t] > 0).Select(t => $"{label[t]} {Pct(odds[t])}").ToList();
+            if (setChance > 0) parts.Add($"Set {Pct(setChance)}");
+            parts.AddRange(gather.Select(g => $"{Db.Item(g.hunt.ItemId).Name} {Pct(g.chance)}"));
+            // Luck only when it's working: it's the one thing here that changes what you do (keep farming).
+            var luckLine = luck > 0 ? $"\nLuck: +{Pct(luck)} Rare after {misses} dry kills." : "";
+            return string.Join(" · ", parts) + luckLine;
         }
 
         /// <summary>
@@ -983,19 +976,19 @@ namespace Drakepg
                 Tooltip.Attach(t, title, body);
                 parts.Add(t);
             }
+            // Tooltips: a title, then the effect in a few words ("Takes 50% more from Water"), not the stat behind it.
             if (m.Element != null)
             {
-                Token("el_" + m.Element, $"{Label(m.Element)} monster", $"Its own attacks are {Label(m.Element)}.");
+                Token("el_" + m.Element, $"{Label(m.Element)} monster", $"Its attacks are {Label(m.Element)}.");
                 var gap = new VisualElement { pickingMode = PickingMode.Ignore };
                 gap.style.width = 6;
                 parts.Add(gap);
             }
             // Weak spots: the elements, then Blunt skills and Poison.
             var spots = new List<(string icon, string title, string body)>();
-            foreach (var e in weak)
-                spots.Add(("el_" + e, $"Weak to {Label(e)}", $"{Label(e)} hits deal {JsMath.Str(-(R(e) + all))}% more damage (its {Label(e)} resist is {JsMath.Str(R(e) + all)})."));
-            if (m.WeakTo?.Blunt > 0) spots.Add(("spot_blunt", "Weak to Blunt", $"Blunt skills deal {JsMath.Str(m.WeakTo.Blunt.Value)}% more damage."));
-            if (m.WeakTo?.Poison > 0) spots.Add(("spot_poison", "Weak to Poison", $"Its poison ticks hurt {JsMath.Str(m.WeakTo.Poison.Value)}% more."));
+            foreach (var e in weak) spots.Add(("el_" + e, $"Weak to {Label(e)}", $"Takes {JsMath.Str(-(R(e) + all))}% more from {Label(e)}."));
+            if (m.WeakTo?.Blunt > 0) spots.Add(("spot_blunt", "Weak to Blunt", $"Takes {JsMath.Str(m.WeakTo.Blunt.Value)}% more from Blunt skills."));
+            if (m.WeakTo?.Poison > 0) spots.Add(("spot_poison", "Weak to Poison", $"Poison hurts it {JsMath.Str(m.WeakTo.Poison.Value)}% more."));
             if (spots.Count > 0)
             {
                 Word("Weak");
@@ -1007,20 +1000,20 @@ namespace Drakepg
                 foreach (var e in strong)
                 {
                     var r = R(e) + all;
-                    if (r >= 100) Token("el_" + e, $"Immune to {Label(e)}", $"{Label(e)} hits do nothing.");
-                    else Token("el_" + e, $"Resists {Label(e)}", $"{Label(e)} hits deal {JsMath.Str(r)}% less damage.");
+                    if (r >= 100) Token("el_" + e, $"Immune to {Label(e)}", $"{Label(e)} does nothing.");
+                    else Token("el_" + e, $"Resists {Label(e)}", $"Takes {JsMath.Str(r)}% less from {Label(e)}.");
                 }
             }
             if (absorbs.Count > 0)
             {
                 Word("Absorbs");
-                foreach (var e in absorbs) Token("el_" + e, $"Absorbs {Label(e)}", $"{Label(e)} hits heal it instead.");
+                foreach (var e in absorbs) Token("el_" + e, $"Absorbs {Label(e)}", $"{Label(e)} heals it.");
             }
             if (all != 0)
             {
                 var chip = Felt.Chip($"All {(all > 0 ? "+" : "")}{JsMath.Str(all)}", Design.Hex(0xc9a520), 14, 80);
                 chip.style.marginLeft = 4;
-                Tooltip.Attach(chip, "Every element", $"{(all > 0 ? "+" : "")}{JsMath.Str(all)} resist to every element, on top of the ones shown.");
+                Tooltip.Attach(chip, "Every element", all > 0 ? $"Takes {JsMath.Str(all)}% less from every element." : $"Takes {JsMath.Str(-all)}% more from every element.");
                 parts.Add(chip);
             }
             return parts;
@@ -1073,7 +1066,7 @@ namespace Drakepg
                     var chip = Felt.IconChip($"{def.Name} {kv.Value}", def.Harmful ? Design.Hex(0xd9604a) : Design.Hex(0x6aa84f), SkillUi.StatusIcon(def), 15, seed++);
                     chip.style.marginRight = 6;
                     // Hover (or tap) opens a tooltip by the chip: what it does and the turns left.
-                    Tooltip.Attach(chip, $"{def.Name}: {kv.Value} turn{(kv.Value == 1 ? "" : "s")} left", def.Description);
+                    Tooltip.Attach(chip, $"{def.Name} · {kv.Value} turn{(kv.Value == 1 ? "" : "s")}", def.Description);
                     row.Add(chip);
                     // A new status is sewn on with a pop; the ones already there just change their number.
                     if (before.Contains(kv.Key)) continue;
