@@ -94,6 +94,17 @@ Build order (all built, see "Done" at the bottom):
 - ~~To do: art for the 3 clerks and icons for the 10 hunt items~~: made in the art redo (2026-10-17).
 - Playtest: is 50% per kill for gather items right? ~~Are Tough hunts (3 Ash Imps at Rank F) too risky that early?~~ Unity playthrough bot (2026-10-27, see "Playthrough" under Skills, weapons and builds): yes, almost every Chapter 1 death is an Ash Imp, mostly on that hunt at hero level 2-3 with the starter weapon (0.7-1.2 deaths per hero). Letting Tough hunts reach only one rank up doesn't help (heroes meet Imps in the first Thornwood rooms anyway) and cuts Chapter 1 to ~21 min. Built instead (2026-10-27): the Ash Imp is weak to Blunt and Poison, deaths now 0.4-0.9 per hero.
 
+## Harder dungeons: a tower (proposed 2026-10-27)
+
+- **Proposed (designer, 2026-10-27): harder dungeons like Summoners War's Trial of Ascension**: go deeper floor by floor, rewards on the way, so grinding for better gear has a goal. Fits the playthrough findings: story bosses fall on the first try and gold piles up, so there is no hard content to gear up for.
+- Design advisor's notes (2026-10-27):
+  - ToA works because it's the *exam* and the Cairos dungeons are the *farm*: the tower tests gear that is grinded elsewhere ([shipped game, from memory]). Ours: the farm is zones, Elites and Heroic rematches; the tower is the exam. Its rewards must feed the farm (things that make the next grind better), or it's played once.
+  - Hand-made floors are an arc, used up once (Daniel Cook, loops vs arcs). ToA turns them into a loop with a monthly reset (a live-service habit; odd for a single-player Steam game). Alternative: hand-made floors, then an endless tail of generated floors with a best-depth record.
+  - Each floor asks one question, not more HP (Ghost of Tsushima's lethality contract): a known monster plus one twist shown before you enter (an Elite affix, immune to stun, Fire-shielded, no potions, enrages at turn 8). That's where Wards, the spare weapon, element books and Play Dead finally matter (the sim bot never needs them).
+  - Rewards: first clear only per floor, bigger every 5th and 10th (Mike Stout: bigger gaps, bigger rewards). Not gold (there's too much): Sigil gear, stones in bulk, rare books, titles or cosmetics, and a tower currency for a vendor that also charges gold (the gold sink the playthrough asked for).
+  - Fresh HP each floor and free retries (ToA) keep a loss cheap and readable; a run with HP carried between floors (roguelite descent) is harder to tune. Start with fresh HP.
+- **Open:** name (original, not "Trial of Ascension"); where it stands (a town building, or the Guild); unlock (after the Thornheart?); floors per chapter (e.g. 10 per chapter, a boss every 10th); endless tail or not; reset or not.
+
 ## UI
 
 - **Decided (designer, 2026-10-15):** the UI needs an overhaul. Do it after the Qwen (ComfyUI) art setup (set up the same day, see Art).
