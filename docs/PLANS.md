@@ -103,7 +103,8 @@ Build order (all built, see "Done" at the bottom):
   - Each floor asks one question, not more HP (Ghost of Tsushima's lethality contract): a known monster plus one twist shown before you enter (an Elite affix, immune to stun, Fire-shielded, no potions, enrages at turn 8). That's where Wards, the spare weapon, element books and Play Dead finally matter (the sim bot never needs them).
   - Rewards: first clear only per floor, bigger every 5th and 10th (Mike Stout: bigger gaps, bigger rewards). Not gold (there's too much): Sigil gear, stones in bulk, rare books, titles or cosmetics, and a tower currency for a vendor that also charges gold (the gold sink the playthrough asked for).
   - Fresh HP each floor and free retries (ToA) keep a loss cheap and readable; a run with HP carried between floors (roguelite descent) is harder to tune. Start with fresh HP.
-- **Open:** name (original, not "Trial of Ascension"); where it stands (a town building, or the Guild); unlock (after the Thornheart?); floors per chapter (e.g. 10 per chapter, a boss every 10th); endless tail or not; reset or not.
+- **Spec drafted (2026-10-27), waiting for the designer's review: `docs/TOWER_SPEC.md`.** The designer's defaults: fresh HP per floor, first-clear rewards, a twist on every floor, a tower-currency vendor. The draft's own defaults: 30 floors in 3 flights of 10 (each opens after a chapter's last boss), a room behind Brindlemoor with a Warden, no XP or drops inside, vendor prices in marks plus gold (sized to the playthrough's gold surplus), save v17. Not in it: the endless Depths, resets.
+- **Open:** name (original, not "Trial of Ascension"); endless tail later or not; reset or not.
 
 ## UI
 
