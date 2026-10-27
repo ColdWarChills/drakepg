@@ -6,6 +6,7 @@ Browser turn-based RPG. Phaser 4 + TypeScript + Vite. See README.md for layout a
 - `npm run dev` / `npm run build` (build runs `tsc --noEmit` first) / `npm run typecheck`
 - `npm run sim`: headless balance check (scripts/sim.ts). Run it after tuning monsters, skills, items or `BALANCE`.
 - `npm run pace`: headless pacing estimate (scripts/pace.ts): rooms, fights, level at each boss, rough minutes per chapter. Run it after changing rooms or quests.
+- Unity playthrough: `Drakepg.EditorTools.Playthrough.Run(20)` through the Unity MCP's `execute_code` (`unity/Assets/Editor/Playthrough.cs`): a bot that plays the whole story paying its own way (gold, potions, HP between fights, deaths and who caused them). Run it after changing the economy, drops, shops or monsters. Calls over ~30 s time out the MCP but keep running.
 
 ## Working across chats
 Several chats (in the browser and on the PC) work on this repo and can't see each other. The repo is the only shared memory.
