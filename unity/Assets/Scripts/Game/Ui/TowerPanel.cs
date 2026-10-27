@@ -240,8 +240,10 @@ namespace Drakepg
             foreach (var id in def.Tower.Twists)
             {
                 var tw = Db.Twist(id);
-                Felt.Icon(card, tx, 31, 18, IconOf(tw), true);
-                Ui.Text(card, tx + 22, 30, tw.Name, 15, Felt.Gold);
+                var twIcon = Felt.Icon(card, tx, 31, 18, IconOf(tw), true);
+                var twName = Ui.Text(card, tx + 22, 30, tw.Name, 15, Felt.Gold);
+                Tooltip.Attach(twIcon, tw.Name, tw.Text);
+                Tooltip.Attach(twName, tw.Name, tw.Text);
                 tx += 22 + tw.Name.Length * 7.6f + 14;
             }
             var state = cleared ? "✔ Cleared" : isNext ? $"Next: {RewardText(floor)}" : open ? RewardText(floor) : "Locked";

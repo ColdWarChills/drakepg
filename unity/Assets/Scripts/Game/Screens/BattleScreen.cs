@@ -528,11 +528,13 @@ namespace Drakepg
             if (m.Shell != null)
             {
                 shellLine = EnemyLine(ref y, "shield", "", 16, Felt.Magic);
+                Tooltip.Attach(shellLine, ShellTip);
                 RefreshShell();
             }
             if (m.EscapeAfter.HasValue && m.EscapeAfter > 0)
             {
                 escapeLine = EnemyLine(ref y, "boot", "", 16);
+                Tooltip.Attach(escapeLine, "Runs away", "When the count runs out it flees with its loot. A stun or Freeze holds it in place for a turn.");
                 RefreshEscape();
             }
 
@@ -552,10 +554,10 @@ namespace Drakepg
             return 100 + lines * LineStep;
         }
 
-        /// <summary>A badge on the enemy's sheet: its icon, a ring in its kind's color, and what hovering it says.</summary>
+        /// <summary>A badge on the enemy's sheet: its icon, a ring in its kind's color, and its tooltip.</summary>
         struct BadgeInfo
         {
-            public string Icon, Note;
+            public string Icon, Title, Note;
             public Color Ring;
         }
 
@@ -565,17 +567,17 @@ namespace Drakepg
             var m = monster;
             var list = new List<BadgeInfo>();
             if (affix != null)
-                list.Add(new BadgeInfo { Icon = Felt.HasIcon("twist_" + affix.Id) ? "twist_" + affix.Id : "star", Note = $"Elite, {affix.Name}: {affix.Description}", Ring = Felt.Gold });
+                list.Add(new BadgeInfo { Icon = Felt.HasIcon("twist_" + affix.Id) ? "twist_" + affix.Id : "star", Title = $"Elite: {affix.Name}", Note = affix.Description, Ring = Felt.Gold });
             foreach (var id in m.Tower?.Twists ?? new List<string>())
             {
                 var tw = Db.Twist(id);
                 if (tw.Shell != null) continue;
-                list.Add(new BadgeInfo { Icon = TowerPanel.IconOf(tw), Note = $"{tw.Name}: {tw.Text}", Ring = Felt.Gold });
+                list.Add(new BadgeInfo { Icon = TowerPanel.IconOf(tw), Title = tw.Name, Note = tw.Text, Ring = Felt.Gold });
             }
-            if (m.Trait != null) list.Add(new BadgeInfo { Icon = "star", Note = m.Trait, Ring = Felt.Trait });
-            if (heroic != "") list.Add(new BadgeInfo { Icon = "star", Note = heroic, Ring = Felt.Gold });
-            if (m.Lucky && m.Loot != null) list.Add(new BadgeInfo { Icon = "bag", Note = LuckyNote(), Ring = Felt.OnFelt(Design.Css("#ff9550")) });
-            else if (m.Loot != null) list.Add(new BadgeInfo { Icon = "bag", Note = LootNote(m.Loot), Ring = Felt.TextDim });
+            if (m.Trait != null) list.Add(new BadgeInfo { Icon = "star", Title = "Signature move", Note = m.Trait, Ring = Felt.Trait });
+            if (heroic != "") list.Add(new BadgeInfo { Icon = "star", Title = "Heroic", Note = m.Heroic.Text, Ring = Felt.Gold });
+            if (m.Lucky && m.Loot != null) list.Add(new BadgeInfo { Icon = "bag", Title = "Lucky loot", Note = LuckyNote(), Ring = Felt.OnFelt(Design.Css("#ff9550")) });
+            else if (m.Loot != null) list.Add(new BadgeInfo { Icon = "bag", Title = "Loot", Note = LootNote(m.Loot), Ring = Felt.TextDim });
             return list;
         }
 
@@ -601,10 +603,7 @@ namespace Drakepg
                 ic.style.marginLeft = 4.5f;
                 ic.style.marginTop = 1.5f;
                 b.Add(ic);
-                var note = info.Note;
-                b.RegisterCallback<PointerEnterEvent>(_ => ShowNote(note, 17));
-                b.RegisterCallback<PointerDownEvent>(_ => ShowNote(note, 17));
-                b.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
+                Tooltip.Attach(b, info.Title, info.Note);
                 row.Add(b);
             }
             enemyHud.Add(row);
@@ -831,17 +830,30 @@ namespace Drakepg
             weaponTag = row;
         }
 
-        /// <summary>"Frost Shell ◆◆◇: 80% less damage. Fire hits crack it."</summary>
+        /// <summary>"Frost Shell: 3 Fire hits to break it · 80% less damage", then "broken!".</summary>
         void RefreshShell()
         {
             var shell = monster.Shell;
             if (shell == null || shellLine == null) return;
             var left = battle.Shell;
-            var pips = new string('◆', Math.Max(0, left)) + new string('◇', Math.Max(0, shell.Hits - left));
+            var element = Db.Data.ElementLabels[shell.Element];
             var regrow = shell.ReformAt.HasValue ? $" Grows back once at {Math.Round(shell.ReformAt.Value * 100)}% HP." : "";
             shellLine.text = left > 0
-                ? $"{shell.Name} {pips}: {Math.Round(shell.Reduction * 100)}% less damage. {Db.Data.ElementLabels[shell.Element]} hits crack it."
-                : $"{shell.Name} {pips}: broken!{(shellRegrew ? "" : regrow)}";
+                ? $"{shell.Name}: {left} {element} hit{(left == 1 ? "" : "s")} to break it · {Math.Round(shell.Reduction * 100)}% less damage"
+                : $"{shell.Name}: broken!{(shellRegrew ? "" : regrow)}";
+        }
+
+        /// <summary>The shell's tooltip, read when it opens (the hits left change during the fight).</summary>
+        (string, string) ShellTip()
+        {
+            var shell = monster.Shell;
+            var left = battle.Shell;
+            var element = Db.Data.ElementLabels[shell.Element];
+            var regrow = shell.ReformAt.HasValue ? $" It grows back once at {Math.Round(shell.ReformAt.Value * 100)}% HP." : "";
+            var a = "AEIOU".IndexOf(element[0]) >= 0 ? "an" : "a";
+            return (shell.Name, left > 0
+                ? $"Takes {Math.Round(shell.Reduction * 100)}% less damage until it's hit {left} more time{(left == 1 ? "" : "s")} with {element}: {a} {element} skill, or attacks with {a} {element} weapon.{regrow}"
+                : $"Broken: it takes full damage now.{(shellRegrew ? "" : regrow)}");
         }
 
         /// <summary>"Runs away in 2 turns. A stun holds it."</summary>
@@ -963,34 +975,31 @@ namespace Drakepg
                 w.style.marginRight = 4;
                 parts.Add(w);
             }
-            void Token(string icon, string note)
+            void Token(string icon, string title, string body)
             {
                 var t = Felt.Icon(null, 0, 0, 25, icon, true);
                 t.style.position = Position.Relative;
                 t.style.marginRight = 3;
-                t.pickingMode = PickingMode.Position;
-                t.RegisterCallback<PointerEnterEvent>(_ => ShowNote(note, 17));
-                t.RegisterCallback<PointerDownEvent>(_ => ShowNote(note, 17));
-                t.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
+                Tooltip.Attach(t, title, body);
                 parts.Add(t);
             }
             if (m.Element != null)
             {
-                Token("el_" + m.Element, $"Its element: {Label(m.Element)}. Its own attacks are {Label(m.Element)}.");
+                Token("el_" + m.Element, $"{Label(m.Element)} monster", $"Its own attacks are {Label(m.Element)}.");
                 var gap = new VisualElement { pickingMode = PickingMode.Ignore };
                 gap.style.width = 6;
                 parts.Add(gap);
             }
             // Weak spots: the elements, then Blunt skills and Poison.
-            var spots = new List<(string icon, string note)>();
+            var spots = new List<(string icon, string title, string body)>();
             foreach (var e in weak)
-                spots.Add(("el_" + e, $"Weak to {Label(e)} ({JsMath.Str(R(e) + all)}): {Label(e)} hits deal {JsMath.Str(-(R(e) + all))}% more damage."));
-            if (m.WeakTo?.Blunt > 0) spots.Add(("spot_blunt", $"Weak to Blunt: Blunt skills deal {JsMath.Str(m.WeakTo.Blunt.Value)}% more damage."));
-            if (m.WeakTo?.Poison > 0) spots.Add(("spot_poison", $"Weak to Poison: its poison ticks hurt {JsMath.Str(m.WeakTo.Poison.Value)}% more."));
+                spots.Add(("el_" + e, $"Weak to {Label(e)}", $"{Label(e)} hits deal {JsMath.Str(-(R(e) + all))}% more damage (its {Label(e)} resist is {JsMath.Str(R(e) + all)})."));
+            if (m.WeakTo?.Blunt > 0) spots.Add(("spot_blunt", "Weak to Blunt", $"Blunt skills deal {JsMath.Str(m.WeakTo.Blunt.Value)}% more damage."));
+            if (m.WeakTo?.Poison > 0) spots.Add(("spot_poison", "Weak to Poison", $"Its poison ticks hurt {JsMath.Str(m.WeakTo.Poison.Value)}% more."));
             if (spots.Count > 0)
             {
                 Word("Weak");
-                foreach (var (icon, note) in spots) Token(icon, note);
+                foreach (var (icon, title, body) in spots) Token(icon, title, body);
             }
             if (strong.Count > 0)
             {
@@ -998,18 +1007,20 @@ namespace Drakepg
                 foreach (var e in strong)
                 {
                     var r = R(e) + all;
-                    Token("el_" + e, r >= 100 ? $"Immune to {Label(e)}: {Label(e)} hits do nothing." : $"Resists {Label(e)} ({JsMath.Str(r)}): {Label(e)} hits deal {JsMath.Str(r)}% less.");
+                    if (r >= 100) Token("el_" + e, $"Immune to {Label(e)}", $"{Label(e)} hits do nothing.");
+                    else Token("el_" + e, $"Resists {Label(e)}", $"{Label(e)} hits deal {JsMath.Str(r)}% less damage.");
                 }
             }
             if (absorbs.Count > 0)
             {
                 Word("Absorbs");
-                foreach (var e in absorbs) Token("el_" + e, $"Absorbs {Label(e)}: {Label(e)} hits heal it.");
+                foreach (var e in absorbs) Token("el_" + e, $"Absorbs {Label(e)}", $"{Label(e)} hits heal it instead.");
             }
             if (all != 0)
             {
                 var chip = Felt.Chip($"All {(all > 0 ? "+" : "")}{JsMath.Str(all)}", Design.Hex(0xc9a520), 14, 80);
                 chip.style.marginLeft = 4;
+                Tooltip.Attach(chip, "Every element", $"{(all > 0 ? "+" : "")}{JsMath.Str(all)} resist to every element, on top of the ones shown.");
                 parts.Add(chip);
             }
             return parts;
@@ -1061,12 +1072,8 @@ namespace Drakepg
                     var def = Db.Status(kv.Key);
                     var chip = Felt.IconChip($"{def.Name} {kv.Value}", def.Harmful ? Design.Hex(0xd9604a) : Design.Hex(0x6aa84f), SkillUi.StatusIcon(def), 15, seed++);
                     chip.style.marginRight = 6;
-                    // Hover (or tap) says what it does, in the log's place, like the skill buttons.
-                    var note = $"{def.Name} ({kv.Value} turn{(kv.Value == 1 ? "" : "s")} left): {def.Description}";
-                    chip.pickingMode = PickingMode.Position;
-                    chip.RegisterCallback<PointerEnterEvent>(_ => ShowNote(note, 17));
-                    chip.RegisterCallback<PointerDownEvent>(_ => ShowNote(note, 17));
-                    chip.RegisterCallback<PointerLeaveEvent>(_ => RestoreLog());
+                    // Hover (or tap) opens a tooltip by the chip: what it does and the turns left.
+                    Tooltip.Attach(chip, $"{def.Name}: {kv.Value} turn{(kv.Value == 1 ? "" : "s")} left", def.Description);
                     row.Add(chip);
                     // A new status is sewn on with a pop; the ones already there just change their number.
                     if (before.Contains(kv.Key)) continue;
