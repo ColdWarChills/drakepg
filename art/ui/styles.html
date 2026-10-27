@@ -108,6 +108,12 @@ function shard(w, h, seed, amt = 8, pad = 0) {
 /** -0.5..0.5 per piece (rng's first draw follows the seed too closely, so skip two). */
 const wobble = (s) => { const R = rng(s + 5); R(); R(); return R() - .5; };
 const soft = (d, dy, sd, op, col = '#2b211c') => `<path d="${d}" transform="translate(0 ${dy})" fill="${col}" opacity="${op}" filter="url(#b${sd})"/>`;
+/** A square box `i` in from the edges. */
+const sq = (w, h, i = 0) => `M${i} ${i} H${w - i} V${h - i} H${i} Z`;
+/** L-shaped brackets on the four corners, `i` in from the edge. */
+const brackets = (w, h, i, L, col, sw = 2) => [[i, i, 1, 1], [w - i, i, -1, 1], [w - i, h - i, -1, -1], [i, h - i, 1, -1]]
+  .map(([x, y, dx, dy]) => `<path d="M${x} ${y + dy * L} V${y} H${x + dx * L}" fill="none" stroke="${col}" stroke-width="${sw}"/>`).join('');
+const diamond = (x, y, r, col) => `<path d="M${x} ${y - r} L${x + r} ${y} L${x} ${y + r} L${x - r} ${y} Z" fill="${col}"/>`;
 /** A dark rim around text, drawn with text-shadows. */
 const rim = (c, t = 2) => [[0, t], [t, 0], [-t, 0], [0, -t], [t * .7, t * .7], [-t * .7, t * .7], [t * .7, -t * .7], [-t * .7, -t * .7], [0, t + 1.5]]
   .map(([x, y]) => `${x}px ${y}px 0 ${c}`).join(', ');
@@ -620,13 +626,9 @@ SKINS.engraved = {
     .slot .qty { color: #e6dcc6; } .slot .lbl { color: #4a5168; font-family: Cinzel; font-size: 11px; letter-spacing: 1px; }`,
   shape(k, w, h) {
     const N = '#131826', N2 = '#1a2031', N3 = '#0c1019', G = '#d9b45f';
-    const box = (i = 0) => `M${i} ${i} H${w - i} V${h - i} H${i} Z`;
+    const box = (i) => sq(w, h, i), dia = (x, y, r) => diamond(x, y, r, G), corners = (i, L, sw) => brackets(w, h, i, L, G, sw);
     const drop = (dy, sd, op) => `<path d="${box()}" transform="translate(0 ${dy})" fill="#000" opacity="${op}" filter="url(#b${sd})"/>`;
     const line = (i, op, sw = 1) => `<path d="${box(i)}" fill="none" stroke="${G}" stroke-width="${sw}" stroke-opacity="${op}"/>`;
-    const dia = (x, y, r) => `<path d="M${x} ${y - r} L${x + r} ${y} L${x} ${y + r} L${x - r} ${y} Z" fill="${G}"/>`;
-    /** L-shaped brackets on the four corners, `i` in from the edge. */
-    const corners = (i, L, sw = 2) => [[i, i, 1, 1], [w - i, i, -1, 1], [w - i, h - i, -1, -1], [i, h - i, 1, -1]]
-      .map(([x, y, dx, dy]) => `<path d="M${x} ${y + dy * L} V${y} H${x + dx * L}" fill="none" stroke="${G}" stroke-width="${sw}"/>`).join('');
     switch (k) {
       case 'panel': return drop(10, 9, .6) + `<path d="${box()}" fill="${N}"/>` + line(8, .75, 1.2) + line(12, .25) + corners(3, 28, 2.5) +
         `<path d="M40 72 H${w - 40}" stroke="${G}" stroke-opacity=".4"/>` + dia(40, 72, 4) + dia(w - 40, 72, 4);
@@ -752,6 +754,197 @@ SKINS.hotbar = {
       case 'hotOff': return `<path d="${box()}" fill="#11141d" fill-opacity=".85"/>`;
       case 'board': return `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${D}" stop-opacity="0"/><stop offset=".35" stop-color="${D}" stop-opacity=".82"/><stop offset="1" stop-color="${D}" stop-opacity=".92"/></linearGradient>` +
         `<path d="M-20 -40 H${w + 20} V${h + 20} H-20 Z" fill="url(#${id})"/>`;
+    }
+    return '';
+  },
+};
+
+// ---- Round 4 (designer: "4 more options that are brighter, since it makes it easier to read and understand. maybe
+// bright brownish. experiment."): the calm night skins turned to daylight, dark brown ink on light boxes. ----
+
+// L1) Parchment: Engraved in daylight: parchment boxes, brown ink, a thin bronze double line with corner brackets,
+// underlined tabs, a wine-red main button.
+SKINS.parchment = {
+  name: 'Parchment', darkUi: false, keyInk: '#5a3d1e', xFont: 'Cinzel',
+  dim: 'background: rgba(40,28,16,.28);',
+  css: `
+    body { font-family: 'Alegreya Sans'; font-weight: 700; color: #3b2a1c; }
+    .title { font-family: Cinzel; font-weight: 700; font-size: 32px; color: #6b4a26; letter-spacing: 3px; }
+    .name { font-family: Cinzel; font-weight: 700; color: #3b2a1c; letter-spacing: .5px; }
+    .name .dim { font-family: 'Alegreya Sans'; }
+    .dim { color: #8a7458; } .good { color: #3f7d34; } .bad { color: #b3402f; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn { font-family: Cinzel; font-weight: 700; letter-spacing: 1px; }
+    .k-tab .center, .k-tabOn .center { font-size: 16px !important; }
+    .k-btn, .k-tabOn { color: #3b2a1c; } .k-btnP { color: #f8e8c4; } .k-tab { color: #9a8566; } .k-btnOff { color: #b5a385; } .k-btnOff img.ico { opacity: .4; }
+    .k-btnP .row { font-size: 30px !important; }
+    .k-x .center { color: #5a3d1e !important; }
+    .bar .t { color: #fff; font-size: 14px; text-shadow: 0 1px 2px #0008; }
+    .chip { color: #fff; }
+    .slot .qty { color: #3b2a1c; } .slot .lbl { color: #b09a78; font-family: Cinzel; font-size: 11px; letter-spacing: 1px; }`,
+  shape(k, w, h) {
+    const P = '#f2e6cb', B = '#9a7646', box = (i) => sq(w, h, i);
+    const drop = (dy, sd, op) => `<path d="${box()}" transform="translate(0 ${dy})" fill="#2b1d10" opacity="${op}" filter="url(#b${sd})"/>`;
+    const line = (i, op, sw = 1) => `<path d="${box(i)}" fill="none" stroke="${B}" stroke-width="${sw}" stroke-opacity="${op}"/>`;
+    switch (k) {
+      case 'panel': return drop(10, 9, .45) + `<path d="${box()}" fill="${P}"/>` + line(8, .8, 1.2) + line(12, .3) + brackets(w, h, 3, 28, B, 2.5) +
+        `<path d="M40 72 H${w - 40}" stroke="${B}" stroke-opacity=".45"/>` + diamond(40, 72, 4, B) + diamond(w - 40, 72, 4, B);
+      case 'hud': case 'tag': return drop(6, 6, .4) + `<path d="${box()}" fill="${P}" fill-opacity=".97"/>` + line(5, .6) + brackets(w, h, 2, 14, B, 2);
+      case 'section': return `<path d="${box()}" fill="#e7d6b2"/>` + line(.5, .25);
+      case 'slot': return `<path d="${box(.5)}" fill="#e2cea6" stroke="#cbb07f"/>`;
+      case 'slotOn': return `<path d="${box(.75)}" fill="#f8efdb" stroke="${B}" stroke-width="1.5"/>` + line(4, .35);
+      case 'tabOn': return `<path d="M8 ${h - 1} H${w - 8}" stroke="${B}" stroke-width="1.5"/>` + diamond(w / 2, h - 1, 4, B);
+      case 'btn': case 'x': return `<path d="${box(.5)}" fill="#e9d8b4"/>` + line(.5, .7) + line(3.5, .2);
+      case 'btnP': return drop(5, 4, .35) + `<path d="${box()}" fill="#7a2a26"/><path d="${box(5)}" fill="none" stroke="#e9cf96" stroke-opacity=".6"/>` + brackets(w, h, -4, 12, B, 1.5);
+      case 'btnOff': return `<path d="${box(.5)}" fill="#e6dac0" stroke="#d2c29f"/>`;
+      case 'track': return `<path d="${box(.5)}" fill="#d8c49c" stroke="${B}" stroke-opacity=".4"/>`;
+      case 'fillHp': return `<path d="${box()}" fill="#c0453b"/>`;
+      case 'fillMp': return `<path d="${box()}" fill="#3f74bf"/>`;
+      case 'fillGood': return `<path d="${box()}" fill="#5f9e4f"/>`;
+      case 'chip': return `<path d="${box()}" fill="var(--c)"/>`;
+      case 'log': return `<path d="${box()}" fill="${P}"/>` + line(5, .35) + brackets(w, h, 2, 14, B, 1.5);
+      case 'board': return `<path d="M-20 0 H${w + 20} V${h + 20} H-20 Z" fill="#d9c39a"/><path d="M-20 0 H${w + 20}" stroke="${B}" stroke-width="1.5"/><path d="M-20 4 H${w + 20}" stroke="${B}" stroke-opacity=".3"/>`;
+      case 'key': return `<path d="${box(.5)}" fill="${P}" stroke="${B}"/>`;
+    }
+    return '';
+  },
+};
+
+// L2) Tan hotbar: Quiet hotbar in daylight: flat tan, lighter tan and cream boxes stepping in, dark brown hairlines
+// and ink, the actions as six equal slots, the main button dark brown.
+SKINS.tan = {
+  name: 'Tan hotbar', darkUi: false, xFont: 'Alegreya Sans', actions: 'hotbar',
+  dim: 'background: rgba(40,28,16,.25);',
+  css: `
+    body { font-family: 'Alegreya Sans'; font-weight: 700; color: #36230f; }
+    .title { font-family: Cinzel; font-weight: 700; font-size: 30px; color: #36230f; letter-spacing: 4px; }
+    .name { font-family: Cinzel; font-weight: 700; color: #36230f; letter-spacing: 1px; }
+    .name .dim { font-family: 'Alegreya Sans'; letter-spacing: 0; }
+    .dim { color: #7a5c3a; } .good { color: #2f6e2a; } .bad { color: #a8321f; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn, .k-hot, .k-hotOn, .k-hotOff { font-family: 'Alegreya Sans'; font-weight: 800; letter-spacing: .5px; }
+    .k-tab { color: #86673f; } .k-btnP { color: #f6e7c8; } .k-btnOff, .k-hotOff { opacity: .45; }
+    .k-x .center { color: #36230f !important; }
+    .bar .t { color: #fff; font-size: 14px; text-shadow: 0 1px 2px #0009; }
+    .chip { color: #fff; }
+    .slot .qty { color: #36230f; } .slot .lbl { color: #a98b62; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }`,
+  shape(k, w, h) {
+    const T = '#d9bb8c', T2 = '#e8d3ab', C = '#f3e6cb', K = '#4a2f18', box = (i) => sq(w, h, i);
+    const hair = (y) => `<rect x="0" y="${y}" width="${w}" height="1.5" fill="${K}"/>`;
+    switch (k) {
+      case 'panel': return `<path d="${box()}" transform="translate(0 10)" fill="#2b1d10" opacity=".4" filter="url(#b9)"/><path d="${box()}" fill="${T}"/>` +
+        hair(0) + hair(h - 1.5) + `<rect x="38" y="66" width="44" height="2" fill="${K}"/>`;
+      case 'hud': return `<path d="${box()}" fill="${T}" fill-opacity=".97"/>` + hair(0) + hair(h - 1.5);
+      case 'tag': return `<path d="${box()}" fill="${T}" fill-opacity=".97"/><rect width="3" height="${h}" fill="${K}"/>`;
+      case 'section': case 'btnOff': case 'hot': case 'hotOff': return `<path d="${box()}" fill="${T2}"/>`;
+      case 'slot': case 'btn': return `<path d="${box()}" fill="${C}"/>`;
+      case 'slotOn': return `<path d="${box(1)}" fill="#fbf4e4" stroke="${K}" stroke-width="2"/>`;
+      case 'tabOn': return `<rect x="10" y="${h - 3}" width="${w - 20}" height="2" fill="${K}"/>`;
+      case 'btnP': return `<path d="${box()}" fill="${K}"/>`;
+      case 'x': return `<path d="${box(.75)}" fill="none" stroke="${K}" stroke-opacity=".5" stroke-width="1.5"/>`;
+      case 'track': return `<path d="${box()}" fill="#b4956a"/>`;
+      case 'fillHp': return `<path d="${box()}" fill="#c0453b"/>`;
+      case 'fillMp': return `<path d="${box()}" fill="#3f74bf"/>`;
+      case 'fillGood': return `<path d="${box()}" fill="#4f8f43"/>`;
+      case 'chip': return `<path d="${box()}" fill="var(--c)"/>`;
+      case 'log': return `<rect width="2" height="${h}" fill="${K}" fill-opacity=".6"/>`;
+      case 'hotOn': return `<path d="${box(1)}" fill="${C}" stroke="${K}" stroke-width="2"/><rect y="${h - 4}" width="${w}" height="4" fill="${K}"/>`;
+      case 'board': return `<path d="M-20 0 H${w + 20} V${h + 20} H-20 Z" fill="${T}"/><path d="M-20 .75 H${w + 20}" stroke="${K}" stroke-width="1.5"/>`;
+    }
+    return '';
+  },
+};
+
+// L3) Daylight menu: Glass menu in daylight: rounded cream windows (white fading to sand) with a bronze line, the
+// command menu with an amber selection and a brown pointer, the game's serif for words.
+SKINS.daylight = {
+  name: 'Daylight menu', darkUi: false, xFont: 'Alegreya', actions: 'menu',
+  dim: 'background: rgba(40,28,16,.22);',
+  css: `
+    body { font-family: 'Alegreya Sans'; font-weight: 700; color: #3a2a1a; }
+    .title { font-family: Alegreya; font-weight: 800; font-size: 34px; color: #7a4f22; }
+    .name { font-family: Alegreya; font-weight: 800; color: #3a2a1a; }
+    .name .dim { font-family: 'Alegreya Sans'; }
+    .dim { color: #8c7356; } .good { color: #3f7d34; } .bad { color: #b3402f; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn, .k-cmd, .k-cmdOn, .k-cmdOff { font-family: Alegreya; font-weight: 800; }
+    .k-tab { color: #8c7356; } .k-btn { color: #7a4f22; } .k-btnOff, .k-cmdOff { opacity: .4; }
+    .k-x .center { color: #5a3d1e !important; }
+    .bar .t { color: #fff; font-size: 14px; text-shadow: 0 1px 2px #0008; }
+    .chip { color: #fff; }
+    .slot .qty { color: #3a2a1a; } .slot .lbl { color: #b49c7a; font-size: 12px; }`,
+  shape(k, w, h, s) {
+    const B = '#a37a45', A = '#e2a944', id = 'g' + s;
+    const win = (r) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#f0e1c2"/></linearGradient>` +
+      `<path d="${rr(w, h, r)}" fill="url(#${id})" fill-opacity=".96"/><path d="${rr(w, h, r, -.75)}" fill="none" stroke="${B}" stroke-width="1.5"/><path d="${rr(w, h, r, -4)}" fill="none" stroke="${B}" stroke-opacity=".25"/>`;
+    /** The selection: amber fading out to the right, the brown pointer on the left. */
+    const sel = (pointer) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${A}" stop-opacity=".8"/><stop offset="1" stop-color="${A}" stop-opacity=".05"/></linearGradient>` +
+      `<path d="${rr(w, h, 4)}" fill="url(#${id})"/>` + (pointer ? `<path d="M9 ${h / 2 - 8} L21 ${h / 2} L9 ${h / 2 + 8} Z" fill="#5a3d1e"/>` : '');
+    const drop = (r, dy, sd, op) => `<path d="${rr(w, h, r)}" transform="translate(0 ${dy})" fill="#2b1d10" opacity="${op}" filter="url(#b${sd})"/>`;
+    switch (k) {
+      case 'panel': return drop(10, 8, 8, .35) + win(10);
+      case 'hud': case 'tag': case 'log': case 'menu': return drop(8, 5, 5, .3) + win(8);
+      case 'section': return `<path d="${rr(w, h, 6)}" fill="#e9d8b5" fill-opacity=".6"/>`;
+      case 'slot': return `<path d="${rr(w, h, 5, -.5)}" fill="#f4e9d3" stroke="#c9ad80" stroke-opacity=".7"/>`;
+      case 'slotOn': return `<path d="${rr(w, h, 5, -1)}" fill="#f8e3b4" stroke="${B}" stroke-width="2"/>`;
+      case 'tabOn': return sel(false);
+      case 'cmdOn': return sel(true);
+      case 'btn': return `<path d="${rr(w, h, 5, -.5)}" fill="#fbf4e4" stroke="${B}" stroke-opacity=".6"/>`;
+      case 'btnP': return sel(false) + `<path d="${rr(w, h, 4, -.75)}" fill="none" stroke="${B}" stroke-width="1.5"/>`;
+      case 'btnOff': return `<path d="${rr(w, h, 5, -.5)}" fill="none" stroke="${B}" stroke-opacity=".3"/>`;
+      case 'x': return `<circle cx="${w / 2}" cy="${h / 2}" r="${w / 2 - 1}" fill="#fbf4e4" stroke="${B}" stroke-width="1.5"/>`;
+      case 'track': return `<path d="${rr(w, h, h / 2, -.5)}" fill="#e3d2ad" stroke="${B}" stroke-opacity=".35"/>`;
+      case 'fillHp': return `<path d="${rr(w, h, h / 2)}" fill="#d24f45"/>`;
+      case 'fillMp': return `<path d="${rr(w, h, h / 2)}" fill="#4a8ae0"/>`;
+      case 'fillGood': return `<path d="${rr(w, h, h / 2)}" fill="#5fa64f"/>`;
+      case 'chip': return `<path d="${rr(w, h, h / 2)}" fill="var(--c)"/>`;
+      case 'board': return `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6d3ad" stop-opacity="0"/><stop offset=".3" stop-color="#e6d3ad" stop-opacity=".92"/><stop offset="1" stop-color="#e6d3ad" stop-opacity=".96"/></linearGradient>` +
+        `<path d="M-20 -50 H${w + 20} V${h + 20} H-20 Z" fill="url(#${id})"/>`;
+    }
+    return '';
+  },
+};
+
+// L4) Caramel and teal: a two-tone experiment: cream boxes under caramel name bands, a caramel board, deep teal for
+// whatever is selected or pressed first.
+SKINS.caramel = {
+  name: 'Caramel and teal', darkUi: false, keyInk: '#f6ecd8', xFont: 'Alegreya Sans',
+  dim: 'background: rgba(40,28,16,.25);',
+  css: `
+    body { font-family: 'Alegreya Sans'; font-weight: 700; color: #3a2616; }
+    .title { font-family: Alegreya; font-weight: 800; font-size: 34px; color: #fff4e0; }
+    .k-panel > .row { color: #fff4e0; }
+    .name { font-family: Alegreya; font-weight: 800; color: #3a2616; }
+    .k-hud .name { color: #fff4e0; } .k-hud .name .dim { color: #f3d9b6; }
+    .name .dim { font-family: 'Alegreya Sans'; }
+    .dim { color: #8a6c4c; } .good { color: #2f7a43; } .bad { color: #b3402f; }
+    .k-btn, .k-btnP, .k-btnOff, .k-tab, .k-tabOn { font-family: Alegreya; font-weight: 800; }
+    .k-tab { color: #9a6a3d; } .k-tabOn, .k-btnP { color: #f6ecd8; } .k-btn { color: #3a2616; } .k-btnOff { opacity: .5; }
+    .bar .t { color: #fff; font-size: 14px; text-shadow: 0 1px 2px #0008; }
+    .chip { color: #fff; }
+    .slot .qty { color: #3a2616; } .slot .lbl { color: #b3936c; font-size: 12px; }`,
+  shape(k, w, h) {
+    const C = '#f8eedb', CA = '#b97a45', TE = '#2c6a66', r = (i = 0, rad = 4) => rr(w, h, rad, -i);
+    const drop = (dy, sd, op) => `<path d="${r()}" transform="translate(0 ${dy})" fill="#2b1d10" opacity="${op}" filter="url(#b${sd})"/>`;
+    /** The caramel band across the top, `bh` tall. */
+    const band = (bh) => `<path d="M0 4 A4 4 0 0 1 4 0 H${w - 4} A4 4 0 0 1 ${w} 4 V${bh} H0 Z" fill="${CA}"/>`;
+    switch (k) {
+      case 'panel': return drop(10, 9, .4) + `<path d="${r()}" fill="${C}"/>` + band(74) + `<rect y="74" width="${w}" height="3" fill="#9a6234"/>`;
+      case 'hud': return drop(6, 6, .35) + `<path d="${r()}" fill="${C}"/>` + band(48);
+      case 'section': return `<path d="${r()}" fill="#efdfc0"/>`;
+      case 'slot': return `<path d="${r(0, 3)}" fill="#e6d0a8"/>`;
+      case 'slotOn': return `<path d="${r(1.25, 3)}" fill="${C}" stroke="${TE}" stroke-width="2.5"/>`;
+      case 'tabOn': return `<path d="${r(0, 3)}" fill="${TE}"/>`;
+      case 'btn': return `<path d="${r(.5)}" fill="#fbf3e2" stroke="${CA}"/>`;
+      case 'btnP': return drop(4, 3, .3) + `<path d="${r()}" fill="${TE}"/>`;
+      case 'btnOff': return `<path d="${r(.5)}" fill="#efe3c9" stroke="#d6bf98"/>`;
+      case 'x': return `<path d="${r()}" fill="#9a6234"/>`;
+      case 'track': return `<path d="${r(0, 3)}" fill="#e2cca3"/>`;
+      case 'fillHp': return `<path d="${r(0, 3)}" fill="#c9473d"/>`;
+      case 'fillMp': return `<path d="${r(0, 3)}" fill="#3f78c8"/>`;
+      case 'fillGood': return `<path d="${r(0, 3)}" fill="${TE}"/>`;
+      case 'chip': return `<path d="${r(0, 3)}" fill="var(--c)"/>`;
+      case 'tag': return drop(5, 4, .3) + `<path d="${r()}" fill="${C}"/><path d="M0 4 A4 4 0 0 1 4 0 H6 V${h} H4 A4 4 0 0 1 0 ${h - 4} Z" fill="${TE}"/>`;
+      case 'log': return `<path d="${r()}" fill="${C}"/>`;
+      case 'board': return `<path d="M-20 0 H${w + 20} V${h + 20} H-20 Z" fill="${CA}"/><rect x="-20" width="${w + 40}" height="3" fill="#9a6234"/>`;
+      case 'key': return `<path d="${r(0, 3)}" fill="${TE}" stroke="${C}" stroke-width="1.5"/>`;
     }
     return '';
   },
