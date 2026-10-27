@@ -176,8 +176,8 @@ namespace Drakepg
             // The skill's drawing (faded until it's learned).
             if (Felt.HasIcon(icon))
             {
-                var ic = Felt.Icon(null, 0, 0, 22, icon, true);
-                if (tint is Color t) ic.style.unityBackgroundImageTintColor = t;
+                var ic = Felt.Icon(null, 0, 0, 22, icon, tint != null);
+                if (tint is Color t) ic.style.unityBackgroundImageTintColor = Felt.Readable(t);
                 ic.style.position = Position.Relative;
                 ic.style.flexShrink = 0;
                 ic.style.marginLeft = known ? 0 : 21;

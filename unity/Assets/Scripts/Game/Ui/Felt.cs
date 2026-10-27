@@ -6,56 +6,76 @@ using UnityEngine.UIElements;
 namespace Drakepg
 {
     /// <summary>
-    /// The felt UI kit (the mock art/ui/battle_felt.html, picked by the designer 2026-10-18): patches of felt with a
-    /// slightly hairy edge, a padded rim and running stitches; sand-felt buttons with brown stitches (Attack in red
-    /// felt), sewing buttons for key numbers, a felt runner along the bottom and a linen patch for the log.
-    /// Patches are drawn as vector shapes (UI Toolkit's painter): crisp at any size and resolution, no textures to bake
-    /// or stretch. The first version baked noisy cloth textures, and big menus (baked small, shown 2x) read as grain
-    /// (designer: "still too grainy"). Only world sprites (class cards, the result panel) and sewing buttons are baked.
-    /// Everything is drawn in code, designed by hand, never generated (docs/PLANS.md, Art).
+    /// The paper UI kit (style A of the round in art/ui/styles.html, picked by the designer 2026-10-27; it replaced the
+    /// felt kit of 2026-10-18): the backgrounds' own medium. Sheets of cream paper cut with scissors (straight cuts of
+    /// uneven length, each a hair off the line, the corners snipped) laid on a green sheet, soft shadows between the
+    /// layers, no outlines and no stitches. Buttons are two sheets thick (sand; Attack red), key numbers are ink dots, a
+    /// green runner lies along the bottom of the battle. Text on paper is dark ink.
+    /// Sheets are drawn as vector shapes (UI Toolkit's painter): crisp at any size and resolution, no textures to bake
+    /// or stretch (baked cloth textures read as grain, designer: "still too grainy"). Only world sprites (class cards,
+    /// the result panel) and key dots are baked. Everything is drawn in code, designed by hand, never generated
+    /// (docs/PLANS.md, Art). The kit keeps its felt-era names (Felt, FeltButton, FeltBar, FeltPass).
     /// </summary>
     public static class Felt
     {
-        // The mock's felt and thread.
-        public static readonly Color Navy = Design.Hex(0x2b3650);
-        public static readonly Color NavyDark = Design.Hex(0x1f2738);
-        public static readonly Color Groove = Design.Hex(0x141a28);
+        // The paper.
+        /// <summary>The cream sheet panels, tags and the log are cut from.</summary>
+        public static readonly Color Paper = Design.Hex(0xf6ecd6);
+        /// <summary>The green sheet under menus and the HUD, and the battle's runner.</summary>
+        public static readonly Color Leaf = Design.Hex(0x5b8a57);
+        /// <summary>Buttons.</summary>
+        public static readonly Color Sand = Design.Hex(0xe3c88f);
+        /// <summary>The main button (Attack), the boss banner, hearts.</summary>
+        public static readonly Color Red = Design.Hex(0xc8473a);
+        /// <summary>The track a bar runs in.</summary>
+        public static readonly Color Groove = Design.Hex(0x4a3a2b);
+        /// <summary>Small brown marks on paper: rims, pointers.</summary>
+        public static readonly Color Trim = Design.Hex(0x9a7a50);
+        /// <summary>Light thread and a dark disc for the map, which is drawn on its own picture, not on paper.</summary>
         public static readonly Color Stitch = Design.Hex(0xeadbb5);
-        public static readonly Color Hem = Design.Hex(0xc9b48c);
-        public static readonly Color Sand = Design.Hex(0xd8c59c);
-        public static readonly Color SandStitch = Design.Hex(0x7a5636);
-        public static readonly Color RedFelt = Design.Hex(0xb8402c);
-        public static readonly Color RedStitch = Design.Hex(0xf6e3c0);
-        public static readonly Color Linen = Design.Hex(0xece2c9);
-        public static readonly Color LinenStitch = Design.Hex(0x8a5a3a);
+        public static readonly Color NavyDark = Design.Hex(0x1f2738);
         public static readonly Color Hp = Design.Hex(0xc8452f);
-        public static readonly Color Mp = Design.Hex(0x4a7cc0);
-        /// <summary>Text on navy felt.</summary>
-        public static readonly Color Text = Design.Hex(0xf1e6cc);
-        public static readonly Color TextDim = Design.Hex(0xc4b48f);
-        public static readonly Color Gold = Design.Hex(0xf0c75a);
-        public static readonly Color Good = Design.Hex(0x9ad48a);
-        public static readonly Color Bad = Design.Hex(0xff8f7a);
-        public static readonly Color Magic = Design.Hex(0x9fc4ff);
-        public static readonly Color Trait = Design.Hex(0xd9bdf0);
+        public static readonly Color Mp = Design.Hex(0x3e6fb5);
+        /// <summary>Text on paper: dark ink, and darker shades of the colors that mean something.</summary>
+        public static readonly Color Text = Design.Hex(0x3a2b1f);
+        public static readonly Color TextDim = Design.Hex(0x7d6a52);
+        public static readonly Color Gold = Design.Hex(0x9a6512);
+        public static readonly Color Good = Design.Hex(0x3f7d3a);
+        public static readonly Color Bad = Design.Hex(0xb3402f);
+        public static readonly Color Magic = Design.Hex(0x2f62a8);
+        public static readonly Color Trait = Design.Hex(0x7a4f9e);
         /// <summary>The monster's next move.</summary>
-        public static readonly Color Intent = Design.Hex(0xffb08a);
-        /// <summary>Text on sand felt (buttons) and on linen (the log).</summary>
+        public static readonly Color Intent = Design.Hex(0xb04a22);
+        /// <summary>Text on sand (buttons).</summary>
         public static readonly Color Brown = Design.Hex(0x3a2a1a);
-        public static readonly Color BrownDim = Design.Hex(0x5f4a33);
+        public static readonly Color BrownDim = Design.Hex(0x6b5338);
         public static readonly Color Ink = Design.Hex(0x2a1d16);
-        /// <summary>Text on strong colors (bar numbers, Attack).</summary>
+        /// <summary>Text on strong colors (bar numbers, Attack, chips).</summary>
         public static readonly Color Cream = Design.Hex(0xfff4dc);
 
-        static readonly Color ShadowColor = Design.Hex(0x0a0806);
+        static readonly Color ShadowColor = Design.Hex(0x2a1d10);
 
-        /// <summary>A color made light enough to read as text on navy felt.</summary>
-        public static Color OnFelt(Color c)
+        /// <summary>A color made dark enough to read as text on paper: light and grey ones become ink, colors keep their hue, darker.</summary>
+        public static Color Readable(Color c)
         {
             Color.RGBToHSV(c, out var h, out var s, out var v);
-            if (s < 0.15f) return v < 0.6f ? TextDim : c;
-            return Color.HSVToRGB(h, Mathf.Min(s, 0.55f), Mathf.Max(v, 0.88f));
+            Color o;
+            if (s < 0.18f) o = v > 0.8f ? Text : v > 0.45f ? TextDim : c;
+            else
+            {
+                // Dark yellow reads as olive: yellows lean to amber.
+                if (h > 0.1f && h < 0.19f) h = 0.1f;
+                o = Color.HSVToRGB(h, Mathf.Max(s, 0.55f), Mathf.Min(v, 0.6f));
+            }
+            o.a = c.a;
+            return o;
         }
+
+        /// <summary>Whether a paper is dark enough to take cream text (its brightness as the eye sees it).</summary>
+        public static bool IsDark(Color c) => 0.299f * c.r + 0.587f * c.g + 0.114f * c.b < 0.6f;
+
+        /// <summary>A darker sheet of the same paper (under a thick button).</summary>
+        static Color Under(Color c) => Color.Lerp(c, new Color(0.25f, 0.13f, 0.05f), 0.33f);
 
         /// <summary>Texels per design px for baked pictures: the UI's screen scale, at least 1.</summary>
         public static int Density
@@ -91,118 +111,46 @@ namespace Drakepg
             }
         }
 
-        // --- How a patch looks ---
+        // --- How a sheet looks ---
 
-        /// <summary>How a felt patch is made: its cloth, its thread and where the stitches run.</summary>
+        /// <summary>How a sheet is cut and laid: its paper, a sheet behind it, how thick it is.</summary>
         public class Patch
         {
-            public Color Cloth = Navy;
-            public Color? Thread = Felt.Stitch;
-            public float Inset = 7, Radius = 16, Dash = 7, Gap = 5, ThreadWidth = 2.2f;
-            /// <summary>A soft drop shadow (2 px right, 5 down).</summary>
+            public Color Cloth = Paper;
+            /// <summary>A sheet of this color behind it, `BackPad` px bigger all round (the green under menus and the HUD).</summary>
+            public Color? Back;
+            public float BackPad = 6;
+            /// <summary>A soft shadow under each sheet.</summary>
             public bool Shadow = true;
-            /// <summary>How hairy the edge is: px the outline wanders in and out (0: a clean cut, like linen).</summary>
-            public float Fuzz = 1.3f;
-            /// <summary>The darker band just inside the edge that makes the patch look padded (its opacity).</summary>
-            public float Rim = 0.13f;
-            /// <summary>Thick felt (buttons): its cut edge shows this many px below it, in a darker shade.</summary>
+            /// <summary>Two sheets thick (buttons): the darker sheet under it shows this many px below.</summary>
             public float Thick;
+            /// <summary>A darker sheet laid over it from this many px down (the runner's two greens; 0: none).</summary>
+            public float Band;
+            /// <summary>How far each scissor cut wanders off the line, and how much of each corner is snipped off (px).</summary>
+            public float Wobble = 1.2f, Snip = 3;
 
-            public string Key =>
-                $"{Hex(Cloth)}|{(Thread.HasValue ? Hex(Thread.Value) : "-")}|{Inset}|{Radius}|{Dash}|{Gap}|{ThreadWidth}|{Shadow}|{Fuzz}|{Rim}|{Thick}";
+            public string Key => $"{Hex(Cloth)}|{(Back.HasValue ? Hex(Back.Value) : "-")}|{BackPad}|{Shadow}|{Thick}|{Band}|{Wobble}|{Snip}";
 
-            /// <summary>A navy panel with cream stitches (the battle sheets, the HUD).</summary>
-            public static Patch Panel() => new Patch();
+            /// <summary>A cream sheet on a green one (the battle sheets, the HUD, panels).</summary>
+            public static Patch Panel() => new Patch { Back = Leaf };
 
-            /// <summary>A big navy menu with a wider hem.</summary>
-            public static Patch Menu() => new Patch { Inset = 10, Radius = 18, Dash = 9, Gap = 6, ThreadWidth = 2.4f };
+            /// <summary>A big menu: more of the green shows.</summary>
+            public static Patch Menu() => new Patch { Back = Leaf, BackPad = 9, Wobble = 1.4f };
 
-            /// <summary>A small navy tag (the next move, the quest tracker, prompts).</summary>
-            public static Patch Tag() => new Patch { Inset = 5, Radius = 10, Dash = 5, Gap = 4, ThreadWidth = 1.8f };
+            /// <summary>A small cream sheet (the next move, the quest tracker, prompts).</summary>
+            public static Patch Tag() => new Patch();
 
-            /// <summary>A sand button with brown stitches; any cloth (red Attack, a skill's color) with its own thread.</summary>
-            public static Patch Button(Color? cloth = null, Color? thread = null) =>
-                new Patch { Cloth = cloth ?? Sand, Thread = thread ?? SandStitch, Inset = 5, Radius = 12, Dash = 5, Gap = 4, Rim = 0.1f, Thick = 4 };
+            /// <summary>A sand button two sheets thick; any paper (red Attack, a skill's color).</summary>
+            public static Patch Button(Color? cloth = null) => new Patch { Cloth = cloth ?? Sand, Thick = 5 };
 
-            /// <summary>The runner along the bottom of the battle screen.</summary>
-            public static Patch Runner() => new Patch { Cloth = NavyDark, Thread = Hem, Inset = 9, Radius = 22, Dash = 9, Gap = 6 };
+            /// <summary>The runner along the bottom of the battle screen: green, a darker green from 14 px down.</summary>
+            public static Patch Runner() => new Patch { Cloth = Leaf, Band = 14, Wobble = 2 };
 
-            /// <summary>The linen patch the battle log is written on: a clean cut edge, brown stitches.</summary>
-            public static Patch LinenLog() =>
-                new Patch { Cloth = Linen, Thread = LinenStitch, Inset = 7, Radius = 10, Dash = 6, Gap = 5, ThreadWidth = 2, Fuzz = 0, Rim = 0.06f };
+            /// <summary>The cream sheet the battle log is written on.</summary>
+            public static Patch Log() => new Patch();
         }
 
         // --- Vector drawing ---
-
-        /// <summary>Walks a rounded rectangle's outline clockwise from the top edge's start: the point and its outward normal at length s.</summary>
-        internal readonly struct Outline
-        {
-            readonly float x, y, w, h, r, l1, l2, a;
-            public readonly float Length;
-
-            public Outline(float x, float y, float w, float h, float r)
-            {
-                r = Mathf.Max(0, Mathf.Min(r, w / 2, h / 2));
-                this.x = x;
-                this.y = y;
-                this.w = w;
-                this.h = h;
-                this.r = r;
-                l1 = Mathf.Max(0, w - 2 * r);
-                l2 = Mathf.Max(0, h - 2 * r);
-                a = Mathf.PI * r / 2;
-                Length = 2 * l1 + 2 * l2 + 4 * a;
-            }
-
-            Vector2 Arc(float cx, float cy, float deg, out Vector2 n)
-            {
-                var rad = deg * Mathf.Deg2Rad;
-                n = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
-                return new Vector2(cx + n.x * r, cy + n.y * r);
-            }
-
-            public Vector2 At(float s, out Vector2 n)
-            {
-                if (Length <= 0)
-                {
-                    n = Vector2.up;
-                    return new Vector2(x, y);
-                }
-                s %= Length;
-                if (s < 0) s += Length;
-                if (s < l1)
-                {
-                    n = Vector2.down;
-                    return new Vector2(x + r + s, y);
-                }
-                s -= l1;
-                if (s < a) return Arc(x + w - r, y + r, -90 + s / a * 90, out n);
-                s -= a;
-                if (s < l2)
-                {
-                    n = Vector2.right;
-                    return new Vector2(x + w, y + r + s);
-                }
-                s -= l2;
-                if (s < a) return Arc(x + w - r, y + h - r, s / a * 90, out n);
-                s -= a;
-                if (s < l1)
-                {
-                    n = Vector2.up;
-                    return new Vector2(x + w - r - s, y + h);
-                }
-                s -= l1;
-                if (s < a) return Arc(x + r, y + h - r, 90 + s / a * 90, out n);
-                s -= a;
-                if (s < l2)
-                {
-                    n = Vector2.left;
-                    return new Vector2(x, y + h - r - s);
-                }
-                s -= l2;
-                return Arc(x + r, y + r, 180 + s / Mathf.Max(a, 1e-4f) * 90, out n);
-            }
-        }
 
         /// <summary>A closed rounded rectangle path.</summary>
         internal static void RoundRect(Painter2D p, float x, float y, float w, float h, float r)
@@ -222,106 +170,86 @@ namespace Drakepg
         }
 
         /// <summary>
-        /// Running stitches along a rounded rectangle: a whole number of dashes (so the seam closes evenly), round ends,
-        /// a thread shadow down-right first (like thread pulled through cloth), then the thread.
+        /// A scissor cut around a w x h box (the mock's cut()): straight cuts of uneven length, about 40 px, each end a hair
+        /// (`wobble` px) off the line; the corners snipped off. The same seed always cuts the same way.
         /// </summary>
-        internal static void Stitches(Painter2D p, float x, float y, float w, float h, float r, float dash, float gap, float width, Color color)
+        internal static void Cut(Painter2D p, float x, float y, float w, float h, int seed, float wobble, float snip)
         {
-            var o = new Outline(x, y, w, h, r);
-            if (o.Length <= 0) return;
-            var period = dash + gap;
-            var count = Mathf.Max(1, Mathf.RoundToInt(o.Length / period));
-            var step = o.Length / count;
-            var len = dash * step / period;
-            var parts = Mathf.Max(1, Mathf.CeilToInt(len / 2));
-            p.lineCap = LineCap.Round;
-            p.lineJoin = LineJoin.Round;
-            for (int pass = 0; pass < 2; pass++)
+            var rnd = new Rand(seed);
+            var first = true;
+            void Edge(float ax, float ay, float bx, float by)
             {
-                var shift = pass == 0 ? new Vector2(0.8f, 1.2f) : Vector2.zero;
-                p.lineWidth = pass == 0 ? width * 1.1f : width;
-                p.strokeColor = pass == 0 ? new Color(0, 0, 0, 0.35f * color.a) : color;
-                p.BeginPath();
-                for (int i = 0; i < count; i++)
+                var len = Mathf.Sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+                if (len < 0.01f) return;
+                float nx = -(by - ay) / len, ny = (bx - ax) / len;
+                for (float t = 0; t < 1;)
                 {
-                    var s0 = i * step;
-                    for (int j = 0; j <= parts; j++)
-                    {
-                        var pt = o.At(s0 + len * j / parts, out _) + shift;
-                        if (j == 0) p.MoveTo(pt);
-                        else p.LineTo(pt);
-                    }
+                    var o = (rnd.Next() - 0.5f) * 2 * wobble;
+                    var pt = new Vector2(ax + (bx - ax) * t + nx * o, ay + (by - ay) * t + ny * o);
+                    if (first) p.MoveTo(pt);
+                    else p.LineTo(pt);
+                    first = false;
+                    t += 40 * (0.6f + rnd.Next() * 0.9f) / len;
                 }
-                p.Stroke();
+            }
+            snip = Mathf.Min(snip, w / 4, h / 4);
+            p.BeginPath();
+            Edge(x + snip, y, x + w - snip, y);
+            Edge(x + w, y + snip, x + w, y + h - snip);
+            Edge(x + w - snip, y + h, x + snip, y + h);
+            Edge(x, y + h - snip, x, y + snip);
+            p.ClosePath();
+        }
+
+        /// <summary>A soft shadow under a sheet, (dx, dy) off: a few faint layers, each a little bigger, `spread` px in all.</summary>
+        static void SoftShadow(Painter2D p, float x, float y, float w, float h, float dx, float dy, float spread, float alpha)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                var g = i * spread / 3;
+                p.fillColor = new Color(ShadowColor.r, ShadowColor.g, ShadowColor.b, alpha / 4);
+                RoundRect(p, x + dx - g, y + dy - g, w + 2 * g, h + 2 * g, 3 + g);
+                p.Fill();
             }
         }
 
         /// <summary>
-        /// Draws a patch filling `rect`: a soft shadow, the cloth with a slightly hairy edge, a darker padded rim and
-        /// running stitches.
+        /// Draws a sheet filling `rect`: the sheet behind it (with its shadow), the sheet's own shadow, the darker sheet
+        /// under a thick one, the cut paper, and a darker band over its lower part.
         /// </summary>
         internal static void DrawPatch(Painter2D p, Rect rect, Patch look, int seed)
         {
             float w = rect.width, h = rect.height, x0 = rect.x, y0 = rect.y;
             if (w < 2 || h < 2) return;
-            var r = Mathf.Min(look.Radius, w / 2, h / 2);
-            if (look.Shadow)
+            // Small sheets (chips, keys) get gentler cuts.
+            var wobble = Mathf.Min(look.Wobble, h / 16, w / 16);
+            if (look.Back is Color back)
             {
-                // A soft shadow: a few faint layers, each a little bigger.
-                for (int i = 0; i < 4; i++)
-                {
-                    var g = i * 1.6f;
-                    p.fillColor = new Color(ShadowColor.r, ShadowColor.g, ShadowColor.b, 0.1f);
-                    RoundRect(p, x0 + 2 - g, y0 + 5 + look.Thick - g, w + 2 * g, h + 2 * g, r + g);
-                    p.Fill();
-                }
+                var b = look.BackPad;
+                if (look.Shadow) SoftShadow(p, x0 - b, y0 - b, w + 2 * b, h + 2 * b, 4, 8, 8, 0.4f);
+                p.fillColor = back;
+                Cut(p, x0 - b, y0 - b, w + 2 * b, h + 2 * b, seed + 7, wobble * 1.3f, look.Snip);
+                p.Fill();
             }
-            // The cloth. Felt's edge isn't a clean cut: the outline wanders in and out a little, every 1.5 px.
-            void Cloth(float dy, int s)
-            {
-                if (look.Fuzz <= 0)
-                {
-                    RoundRect(p, x0, y0 + dy, w, h, r);
-                    return;
-                }
-                var o = new Outline(x0, y0 + dy, w, h, r);
-                var rnd = new Rand(s);
-                var n = Mathf.Max(8, Mathf.RoundToInt(o.Length / 1.5f));
-                p.BeginPath();
-                for (int i = 0; i < n; i++)
-                {
-                    var pt = o.At(i * o.Length / n, out var normal);
-                    pt += normal * ((rnd.Next() - 0.5f) * look.Fuzz);
-                    if (i == 0) p.MoveTo(pt);
-                    else p.LineTo(pt);
-                }
-                p.ClosePath();
-            }
+            if (look.Shadow) SoftShadow(p, x0, y0, w, h, 2, 3 + look.Thick, 3, 0.35f);
             if (look.Thick > 0)
             {
-                // Thick felt: its cut edge, a darker shade, shows below it.
-                p.fillColor = Color.Lerp(look.Cloth, Color.black, 0.4f);
-                Cloth(look.Thick, seed + 5);
+                p.fillColor = Under(look.Cloth);
+                Cut(p, x0, y0 + look.Thick, w, h, seed + 1, wobble, look.Snip);
                 p.Fill();
             }
             p.fillColor = look.Cloth;
-            Cloth(0, seed);
+            Cut(p, x0, y0, w, h, seed, wobble, look.Snip);
             p.Fill();
-            // A darker band just inside the edge: the patch looks padded, not printed.
-            if (look.Rim > 0 && w > 12 && h > 12)
+            if (look.Band > 0 && h > look.Band)
             {
-                p.strokeColor = new Color(0, 0, 0, look.Rim);
-                p.lineWidth = 5;
-                p.lineJoin = LineJoin.Round;
-                RoundRect(p, x0 + 3, y0 + 3, w - 6, h - 6, Mathf.Max(0, r - 3));
-                p.Stroke();
+                p.fillColor = Color.Lerp(look.Cloth, new Color(0.1f, 0.15f, 0.08f), 0.25f);
+                Cut(p, x0, y0 + look.Band, w, h - look.Band, seed + 3, wobble, look.Snip);
+                p.Fill();
             }
-            if (look.Thread.HasValue && w > look.Inset * 2 + 4 && h > look.Inset * 2 + 4)
-                Stitches(p, x0 + look.Inset, y0 + look.Inset, w - look.Inset * 2, h - look.Inset * 2, Mathf.Max(3, r - look.Inset),
-                    look.Dash, look.Gap, look.ThreadWidth, look.Thread.Value);
         }
 
-        /// <summary>A felt patch as an element: drawn to fill its own box (it may be sized by layout), repainted when that changes.</summary>
+        /// <summary>A sheet as an element: drawn to fill its own box (it may be sized by layout), repainted when that changes.</summary>
         public class PatchView : VisualElement
         {
             Patch look;
@@ -332,7 +260,7 @@ namespace Drakepg
                 this.look = look;
                 this.seed = seed;
                 pickingMode = PickingMode.Ignore;
-                name = "felt patch";
+                name = "paper sheet";
                 generateVisualContent += ctx => DrawPatch(ctx.painter2D, contentRect, this.look, this.seed);
                 RegisterCallback<GeometryChangedEvent>(_ => MarkDirtyRepaint());
             }
@@ -357,18 +285,18 @@ namespace Drakepg
             }
         }
 
-        /// <summary>A patch on screen. `Root` is the patch; put content in `Content`.</summary>
+        /// <summary>A sheet on screen. `Root` is the sheet; put content in `Content`.</summary>
         public class Sheet
         {
             public VisualElement Root, Content;
             public float Width, Height;
         }
 
-        /// <summary>A felt patch at (x, y) top-left, w x h design px, tilted by `rotate` degrees.</summary>
+        /// <summary>A sheet at (x, y) top-left, w x h design px, tilted by `rotate` degrees.</summary>
         public static Sheet MakePatch(VisualElement parent, float x, float y, float w, float h, int seed, Patch patch = null, float rotate = 0,
             bool blocksClicks = true)
         {
-            var root = new VisualElement { pickingMode = PickingMode.Ignore, name = "felt" };
+            var root = new VisualElement { pickingMode = PickingMode.Ignore, name = "paper" };
             Ui.Place(root, x, y);
             Ui.Size(root, w, h);
             root.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
@@ -383,8 +311,8 @@ namespace Drakepg
         }
 
         /// <summary>
-        /// Felt behind an element that sizes itself (a quest tracker, a prompt): a tag patch stretched over it. The
-        /// element's colors are themed for felt (FeltPass).
+        /// Paper behind an element that sizes itself (a quest tracker, a prompt): a tag sheet stretched over it. The
+        /// element's colors are themed for paper (FeltPass).
         /// </summary>
         public static VisualElement CardBehind(VisualElement e, int seed, Patch patch = null)
         {
@@ -396,32 +324,7 @@ namespace Drakepg
             return bg;
         }
 
-        /// <summary>A row of light stitches from x0 to x1 at y inside an element (along a bar's strip).</summary>
-        public class StitchRow : VisualElement
-        {
-            public StitchRow(float x0, float x1, float y, Color color, float dash = 5, float gap = 4, float width = 1.4f)
-            {
-                pickingMode = PickingMode.Ignore;
-                style.position = Position.Absolute;
-                style.left = style.top = style.right = style.bottom = 0;
-                generateVisualContent += ctx =>
-                {
-                    var p = ctx.painter2D;
-                    p.lineCap = LineCap.Round;
-                    p.lineWidth = width;
-                    p.strokeColor = color;
-                    p.BeginPath();
-                    for (var s = x0; s + dash <= x1; s += dash + gap)
-                    {
-                        p.MoveTo(new Vector2(s, y));
-                        p.LineTo(new Vector2(s + dash, y));
-                    }
-                    p.Stroke();
-                };
-            }
-        }
-
-        // --- Tokens: big numbers on felt shapes (Hearthstone-style HP and MP) ---
+        // --- Tokens: big numbers on paper shapes (Hearthstone-style HP and MP) ---
 
         /// <summary>Points along cubic curves: `start`, then (control, control, end) triples, in a 100 x 100 box.</summary>
         static Vector2[] Curve(Vector2 start, params Vector2[] segs)
@@ -453,8 +356,8 @@ namespace Drakepg
             V(12, 66), V(12, 46), V(42, 18), V(50, 4));
 
         /// <summary>
-        /// A felt token: a shape (Heart, Drop) cut from thick felt with stitches just inside its edge and a big number on
-        /// it. The number pops when it changes. Placed by its top-left; `size` px square.
+        /// A token: a shape (Heart, Drop) cut from paper two sheets thick, a big number on it. The number pops when it
+        /// changes. Placed by its top-left; `size` px square.
         /// </summary>
         public class TokenView : VisualElement
         {
@@ -490,46 +393,12 @@ namespace Drakepg
                         Shape(p, 1 + i * 0.03f, new Vector2(2, 6));
                         p.Fill();
                     }
-                    p.fillColor = Color.Lerp(cloth, Color.black, 0.42f);
+                    p.fillColor = Under(cloth);
                     Shape(p, 1, new Vector2(0, 4));
                     p.Fill();
                     p.fillColor = cloth;
                     Shape(p, 1, Vector2.zero);
                     p.Fill();
-                    // Stitches along the shape, 80% of its size: dashes laid by length along the outline.
-                    var seam = new Vector2[shape.Length];
-                    for (int i = 0; i < shape.Length; i++) seam[i] = At(shape[i], 0.8f, Vector2.zero);
-                    var lengths = new float[seam.Length + 1];
-                    for (int i = 0; i < seam.Length; i++) lengths[i + 1] = lengths[i] + Vector2.Distance(seam[i], seam[(i + 1) % seam.Length]);
-                    var total = lengths[seam.Length];
-                    Vector2 Along(float s)
-                    {
-                        s = Mathf.Repeat(s, total);
-                        var j = Array.BinarySearch(lengths, s);
-                        if (j < 0) j = ~j - 1;
-                        j = Mathf.Clamp(j, 0, seam.Length - 1);
-                        var seg = lengths[j + 1] - lengths[j];
-                        return Vector2.Lerp(seam[j], seam[(j + 1) % seam.Length], seg > 0 ? (s - lengths[j]) / seg : 0);
-                    }
-                    var count = Mathf.Max(3, Mathf.RoundToInt(total / 10.5f));
-                    var step = total / count;
-                    var dash = step * 0.57f;
-                    p.lineCap = LineCap.Round;
-                    for (int pass = 0; pass < 2; pass++)
-                    {
-                        var shift = pass == 0 ? new Vector2(0.8f, 1.2f) : Vector2.zero;
-                        p.lineWidth = pass == 0 ? 2.2f : 2f;
-                        p.strokeColor = pass == 0 ? new Color(0, 0, 0, 0.35f) : RedStitch;
-                        p.BeginPath();
-                        for (int i = 0; i < count; i++)
-                            for (int j = 0; j <= 3; j++)
-                            {
-                                var pt = Along(i * step + dash * j / 3) + shift;
-                                if (j == 0) p.MoveTo(pt);
-                                else p.LineTo(pt);
-                            }
-                        p.Stroke();
-                    }
                 };
                 number = new Label { pickingMode = PickingMode.Ignore };
                 number.style.position = Position.Absolute;
@@ -572,7 +441,7 @@ namespace Drakepg
             return t;
         }
 
-        // --- Baked pictures: world sprites and sewing buttons ---
+        // --- Baked pictures: world sprites and key dots ---
 
         static float Smooth(float a, float b, float v)
         {
@@ -588,8 +457,6 @@ namespace Drakepg
             var oy = Mathf.Max(qy, 0);
             return Mathf.Sqrt(ox * ox + oy * oy) + Mathf.Min(Mathf.Max(qx, qy), 0) - r;
         }
-
-        static float Stroke(float d, float width, int k) => Mathf.Clamp01((width / 2 - Mathf.Abs(d)) * k + 0.5f);
 
         static Color Over(Color dst, Color src, float a)
         {
@@ -620,101 +487,60 @@ namespace Drakepg
             return tex;
         }
 
+        /// <summary>Room around a baked sheet for its shadow and the sheet behind it (design px).</summary>
+        const float BakePad = 20;
+
         /// <summary>
-        /// A patch baked into a picture, for the world, where the painter can't draw: the same look as PatchView (a clean
-        /// edge), worked out per texel, with 10 px of room for the shadow.
+        /// A sheet baked into a picture, for the world, where the painter can't draw: the same layers as PatchView (the
+        /// sheet behind, soft shadows, the sheet; edges cut straight), worked out per texel.
         /// </summary>
         static Texture2D PatchTexture(float w, float h, int seed, Patch p)
         {
             var k = Density;
             return Cached($"patch|{w}|{h}|{seed}|{p.Key}|{k}", () =>
             {
-                const float pad = 10;
+                const float pad = BakePad, r = 3;
                 int W = Mathf.CeilToInt((w + pad * 2) * k), H = Mathf.CeilToInt((h + pad * 2) * k);
-                var r = Mathf.Min(p.Radius, w / 2, h / 2);
+                var b = p.Back.HasValue ? p.BackPad : 0;
+                Color Shade(float a) => new Color(ShadowColor.r, ShadowColor.g, ShadowColor.b, a);
                 var px = new Color[W * H];
                 for (int y = 0; y < H; y++)
                 {
                     for (int x = 0; x < W; x++)
                     {
                         var q = new Vector2((x + 0.5f) / k - pad, (y + 0.5f) / k - pad);
-                        var d = RoundBoxDist(q, 0, 0, w, h, r);
-                        var c = p.Shadow
-                            ? new Color(ShadowColor.r, ShadowColor.g, ShadowColor.b, 0.4f * (1 - Smooth(-3, 5, RoundBoxDist(q - new Vector2(2, 5), 0, 0, w, h, r))))
-                            : new Color(0, 0, 0, 0);
-                        var cover = Mathf.Clamp01(-d * k + 0.5f);
-                        if (cover > 0)
+                        var c = new Color(0, 0, 0, 0);
+                        if (p.Back is Color back)
                         {
-                            var f = p.Cloth;
-                            if (p.Rim > 0) f = Color.Lerp(f, Color.black, p.Rim * Stroke(d + 3, 5, k));
-                            c = Over(c, f, cover);
+                            if (p.Shadow) c = Shade(0.4f * (1 - Smooth(-4, 8, RoundBoxDist(q - new Vector2(4, 8), -b, -b, w + 2 * b, h + 2 * b, r))));
+                            c = Over(c, back, Mathf.Clamp01(-RoundBoxDist(q, -b, -b, w + 2 * b, h + 2 * b, r) * k + 0.5f));
                         }
+                        if (p.Shadow) c = Over(c, ShadowColor, 0.35f * (1 - Smooth(-2, 3, RoundBoxDist(q - new Vector2(2, 3), 0, 0, w, h, r))));
+                        c = Over(c, p.Cloth, Mathf.Clamp01(-RoundBoxDist(q, 0, 0, w, h, r) * k + 0.5f));
                         px[y * W + x] = c;
                     }
                 }
-                if (p.Thread.HasValue)
-                {
-                    // The stitches: points every half px along the seam; each dash covers the texels near its points.
-                    var o = new Outline(p.Inset, p.Inset, w - p.Inset * 2, h - p.Inset * 2, Mathf.Max(3, r - p.Inset));
-                    var period = p.Dash + p.Gap;
-                    var count = Mathf.Max(1, Mathf.RoundToInt(o.Length / period));
-                    var step = o.Length / count;
-                    var len = p.Dash * step / period;
-                    for (int pass = 0; pass < 2; pass++)
-                    {
-                        var shift = pass == 0 ? new Vector2(0.8f, 1.2f) : Vector2.zero;
-                        var width = pass == 0 ? p.ThreadWidth * 1.1f : p.ThreadWidth;
-                        var col = pass == 0 ? new Color(0, 0, 0, 0.35f) : p.Thread.Value;
-                        var pts = new List<Vector2>();
-                        for (int i = 0; i < count; i++)
-                        {
-                            pts.Clear();
-                            for (float s = 0; s <= len; s += 0.5f) pts.Add(o.At(i * step + s, out _) + shift);
-                            float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
-                            foreach (var pt in pts)
-                            {
-                                minX = Mathf.Min(minX, pt.x);
-                                maxX = Mathf.Max(maxX, pt.x);
-                                minY = Mathf.Min(minY, pt.y);
-                                maxY = Mathf.Max(maxY, pt.y);
-                            }
-                            int x0 = Mathf.Max(0, Mathf.FloorToInt((minX + pad - width) * k)), x1 = Mathf.Min(W, Mathf.CeilToInt((maxX + pad + width) * k));
-                            int y0 = Mathf.Max(0, Mathf.FloorToInt((minY + pad - width) * k)), y1 = Mathf.Min(H, Mathf.CeilToInt((maxY + pad + width) * k));
-                            for (int y = y0; y < y1; y++)
-                            {
-                                for (int x = x0; x < x1; x++)
-                                {
-                                    var q = new Vector2((x + 0.5f) / k - pad, (y + 0.5f) / k - pad);
-                                    var best = float.MaxValue;
-                                    foreach (var pt in pts) best = Mathf.Min(best, (pt - q).sqrMagnitude);
-                                    var i2 = y * W + x;
-                                    var cov = Stroke(Mathf.Sqrt(best), width, k) * col.a;
-                                    if (cov > 0) px[i2] = Over(px[i2], col, cov * px[i2].a);
-                                }
-                            }
-                        }
-                    }
-                }
-                return ToTexture(px, W, H, "felt patch");
+                return ToTexture(px, W, H, "paper sheet");
             });
         }
 
-        /// <summary>A felt patch as a world sprite, centered on its transform (cards the world's figures stand on).</summary>
+        /// <summary>A sheet as a world sprite, centered on its transform (cards the world's figures stand on).</summary>
         public static Sprite PatchSprite(float w, float h, int seed, Patch patch = null)
         {
             var tex = PatchTexture(w, h, seed, patch ?? Patch.Panel());
-            var ppu = Design.PixelsPerUnit * tex.width / (w + 20);
+            var ppu = Design.PixelsPerUnit * tex.width / (w + BakePad * 2);
             return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), ppu, 0, SpriteMeshType.FullRect);
         }
 
-        // --- Chips and sewing buttons ---
+        // --- Chips and key dots ---
 
-        /// <summary>A word on a small rounded chip of felt in its color, light text in that color (elements, statuses, the hero's weapon).</summary>
+        /// <summary>A word on a small chip of paper in its color, cream text (ink on a light color): elements, statuses, the hero's weapon.</summary>
         public static Label Chip(string rich, Color color, float fontSize = 15, int seed = 1)
         {
             var l = new Label(rich) { pickingMode = PickingMode.Ignore };
             l.style.fontSize = fontSize;
-            l.style.color = Color.Lerp(OnFelt(color), Color.white, 0.25f);
+            var paper = Color.Lerp(color, Ink, 0.15f);
+            l.style.color = IsDark(paper) ? Cream : Ink;
             Fonts.Heavy(l);
             l.style.marginLeft = l.style.marginRight = l.style.marginTop = l.style.marginBottom = 0;
             l.style.paddingLeft = l.style.paddingRight = 9;
@@ -723,24 +549,22 @@ namespace Drakepg
             l.style.height = Mathf.Round(fontSize + 9);
             l.style.unityTextAlign = TextAnchor.MiddleCenter;
             l.style.whiteSpace = WhiteSpace.NoWrap;
-            l.style.backgroundColor = Color.Lerp(NavyDark, color, 0.45f);
-            Ui.Round(l, 7);
+            l.style.backgroundColor = paper;
+            Ui.Round(l, 4);
             l.AddToClassList(FeltPass.Keep);
             return l;
         }
 
-        /// <summary>A cream sewing button (the key numbers): a disc with a brown rim and a pressed inner ring, 3 px shadow room.</summary>
+        /// <summary>A key number's dot: an ink disc with a soft shadow, 3 px of room for it.</summary>
         public static Texture2D ButtonTexture(float size)
         {
             var k = Density;
-            return Cached($"sewbtn|{size}|{k}", () =>
+            return Cached($"keydot|{size}|{k}", () =>
             {
                 const float pad = 3;
                 int W = Mathf.CeilToInt((size + pad * 2) * k);
                 var c = pad + size / 2;
-                var rOut = size * 12f / 26f;
-                var rIn = size * 8.5f / 26f;
-                Color face = Design.Hex(0xefe2c2), rim = SandStitch, ring = Hem;
+                var r = size * 12f / 26f;
                 var px = new Color[W * W];
                 for (int y = 0; y < W; y++)
                 {
@@ -749,33 +573,30 @@ namespace Drakepg
                         var p = new Vector2((x + 0.5f) / k, (y + 0.5f) / k);
                         var d = Vector2.Distance(p, new Vector2(c, c));
                         var sd = Vector2.Distance(p, new Vector2(c + 0.8f, c + 1.8f));
-                        var col = new Color(0, 0, 0, 0.45f * (1 - Smooth(rOut - 1.5f, rOut + 2f, sd)));
-                        col = Over(col, face, Mathf.Clamp01((rOut - d) * k + 0.5f));
-                        col = Over(col, rim, Stroke(d - rOut + 0.8f, 1.6f, k));
-                        col = Over(col, ring, Stroke(d - rIn, 1f, k));
-                        px[y * W + x] = col;
+                        var col = new Color(ShadowColor.r, ShadowColor.g, ShadowColor.b, 0.4f * (1 - Smooth(r - 1.5f, r + 2f, sd)));
+                        px[y * W + x] = Over(col, Ink, Mathf.Clamp01((r - d) * k + 0.5f));
                     }
                 }
-                return ToTexture(px, W, W, "sewing button");
+                return ToTexture(px, W, W, "key dot");
             });
         }
 
-        /// <summary>A sewing button with a number on it, its top-left at (x, y) (`size` px across, plus shadow room).</summary>
+        /// <summary>A key dot with a number on it, its top-left at (x, y) (`size` px across, plus shadow room).</summary>
         public static VisualElement SewnButton(VisualElement parent, float x, float y, string text, float size = 26, float fontSize = 14)
         {
             const float pad = 3;
-            var e = new VisualElement { pickingMode = PickingMode.Ignore, name = "sewn" };
+            var e = new VisualElement { pickingMode = PickingMode.Ignore, name = "key" };
             e.AddToClassList(FeltPass.Keep);
             Ui.Place(e, x - pad, y - pad);
             Ui.Size(e, size + pad * 2, size + pad * 2);
             e.style.backgroundImage = new StyleBackground(ButtonTexture(size));
-            var n = Ui.Text(e, pad + size / 2, pad + size / 2, text, fontSize, Brown, false, 0.5f, 0.5f);
+            var n = Ui.Text(e, pad + size / 2, pad + size / 2, text, fontSize, Cream, false, 0.5f, 0.5f);
             Fonts.Heavy(n);
             parent?.Add(e);
             return e;
         }
 
-        /// <summary>The felt runner across the bottom of the screen, its top edge at y (it runs off the sides and bottom).</summary>
+        /// <summary>The green runner across the bottom of the screen, its top edge at y (it runs off the sides and bottom).</summary>
         public static Sheet Runner(VisualElement parent, float y, int seed) =>
             MakePatch(parent, -12, y, Design.Width + 24, 200, seed, Patch.Runner());
 
@@ -790,7 +611,7 @@ namespace Drakepg
             return has;
         }
 
-        /// <summary>A status chip with its icon: the chip's felt holds the icon (cream ink) and then the text.</summary>
+        /// <summary>A status chip with its icon: the chip holds the icon (cream ink) and then the text.</summary>
         public static VisualElement IconChip(string rich, Color color, string icon, float fontSize = 15, int seed = 1)
         {
             var label = Chip(rich, color, fontSize, seed);
@@ -801,19 +622,19 @@ namespace Drakepg
             chip.style.height = label.style.height;
             chip.style.backgroundColor = label.style.backgroundColor;
             chip.style.paddingLeft = 4;
-            Ui.Round(chip, 7);
+            Ui.Round(chip, 4);
             chip.AddToClassList(FeltPass.Keep);
             label.style.backgroundColor = Color.clear;
             label.style.paddingLeft = 3;
             var size = Mathf.Round(fontSize + 5);
-            var ic = Icon(null, 0, 0, size, icon, true);
+            var ic = Icon(null, 0, 0, size, icon, IsDark(chip.style.backgroundColor.value));
             ic.style.position = Position.Relative;
             chip.Add(ic);
             chip.Add(label);
             return chip;
         }
 
-        /// <summary>An icon from Resources/UiIcons (hand-drawn, scripts/ui_icons.py); `light`: the cream-ink set for dark felt.</summary>
+        /// <summary>An icon from Resources/UiIcons (hand-drawn, scripts/ui_icons.py); `light`: the cream-ink set, for dark or colored ground.</summary>
         public static VisualElement Icon(VisualElement parent, float x, float y, float size, string name, bool light = false)
         {
             var e = new VisualElement { pickingMode = PickingMode.Ignore, name = "icon " + name };
@@ -849,7 +670,7 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// A health or mana bar: a felt strip with a row of light stitches in a dark felt groove. (x, y) = left edge, middle.
+    /// A health or mana bar: a strip of colored paper in a dark brown groove. (x, y) = left edge, middle.
     /// It can preview a coming hit as a pale chunk at the end of the strip (Preview).
     /// </summary>
     public class FeltBar : VisualElement
@@ -862,7 +683,7 @@ namespace Drakepg
         readonly string prefix;
         float shown = -1, trailShown = -1;
         Anim.Handle tween, trailTween;
-        /// <summary>The pale felt left where a hit took HP away: it lingers a moment, then drains after the strip.</summary>
+        /// <summary>The pale paper left where a hit took HP away: it lingers a moment, then drains after the strip.</summary>
         static readonly Color TrailColor = Design.Hex(0xf3d6a4);
 
         public FeltBar(VisualElement parent, float x, float y, float width, float height, Color color, string prefix, int seed, float fontSize = 18)
@@ -872,18 +693,17 @@ namespace Drakepg
             AddToClassList(FeltPass.Keep);
             Ui.Place(this, x, y - height / 2);
             Ui.Size(this, width, height);
-            Ui.Rect(this, 0, 0, width, height, Felt.Groove, height / 2);
-            // The strip slides in from the left, so its rounded right end always shows; the clip rounds its left end.
+            Ui.Rect(this, 0, 0, width, height, Felt.Groove, 3);
+            // The strip slides in from the left, so its right end always shows; the clip rounds its left end.
             inner = width - 6;
             clip = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(clip, 3, 3);
             Ui.Size(clip, inner, height - 6);
             clip.style.overflow = Overflow.Hidden;
-            Ui.Round(clip, (height - 6) / 2);
+            Ui.Round(clip, 2);
             Add(clip);
-            trail = Ui.Rect(clip, 0, 0, inner, height - 6, TrailColor, (height - 6) / 2);
-            strip = Ui.Rect(clip, 0, 0, inner, height - 6, color, (height - 6) / 2);
-            strip.Add(new Felt.StitchRow(7, inner - 8, 3, new Color(1, 240 / 255f, 215 / 255f, 0.45f)));
+            trail = Ui.Rect(clip, 0, 0, inner, height - 6, TrailColor, 2);
+            strip = Ui.Rect(clip, 0, 0, inner, height - 6, color, 2);
             label = Ui.Text(this, width / 2, height / 2, "", fontSize, Felt.Cream, false, 0.5f, 0.5f);
             Fonts.Heavy(label);
             label.style.unityTextOutlineWidth = 0.2f;
@@ -907,7 +727,7 @@ namespace Drakepg
         {
             if (preview == null)
             {
-                preview = Ui.Rect(clip, 0, 0, 0, inner > 0 ? clip.style.height.value.value : 0, new Color(1, 0.96f, 0.86f), clip.style.height.value.value / 2);
+                preview = Ui.Rect(clip, 0, 0, 0, inner > 0 ? clip.style.height.value.value : 0, new Color(1, 0.96f, 0.86f), 2);
                 preview.name = "preview";
             }
             previewPulse?.Stop();
@@ -948,7 +768,7 @@ namespace Drakepg
             }
             else if (target > from)
             {
-                // Healing: the pale felt jumps ahead and the strip fills up to it.
+                // Healing: the pale paper jumps ahead and the strip fills up to it.
                 trailTween?.Stop();
                 ShowTrail(target);
                 tween = Anim.Float(from, target, 0.4f, Show);
@@ -962,9 +782,9 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// A felt button (the mock's battle buttons): a sand patch with brown running stitches, tilted a little, an icon and
-    /// an Alegreya label, an optional second line, and a sewing button with its key number at the top-left corner.
-    /// `cloth` changes the felt (Attack is red with cream thread; skills get a felt of their color). (x, y) is its center.
+    /// A battle button: sand paper two sheets thick, tilted a little, an icon and an Alegreya label, an optional second
+    /// line, and an ink dot with its key number at the top-left corner. `cloth` changes the paper (Attack is red; skills
+    /// get a paper of their color). (x, y) is its center.
     /// </summary>
     public class FeltButton : VisualElement
     {
@@ -972,14 +792,13 @@ namespace Drakepg
         bool enabled = true, hover, down;
 
         public FeltButton(VisualElement parent, float x, float y, string text, Action onClick, float width = 196, float height = 64,
-            string sublabel = null, string icon = null, Color? cloth = null, Color? thread = null, int seed = 1, float rotate = 0, string key = null,
+            string sublabel = null, string icon = null, Color? cloth = null, int seed = 1, float rotate = 0, string key = null,
             float fontSize = 24, float iconSize = 26, float subSize = 15)
         {
             this.onClick = onClick;
             var face = cloth ?? Felt.Sand;
-            Color.RGBToHSV(face, out _, out _, out var v);
-            // Dark felt (Attack's red) takes cream text and the cream-ink icons; sand and light felts take brown.
-            var dark = v < 0.75f;
+            // Dark paper (Attack's red) takes cream text and the cream-ink icons; sand and light papers take brown.
+            var dark = Felt.IsDark(face);
             var ink = dark ? Felt.Cream : Felt.Brown;
             Ui.Place(this, x - width / 2, y - height / 2);
             Ui.Size(this, width, height);
@@ -987,7 +806,7 @@ namespace Drakepg
             AddToClassList(FeltPass.Keep);
             style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             if (rotate != 0) style.rotate = new Rotate(rotate);
-            Add(new Felt.PatchView(Felt.Patch.Button(face, thread), seed).Fill());
+            Add(new Felt.PatchView(Felt.Patch.Button(face), seed).Fill());
 
             var column = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(column, 0, 0);
@@ -1052,7 +871,7 @@ namespace Drakepg
             return l;
         }
 
-        /// <summary>Lift on hover, press down onto its thick edge, fade when disabled.</summary>
+        /// <summary>Lift on hover, press down onto the sheet under it, fade when disabled.</summary>
         void Paint()
         {
             var lift = !enabled ? 0 : down ? 3 : hover ? -3 : 0;

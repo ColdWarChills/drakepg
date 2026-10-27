@@ -5,14 +5,14 @@ using UnityEngine.UIElements;
 namespace Drakepg
 {
     /// <summary>
-    /// A small felt note that opens right by the thing you hover (or tap): a bold title and a line or two. One at a time,
+    /// A small paper note that opens right by the thing you hover (or tap): a bold title and a line or two. One at a time,
     /// under the thing when there's room, else above it; it never covers the pointer's target and never takes clicks.
     /// <c>Tooltip.Attach(icon, "Weak to Water", "Water hits deal 50% more damage.")</c>.
     /// </summary>
     public static class Tooltip
     {
         const float Width = 330, Gap = 8, Margin = 8;
-        static readonly Color Fill = new Color(0.12f, 0.15f, 0.22f, 0.97f);
+        static readonly Color Fill = new Color(Felt.Paper.r, Felt.Paper.g, Felt.Paper.b, 0.98f);
 
         static VisualElement box;
         static VisualElement owner;
@@ -43,15 +43,15 @@ namespace Drakepg
             box.style.paddingBottom = 9;
             box.style.backgroundColor = Fill;
             Ui.Round(box, 8);
-            Ui.Border(box, 1.5f, new Color(Felt.Cream.r, Felt.Cream.g, Felt.Cream.b, 0.75f));
+            Ui.Border(box, 1.5f, new Color(Felt.Trim.r, Felt.Trim.g, Felt.Trim.b, 0.7f));
             box.AddToClassList(FeltPass.Keep);
             if (!string.IsNullOrEmpty(text.title))
             {
-                var t = Line(text.title, 17, Felt.Gold);
+                var t = Line(text.title, 17, Felt.Ink);
                 Fonts.Heavy(t);
                 box.Add(t);
             }
-            if (!string.IsNullOrEmpty(text.body)) box.Add(Line(text.body, 16, Felt.Cream));
+            if (!string.IsNullOrEmpty(text.body)) box.Add(Line(text.body, 16, Felt.Text));
             box.style.opacity = 0;
             root.Add(box);
             // Placed once its height is known: under the anchor, or above it near the bottom edge.

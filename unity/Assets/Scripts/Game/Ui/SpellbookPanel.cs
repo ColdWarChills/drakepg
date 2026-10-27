@@ -131,8 +131,9 @@ namespace Drakepg
                 else Ui.Border(gem, 1.5f, color);
                 row.Add(gem);
             }
-            var icon = Felt.Icon(row, 28, 3, 24, SkillUi.Icon(entry.Skill), true);
-            if (SkillUi.IconTint(entry.Skill) is Color tint) icon.style.unityBackgroundImageTintColor = tint;
+            var tint = SkillUi.IconTint(entry.Skill);
+            var icon = Felt.Icon(row, 28, 3, 24, SkillUi.Icon(entry.Skill), tint != null);
+            if (tint is Color t) icon.style.unityBackgroundImageTintColor = Felt.Readable(t);
             icon.style.opacity = entry.Known ? 1 : 0.35f;
             Ui.Text(row, 62, RowH / 2 - 2, entry.Skill.Name, 17, color, carried, ay: 0.5f);
             // Known: its cost. Not yet: the level it needs, or where it's found.
@@ -153,8 +154,9 @@ namespace Drakepg
         {
             var s = entry.Skill;
             Ui.Rect(c, CardX - 8, CardY - 8, CardW + 16, PerPage * RowH + 16, new Color(0, 0, 0, 0.18f), 10);
-            var icon = Felt.Icon(c, CardX + 8, CardY + 6, 64, SkillUi.Icon(s), true);
-            if (SkillUi.IconTint(s) is Color tint) icon.style.unityBackgroundImageTintColor = tint;
+            var tint = SkillUi.IconTint(s);
+            var icon = Felt.Icon(c, CardX + 8, CardY + 6, 64, SkillUi.Icon(s), tint != null);
+            if (tint is Color t) icon.style.unityBackgroundImageTintColor = Felt.Readable(t);
             icon.style.opacity = entry.Known ? 1 : 0.45f;
             Ui.Text(c, CardX + 88, CardY + 4, s.Name, 26, entry.Known ? Palette.Text : Palette.TextDim, true);
             var who = entry.Group switch

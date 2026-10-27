@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 namespace Drakepg
 {
     /// <summary>
-    /// Motion for UI pieces (the felt HUD, menus, the inventory): slide in and out, pop, jolt when hit, a ring of thread.
+    /// Motion for UI pieces (the paper HUD, menus, the inventory): slide in and out, pop, jolt when hit, a ring of thread.
     /// Slides and jolts move an element's `translate`, so use them on plain containers, not on elements placed with an
     /// anchor (Ui.Place with ax/ay) or on FeltButtons (their hover lift is a translate too): wrap those in a holder.
     /// One translate tween per element at a time; a new one takes over from where the old one stopped.

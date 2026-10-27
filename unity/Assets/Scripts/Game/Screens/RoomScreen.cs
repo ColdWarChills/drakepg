@@ -464,7 +464,7 @@ namespace Drakepg
                     head.style.flexDirection = FlexDirection.Row;
                     head.style.alignItems = Align.Center;
                     head.style.marginBottom = 4;
-                    var ic = Felt.Icon(null, 0, 0, 30, r.icon, true);
+                    var ic = Felt.Icon(null, 0, 0, 30, r.icon);
                     ic.style.position = Position.Relative;
                     ic.style.marginRight = 8;
                     head.Add(ic);

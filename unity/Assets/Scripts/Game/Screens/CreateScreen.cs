@@ -26,7 +26,7 @@ namespace Drakepg
             public ClassDef Cls;
             public VisualElement Box;
             public SpriteRenderer Fill;
-            /// <summary>The card's felt, plain and picked (lighter, gold thread).</summary>
+            /// <summary>The card's paper, plain and picked (on a green sheet).</summary>
             public Sprite Plain, Picked;
             public Figure Fig;
             public float X, FigY, Scale = 1;
@@ -162,9 +162,9 @@ namespace Drakepg
         {
             var card = new Card { Cls = cls, X = x };
             var cy = CardY + CardH / 2;
-            // A felt card in the world, so the hero (a world figure) stands on it; picked, lighter felt with gold thread.
-            card.Plain = Felt.PatchSprite(CardW, CardH, 61 + index, new Felt.Patch { Fuzz = 0 });
-            card.Picked = Felt.PatchSprite(CardW, CardH, 61 + index, new Felt.Patch { Cloth = Design.Hex(0x34426a), Thread = Felt.Gold, Fuzz = 0 });
+            // A paper card in the world, so the hero (a world figure) stands on it; picked, laid on a green sheet.
+            card.Plain = Felt.PatchSprite(CardW, CardH, 61 + index, Felt.Patch.Tag());
+            card.Picked = Felt.PatchSprite(CardW, CardH, 61 + index, Felt.Patch.Menu());
             var go = new GameObject("card " + cls.Id);
             go.transform.SetParent(stepWorld, false);
             card.Fill = go.AddComponent<SpriteRenderer>();

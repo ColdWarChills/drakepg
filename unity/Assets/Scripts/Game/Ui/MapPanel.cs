@@ -9,7 +9,7 @@ namespace Drakepg
 {
     /// <summary>
     /// The map (M or the Map button), a port of src/ui/mapPanel.ts: one area at a time. Each page shows its area's own
-    /// picture (`bg_map_<area>`, a paper-cut panorama from scripts/redo_art.py) framed in the felt; the rooms sit on it
+    /// picture (`bg_map_<area>`, a paper-cut panorama from scripts/redo_art.py) framed in the paper; the rooms sit on it
     /// as round badges, a visited room showing a cut of its own background, joined by stitched thread. Rooms next to
     /// visited ones show as "?". Arrows lead to other pages.
     /// </summary>
@@ -19,7 +19,7 @@ namespace Drakepg
         const float H = 640;
         /// <summary>Where the node graph is drawn inside the panel.</summary>
         static readonly Rect Area = new Rect(50, 130, W - 100, H - 260);
-        /// <summary>The page's picture, framed in the felt behind the rooms.</summary>
+        /// <summary>The page's picture, framed in the paper behind the rooms.</summary>
         static readonly Rect ArtRect = new Rect(36, 124, W - 72, 408);
         /// <summary>The picture is dimmed a little so the rooms, thread and names stand out on it.</summary>
         static readonly Color ArtTint = new Color(0.8f, 0.8f, 0.84f);
@@ -158,7 +158,7 @@ namespace Drakepg
             return modal;
         }
 
-        /// <summary>The page's picture in a window in the felt: a dark groove around it and a ring of stitches inside. False without art.</summary>
+        /// <summary>The page's picture in a window in the paper: a dark groove around it and a ring of stitches inside. False without art.</summary>
         static bool PageArt(VisualElement c, string areaId)
         {
             var sprite = Art.Get("bg_map_" + areaId);

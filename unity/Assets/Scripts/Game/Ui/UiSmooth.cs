@@ -11,14 +11,14 @@ namespace Drakepg
     /// anti-aliased 9-slice image instead, drawn at the screen's real resolution. Code keeps using
     /// style.backgroundColor / Ui.Border / Ui.Round as usual: GameRoot runs `Pass` every frame and re-bakes an element
     /// when its colors, border width or radius change (baked images are cached by look). The same walk themes menus for
-    /// felt and sets the UI fonts (FeltPass).
+    /// paper and sets the UI fonts (FeltPass).
     /// </summary>
     public static class UiSmooth
     {
         /// <summary>What an element should look like, and what was last baked for it.</summary>
         class Look
         {
-            public Color Fill, Border, Thread;
+            public Color Fill, Border;
             public float Width, Radius;
             public string Key;
         }
@@ -46,7 +46,11 @@ namespace Drakepg
             if (e.resolvedStyle.display == DisplayStyle.None) return;
             if (e.ClassListContains(FeltPass.Keep)) inked = false;
             else if (e.ClassListContains(FeltPass.Class)) inked = true;
-            if (e is Label label) FeltPass.Font(label);
+            if (e is Label label)
+            {
+                FeltPass.Font(label);
+                if (inked) FeltPass.Ink(label);
+            }
             var radius = e.resolvedStyle.borderTopLeftRadius;
             if (radius >= 1) Apply(e, radius, inked);
             else if (inked) FeltPass.Box(e);
@@ -67,14 +71,7 @@ namespace Drakepg
             }
             // After baking, the element's own background and border colors are cleared; anything set since is new.
             if (rs.backgroundColor.a > 0 || !mine) look.Fill = inked ? FeltPass.Fill(rs.backgroundColor) : rs.backgroundColor;
-            if (inked && rs.borderTopWidth > 0)
-            {
-                // On felt a rim is sewn on (FeltPass.Seam): only the fill is baked, inside where the rim was.
-                if (rs.borderTopColor.a > 0 || !mine) look.Thread = FeltPass.Border(rs.borderTopColor);
-                look.Border = Color.clear;
-                if (look.Thread.a > 0) FeltPass.Seam(e, look.Thread, rs.borderTopWidth, radius);
-            }
-            else if (rs.borderTopColor.a > 0 || !mine) look.Border = rs.borderTopColor;
+            if (rs.borderTopColor.a > 0 || !mine) look.Border = inked ? FeltPass.Border(rs.borderTopColor) : rs.borderTopColor;
             look.Width = rs.borderTopWidth;
             look.Radius = radius;
             var key = Key(look);

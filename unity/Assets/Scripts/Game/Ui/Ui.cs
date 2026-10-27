@@ -7,8 +7,9 @@ namespace Drakepg
 {
     /// <summary>
     /// UI building blocks drawn in code with UI Toolkit, positioned in design pixels (src/ui/text.ts, Button.ts, Bar.ts,
-    /// Modal.ts, Hud.ts). They wear the felt kit (Ui/Felt.cs): panels and menus are stitched navy felt, buttons sand
-    /// felt, bars felt strips in a groove; the colors screens give them are themed for felt (FeltPass).
+    /// Modal.ts, Hud.ts). They wear the paper kit (Ui/Felt.cs): panels and menus are cream sheets on a green one,
+    /// buttons sand paper two sheets thick, bars paper strips in a groove; the colors screens give them are themed for
+    /// paper (FeltPass).
     /// </summary>
     public static class Ui
     {
@@ -80,13 +81,13 @@ namespace Drakepg
             return e;
         }
 
-        /// <summary>The standard panel: a stitched navy felt patch (`alpha` is from the old dark panels, unused).</summary>
+        /// <summary>The standard panel: a cream sheet on a green one (`alpha` is from the old dark panels, unused).</summary>
         public static VisualElement Panel(VisualElement parent, float x, float y, float w, float h, float alpha = 0.92f, bool blocksClicks = true) =>
             Sheet(parent, x, y, w, h, blocksClicks);
 
         /// <summary>
-        /// A felt patch at (x, y) top-left, w x h: fuzzy edged, running stitches inside (`patch`: the panel look by default).
-        /// Content goes straight in it; the Palette colors of what's inside are themed for felt (FeltPass).
+        /// A paper sheet at (x, y) top-left, w x h, cut with scissors (`patch`: the panel look by default). Content goes
+        /// straight in it; the Palette colors of what's inside are themed for paper (FeltPass).
         /// </summary>
         public static VisualElement Sheet(VisualElement parent, float x, float y, float w, float h, bool blocksClicks = true, Felt.Patch patch = null,
             int seed = 0)
@@ -188,8 +189,8 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// A button (Button.ts): a sand felt patch with brown running stitches, an Alegreya label and an optional second
-    /// line; a color of its own (a selected tab) dyes the felt toward it. Lifts on hover, presses down. (x, y) is its center.
+    /// A button (Button.ts): sand paper two sheets thick, an Alegreya label and an optional second line; a color of its
+    /// own (a selected tab) dyes the paper toward it. Lifts on hover, presses down. (x, y) is its center.
     /// </summary>
     public class UiButton : VisualElement
     {
@@ -259,7 +260,7 @@ namespace Drakepg
             parent?.Add(this);
         }
 
-        /// <summary>The plain button color means sand felt; any other color (a selected tab) dyes the felt toward it.</summary>
+        /// <summary>The plain button color means sand paper; any other color (a selected tab) dyes the paper toward it.</summary>
         Color Cloth()
         {
             var b = Palette.Button;
@@ -269,7 +270,12 @@ namespace Drakepg
 
         void Paint()
         {
-            sheet.Look = Felt.Patch.Button(Cloth());
+            var cloth = Cloth();
+            sheet.Look = Felt.Patch.Button(cloth);
+            // A dark dye (a selected tab) takes cream text.
+            var dark = Felt.IsDark(cloth);
+            label.style.color = dark ? Felt.Cream : Felt.Brown;
+            if (sub != null) sub.style.color = dark ? Felt.Cream : Felt.BrownDim;
             style.translate = new Translate(0, !enabled ? 0 : down ? 1 : hover ? -2 : 0);
             style.scale = new Scale(Vector3.one * (down && enabled ? 0.97f : 1));
             style.opacity = enabled ? 1 : 0.5f;
@@ -305,8 +311,8 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// HP / MP / XP bar (Bar.ts): a felt strip in a dark felt groove, the "cur / max" label in cream, and a pale trail
-    /// of the strip when it drops. (x, y) = left edge, middle. Its own colors stay (FeltPass leaves it alone).
+    /// HP / MP / XP bar (Bar.ts): a paper strip in a dark brown groove, the "cur / max" label in cream, and a pale
+    /// trail of the strip when it drops. (x, y) = left edge, middle. Its own colors stay (FeltPass leaves it alone).
     /// </summary>
     public class UiBar : VisualElement
     {
@@ -328,11 +334,10 @@ namespace Drakepg
             pickingMode = PickingMode.Ignore;
             AddToClassList(FeltPass.Keep);
             var seed = Ui.Seed(prefix) + (int)width;
-            Ui.Rect(this, 0, 0, width, height, Felt.Groove, height / 2);
+            Ui.Rect(this, 0, 0, width, height, Felt.Groove, 3);
             inner = width - 6;
             chip = Strip(Color.Lerp(cloth, Felt.Groove, 0.55f), height);
             fill = Strip(cloth, height);
-            if (height >= 16) fill.Add(new Felt.StitchRow(7, inner - 8, 3, new Color(1, 240 / 255f, 215 / 255f, 0.45f)));
             label = Ui.Text(this, width / 2, height / 2, "", Mathf.Max(12, height - 8), Felt.Cream, false, 0.5f, 0.5f);
             Fonts.Heavy(label);
             label.style.unityTextOutlineWidth = 0.2f;
@@ -340,16 +345,16 @@ namespace Drakepg
             parent?.Add(this);
         }
 
-        /// <summary>A felt strip in its own clip: it slides in from the left, so its rounded right end always shows.</summary>
+        /// <summary>A paper strip in its own clip: it slides in from the left, so its right end always shows.</summary>
         VisualElement Strip(Color color, float height)
         {
             var clip = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(clip, 3, 3);
             Ui.Size(clip, inner, height - 6);
             clip.style.overflow = Overflow.Hidden;
-            Ui.Round(clip, (height - 6) / 2);
+            Ui.Round(clip, 2);
             Add(clip);
-            return Ui.Rect(clip, -inner, 0, inner, height - 6, color, (height - 6) / 2);
+            return Ui.Rect(clip, -inner, 0, inner, height - 6, color, 2);
         }
 
         void ShowFill(float w) => fill.style.left = w - inner;
@@ -389,8 +394,8 @@ namespace Drakepg
     }
 
     /// <summary>
-    /// Dimmed overlay + a centered navy felt patch with a title; content goes in `Content`, positioned from the panel's
-    /// top-left (Modal.ts). The shade swallows clicks. Modals stack; Esc closes the top one. The X is a sewing button.
+    /// Dimmed overlay + a centered cream sheet on a green one, with a title; content goes in `Content`, positioned from the
+    /// panel's top-left (Modal.ts). The shade swallows clicks. Modals stack; Esc closes the top one. The X is an ink dot.
     /// </summary>
     public class UiModal
     {
@@ -412,7 +417,7 @@ namespace Drakepg
             Root = new VisualElement { pickingMode = PickingMode.Position };
             Ui.Place(Root, 0, 0);
             Ui.Size(Root, Design.Width, Design.Height);
-            Root.style.backgroundColor = new Color(0.02f, 0.03f, 0.06f, 0.6f);
+            Root.style.backgroundColor = new Color(0.13f, 0.1f, 0.07f, 0.45f);
             parent.Add(Root);
             var left = (Design.Width - width) / 2;
             var top = (Design.Height - height) / 2;
@@ -431,7 +436,7 @@ namespace Drakepg
             open.Add(this);
         }
 
-        /// <summary>The close button: a sewing button with an X, a little bigger on hover.</summary>
+        /// <summary>The close button: an ink dot with an X, a little bigger on hover.</summary>
         static void CloseSeal(VisualElement parent, float x, float y, Action run)
         {
             var hit = new VisualElement { pickingMode = PickingMode.Position, name = "close" };
@@ -466,7 +471,7 @@ namespace Drakepg
         public void Escape() => Close(onClose);
     }
 
-    /// <summary>Top-left status block on a felt patch: name, level, HP, MP, XP, gold (Hud.ts).</summary>
+    /// <summary>Top-left status block on a paper sheet: name, level, HP, MP, XP, gold (Hud.ts).</summary>
     public class Hud
     {
         readonly Label nameText, goldText;

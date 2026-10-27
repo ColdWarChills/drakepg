@@ -73,7 +73,7 @@ namespace Drakepg
                 var t = player.Data.Tower;
 
                 // Header: marks, best floor, the Warden's line.
-                Felt.Icon(c, 38, 40, 34, "mark", true);
+                Felt.Icon(c, 38, 40, 34, "mark");
                 Ui.Text(c, 78, 44, $"{t.Marks} marks", 24, Palette.TextGold, true);
                 Ui.Text(c, 78, 74, t.Best == 0 ? "No floor cleared yet." : $"Best floor: {t.Best} / {Tower.LastFloor}", 15, Palette.TextDim);
                 var line = warden.Dialogue != null && warden.Dialogue.Count > 0 ? warden.Dialogue[0] : "";
@@ -239,7 +239,7 @@ namespace Drakepg
             foreach (var id in def.Tower.Twists)
             {
                 var tw = Db.Twist(id);
-                var twIcon = Felt.Icon(card, tx, 31, 18, IconOf(tw), true);
+                var twIcon = Felt.Icon(card, tx, 31, 18, IconOf(tw));
                 var twName = Ui.Text(card, tx + 22, 30, tw.Name, 15, Felt.Gold);
                 Tooltip.Attach(twIcon, tw.Name, tw.Text);
                 Tooltip.Attach(twName, tw.Name, tw.Text);
@@ -262,7 +262,7 @@ namespace Drakepg
             Ui.Rect(c, x, y, CardW, 62, Design.Hex(0x241e2e), 10, 2, PanelKit.WithAlpha(Palette.PanelBorder, 0.45f));
             var def = row.ItemId != null ? Db.Item(row.ItemId) : null;
             if (def != null) ItemUi.Icon(c, x + 36, y + 31, 48, def);
-            else Felt.Icon(c, x + 14, y + 9, 44, "cache", true);
+            else Felt.Icon(c, x + 14, y + 9, 44, "cache");
             var kind = row.Entry.Kind == "set" ? $"{Db.Set(row.Entry.Set).Name} set, rolled like a boss drop"
                 : row.Entry.Kind == "cache" ? $"A random weapon of the area with a {SigilName(row.Entry.Sigil)} Sigil"
                 : $"Skill book, read at level {Books.ReadLevelOf(Books.BookSkill(def))}";

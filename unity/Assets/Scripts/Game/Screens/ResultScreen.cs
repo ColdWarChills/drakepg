@@ -42,7 +42,7 @@ namespace Drakepg
             }
             Anim.Float(0, -360, 40, r => { if (rays != null) rays.transform.localRotation = Quaternion.Euler(0, 0, r); }, Ease.Linear, repeat: -1);
 
-            // The panel is a felt patch drawn in the world so effects (confetti, sparkles) can fly over it; the text
+            // The panel is a paper sheet drawn in the world so effects (confetti, sparkles) can fly over it; the text
             // sits on top.
             var go = new GameObject("panel");
             go.transform.SetParent(World, false);
