@@ -236,7 +236,7 @@ export const MONSTERS: MonsterDef[] = [
     damage: [17, 22],
     element: 'earth',
     // Steel glances off the shell, but it is old dry bark: it burns, and wind flips it over.
-    defense: { melee: 24, pierce: 24, magic: 3 },
+    defense: { melee: 18, pierce: 18, magic: 6 },
     resists: { earth: 75, water: 25, ice: 25, fire: -75, wind: -50 },
     trait: 'Shells up every 3rd move (-25% damage taken).',
     attacks: [
@@ -265,7 +265,7 @@ export const MONSTERS: MonsterDef[] = [
     damage: [15, 20],
     element: 'earth',
     // Thick bark shrugs off spells; easier to hurt with steel and fire.
-    defense: { melee: 4, pierce: 4, magic: 18 },
+    defense: { melee: 4, pierce: 4, magic: 12 },
     resists: { earth: 75, water: 50, fire: -25, wind: -25 },
     immune: ['stun'],
     // Boss test: Defend timing. Root Crush comes on a steady beat.
@@ -305,7 +305,7 @@ export const MONSTERS: MonsterDef[] = [
     name: 'Mire Toad',
     level: 6,
     look: { shape: 'blob', color: 0x4f7f5a, accent: 0x2e4a33, scale: 0.9, art: 'mon_mire_toad' },
-    hp: 170,
+    hp: 145,
     stats: { str: 10, int: 4, dex: 6, end: 8 },
     damage: [11, 16],
     element: 'water',
@@ -336,8 +336,8 @@ export const MONSTERS: MonsterDef[] = [
     damage: [12, 17],
     element: 'energy',
     // A body of pure lightning: spells barely scratch it, steel goes right through.
-    defense: { melee: 4, pierce: 4, magic: 16 },
-    resists: { energy: 75, water: -50, earth: 25 },
+    defense: { melee: 4, pierce: 4, magic: 10 },
+    resists: { energy: 50, water: -50, earth: 25 },
     trait: 'Flickers out of reach every 3rd move (-40% to hit it).',
     attacks: [
       { name: 'Static Bolt', damageType: 'magic', power: 1, weight: 3, applies: [{ status: 'shock', turns: 2, chance: 0.3 }] },
@@ -357,7 +357,7 @@ export const MONSTERS: MonsterDef[] = [
     name: 'Bog Lurker',
     level: 7,
     look: { shape: 'beast', color: 0x3f5a4a, accent: 0x1f2f26, scale: 1.15, art: 'mon_bog_lurker', blood: { kind: 'liquid', color: 0x52733a } },
-    hp: 240,
+    hp: 195,
     stats: { str: 13, int: 3, dex: 4, end: 11 },
     damage: [12, 18],
     element: 'water',
@@ -383,7 +383,7 @@ export const MONSTERS: MonsterDef[] = [
     name: 'Sunken Revenant',
     level: 8,
     look: { shape: 'humanoid', color: 0x4a6b6b, accent: 0x1d2b2b, scale: 1, art: 'mon_sunken_revenant', blood: { kind: 'wisps', color: 0x7fd6c4 } },
-    hp: 220,
+    hp: 175,
     stats: { str: 11, int: 8, dex: 9, end: 9 },
     damage: [13, 19],
     element: 'dark',
@@ -686,7 +686,7 @@ export const MONSTERS: MonsterDef[] = [
     damage: [22, 28],
     element: 'ice',
     // Solid glacier: steel barely scratches it, but fire melts it and lightning shatters it.
-    defense: { melee: 26, pierce: 26, magic: 8 },
+    defense: { melee: 20, pierce: 20, magic: 10 },
     resists: { ice: 75, water: 25, earth: 25, fire: -75, energy: -50 },
     trait: 'Hardens every 3rd move (-25% damage taken).',
     attacks: [
@@ -743,7 +743,7 @@ export const MONSTERS: MonsterDef[] = [
     // Born in the hot springs: steam and stone shrug off most things, but cold and water choke its fire,
     // and a heavy blow cracks its lava shell.
     defense: { melee: 12, pierce: 12, magic: 12 },
-    resists: { fire: 75, earth: 25, wind: 25, ice: -75, water: -50 },
+    resists: { fire: 50, earth: 25, wind: 25, ice: -75, water: -50 },
     weakTo: { blunt: 50 },
     trait: 'Opens with a Steam Burst (Burn).',
     attacks: [

@@ -6,6 +6,7 @@
  */
 import { BALANCE } from '../src/config';
 import { db, validateData } from '../src/data/db';
+import { MONSTERS } from '../src/data/monsters';
 import { ELEMENTS } from '../src/data/elements';
 import type { ClassId, Element, MonsterDef, SkillDef, StatKey } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
@@ -710,3 +711,80 @@ function elementReport(): void {
 
 skillUseReport();
 elementReport();
+
+/**
+ * `npm run sim -- 400 baseline`: every monster against a reference hero of its own level in the region's shop gear at
+ * 0% (docs/BALANCE_SPEC.md, step 1). Per class: hits to kill (the hero's turns to win) and turns to die (max HP over
+ * the damage taken per turn, no potions); "ref" is the mean of the three classes, "gap" the slowest class over the fastest.
+ */
+function baselineReport(): void {
+  if (ONLY !== 'baseline') return;
+  const classes: ClassId[] = ['warrior', 'mage', 'rogue'];
+  const gearFor = (level: number): Loadout => (level <= 2 ? STARTER : level <= 5 ? SHOP : level <= 9 ? SHOP2 : SHOP3);
+  const tier = (armor: number): string => (armor <= 6 ? 'L' : armor <= 14 ? 'M' : 'H');
+  console.log('\nBaseline: a hero of the monster\'s level, shop gear at 0%, smart AI, no potions');
+  console.log(`${'monster'.padEnd(22)} lv kind  def   | hits to kill W / M / R   ref  gap | turns to die W / M / R   ref | win W/M/R | flags`);
+  const rng = seeded(4321);
+  const byKind: Record<string, { htk: number[]; ttd: number[] }> = {};
+  for (const m of MONSTERS) {
+    if (m.id === 'lucky_impling' || m.id === 'mimic') continue;
+    const htk: number[] = [];
+    const ttd: number[] = [];
+    const win: number[] = [];
+    for (const c of classes) {
+      let turns = 0;
+      let wins = 0;
+      let lost = 0;
+      let enemyTurns = 0;
+      for (let i = 0; i < RUNS; i++) {
+        const p = makePlayer(c, m.level, gearFor(m.level), 0, 'health_potion', m);
+        const b = new Battle(p, m, rng);
+        let t = 0;
+        let hpBefore = p.hp;
+        while (!b.isOver && t < 60) {
+          act(b);
+          t++;
+          // Only what was lost counts (a heal in between would hide damage).
+          if (p.hp < hpBefore) lost += hpBefore - p.hp;
+          hpBefore = p.hp;
+        }
+        enemyTurns += t;
+        if (b.state === 'victory') {
+          wins++;
+          turns += t;
+        }
+      }
+      const maxHp = makePlayer(c, m.level, gearFor(m.level), 0, 'health_potion', m).maxHp;
+      htk.push(wins ? turns / wins : 99);
+      ttd.push(lost > 0 ? maxHp / (lost / enemyTurns) : 99);
+      win.push(wins / RUNS);
+    }
+    const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
+    const ref = mean(htk);
+    const gap = Math.max(...htk) / Math.min(...htk);
+    const refDie = mean(ttd);
+    const kind = m.boss ? 'boss' : m.tough ? 'tough' : 'norm';
+    const d = m.defense;
+    const resists = Object.values(m.resists ?? {});
+    const flags = [
+      !m.boss && ref > 6 ? 'slow kill' : '',
+      !m.boss && ref < 2 ? 'dies at once' : '',
+      gap >= 1.5 ? 'class gap' : '',
+      refDie < 5 ? 'deadly' : '',
+      resists.some((r) => r >= 100) ? 'immune' : resists.some((r) => r >= 75) ? 'resist 75+' : '',
+      Math.min(...win) < 0.8 && !m.boss ? 'a class under 80%' : '',
+    ].filter(Boolean);
+    (byKind[kind] ??= { htk: [], ttd: [] }).htk.push(ref);
+    byKind[kind].ttd.push(Math.min(refDie, 60));
+    const f = (n: number) => (n >= 99 ? '  -' : n.toFixed(1)).padStart(5);
+    console.log(
+      `${m.id.padEnd(22)} ${String(m.level).padStart(2)} ${kind.padEnd(5)} ${tier(d.melee)}${tier(d.pierce)}${tier(d.magic)}   | ${htk.map(f).join(' ')}  ${f(ref)} ${gap.toFixed(2).padStart(5)} | ` +
+        `${ttd.map(f).join(' ')}  ${f(refDie)} | ${win.map((w) => String(Math.round(w * 100)).padStart(3)).join(' ')} | ${flags.join(', ')}`,
+    );
+  }
+  const median = (a: number[]) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+  console.log('\nMedians by kind (what a fitted table would start from):');
+  for (const [kind, v] of Object.entries(byKind)) console.log(`  ${kind.padEnd(5)} hits to kill ${median(v.htk).toFixed(1)}, turns to die ${median(v.ttd).toFixed(1)} (${v.htk.length} monsters)`);
+}
+
+baselineReport();

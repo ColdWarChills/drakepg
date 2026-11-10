@@ -6188,9 +6188,9 @@
    ],
    "element": "earth",
    "defense": {
-    "melee": 24,
-    "pierce": 24,
-    "magic": 3
+    "melee": 18,
+    "pierce": 18,
+    "magic": 6
    },
    "resists": {
     "earth": 75,
@@ -6285,7 +6285,7 @@
    "defense": {
     "melee": 4,
     "pierce": 4,
-    "magic": 18
+    "magic": 12
    },
    "resists": {
     "earth": 75,
@@ -6392,7 +6392,7 @@
     "scale": 0.9,
     "art": "mon_mire_toad"
    },
-   "hp": 170,
+   "hp": 145,
    "stats": {
     "str": 10,
     "int": 4,
@@ -6495,10 +6495,10 @@
    "defense": {
     "melee": 4,
     "pierce": 4,
-    "magic": 16
+    "magic": 10
    },
    "resists": {
-    "energy": 75,
+    "energy": 50,
     "water": -50,
     "earth": 25
    },
@@ -6570,7 +6570,7 @@
      "color": 5403450
     }
    },
-   "hp": 240,
+   "hp": 195,
    "stats": {
     "str": 13,
     "int": 3,
@@ -6656,7 +6656,7 @@
      "color": 8378052
     }
    },
-   "hp": 220,
+   "hp": 175,
    "stats": {
     "str": 11,
     "int": 8,
@@ -7550,9 +7550,9 @@
    ],
    "element": "ice",
    "defense": {
-    "melee": 26,
-    "pierce": 26,
-    "magic": 8
+    "melee": 20,
+    "pierce": 20,
+    "magic": 10
    },
    "resists": {
     "ice": 75,
@@ -7723,7 +7723,7 @@
     "magic": 12
    },
    "resists": {
-    "fire": 75,
+    "fire": 50,
     "earth": 25,
     "wind": 25,
     "ice": -75,
