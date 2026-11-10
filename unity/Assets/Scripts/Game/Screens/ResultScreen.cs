@@ -86,34 +86,40 @@ namespace Drakepg
                 Ui.Text(Root, cx, 240, $"You defeated {The(data.MonsterName)}.", 24, ax: 0.5f, ay: 0.5f);
                 var xpText = Ui.Text(Root, cx - 120, 288, "+0 XP", 30, Palette.TextGood, true, 0.5f, 0.5f);
                 var goldText = Ui.Text(Root, cx + 120, 288, "+0 gold", 30, Palette.TextGold, true, 0.5f, 0.5f);
+                // With no drops the rows below move up into their place.
+                var low = rewards.Items.Count > 0 ? 0 : -64;
                 DropReveal(cx, 360, rewards.Items, data.Lost);
                 for (int i = 0; i < data.Quests.Count; i++)
                 {
                     var q = data.Quests[i];
                     var done = q.Count >= q.Target;
-                    var line = Ui.Text(Root, cx, 450 + i * 28, $"{q.Name}: {q.Goal} {q.Count}/{q.Target}{(done ? $"  ✔ Return to {q.TurnIn ?? "the quest giver"}" : "")}",
+                    var line = Ui.Text(Root, cx, 456 + low + i * 28, $"{q.Name}: {q.Goal} {q.Count}/{q.Target}{(done ? $"  ✔ Return to {q.TurnIn ?? "the quest giver"}" : "")}",
                         19, done ? Palette.TextGood : Palette.TextGold, done, 0.5f, 0.5f);
                     line.style.opacity = 0;
                     Anim.Float(0, 1, 0.3f, a => line.style.opacity = a, Ease.Linear, 1.1f + i * 0.15f);
                     if (done) Anim.After(1.1f, () => Sfx.Play("quest"));
                 }
-                var shift = data.Quests.Count * 28;
+                var shift = data.Quests.Count * 28 + low;
                 CountUp(xpText, rewards.Xp, " XP", 0.4f);
                 CountUp(goldText, rewards.Gold, " gold", 0.65f);
 
-                if (data.LevelsGained > 0)
+                // The XP bar fills from where it stood before the fight; a level-up fills it to the brim, then bursts.
+                var before = data.Before ?? HeroBefore.Of(player);
+                var leveled = data.LevelsGained > 0;
+                var barY = 484 + shift;
+                var bar = new UiBar(Root, cx - 190, barY, 380, 24, Palette.Xp, "XP ");
+                bar.SetValue(before.Xp, before.XpNeeded, false);
+                Anim.After(0.5f, () => bar.SetValue(leveled ? before.XpNeeded : player.Xp, leveled ? before.XpNeeded : player.XpNeeded));
+                if (leveled)
                 {
-                    var hx = cx - 280;
-                    var hy = 490 + shift;
-                    HeroPortrait(player, hx, hy, 132);
                     Anim.After(1.2f, () =>
                     {
-                        Fx.LevelUpBurst(World, hx, hy);
+                        if (page != 1) return;
+                        Fx.LevelUpBurst(World, cx, barY);
                         Sfx.Play("levelup");
                         GameRoot.I.Shake(0.2f, 8);
-                        var extras = new[] { $"+{data.LevelsGained * Db.B.StatPointsPerLevel} stat points (press C)" }.Concat(data.NewSkills.Select(n => $"New skill: {n}"));
-                        Ui.Text(Root, cx + 40, 507 + shift, string.Join("   ·   ", extras), 18, Palette.TextMagic, true, 0.5f, 0.5f);
-                        var banner = Ui.Text(Root, cx + 40, 474 + shift, $"LEVEL UP!  Now level {player.Level}", 32, Palette.TextGood, true, 0.5f, 0.5f, stroke: true);
+                        bar.SetValue(player.Xp, player.XpNeeded, false);
+                        var banner = Ui.Text(Root, cx, barY + 36, $"LEVEL UP!  Now level {player.Level}", 30, Palette.TextGood, true, 0.5f, 0.5f, stroke: true);
                         banner.style.scale = new Scale(Vector3.zero);
                         void Scale(float s) => banner.style.scale = new Scale(new Vector3(s, s, 1));
                         Anim.Float(0, 1.2f, 0.2f, Scale, Ease.BackOut)
@@ -121,9 +127,11 @@ namespace Drakepg
                                 .OnComplete(() => Anim.Float(1, 1.06f, 0.5f, Scale, Ease.Linear, repeat: -1, yoyo: true)));
                     });
                 }
-                else Ui.Text(Root, cx, 480 + shift, $"XP {JsMath.Str(player.Xp)} / {JsMath.Str(player.XpNeeded)}", 20, Palette.TextDim, ax: 0.5f, ay: 0.5f);
 
-                ContinueButton("Continue", data.Back, 568 + Math.Min(shift, 20));
+                // A level-up gets its own page (what grew, the stat points) before the room.
+                var buttonY = Mathf.Min(576, barY + (leveled ? 92 : 62));
+                if (leveled) ContinueButton("Level up!", () => LevelPage(true), buttonY);
+                else ContinueButton("Continue", ToRoom(data.Back), buttonY);
             }
             else
             {
@@ -136,8 +144,111 @@ namespace Drakepg
                     lines.Add($"Grit: +{Math.Round(grit * 100)}% damage against {The(data.MonsterName)} next time{max}.");
                 }
                 Ui.Text(Root, cx, 330, string.Join("\n", lines), 26, ax: 0.5f, ay: 0.5f, align: TextAnchor.MiddleCenter);
-                ContinueButton("Wake up", RoomArrival.Spawn(data.Wake.RoomId, (float)data.Wake.X, (float)data.Wake.Y), 520);
+                ContinueButton("Wake up", ToRoom(RoomArrival.Spawn(data.Wake.RoomId, (float)data.Wake.X, (float)data.Wake.Y)), 520);
             }
+        }
+
+        static readonly Dictionary<string, string> StatHelp = new Dictionary<string, string>
+        {
+            [Stat.Str] = "Melee damage", [Stat.Int] = "Magic, max MP", [Stat.Dex] = "Pierce, hit, crit", [Stat.End] = "Max HP",
+        };
+
+        /// <summary>1: the fight's rewards. 2: the level-up page.</summary>
+        int page = 1;
+
+        /// <summary>
+        /// The level-up page: the level, what grew (before -> after), new skills, and the stat points to place right
+        /// here (buttons, or keys 1-4); what's left over waits in the Character panel. `intro`: with the fanfare (the
+        /// first time; placing a point redraws it without).
+        /// </summary>
+        void LevelPage(bool intro)
+        {
+            const float cx = Design.Width / 2;
+            var player = Session.Player;
+            var before = data.Before;
+            page = 2;
+            go = null;
+            Root.Clear();
+
+            var title = Ui.Text(Root, cx, 150, "Level Up!", 56, Palette.TextGold, false, 0.5f, 0.5f, stroke: true);
+            Fonts.Title(title);
+            Ui.Text(Root, cx, 204, $"Level {before.Level}  →  {player.Level}", 26, bold: true, ax: 0.5f, ay: 0.5f);
+            HeroPortrait(player, cx - 235, 428, 190);
+
+            // What grew. Stat points placed here show up at once.
+            var rows = new List<(string label, double from, double to)> { ("Max HP", before.MaxHp, player.MaxHp), ("Max MP", before.MaxMp, player.MaxMp) };
+            var stats = player.Stats;
+            foreach (var k in Stat.Keys)
+                if (stats[k] != before.Stats[k]) rows.Add((Player.StatLabels[k], before.Stats[k], stats[k]));
+            const float x0 = cx - 100;
+            var y = 244f;
+            foreach (var (label, from, to) in rows)
+            {
+                Ui.Text(Root, x0, y, label, 20, ay: 0.5f);
+                Ui.Text(Root, x0 + 170, y, JsMath.Str(from), 20, Palette.TextDim, false, 1, 0.5f);
+                Ui.Text(Root, x0 + 196, y, "→", 20, Palette.TextDim, false, 0.5f, 0.5f);
+                Ui.Text(Root, x0 + 222, y, JsMath.Str(to), 20, Palette.TextGood, true, 0, 0.5f);
+                y += 28;
+            }
+            Ui.Text(Root, x0, y, "HP and MP restored", 18, Palette.TextGood, false, 0, 0.5f);
+            y += 28;
+            foreach (var skill in data.NewSkills)
+            {
+                Ui.Text(Root, x0, y, $"New skill: {skill}", 20, Palette.TextMagic, true, 0, 0.5f);
+                y += 28;
+            }
+            if (Hud.NextUnlock(player) is string next) Ui.Text(Root, x0, y, $"Coming up  ·  {next}", 16, Palette.TextDim, false, 0, 0.5f);
+
+            // The stat points, placed right here.
+            var points = player.Data.StatPoints;
+            Ui.Text(Root, cx, 448, points > 0 ? $"{points} stat point{(points > 1 ? "s" : "")} to place" : "All stat points placed", 19,
+                points > 0 ? Palette.TextGold : Palette.TextDim, points > 0, 0.5f, 0.5f);
+            for (int i = 0; i < Stat.Keys.Length; i++)
+            {
+                var k = Stat.Keys[i];
+                var x = cx + (i - 1.5f) * 158;
+                var text = $"{Player.StatLabels[k]}  {JsMath.Str(stats[k])}";
+                if (points > 0) new UiButton(Root, x, 488, $"{text}   +", () => PlacePoint(k), 146, 44, 19);
+                else Ui.Text(Root, x, 488, text, 20, bold: true, ax: 0.5f, ay: 0.5f);
+                Ui.Text(Root, x, 529, StatHelp[k], 13, Palette.TextDim, false, 0.5f, 0.5f);
+            }
+
+            if (intro)
+            {
+                title.style.scale = new Scale(Vector3.one * 2);
+                title.style.opacity = 0;
+                Anim.Float(0, 1, 0.38f, t =>
+                {
+                    var s = Mathf.LerpUnclamped(2, 1, t);
+                    title.style.scale = new Scale(new Vector3(s, s, 1));
+                    title.style.opacity = Mathf.Clamp01(t);
+                }, Ease.BackOut);
+                Fx.LevelUpBurst(World, cx - 235, 428);
+                Fx.Confetti(World);
+                Sfx.Play("levelup");
+            }
+            ContinueButton("Continue", ToRoom(data.Back), 578, intro ? 0.5f : 0);
+        }
+
+        void PlacePoint(string stat)
+        {
+            var player = Session.Player;
+            if (!player.SpendStatPoint(stat)) return;
+            Saves.Save(player);
+            Sfx.Play("equip");
+            LevelPage(false);
+        }
+
+        /// <summary>Leave for a room (once).</summary>
+        Action ToRoom(RoomArrival back)
+        {
+            var gone = false;
+            return () =>
+            {
+                if (gone) return;
+                gone = true;
+                GameRoot.I.Go(new RoomScreen(back));
+            };
         }
 
         /// <summary>The hero's art as a UI picture (feet at x, y): the outfit with the weapon is the world figure's job, so this shows the body.</summary>
@@ -180,13 +291,7 @@ namespace Drakepg
                 if (same != null) same.Qty++;
                 else shown.Add(new Card { G = g, Qty = 1, IsLost = isLost, Def = def });
             }
-            if (shown.Count == 0)
-            {
-                var none = Ui.Text(Root, cx, y, "No loot this time", 22, Palette.TextDim, ax: 0.5f, ay: 0.5f);
-                none.style.opacity = 0;
-                Anim.Float(0, 1, 0.3f, a => none.style.opacity = a, Ease.Linear, Ms("start"));
-                return;
-            }
+            if (shown.Count == 0) return;
             foreach (var c in shown)
             {
                 c.Info = ItemUi.GradeInfo(c.Def, c.G.Traits());
@@ -230,8 +335,8 @@ namespace Drakepg
                 var screenY = y - 10 * scale;
                 var windup = Ms(c.Tier);
                 var pop = at + windup;
-                if (windup > 0) Anim.After(at, () => WindUp(screenX, screenY, c.Tier, windup));
-                Anim.After(pop, () => PopCard(card, screenX, screenY, c.Tier, c.Info.Frame, label));
+                if (windup > 0) Anim.After(at, () => { if (page == 1) WindUp(screenX, screenY, c.Tier, windup); });
+                Anim.After(pop, () => { if (page == 1) PopCard(card, screenX, screenY, c.Tier, c.Info.Frame, label); });
                 at = pop + Ms("gap");
             }
         }
@@ -329,7 +434,7 @@ namespace Drakepg
                 var hasGear = t.Clear?.Items.Any(g => Db.Item(g.ItemId).IsGear) == true;
                 Ui.Text(Root, cx, hasGear ? 470 : 400, $"Marks: {player.Data.Tower.Marks}   ·   Best floor: {player.Data.Tower.Best} / {Tower.LastFloor}", 19, Palette.TextDim, false, 0.5f, 0.5f);
                 if (t.Next is int next) TowerButtons("Next floor", () => TowerPanel.StartFloor(player, next), 560);
-                else ContinueButton("Back", data.Back, 560);
+                else ContinueButton("Back", ToRoom(data.Back), 560);
             }
             else
             {
@@ -364,24 +469,28 @@ namespace Drakepg
             keysFrom = Time.time + 0.7f;
         }
 
-        void ContinueButton(string label, RoomArrival back, float y)
+        /// <summary>The button at the bottom (also Space, Enter or E), usable `delay` s in.</summary>
+        void ContinueButton(string label, Action run, float y, float delay = 0.7f)
         {
-            var gone = false;
-            go = () =>
-            {
-                if (gone) return;
-                gone = true;
-                GameRoot.I.Go(new RoomScreen(back));
-            };
-            var btn = new UiButton(Root, Design.Width / 2, y, label, go, 280, 64);
+            go = run;
+            var btn = new UiButton(Root, Design.Width / 2, y, label, run, 280, 56);
+            keysFrom = Time.time + delay;
+            if (delay <= 0) return;
             btn.style.opacity = 0;
-            Anim.Float(0, 1, 0.3f, a => btn.style.opacity = a, Ease.Linear, 0.7f);
-            keysFrom = Time.time + 0.7f;
+            Anim.Float(0, 1, 0.3f, a => btn.style.opacity = a, Ease.Linear, delay);
         }
 
         public override void Tick(float dt)
         {
-            if (go == null || Time.time < keysFrom || !InputEnabled) return;
+            if (!InputEnabled) return;
+            if (page == 2)
+            {
+                // Keys 1-4 place a stat point.
+                Key[] keys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4 };
+                for (int i = 0; i < keys.Length; i++)
+                    if (Keys.Pressed(keys[i])) { PlacePoint(Stat.Keys[i]); return; }
+            }
+            if (go == null || Time.time < keysFrom) return;
             if (Keys.Pressed(Key.Space) || Keys.Pressed(Key.Enter) || Keys.Pressed(Key.E)) go();
         }
     }

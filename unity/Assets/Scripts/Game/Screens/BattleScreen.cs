@@ -396,6 +396,8 @@ namespace Drakepg
             foe?.Apply();
             // Battle speed works while a turn plays too.
             if (InputEnabled && Keys.Pressed(Key.S)) ToggleSpeed();
+            if (InputEnabled && leavePayout != null && Time.time >= leavePayoutFrom
+                && (Keys.Pressed(Key.Space) || Keys.Pressed(Key.Enter) || Keys.Pressed(Key.E))) leavePayout();
             if (!InputEnabled || busy) return;
             Key[] keys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5, Key.Digit6 };
             for (int i = 0; i < keys.Length; i++)
@@ -2908,7 +2910,8 @@ namespace Drakepg
                 case "victory":
                 {
                     var rewards = battle.Rewards ?? new Rewards();
-                    var levelBefore = player.Level;
+                    var before = HeroBefore.Of(player);
+                    var levelBefore = before.Level;
                     var (levelsGained, lost) = player.GrantRewards(rewards);
                     Travel.RecordGuard(player, back.RoomId, monster.Id);
                     var quests = Quests.RecordKill(player, monster)
@@ -2929,11 +2932,16 @@ namespace Drakepg
                     if (Db.B.RestoreAfterBattle) player.RestoreFull();
                     Saves.Save(player);
                     var newSkills = player.SkillsLearnedSince(levelBefore).Select(s => s.Name).ToList();
-                    GameRoot.I.Go(new ResultScreen(new BattleResult
+                    var result = new BattleResult
                     {
                         Outcome = "victory", MonsterName = monsterName, Rewards = rewards, Lost = lost, LevelsGained = levelsGained, NewSkills = newSkills,
-                        Quests = quests, Back = backTo,
-                    }));
+                        Quests = quests, Back = backTo, Before = before,
+                    };
+                    // An everyday win pays out right here; a boss, a level-up or gear gets the Victory card.
+                    var big = monster.Boss || levelsGained > 0 || lost.Count > 0
+                        || rewards.Items.Any(i => Db.Item(i.ItemId).IsGear || Db.Item(i.ItemId).Type == "book");
+                    if (big) GameRoot.I.Go(new ResultScreen(result));
+                    else PayOut(result);
                     break;
                 }
                 case "defeat":
@@ -2957,6 +2965,107 @@ namespace Drakepg
                     GameRoot.I.Go(new RoomScreen(RoomArrival.Battle(back.RoomId, "escaped", back.X, back.Y)));
                     break;
             }
+        }
+
+        /// <summary>Leaves the payout slip for the room (Space, Enter, E or a click skip the wait).</summary>
+        Action leavePayout;
+        float leavePayoutFrom;
+
+        /// <summary>
+        /// An everyday win pays out on the battlefield: a slip of paper where the menu was counts up the XP and gold and
+        /// fills the XP bar, small loot hops over from the body, hunt and quest counters tick; then it is straight back
+        /// to the room. (Level-ups, gear and bosses get the Victory card: ResultScreen.)
+        /// </summary>
+        void PayOut(BattleResult r)
+        {
+            var player = battle.Player;
+            // Stacking loot (potions, hunt items) as one icon each, "x2".
+            var stacks = new List<(ItemDef def, int qty)>();
+            foreach (var g in r.Rewards.Items)
+            {
+                var at = stacks.FindIndex(s => s.def.Id == g.ItemId);
+                if (at >= 0) stacks[at] = (stacks[at].def, stacks[at].qty + 1);
+                else stacks.Add((Db.Item(g.ItemId), 1));
+            }
+            const float w = 520;
+            var h = 98f + (stacks.Count > 0 ? 40 : 0) + r.Quests.Count * 26;
+            var left = (Design.Width - w) / 2;
+            var top = Design.Height - 34 - h;
+            const float cx = Design.Width / 2;
+
+            var layer = UiMotion.Layer(Root, "payout");
+            // A click anywhere skips the wait.
+            var hit = Ui.Rect(layer, 0, 0, Design.Width, Design.Height, new Color(0, 0, 0, 0), blocksClicks: true);
+            hit.RegisterCallback<PointerDownEvent>(_ => { if (Time.time >= leavePayoutFrom) leavePayout?.Invoke(); });
+            Felt.MakePatch(layer, left, top, w, h, 23, blocksClicks: false);
+            UiMotion.SlideIn(layer, new Vector2(0, 90), 0.28f);
+
+            void CountUp(Label text, double to, string suffix, float delay, string sound)
+            {
+                Anim.Float(0, (float)to, 0.4f, v => text.text = $"+{Math.Round(v)}{suffix}", Ease.CubicOut, delay).OnComplete(() =>
+                {
+                    text.text = $"+{JsMath.Str(to)}{suffix}";
+                    if (to > 0 && sound != null) Sfx.Play(sound);
+                    Anim.Float(1, 1.2f, 0.09f, s => text.style.scale = new Scale(new Vector3(s, s, 1)), Ease.Linear, yoyo: true);
+                });
+            }
+            var xpText = Ui.Text(layer, cx - 110, top + 32, "+0 XP", 28, Felt.Good, true, 0.5f, 0.5f);
+            var goldText = Ui.Text(layer, cx + 110, top + 32, "+0 gold", 28, Felt.Gold, true, 0.5f, 0.5f);
+            CountUp(xpText, r.Rewards.Xp, " XP", 0.1f, null);
+            CountUp(goldText, r.Rewards.Gold, " gold", 0.2f, "coin");
+
+            // The XP bar fills from where it stood before this fight.
+            var bar = new FeltBar(layer, left + 30, top + 68, w - 60, 22, Design.Hex(0xc9a227), "XP ", 31, 14);
+            bar.SetValue(r.Before.Xp, r.Before.XpNeeded, false);
+            Anim.After(0.3f, () => bar.SetValue(player.Xp, player.XpNeeded));
+
+            // Small loot hops from where the monster fell to its place on the slip.
+            var y = top + 98;
+            if (stacks.Count > 0)
+            {
+                var step = Mathf.Min(170, (w - 60) / stacks.Count);
+                for (int i = 0; i < stacks.Count; i++)
+                {
+                    var (def, qty) = stacks[i];
+                    var x = cx + (i - (stacks.Count - 1) / 2f) * step;
+                    var item = new VisualElement { pickingMode = PickingMode.Ignore };
+                    Ui.Place(item, x, y + 8);
+                    layer.Add(item);
+                    var name = stacks.Count <= 3 ? $"{def.Name}{(qty > 1 ? $" x{qty}" : "")}" : qty > 1 ? $"x{qty}" : "";
+                    ItemUi.DrawItemIcon(item, name != "" ? -step / 2 + 26 : 0, 0, 32, def);
+                    if (name != "") Ui.Text(item, -step / 2 + 48, 0, name, 15, Felt.Text, false, 0, 0.5f, step - 52);
+                    var from = new Vector2(EnemyX - x, GroundY - 60 - (y + 8));
+                    item.style.opacity = 0;
+                    Anim.Float(0, 1, 0.34f, t =>
+                    {
+                        item.style.opacity = Mathf.Clamp01(t * 4);
+                        item.style.translate = new Translate(from.x * (1 - t), from.y * (1 - t) - 90 * Mathf.Sin(t * Mathf.PI));
+                    }, Ease.QuadOut, 0.25f + i * 0.1f).OnComplete(() => Sfx.Play("click"));
+                }
+                y += 40;
+            }
+            for (int i = 0; i < r.Quests.Count; i++)
+            {
+                var q = r.Quests[i];
+                var done = q.Count >= q.Target;
+                var line = Ui.Text(layer, cx, y + 4 + i * 26, $"{q.Name}: {q.Goal} {q.Count}/{q.Target}{(done ? $"  ✔ Return to {q.TurnIn ?? "the quest giver"}" : "")}",
+                    17, done ? Felt.Good : Felt.Gold, done, 0.5f, 0.5f);
+                line.style.opacity = 0;
+                Anim.Float(0, 1, 0.25f, a => line.style.opacity = a, Ease.Linear, 0.45f + i * 0.12f);
+                if (done) Anim.After(0.45f + i * 0.12f, () => Sfx.Play("quest"));
+            }
+
+            var gone = false;
+            leavePayout = () =>
+            {
+                if (gone) return;
+                gone = true;
+                GameRoot.I.Go(new RoomScreen(r.Back));
+            };
+            leavePayoutFrom = Time.time + 0.3f;
+            // Long enough to read at either battle speed: x2 plays the slip faster but holds it about a second.
+            var hold = 1.25f + (stacks.Count > 0 ? 0.3f : 0) + (r.Quests.Count > 0 ? 0.5f : 0);
+            Anim.After(Anim.Speed > 1 ? (hold - 0.25f) * Anim.Speed : hold, () => leavePayout?.Invoke());
         }
 
         /// <summary>1st, 2nd, 3rd, 4th...</summary>

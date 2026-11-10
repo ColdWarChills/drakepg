@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -474,13 +475,35 @@ namespace Drakepg
     /// <summary>Top-left status block on a paper sheet: name, level, HP, MP, XP, gold (Hud.ts).</summary>
     public class Hud
     {
-        readonly Label nameText, goldText;
+        readonly Label nameText, goldText, nextText;
         readonly UiBar hp, mp, xp;
         public readonly VisualElement Root;
 
-        public Hud(VisualElement parent, float x, float y)
+        /// <summary>
+        /// What the hero is levelling toward: the next level that teaches a skill ("Level 9: Cleave"), or else the next
+        /// one that lets a book be read ("Level 11: read Frost Nova"). Null when no level ahead holds anything.
+        /// </summary>
+        public static string NextUnlock(Rules.Player player)
         {
-            Root = Ui.Panel(parent, x, y, 340, 150, 0.85f, false);
+            var ahead = Rules.Books.Spellbook(player).Where(e => !e.Known && e.Level > player.Level).ToList();
+            foreach (var books in new[] { false, true })
+            {
+                var pool = ahead.Where(e => (e.Group != "level") == books).ToList();
+                if (pool.Count == 0) continue;
+                var level = pool.Min(e => e.Level);
+                var names = pool.Where(e => e.Level == level).Select(e => e.Skill.Name).ToList();
+                if (!books) return $"Level {level}: {string.Join(", ", names)}";
+                return names.Count <= 2 ? $"Level {level}: read {string.Join(", ", names)}" : $"Level {level}: {names.Count} new books to read";
+            }
+            return null;
+        }
+
+        /// <param name="player">Given: the sheet grows a line for what the next levels bring (`NextUnlock`).</param>
+        public Hud(VisualElement parent, float x, float y, Rules.Player player = null)
+        {
+            var next = player != null ? NextUnlock(player) : null;
+            Root = Ui.Panel(parent, x, y, 340, next != null ? 170 : 150, 0.85f, false);
+            if (next != null) nextText = Ui.Text(Root, 170, 149, next, 14, Felt.TextDim, false, 0.5f, 0.5f);
             nameText = Ui.Text(Root, 18, 10, "", 23, Felt.Text);
             Fonts.Title(nameText);
             goldText = Ui.Text(Root, 322, 13, "", 20, Felt.Gold, false, 1, 0);
@@ -497,6 +520,7 @@ namespace Drakepg
             hp.SetValue(player.Hp, player.MaxHp, animate);
             mp.SetValue(player.Mp, player.MaxMp, animate);
             xp.SetValue(player.Xp, player.XpNeeded, animate);
+            if (nextText != null) nextText.text = NextUnlock(player) ?? "";
         }
     }
 }

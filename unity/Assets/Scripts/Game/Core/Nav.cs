@@ -72,6 +72,8 @@ namespace Drakepg
         public List<ItemGrant> Lost = new List<ItemGrant>();
         public int LevelsGained;
         public List<string> NewSkills = new List<string>();
+        /// <summary>Victory: the hero as the fight began paying out (the XP bar fills from here; a level-up shows before -> after).</summary>
+        public HeroBefore Before;
         public List<QuestTick> Quests = new List<QuestTick>();
         public RoomArrival Back;
         /// <summary>Defeat: where you wake up.</summary>
@@ -80,6 +82,22 @@ namespace Drakepg
         public double? Grit;
         /// <summary>A tower floor's outcome (null for other fights).</summary>
         public TowerOutcome Tower;
+    }
+
+    /// <summary>The hero's numbers before a fight's rewards landed.</summary>
+    public class HeroBefore
+    {
+        public int Level;
+        public double Xp, XpNeeded, MaxHp, MaxMp;
+        public Dictionary<string, double> Stats = new Dictionary<string, double>();
+
+        public static HeroBefore Of(Player p)
+        {
+            var b = new HeroBefore { Level = p.Level, Xp = p.Xp, XpNeeded = p.XpNeeded, MaxHp = p.MaxHp, MaxMp = p.MaxMp };
+            var s = p.Stats;
+            foreach (var k in Stat.Keys) b.Stats[k] = s[k];
+            return b;
+        }
     }
 
     public class TowerOutcome

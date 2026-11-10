@@ -1005,7 +1005,7 @@ namespace Drakepg
 
         void BuildUi(bool titleCard)
         {
-            hud = new Hud(ui, 16, 16);
+            hud = new Hud(ui, 16, 16, P);
             hud.Refresh(P, false);
 
             var right = Design.Width - 16;

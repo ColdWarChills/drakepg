@@ -112,6 +112,30 @@ Build order (all built, see "Done" at the bottom):
   - **Open:** the name ("The Spire" is a placeholder; original, not "Trial of Ascension"); the endless Depths after floor 30 (spec "Not in this build"); resets or not.
   - The vendor eases the gold surplus (2-3.5k a chapter) but doesn't solve it: heroes still end Chapter 3 with 7-11k (Open "a gold sink" below).
 
+## Review: feedback, gear, feats, progression (proposed 2026-11-10)
+
+Designer (2026-11-10): the game "feels slightly blank, not enough feedback, gear doesn't look too great, achievements don't seem impactful, lacks progression". Claude reviewed the Unity build (screens in the editor, code, pace bot) with the design advisor. **All Proposed, nothing built.**
+
+What the review found:
+- Every fight ends on a full-screen Victory card; about 88% say "No loot this time" (gear drops on ~11.6% of kills). It shows "+95 XP" but no XP bar. A level-up says only "+3 stat points (press C)": the automatic growth, the HP gain and the full heal are never shown.
+- No music at all (44 synthesized sounds, no loop).
+- Big moments look like small ones: a boss's first kill and a Heroic win get the normal Victory card; a guild promotion is a toast (rewards not listed); Spire floors 5 and 10 look like floor 3; a completed set just turns a line green; Chapter Complete has no summary.
+- Nothing is recorded: no achievements, bestiary, titles or counters (kills, deaths, time) in the save.
+- Gear: only the weapon and body armor show on the hero. Tier 1 pieces have one line, Tier 2+ two; stat mods roll only on Sigil pieces, so a normal drop is the same item with another %. Only weapons have effects (24 of 40 have a proc); armor and jewelry are numbers. Weapon icons are the in-hand art turned 45 degrees, so swords look alike in the bag.
+- Levels: the last level-taught skill comes at 9 (Warrior) or 7 (Mage, Rogue); 5 skill slots forever; levels 13-15 and 17-19 give only 3 stat points. Systems open in two lumps (4 after Chapter 1, 3 after Chapter 2, one long "New!" text), none after Chapter 3.
+
+Proposed, in the suggested build order:
+1. ~~**Reward moments (cheap, biggest effect)**~~: built 2026-11-10 in Unity (designer: "Yes, build 1"; `docs/IMPROVEMENTS_2026-10.md`, "Reward moments"), not merged yet: everyday wins pay out on a slip on the battlefield and go straight back to the room; the Victory card (now with an XP bar, no "No loot this time") stays for level-ups, gear, books and bosses; a level-up gets its own page (before -> after, the stat points placed right there); the room sheet names what the next levels bring. **Playtest:** is the slip long enough to read at x2 (about 1 s)? Does farming feel faster? Is the extra level-up page welcome or one click too many?
+2. **Music:** a loop per area, a battle loop, a boss theme, short stings (level-up, rare drop, promotion).
+3. **Own cards for big moments:** boss first kill (turns taken, drops, what it opened), guild promotion (rank stamp, rewards listed), Heroic win, Spire floors 5/10 and a finished flight, a completed set (glow on the hero), Chapter Complete with a summary (time, kills, deaths, best drop).
+4. **"New!" one thing at a time,** with a picture, when you first meet it (first Elite, first chest), not as one text wall.
+5. **Gear that differs in kind:** stat mods on normal drops too (Fine 1, Superior and up 2) with a name prefix; one named piece per boss with a rule-changing effect, also on armor and jewelry; fewer, better drops (already Proposed under the Steam research).
+6. **Gear you can see:** helms on the hero (a head layer, like the hair tests), a weapon glow by Sigil in battle, an aura for a full set. Own bag icons for weapons (silhouette and colour per tier, element tint); bag tiles show an "upgrade" arrow instead of the bare %.
+7. **A record, then feats:** counters in the save (kills per monster, deaths, boss turns, best hit, Elites, Implings, floors; save bump). A monster log that fills in with kills. Feats that are challenges, not counts ("the Thornheart without potions", "under 10 turns"), paying marks, a title under the name or a cosmetic (headband colours); a stamp and a sting when earned.
+8. **Something every level to 20:** fill the empty levels (a 6th skill slot, a passive pick of 1 from 2 at 5/10/15) until the advanced classes at 20.
+9. **Spread the unlocks and show the next goal:** the spare weapon from the start (playthrough evidence), chests mid-Chapter 1, an unlock after Chapter 3 (the endless Depths with a best-depth record); the next guild reward and Spire milestone visible in the room.
+10. **Something to gear up for:** bosses fall on the first try (97%) and gold piles up, so upgrades aren't needed. Heroic rematches with new moves; the Depths.
+
 ## UI
 
 - **Decided (designer, 2026-10-15):** the UI needs an overhaul. Do it after the Qwen (ComfyUI) art setup (set up the same day, see Art).
