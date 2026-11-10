@@ -38,6 +38,13 @@ export const FEATURES: FeatureDef[] = [
     // Off while crafting is: only quests that ask for a material make it drop.
     disabled: true,
   },
+  // Chapter 2's opener (the road to Reedwatch opens)
+  {
+    id: 'coach',
+    name: 'Travel between towns',
+    text: 'Every town has a driver now. Ride to any town you have walked into, for a few gold. Odo waits by the north gate in Brindlemoor.',
+    unlockedBy: 'rising_waters',
+  },
   // After Chapter 2
   {
     id: 'forge',

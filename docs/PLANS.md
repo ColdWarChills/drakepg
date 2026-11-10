@@ -119,6 +119,18 @@ Build order (all built, see "Done" at the bottom):
 - **Decided (designer, 2026-10-17):** part of the art redo. Judged on whole-screen mocks (UI + background + characters together), then built as separate buttons, panels and bars (`docs/ART_PLAN.md` steps 1-2). AI-generated UI themes were rejected as "heavily AI": the UI is designed by hand (first mock: `art/ui/battle_mock.html`, see Art, round 13).
 - **Built (2026-10-27, designer after a four-round style round: "okay, going back, cut paper seems best for now"): the cut paper UI in Unity** (IMPROVEMENTS "Cut paper UI"). **Open:** the layout pass (smaller menus so the room shows, a filled item card).
 
+## A bigger world: travel between towns, towns with their own identity (proposed 2026-10-27)
+
+- **Proposed (designer, 2026-10-27): "maybe we need a better map? bigger one with more options, possibility to travel between cities, have those cities also have their own identities, some custom npcs etc."** The monster count is fine for now.
+- Today: 3 towns (Brindlemoor, Reedwatch, Hearthold), each with the same cast (quest giver, shop, inn, guild clerk); only Brindlemoor has more (Hulda's forge, Spire Foot). Each chapter is one road of rooms; getting back means walking or a one-way Recall Scroll to the last town.
+- Claude's suggestion, in order (not decided):
+  1. ~~**Travel between towns**~~: built 2026-10-27 (designer: "build travel between towns first, with your defaults"; `docs/IMPROVEMENTS_2026-10.md`): a driver in each town (Odo, the carter from the prologue road, in Brindlemoor; Nell's punt in Reedwatch; Bram's sled in Hearthold) opens a Travel panel with a card per town (picture, area, distance, fare); 5 g per room of road, unlocked with Rising Waters. **Playtest:** worth it while towns are only 2 rooms from Brindlemoor (it grows with the world)? Fares too cheap? **Not built:** the world page on the map (needs a world map picture).
+  2. **One thing only each town has,** taken from systems already proposed, so it adds places, not more rules: Brindlemoor keeps the forge and the Spire; Reedwatch could get the fishing spot and a cook (fishing, proposed 2026-10-26); Hearthold its own smith (Open in `docs/CHAPTER3_SPEC.md`), the paid respec trainer (Open) or the library (proposed). Plus each town's own look and shop stock. Unlock them chapter by chapter (`src/data/features.ts`), so early game isn't packed with systems.
+  3. **Custom NPCs:** 2-3 per town with their own art, name, job and one line. "No dialogues for now" (decided 2026-10-19) still holds unless lifted; the research says personality is a top praise point when dialogues come back.
+  4. **More options on the map:** optional side areas off each region's road (harder monsters, a sure chest, a secret) rather than a longer main road; Chapter 2 already runs past its target length. Then Chapter 4's region builds on the same travel network.
+- Costs: a background per new room and art per NPC (local Qwen, about a minute each), a world map picture.
+- **Open:** which first, and is a short spec (like `docs/TOWER_SPEC.md`) wanted before building?
+
 ## Map (built 2026-10-14)
 
 - Built as proposed: **M** or the Map button; one area per page (Old Road, Brindlemoor and the Thornwood, Mirewater Fen, Frostfang Mountains); rooms as dots, exits as lines; "?" for unvisited neighbours; icons for town, boss, campfire; "You" marker; quest marks (! pick up, ? turn in, gold ring = an active quest's monster lives here); dashed red = blocked; arrows to other pages.

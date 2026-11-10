@@ -369,3 +369,11 @@ From the designer ("harder dungeons, maybe like TOA in summoners war... progress
   - **Plans:** any doc in `docs/` (PLANS.md first) with a section list, search, and filters for the **Open / Proposed / Decided / Playtest / To do** points (each shown with its parents for context).
   - **Notes:** a free pad saved to `docs/NOTES.md` as you type, and the list of monster notes (`docs/MONSTER_NOTES.md`, one line per monster). The dev server writes them (`codexNotes` in `vite.config.ts`); a save that finds the file changed by a chat meanwhile asks first (monster notes merge by themselves).
 - Look: the game's cut paper colors, its fonts (Alegreya, Almendra, Kalam for handwriting) and the Unity UI icons.
+
+## Travel between towns (2026-10-27)
+
+- **Asked (designer, 2026-10-27):** a bigger world with "possibility to travel between cities", built first of that plan ("build travel between towns first, with your defaults"; PLANS "A bigger world").
+- **Built:** a driver in each town (`role: { kind: 'coach' }`, feature `coach`, unlocked by Rising Waters, the quest that opens the road to Reedwatch): Odo in Brindlemoor (the carter from the prologue road, his cart mended; by the north gate), Nell the ferrywoman in Reedwatch, Bram the sled driver in Hearthold. "Travel" opens a panel (`Ui/CoachPanel.cs`) with a card per other town, nearest first: its background picture, area, distance in rooms, fare and Ride; towns you haven't walked into yet are greyed out ("Not reached yet"). Riding pays, saves the landing spot and fades you into that town's square (one way, like a Recall Scroll).
+- Rules in `src/game/Travel.ts` (`roomsBetween`, `coachStops`, `ride`) and `Rules/Quests.cs` (`Travel`): the fare is `BALANCE.coach.farePerRoom` (5 g) per room on the shortest road between the towns, so it grows with the world. Today every trip is 10 g except Reedwatch to Hearthold (20 g); a Recall Scroll is 20 g. No save change (it reads `visited`).
+- The Phaser version gets the driver's line with a button per town.
+- Checked in Unity play mode: a Chapter 3 hero in Brindlemoor (Reedwatch visited, Hearthold not) sees both cards, rides to Reedwatch for 10 g and lands in its square.

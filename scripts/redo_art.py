@@ -146,6 +146,16 @@ NEW = {
                            "light, two iron braziers with small orange flames by the walls, worn stone steps rising "
                            "along the back wall. Only snow, ice, frosted grey stone and iron inside the hall: no trees, "
                            "no plants, no grass and no hills anywhere inside it. " + SPIRE_HALL),
+    # Town drivers (src/game/Travel.ts): Odo drives from Brindlemoor (npc_odo); a ferry in the fen, a sled in the snow.
+    "npc_ferry_nell": ("3:4", "A wiry, weather-beaten middle-aged ferrywoman from a marsh outpost, a long dark-red "
+                       "braid under a wide flat woven reed hat, a mossy green oilskin coat over a cream shirt with "
+                       "rolled sleeves, tall waders, a coil of rope on her belt, holding a long wooden punt pole "
+                       "upright beside her."),
+    # Not red: a red fur-trimmed coat, a beard and a sled read as Santa (first tries, 2026-10-27).
+    "npc_sled_bram": ("3:4", "A big, cheerful mountain sled-dog driver, a short dark brown beard, a grey wool cap "
+                      "with ear flaps, a heavy navy-blue quilted coat with a grey fur collar and a wide leather belt, "
+                      "a long knitted mustard scarf, thick mittens, fur-lined boots, holding a looped leather dog "
+                      "harness."),
     "npc_spire_warden": ("3:4", "A stern, tall old tower warden, short trimmed grey beard, a long slate-grey coat "
                          "with gold trim over dark chain mail, a faded blue sash with a small gold star, a ring of "
                          "heavy iron keys on his belt, holding a tall iron-shod staff topped with a small brass "

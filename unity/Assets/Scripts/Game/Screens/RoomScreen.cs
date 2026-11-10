@@ -1488,6 +1488,7 @@ namespace Drakepg
                 : kind == "inn" ? "Rest"
                 : kind == "guild" ? "Hunts"
                 : kind == "tower" ? "Climb"
+                : kind == "coach" ? "Travel"
                 : "Talk";
             var marker = npc.Marker;
             var above = marker != null && marker.style.display != DisplayStyle.None
@@ -1813,6 +1814,20 @@ namespace Drakepg
             Anim.After(0.45f, () => GameRoot.I.Go(new RoomScreen(RoomArrival.Spawn(dest.RoomId, (float)dest.X, (float)dest.Y, recalled: true)), 0.3f));
         }
 
+        /// <summary>A driver's ride (CoachPanel; the fare is paid): a slow fade, and you stand in that town's square.</summary>
+        void RideTo(Location dest)
+        {
+            if (leaving) return;
+            leaving = true;
+            ShowPrompt(false);
+            RememberRoom();
+            Sfx.Play("whoosh");
+            // Save where you'll land, so a reload mid-fade doesn't undo the trip (the fare is already paid).
+            P.Data.Location = dest.Clone();
+            Saves.Save(P);
+            GameRoot.I.Go(new RoomScreen(RoomArrival.Spawn(dest.RoomId, (float)dest.X, (float)dest.Y)), 0.6f);
+        }
+
         // --- Campfires and things to look at ---
 
         void DrawThings()
@@ -2009,6 +2024,14 @@ namespace Drakepg
                 player.Facing = npc.X < player.X ? -1 : 1;
                 NpcHop(npc);
                 TowerPanel.Open(P, npc.Def, Refresh);
+                return;
+            }
+            if (role.Kind == "coach")
+            {
+                moveTarget = null;
+                player.Facing = npc.X < player.X ? -1 : 1;
+                NpcHop(npc);
+                CoachPanel.Open(P, npc.Def, room.Id, RideTo);
                 return;
             }
 

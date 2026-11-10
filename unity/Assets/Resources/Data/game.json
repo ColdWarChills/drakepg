@@ -4,6 +4,9 @@
   "restoreAfterBattle": false,
   "innCost": 5,
   "startingRecallScrolls": 5,
+  "coach": {
+   "farePerRoom": 5
+  },
   "baseHitChance": 0.9,
   "minHitChance": 0.6,
   "maxHitChance": 0.98,
@@ -9038,6 +9041,27 @@
      "dialogue": [
       "Adventurers' Guild. Pick a notice, bring proof, get paid. Do enough and the Guild ranks you up."
      ]
+    },
+    {
+     "id": "odo_coach",
+     "name": "Odo",
+     "title": "Coach Driver",
+     "x": 985,
+     "y": 612,
+     "look": {
+      "shape": "humanoid",
+      "color": 8219215,
+      "accent": 14272419,
+      "scale": 1,
+      "art": "npc_odo"
+     },
+     "role": {
+      "kind": "coach"
+     },
+     "feature": "coach",
+     "dialogue": [
+      "Cart mended, wheels greased. Anywhere you have been, I can get you back to."
+     ]
     }
    ]
   },
@@ -9732,6 +9756,27 @@
      "dialogue": [
       "Same board as Brindlemoor, just wetter. Hunts in, coin out."
      ]
+    },
+    {
+     "id": "ferry_nell",
+     "name": "Nell",
+     "title": "Ferrywoman",
+     "x": 1090,
+     "y": 612,
+     "look": {
+      "shape": "humanoid",
+      "color": 5204810,
+      "accent": 13220234,
+      "scale": 1,
+      "art": "npc_ferry_nell"
+     },
+     "role": {
+      "kind": "coach"
+     },
+     "feature": "coach",
+     "dialogue": [
+      "My punt knows every channel in the fen. Dry boots not promised."
+     ]
     }
    ]
   },
@@ -10378,6 +10423,27 @@
      },
      "dialogue": [
       "The Guild pays double the cold, or it feels that way. What will it be?"
+     ]
+    },
+    {
+     "id": "sled_bram",
+     "name": "Bram",
+     "title": "Sled Driver",
+     "x": 790,
+     "y": 612,
+     "look": {
+      "shape": "humanoid",
+      "color": 7027242,
+      "accent": 15260872,
+      "scale": 1,
+      "art": "npc_sled_bram"
+     },
+     "role": {
+      "kind": "coach"
+     },
+     "feature": "coach",
+     "dialogue": [
+      "The dogs know the way down. Up is another matter."
      ]
     }
    ]
@@ -12199,6 +12265,12 @@
    "text": "Monsters now drop parts and elemental essences. They sit in their own pouch (Inventory, Materials tab). Keep them: they will matter soon.",
    "unlockedBy": "heart_of_thorns",
    "disabled": true
+  },
+  {
+   "id": "coach",
+   "name": "Travel between towns",
+   "text": "Every town has a driver now. Ride to any town you have walked into, for a few gold. Odo waits by the north gate in Brindlemoor.",
+   "unlockedBy": "rising_waters"
   },
   {
    "id": "forge",

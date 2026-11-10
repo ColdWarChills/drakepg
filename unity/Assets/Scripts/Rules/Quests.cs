@@ -115,7 +115,7 @@ namespace Drakepg.Rules
         }
     }
 
-    /// <summary>Visited rooms, gate guards and the Recall Scroll, a port of src/game/Travel.ts.</summary>
+    /// <summary>Visited rooms, gate guards, the Recall Scroll and the town drivers, a port of src/game/Travel.ts.</summary>
     public static class Travel
     {
         public const string RecallScroll = "recall_scroll";
@@ -169,6 +169,57 @@ namespace Drakepg.Rules
             var (town, reason) = RecallCheck(player, hereRoomId);
             if (reason != null || !player.RemoveItem(RecallScroll)) return null;
             return new Location { RoomId = town.Id, X = town.Town.X, Y = town.Town.Y };
+        }
+
+        /// <summary>Rooms on the shortest road between two rooms, through any exit (locks don't count).</summary>
+        public static double RoomsBetween(string fromId, string toId)
+        {
+            if (fromId == toId) return 0;
+            var seen = new HashSet<string> { fromId };
+            var frontier = new List<string> { fromId };
+            for (var steps = 1; frontier.Count > 0; steps++)
+            {
+                var next = new List<string>();
+                foreach (var id in frontier)
+                {
+                    foreach (var exit in Db.Room(id).Exits)
+                    {
+                        if (exit.To == toId) return steps;
+                        if (seen.Add(exit.To)) next.Add(exit.To);
+                    }
+                }
+                frontier = next;
+            }
+            return double.PositiveInfinity;
+        }
+
+        /// <summary>A town a driver can take you to, its fare from here, and why you can't go yet (null = you can).</summary>
+        public class CoachStop
+        {
+            public RoomDef Town;
+            public double Fare;
+            public string Reason;
+        }
+
+        /// <summary>Every other town, nearest first, with its fare from the driver's town.</summary>
+        public static List<CoachStop> CoachStops(Player player, string hereRoomId) =>
+            Db.Data.Rooms.Where(r => r.Town != null && r.Id != hereRoomId)
+                .Select(town => new CoachStop { Town = town, Fare = RoomsBetween(hereRoomId, town.Id) * Db.B.Coach.FarePerRoom })
+                .OrderBy(s => s.Fare)
+                .Select(s =>
+                {
+                    s.Reason = !player.Data.Visited.Contains(s.Town.Id) ? "Not reached yet" : player.Gold < s.Fare ? "Not enough gold" : null;
+                    return s;
+                })
+                .ToList();
+
+        /// <summary>Pay the fare: you get the landing spot in that town. Null if the ride isn't possible.</summary>
+        public static Location Ride(Player player, string hereRoomId, string townId)
+        {
+            var stop = CoachStops(player, hereRoomId).FirstOrDefault(s => s.Town.Id == townId);
+            if (stop == null || stop.Reason != null) return null;
+            player.Data.Gold -= stop.Fare;
+            return new Location { RoomId = stop.Town.Id, X = stop.Town.Town.X, Y = stop.Town.Town.Y };
         }
     }
 }

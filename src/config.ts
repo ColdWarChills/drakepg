@@ -18,6 +18,8 @@ export const BALANCE = {
   innCost: 5,
   /** Recall Scrolls a new hero starts with (src/game/Travel.ts); after that, town shops sell them. */
   startingRecallScrolls: 5,
+  /** Town drivers (src/game/Travel.ts): the fare is this much gold per room on the shortest road between the two towns. */
+  coach: { farePerRoom: 5 },
   /** Base hit chance before DEX difference is applied. */
   baseHitChance: 0.9,
   minHitChance: 0.6,

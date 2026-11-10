@@ -14,7 +14,7 @@ import { Player } from '../game/Player';
 import { acceptQuest, activeQuests, questForNpc, questNeedsKill, questProgress, questStatus, questWaitingOnRank, questWantsElite, turnInQuest } from '../game/Quests';
 import { saveSettings, settings } from '../game/settings';
 import { SaveSystem } from '../game/SaveSystem';
-import { RECALL_SCROLL, exitOpen, isGuard, recallCheck, roomBoss, useRecall, visitRoom } from '../game/Travel';
+import { RECALL_SCROLL, coachStops, exitOpen, isGuard, recallCheck, ride, roomBoss, useRecall, visitRoom } from '../game/Travel';
 import { defaultRng, weightedPick } from '../game/rng';
 import { MIMIC_UID, rollChest, rollChestLoot } from '../game/Chests';
 import { session, type Chest, type RoamingMonster } from '../game/session';
@@ -1204,7 +1204,9 @@ export class RoomScene extends Phaser.Scene {
                 ? 'Rest'
                 : kind === 'guild'
                   ? 'Hunts'
-                  : 'Talk';
+                  : kind === 'coach'
+                    ? 'Travel'
+                    : 'Talk';
     this.promptText.setText(`${this.keyHint}${verb}`);
     const marker = this.markers.get(near);
     const above = marker?.visible ? marker.y - 46 : near.label.y - near.label.height - 22;
@@ -1747,9 +1749,33 @@ export class RoomScene extends Phaser.Scene {
           });
         },
       });
+    } else if (role.kind === 'coach') {
+      // A button per town (the Unity version has a travel panel), greyed until you've walked there and can pay.
+      for (const stop of coachStops(player, this.room.id)) {
+        actions.push({
+          label: stop.town.name,
+          sublabel: stop.reason ?? `${stop.fare} g`,
+          enabled: stop.reason === null,
+          run: (close) => (close(), this.rideTo(stop.town.id)),
+        });
+      }
     }
 
     openDialogue(this, npc.def, actions, lines);
+  }
+
+  /** A driver's ride: pay the fare, a slow fade, and you stand in that town's square. */
+  private rideTo(townId: string): void {
+    const dest = ride(session.player, this.room.id, townId);
+    if (!dest || this.leaving) return;
+    this.leaving = true;
+    this.prompt.setVisible(false);
+    this.rememberRoom();
+    sfx.play(this, 'coin');
+    // Save where you'll land, so a reload mid-fade doesn't undo the trip (the fare is already paid).
+    session.player.data.location = { ...dest };
+    SaveSystem.save(session.player);
+    goTo(this, SceneKeys.Room, { roomId: dest.roomId, via: 'spawn', x: dest.x, y: dest.y }, 600);
   }
 
   // --- Quests ---

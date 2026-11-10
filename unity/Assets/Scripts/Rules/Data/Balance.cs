@@ -10,6 +10,7 @@ namespace Drakepg.Rules
     {
         public bool RestoreAfterBattle;
         public double InnCost, StartingRecallScrolls;
+        public CoachTuning Coach;
         public double BaseHitChance, MinHitChance, MaxHitChance;
         public double BaseCritChance, CritPerDex, CritMultiplier;
         public double StatDamageScale, BaseFleeChance;
@@ -46,6 +47,12 @@ namespace Drakepg.Rules
         public double RespawnSeconds;
         public ChestTuning Chest;
         public double WalkSpeed, MonsterWanderSpeed, MonsterChaseSpeed, MonsterAggroRange, FleeGraceSeconds;
+    }
+
+    /// <summary>Town drivers (Travel.CoachStops): gold per room on the shortest road between two towns.</summary>
+    public class CoachTuning
+    {
+        public double FarePerRoom;
     }
 
     /// <summary>Skill books (docs/BUILD_VARIETY_SPEC.md).</summary>

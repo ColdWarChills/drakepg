@@ -580,7 +580,9 @@ export type NpcRole =
   /** The Adventurers' Guild board: hunts and ranks (src/game/Guild.ts). Every clerk shares one board. */
   | { kind: 'guild' }
   /** The tower's Warden: the floor list and the vendor (src/game/Tower.ts). */
-  | { kind: 'tower' };
+  | { kind: 'tower' }
+  /** A town's driver: rides you to any other town you've walked into, for a fare (src/game/Travel.ts). */
+  | { kind: 'coach' };
 
 /** A system that opens up later in the game (src/data/features.ts). */
 export interface FeatureDef {
