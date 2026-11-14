@@ -6,6 +6,9 @@ builds its ComfyUI API graph. Talks to the local ComfyUI over the API (default h
   python scripts/model_trial.py smoke                     # one campfire prop per model -> art/tests/models/<model>/
   python scripts/model_trial.py smoke krea2 --runs 2      # some models; run 2 = a warm second image, for timing
   python scripts/model_trial.py smoke --ref some.png      # also run the reference / edit graph with that picture
+  python scripts/model_trial.py trial [--dry]             # step 2: the whole test set, unattended; skips files that exist
+  python scripts/model_trial.py sheets                    # step 2: cut-outs + comparison sheets (art/tests/models/_sheets)
+  python scripts/model_trial.py stats                     # seconds per image per model (art/tests/models/trial.json)
 
 Models: qwen21 (baseline, what the game art is made with), krea2 ("everything else"), moss ("uncensored").
 Each entry: `t2i(job)` and `ref(job)` (None if the model has no such graph) return a graph {node id: node}; `job` is a
@@ -341,8 +344,381 @@ def smoke(models: list[str], runs: int, ref: Path | None) -> None:
     log.write_text(json.dumps(results, indent=1), encoding="utf-8")
 
 
+# ---------------------------------------------------------------- step 2: the test set on every model (`trial`)
+# The Qwen batch tries (seeds 7100, 7101) and the style sheets exist only in the unity-port worktree (git-ignored there).
+WT_REDO = ROOT / ".claude" / "worktrees" / "unity-port" / "art" / "redo"
+STYLE = WT_REDO / "_style"
+GAME = ROOT / "src" / "assets" / "art"
+CUT = OUT / "_cutout"
+SHEETS = OUT / "_sheets"
+SEEDS = (7100, 7101)
+MAGENTA_BG = " On a plain flat solid magenta (#FF00FF) background filling the whole image, no gradient, no shadow."
+# Words-only stand-ins for what Qwen got from a reference picture (the game's sprites, described by eye).
+WORDS_STYLE = ("Drawn in a flat cut-out cartoon style for a 2D game: clean thin dark outlines, flat colours with "
+               "hard-edged cel shadows, matte surfaces with no glossy shine, a warm golden rim light, simple readable "
+               "shapes and minimal detail.")
+HERO_WORDS = ("a young hero with messy dark brown hair and a red headband with tails, a cream shirt with rolled sleeves, "
+              "a brown belt, dark teal trousers and brown boots, empty hands")
+HULDA_WORDS = ("a broad-shouldered blacksmith woman in her forties: long auburn hair in a thick braid over one shoulder, "
+               "soot on her cheek, a brown shirt with rolled-up sleeves, a long dark brown leather apron, heavy dark "
+               "leather gloves, a smithing hammer resting on her shoulder")
+MOSSLING_WORDS = ("a small round moss creature: a fluffy ball of green moss and leaves with two big round yellow eyes, "
+                  "two small orange mushrooms on top and stubby mossy feet")
+THORNWOOD_ROOM = ("A narrow glen deep in the Thornwood forest: huge dark old trees with gnarled roots on both sides, "
+                  "their trunks wrapped in black thorny briars, a fallen mossy log and ferns on the left, bramble bushes "
+                  "with red berries, pale shafts of light falling through the canopy. The bottom 30% of the image is "
+                  "flat, open walkable ground running across the full width. No characters, no creatures.")
+BLOOD = ("A slain cartoon wild boar lying on its side, its eyes shut as two small crosses and its tongue hanging out, in "
+         "a pool of bright red blood spreading from under it, a few red blood drops around it. " + WORDS_STYLE +
+         " Seen from the side, the whole scene centered with empty margin around it. No other creatures, no people, "
+         "no text.")
+CUT_SUBJECTS = ["prop_cart_wheel", "wpn_galecutter", "fx_heal"]
+
+
+def trial_set() -> dict:
+    """{subject: kind ('sprite' | 'fx' | 'bg'), size, words (the prompt without its background line), ref (Krea's
+    style reference: the picture Qwen used for this kind of subject), today (the game's art, or None), qwen (the
+    existing Qwen tries by seed, or a job to make them), edit (Moss edit: source + prompt)}. Prompts come from
+    scripts/asset_batch.py so the comparison with the Qwen batch is fair."""
+    import asset_batch as A
+    import redo_art as R
+    no_bg = lambda s: s.replace("no background, ", "")  # noqa: E731  (Krea and Moss get a plain background line)
+    tries = lambda k: {s: WT_REDO / k / f"{k}_s{s}.png" for s in SEEDS}  # noqa: E731
+    S: dict = {}
+    for k in ("prop_campfire_b", "prop_cart_wheel", "prop_ice_block"):
+        S[k] = dict(kind="sprite", size=(1024, 1024), words=f"{A.PROPS[k]} {WORDS_STYLE} {no_bg(A.PROP_FRAME)}",
+                    ref=STYLE / "monsters.png", today=None, qwen=tries(k))
+    wpn = A.entries("wpn")
+    for k in ("wpn_galecutter", "wpn_stormcleaver"):
+        S[k] = dict(kind="sprite", size=(864, 1536), words=f"{wpn[k][3]} {WORDS_STYLE} {R.WPN_FRAME}",
+                    ref=STYLE / "monsters.png", today=GAME / f"{k}@2x.webp", qwen=tries(k))
+    for k in ("fx_heal", "fx_stab", "fx_fire_burst"):
+        # Qwen made effects with no reference; Krea's style run gets the icon sheet, the nearest kind of picture.
+        S[k] = dict(kind="fx", size=(1024, 1024), words=f"{A.VFX[k]} {no_bg(A.VFX_STYLE)}", ref=STYLE / "icons.png",
+                    today=None, qwen=tries(k))
+    S["portrait_hulda"] = dict(
+        kind="sprite", size=(1024, 1024), ref=GAME / "npc_hulda@2x.webp", today=GAME / "npc_hulda@2x.webp",
+        qwen=tries("portrait_hulda"),
+        words=(f"A close-up head-and-shoulders portrait of {HULDA_WORDS}. {WORDS_STYLE} Three-quarter view facing right, "
+               "a calm friendly expression, the head and shoulders filling most of the square, cut off cleanly below "
+               "the chest. Nothing else: no frame, no text."))
+    S["pose_cheer"] = dict(
+        kind="sprite", size=(1024, 1536), ref=GAME / "char_hero_bare@2x.webp", today=GAME / "char_hero_bare@2x.webp",
+        qwen=tries("pose_cheer"),
+        words=(f"Full body, {HERO_WORDS}, in {A.HERO_POSES['pose_cheer']}. {WORDS_STYLE} Three-quarter view facing "
+               "right, the whole figure visible with empty margin around it. No weapon, no ground, no shadow, no text."),
+        edit=(GAME / "char_hero_bare@2x.webp",
+              f"Change only his pose: the hero is now in {A.HERO_POSES['pose_cheer']}. "
+              + A.KEEP_HERO + " Keep the plain white background."))
+    S["mon_mossling_strike"] = dict(
+        kind="sprite", size=(1024, 1024), ref=GAME / "mon_mossling@2x.webp", today=GAME / "mon_mossling@2x.webp",
+        qwen=tries("mon_mossling_strike"),
+        words=(f"Full body, {MOSSLING_WORDS}, {A.MON_POSES['strike']}. {WORDS_STYLE} Side view facing right, the whole "
+               "figure visible with empty margin around it. No ground, no shadow, no text."),
+        edit=(GAME / "mon_mossling@2x.webp",
+              f"Change only the pose of the creature: it is {A.MON_POSES['strike']}. "
+              + A.KEEP_FIGURE.format(what="creature").replace("no background, ", "") + " Keep the plain white background."))
+    bg_words = f"A wide 16:9 background for a 2D side-view fantasy RPG. {THORNWOOD_ROOM} {R.BG_STYLE}"
+    S["bg_thornwood_glen"] = dict(
+        kind="bg", size=(2048, 1152), words=bg_words, ref=STYLE / "bg.png", today=GAME / "bg_thornwood@2x.webp",
+        qwen=dict(prompt=f"{bg_words} {R.BG_REF}", refs=[STYLE / "bg.png"]))
+    return S
+
+
+def trial_jobs() -> list[dict]:
+    """Every image of step 2 in run order (one model at a time: Krea 2, Moss, Qwen, then the BiRefNet cut-outs)."""
+    S = trial_set()
+    jobs: list[dict] = []
+
+    def add(model, subject, variant, seed, kind, prompt=None, size=(1024, 1024), refs=(), edit=False):
+        name = f"{subject}__{variant}_s{seed}.png"
+        out = (CUT / name) if model == "birefnet" else (OUT / model / name)
+        jobs.append(dict(model=model, subject=subject, variant=variant, seed=seed, kind=kind, prompt=prompt,
+                         size=size, refs=list(refs), edit=edit, out=out))
+
+    bg_line = lambda s: "" if S[s]["kind"] == "bg" else PLAIN_BG  # noqa: E731  (a room fills the picture)
+    for s, d in S.items():
+        for seed in SEEDS:
+            add("krea2", s, "words", seed, "t2i", d["words"] + bg_line(s), d["size"])
+            add("krea2", s, "style", seed, "ref", d["words"] + bg_line(s), d["size"], [d["ref"]])
+    for seed in SEEDS:
+        add("krea2", "blood_boar", "words", seed, "t2i", BLOOD + PLAIN_BG)
+    for s in CUT_SUBJECTS:
+        add("krea2", s, "magenta", SEEDS[0], "t2i", S[s]["words"] + MAGENTA_BG, S[s]["size"])
+    for s, d in S.items():
+        for seed in SEEDS:
+            add("moss", s, "words", seed, "t2i", d["words"] + bg_line(s), d["size"])
+    for s, d in S.items():
+        if d.get("edit"):
+            for seed in SEEDS:
+                add("moss", s, "edit", seed, "ref", d["edit"][1], refs=[d["edit"][0]], edit=True)
+    for seed in SEEDS:
+        add("moss", "blood_boar", "words", seed, "t2i", BLOOD + PLAIN_BG)
+    for s in CUT_SUBJECTS:
+        add("moss", s, "magenta", SEEDS[0], "t2i", S[s]["words"] + MAGENTA_BG, S[s]["size"])
+    for s, d in S.items():
+        if "prompt" in d["qwen"]:
+            for seed in SEEDS:
+                add("qwen21", s, "style", seed, "ref", d["qwen"]["prompt"], d["size"], d["qwen"]["refs"])
+    for seed in SEEDS:
+        add("qwen21", "blood_boar", "words", seed, "t2i", f"{RGBA_OPEN} {BLOOD} {RGBA_CLOSE}")
+    thing = {"prop_cart_wheel": "broken cart wheel and grain sack", "wpn_galecutter": "dagger", "fx_heal": "green effect"}
+    for src in ("krea2", "moss"):
+        for s in CUT_SUBJECTS:
+            source = OUT / src / f"{s}__words_s{SEEDS[0]}.png"
+            text = (f"{RGBA_OPEN} Edit <image1>. Remove only the white background: keep the {thing[s]} exactly the "
+                    "same, with the same shapes, colours, outlines and size, in the same place. Everything that was "
+                    f"white background is now fully transparent. {RGBA_CLOSE}")
+            add("qwen21", s, f"cut_{src}", SEEDS[0], "ref", text, refs=[source], edit=True)
+    for src in ("krea2", "moss"):
+        for s in CUT_SUBJECTS:
+            add("birefnet", s, f"mask_{src}", SEEDS[0], "mask", refs=[OUT / src / f"{s}__words_s{SEEDS[0]}.png"])
+    return jobs
+
+
+def birefnet_graph(job: dict) -> dict:
+    """ComfyUI's built-in background removal (BiRefNet, already in models/background_removal): the mask as a picture."""
+    g = {
+        "src": {"class_type": "LoadImage", "inputs": {"image": job["refs"][0]}},
+        "model": {"class_type": "LoadBackgroundRemovalModel", "inputs": {"bg_removal_name": "birefnet.safetensors"}},
+        "remove": {"class_type": "RemoveBackground", "inputs": {"bg_removal_model": ["model", 0], "image": ["src", 0]}},
+        "img": {"class_type": "MaskToImage", "inputs": {"mask": ["remove", 0]}},
+    }
+    save_node(g, ["img", 0])
+    return numbered(g)
+
+
+def trial(dry: bool) -> None:
+    jobs = trial_jobs()
+    if dry:
+        for j in jobs:
+            print(f"{j['model']:8} {j['out'].name:44} {j['kind']:4} {j['size']} refs={[Path(r).name for r in j['refs']]}\n   {j['prompt']}")
+        todo = [j for j in jobs if not j["out"].exists()]
+        print(f"\n{len(jobs)} jobs, {len(todo)} still to make")
+        return
+    check()
+    log = OUT / "trial.json"
+    results = json.loads(log.read_text(encoding="utf-8")) if log.exists() else []
+    uploaded: dict[str, str] = {}
+    from hero_edits import on_white  # gotcha 1: references and edit sources go in flattened on white
+
+    def ref(p: Path) -> str:
+        if str(p) not in uploaded:
+            uploaded[str(p)] = upload(f"trial_{p.parent.name}_{p.stem.replace('@', '_')}.png", on_white(p))
+        return uploaded[str(p)]
+
+    model = None
+    todo = [j for j in jobs if not j["out"].exists()]
+    print(f"{len(todo)} of {len(jobs)} images to make", flush=True)
+    for n, j in enumerate(todo, 1):
+        if j["model"] != model:
+            free_models()
+            model, cold = j["model"], True
+        missing = [r for r in j["refs"] if not Path(r).exists()]
+        if missing:
+            print(f"{n}/{len(todo)} {j['out'].name}: SKIPPED, source missing {missing}", flush=True)
+            continue
+        w, h = j["size"]
+        job = {"prompt": j["prompt"], "seed": j["seed"], "width": w, "height": h, "edit": j["edit"]}
+        try:
+            job["refs"] = [ref(Path(r)) for r in j["refs"]]
+            if j["model"] == "birefnet":
+                with VramWatch() as v:
+                    t = time.time()
+                    data = run_graph(birefnet_graph(job))
+                    secs, peak = time.time() - t, v.peak
+            else:
+                data, secs, peak = generate(j["model"], j["kind"] if j["kind"] != "mask" else "t2i", job)
+        except Exception as e:  # one failure must not end the run
+            print(f"{n}/{len(todo)} {j['out'].name}: FAILED {str(e)[:300]}", flush=True)
+            results.append({"model": j["model"], "file": j["out"].name, "error": str(e)[:500]})
+            log.write_text(json.dumps(results, indent=1), encoding="utf-8")
+            cold = True
+            continue
+        j["out"].parent.mkdir(parents=True, exist_ok=True)
+        j["out"].write_bytes(data)
+        print(f"{n}/{len(todo)} {j['model']}/{j['out'].name}  {secs:.0f} s{' (cold)' if cold else ''}  peak {peak} MiB", flush=True)
+        results.append({"model": j["model"], "subject": j["subject"], "variant": j["variant"], "seed": j["seed"],
+                        "seconds": round(secs, 1), "cold": cold, "peak_vram_mib": peak, "size": list(j["size"]),
+                        "file": str(j["out"].relative_to(ROOT))})
+        log.write_text(json.dumps(results, indent=1), encoding="utf-8")
+        cold = False
+    free_models()
+    stats()
+
+
+def stats() -> None:
+    """Average seconds per image per model from art/tests/models/trial.json (all runs, and warm runs only)."""
+    log = OUT / "trial.json"
+    results = [r for r in json.loads(log.read_text(encoding="utf-8")) if "seconds" in r] if log.exists() else []
+    for m in ("krea2", "moss", "qwen21", "birefnet"):
+        rs = [r for r in results if r["model"] == m]
+        if rs:
+            warm = [r["seconds"] for r in rs if not r["cold"]]
+            print(f"{m:8} {len(rs):3} images  avg {sum(r['seconds'] for r in rs) / len(rs):5.1f} s  "
+                  f"warm avg {sum(warm) / max(len(warm), 1):5.1f} s  max peak {max(r['peak_vram_mib'] for r in rs)} MiB")
+    errors = [r for r in json.loads(log.read_text(encoding="utf-8")) if "error" in r] if log.exists() else []
+    for e in errors:
+        print(f"error: {e['model']} {e['file']}: {e['error'][:200]}")
+
+
+# ---------------------------------------------------------------- cut-outs and sheets (`sheets`)
+PAPER, DARK, LIGHT = (214, 205, 182), (40, 38, 46), (240, 238, 232)
+
+
+def key_out(img, key: tuple[int, int, int] | None, tol: float, enclosed: bool = False):
+    """Cut a flat background colour out: pixels near `key` and connected to the border become transparent; a 3 px band
+    of the subject next to them gets colour-to-alpha against `key` (soft edges without a coloured fringe)."""
+    import numpy as np
+    from PIL import Image, ImageDraw, ImageFilter
+    a = np.asarray(img.convert("RGB")).astype(np.float32)
+    if key is None:  # the colour the model really drew (Krea's "magenta" is a muted pink with paper grain)
+        edge = np.concatenate([a[:4].reshape(-1, 3), a[-4:].reshape(-1, 3), a[:, :4].reshape(-1, 3), a[:, -4:].reshape(-1, 3)])
+        key = tuple(np.median(edge, axis=0))
+    k = np.array(key, np.float32)
+    near = np.sqrt(((a - k) ** 2).sum(-1)) < tol
+    m = Image.fromarray(np.pad(near, 1, constant_values=True).astype(np.uint8) * 255, "L").copy()  # writable
+    ImageDraw.floodfill(m, (0, 0), 128)
+    bg = np.asarray(m)[1:-1, 1:-1] == 128
+    if enclosed:  # also holes inside the subject (a colour the subject never uses, like magenta)
+        bg = bg | near
+    band = (np.asarray(Image.fromarray(bg.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(7))) > 0) & ~bg
+    up = np.where(a > k, (a - k) / np.maximum(255 - k, 1), 0)
+    down = np.where(a < k, (k - a) / np.maximum(k, 1), 0)
+    soft = np.maximum(up, down).max(-1).clip(0, 1)
+    alpha = np.where(bg, 0.0, np.where(band, soft, 1.0))
+    unmixed = (a - k) / np.maximum(alpha[..., None], 1e-3) + k
+    rgb = np.where((band & (alpha > 0.01))[..., None], unmixed, a).clip(0, 255)
+    return Image.fromarray(np.dstack([rgb, alpha * 255]).astype(np.uint8), "RGBA")
+
+
+def make_cutouts() -> None:
+    """The four routes on the Krea 2 and Moss pictures -> art/tests/models/_cutout/<subject>__<route>_<model>.png."""
+    from PIL import Image
+    CUT.mkdir(parents=True, exist_ok=True)
+    s0 = SEEDS[0]
+    for src in ("krea2", "moss"):
+        for s in CUT_SUBJECTS:
+            white = OUT / src / f"{s}__words_s{s0}.png"
+            if white.exists():
+                key_out(Image.open(white), None, 40).save(CUT / f"{s}__white_{src}.png")
+            mag = OUT / src / f"{s}__magenta_s{s0}.png"
+            if mag.exists():
+                key_out(Image.open(mag), None, 90, enclosed=True).save(CUT / f"{s}__magenta_{src}.png")
+            mask = CUT / f"{s}__mask_{src}_s{s0}.png"
+            if white.exists() and mask.exists():
+                rgba = Image.open(white).convert("RGBA")
+                m = Image.open(mask).convert("L").resize(rgba.size)
+                if sum(m.getpixel(p) for p in ((0, 0), (m.width - 1, 0), (0, m.height - 1))) > 3 * 128:
+                    from PIL import ImageOps
+                    m = ImageOps.invert(m)  # the mask came back as background = white
+                rgba.putalpha(m)
+                rgba.save(CUT / f"{s}__birefnet_{src}.png")
+
+
+def _font(size: int, bold: bool = False):
+    from PIL import ImageFont
+    return ImageFont.truetype("arialbd.ttf" if bold else "arial.ttf", size)
+
+
+def _tile(path, w: int, h: int, bg, note: str = ""):
+    from PIL import Image, ImageDraw
+    t = Image.new("RGB", (w, h), bg)
+    d = ImageDraw.Draw(t)
+    if path is None or not Path(path).exists():
+        text = note or "MISSING"
+        d.text((w // 2, h // 2), text, fill=(150, 140, 120) if note else (200, 40, 40), font=_font(20, True), anchor="mm")
+        return t
+    im = Image.open(path).convert("RGBA")
+    im.thumbnail((w - 12, h - 12), Image.LANCZOS)
+    t.paste(im, ((w - im.width) // 2, (h - im.height) // 2), im)
+    return t
+
+
+def _grid(title: str, headers: list[str], rows: list[tuple[str, list, int]], cell_w: int, out_name: str) -> Path:
+    """rows: (label, [(path | None, tile colour, note)], row height). Saves PNG in _sheets and webp in art/tests/sheets."""
+    from PIL import Image, ImageDraw
+    label_w, head_h, title_h = 250, 56, 50
+    W = label_w + cell_w * len(headers)
+    H = title_h + head_h + sum(r[2] for r in rows)
+    sheet = Image.new("RGB", (W, H), (250, 248, 243))
+    d = ImageDraw.Draw(sheet)
+    d.text((12, title_h // 2), title, fill=(30, 30, 30), font=_font(26, True), anchor="lm")
+    for i, h in enumerate(headers):
+        d.multiline_text((label_w + i * cell_w + cell_w // 2, title_h + head_h // 2), h, fill=(30, 30, 30),
+                         font=_font(17, True), anchor="mm", align="center")
+    y = title_h + head_h
+    for label, cells, rh in rows:
+        d.multiline_text((10, y + rh // 2), label, fill=(30, 30, 30), font=_font(17), anchor="lm")
+        for i, (path, bg, note) in enumerate(cells):
+            sheet.paste(_tile(path, cell_w - 6, rh - 6, bg, note), (label_w + i * cell_w + 3, y + 3))
+        y += rh
+    SHEETS.mkdir(parents=True, exist_ok=True)
+    png = SHEETS / f"{out_name}.png"
+    sheet.save(png)
+    webp_dir = ROOT / "art" / "tests" / "sheets"
+    webp_dir.mkdir(parents=True, exist_ok=True)
+    sheet.save(webp_dir / f"{out_name}.webp", quality=88)
+    print(f"{png}  {W}x{H}")
+    return png
+
+
+def sheets() -> None:
+    make_cutouts()
+    S = trial_set()
+    s0, s1 = SEEDS
+    tile_of = lambda d: DARK if d["kind"] == "fx" else PAPER  # noqa: E731
+    headers = ["In the game\ntoday", f"Qwen 2.1\n{s0}", f"Qwen 2.1\n{s1}", f"Krea 2 words\n{s0}", f"Krea 2 words\n{s1}",
+               f"Krea 2 style ref\n{s0}", f"Krea 2 style ref\n{s1}", f"Moss words\n{s0}", f"Moss words\n{s1}"]
+    rows = []
+    for s, d in S.items():
+        bg = tile_of(d)
+        qwen = d["qwen"] if "prompt" not in d["qwen"] else {x: OUT / "qwen21" / f"{s}__style_s{x}.png" for x in SEEDS}
+        cells = [(d["today"], bg, "" if d["today"] else "not in game")]
+        cells += [(qwen[x], bg, "") for x in SEEDS]
+        cells += [(OUT / "krea2" / f"{s}__{v}_s{x}.png", bg, "") for v in ("words", "style") for x in SEEDS]
+        cells += [(OUT / "moss" / f"{s}__words_s{x}.png", bg, "") for x in SEEDS]
+        label = f"{s}\n\nKrea style ref:\n{Path(d['ref']).name}"
+        rows.append((label, cells, 250 if d["kind"] == "bg" else 380))
+    _grid("Image model trial: the test set (Qwen tries from the asset batch; bg row made new)", headers, rows, 380, "models_main")
+
+    rows = [(f"{s}\n\nsource:\n{d['edit'][0].name}",
+             [(d["edit"][0], PAPER, "")] + [(d["qwen"][x], PAPER, "") for x in SEEDS]
+             + [(OUT / "moss" / f"{s}__edit_s{x}.png", PAPER, "") for x in SEEDS], 520)
+            for s, d in S.items() if d.get("edit")]
+    _grid("Image model trial: edits (the character must stay the same; Krea 2 cannot edit)",
+          ["Source sprite", f"Qwen edit {s0}", f"Qwen edit {s1}", f"Moss edit {s0}", f"Moss edit {s1}"], rows, 400, "models_edits")
+
+    rows = []
+    for src in ("krea2", "moss"):
+        for s in CUT_SUBJECTS:
+            cells = [(OUT / src / f"{s}__words_s{s0}.png", PAPER, "")]
+            for route in ("white", "magenta_raw", "magenta", "birefnet", "qwen"):
+                path = {"white": CUT / f"{s}__white_{src}.png", "magenta": CUT / f"{s}__magenta_{src}.png",
+                        "birefnet": CUT / f"{s}__birefnet_{src}.png", "qwen": OUT / "qwen21" / f"{s}__cut_{src}_s{s0}.png",
+                        "magenta_raw": OUT / src / f"{s}__magenta_s{s0}.png"}[route]
+                cells += [(path, PAPER, "")] if route == "magenta_raw" else [(path, DARK, ""), (path, LIGHT, "")]
+            rows.append((f"{s}\n{src} {s0}", cells, 330))
+    _grid("Image model trial: cut-out routes for white-background pictures (dark and light tile show edge halos)",
+          ["Source\n(white bg)", "Key out white\ndark", "Key out white\nlight", "Asked for\nmagenta bg",
+           "Key out magenta\ndark", "Key out magenta\nlight", "BiRefNet (built in)\ndark", "BiRefNet (built in)\nlight",
+           "Qwen edit\ndark", "Qwen edit\nlight"], rows, 330, "models_cutout")
+
+    rows = [(m, [(OUT / m / f"blood_boar__words_s{x}.png", PAPER, "") for x in SEEDS], 480) for m in ("qwen21", "krea2", "moss")]
+    _grid("Image model trial: blood test (same words on all three)", [f"seed {s0}", f"seed {s1}"], rows, 480, "models_blood")
+
+
 def main() -> None:
     args = sys.argv[1:]
+    if args and args[0] == "trial":
+        trial("--dry" in args)
+        return
+    if args and args[0] == "sheets":
+        sheets()
+        return
+    if args and args[0] == "stats":
+        stats()
+        return
     if not args or args[0] not in ("list", "smoke"):
         sys.exit(__doc__)
     if args[0] == "list":
