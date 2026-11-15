@@ -400,6 +400,12 @@ namespace Drakepg
                 var left = x - w / 2;
                 var top = feetY - h;
                 Shadow(parent, x, feetY, w * 0.7f);
+                // The picture the hero rests in with this weapon (its kind's ready stance, else the bare art), drawn at
+                // the bare art's scale on the same feet.
+                var (restArt, hands) = Figure.Rest(bare, weapon);
+                var restSize = Art.Size(Art.Get(restArt));
+                left = x - restSize.x * s / 2;
+                top = feetY - restSize.y * s;
                 // Weapons first: the body (and its fists) draw over the grip, like the figure's sorting.
                 var wSize = Art.Size(Art.Get(weaponArt));
                 if (wSize.y > 0)
@@ -407,8 +413,11 @@ namespace Drakepg
                     var wh = (float)(weapon.Size ?? 0.6) * h;
                     var ww = wSize.x * wh / wSize.y;
                     var grip = (float)(weapon.Grip ?? 0.85);
-                    foreach (var hand in bare.Hands ?? new List<Hand>())
+                    var fists = bare.Hands?.Count ?? 0;
+                    foreach (var hand in hands ?? new List<Hand>())
                     {
+                        // As many weapons as the class has fists for; a cover hand holds none.
+                        if (hand.Cover || fists-- <= 0) continue;
                         // A zero-size pivot at the fist, turned by the anchor's angle; the weapon hangs from its grip point.
                         var pivot = new VisualElement { pickingMode = PickingMode.Ignore };
                         Ui.Place(pivot, left + (float)hand.X * s, top + (float)hand.Y * s);
@@ -418,7 +427,7 @@ namespace Drakepg
                         parent.Add(pivot);
                     }
                 }
-                Ui.Image(parent, left, top, w, h, bare.Art);
+                Ui.Image(parent, left, top, restSize.x * s, restSize.y * s, restArt);
                 return;
             }
             var key = Art.Pick(look.Art);

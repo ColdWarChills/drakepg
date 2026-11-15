@@ -1,4 +1,4 @@
-import type { ClassDef, Hand } from './types';
+import type { ClassDef, Hand, WeaponDef, WeaponKind } from './types';
 
 /**
  * One base hero for every class (docs/PLANS.md, Art): classes differ by gear, not by the picture. Each class holds its
@@ -12,6 +12,41 @@ const HERO_ART = 'char_hero_bare';
  * the top, where the guard rests, and comes out under the curled fingertips at the bottom.
  */
 const RAISED_FIST: Hand = { x: 235.1, y: 133.5, angle: -10, fingers: { art: 'part_hero_fingers', x: 190, y: 95 } };
+/**
+ * The ready stance the standing hero is drawn in for each kind of weapon (Unity; docs/PLANS.md "Weapon holds: ready
+ * stances"): a key pose in `HERO_POSES` whose arms are drawn for that grip. Without the pose's art (an outfit that has
+ * none yet) the hero stands in the base picture with the weapon upright in `RAISED_FIST`.
+ */
+export const READY_POSE: Record<WeaponKind, string> = {
+  sword: 'sword_ready',
+  axe: 'sword_ready',
+  hammer: 'hammer_ready',
+  dagger: 'dagger_ready',
+  staff: 'staff_ready',
+  wand: 'wand_ready',
+};
+
+/**
+ * A rod this long (of the hero's height) or longer is held and swung as a staff, a shorter one as a wand, whatever its
+ * data calls it: a long, top-heavy rod aimed from its end looks wrong.
+ */
+export const LONG_ROD = 0.7;
+
+/**
+ * How a weapon is held and swung: its data, else from its damage type. A wand or staff goes by its length (`LONG_ROD`).
+ */
+export function weaponKind(w: WeaponDef): WeaponKind {
+  const kind = w.kind ?? (w.damageType === 'pierce' ? 'dagger' : w.damageType === 'magic' ? 'staff' : 'sword');
+  if (kind === 'wand' || kind === 'staff') return (w.size ?? 0.6) >= LONG_ROD ? 'staff' : 'wand';
+  return kind;
+}
+
+/**
+ * How far below the fist a planted staff must reach (of the hero's height) to stand on the ground in `staff_ready`:
+ * `(1 - grip) * size`. Checked for every staff in `validateData`.
+ */
+export const PLANTED_REACH: [number, number] = [0.53, 0.57];
+
 /**
  * Key poses for the top skills (`SkillDef.epic`; scripts/hero_poses.py, Qwen edits of the base): the weapon fist on each
  * (canvases include hero_poses.MARGIN_X on both sides, so outfit robes fit; x is measured with it)
@@ -41,6 +76,18 @@ const HERO_POSES: Record<string, Hand[]> = {
   wand_wind: [{ x: 125.7, y: 79, angle: -12 }],
   wand_step: [{ x: 246.7, y: 133, angle: 40 }],
   wand_strike: [{ x: 386.7, y: 100, angle: 75 }],
+  // The ready stances (READY_POSE): how the standing hero holds each kind of weapon. A closed fist holds a handle square
+  // to the forearm, so each angle follows the drawn forearm; only the wand continues the arm.
+  sword_ready: [{ x: 244, y: 262, angle: 55 }],
+  // A knife fighter's guard, both fists clear of the body: the lead dagger forward and up from a low fist, the near
+  // one in a reverse grip beside the hip (the arm nearest the viewer, so its whole blade is drawn in front of the leg).
+  dagger_ready: [{ x: 274, y: 214, angle: 30 }, { x: 127, y: 241, angle: -140, front: 150 }],
+  wand_ready: [{ x: 213, y: 138, angle: 48 }],
+  // Two hands on the maul: the rear fist at the belt holds it (the whole shaft in front of the body), the lead fist
+  // only closes over the shaft.
+  hammer_ready: [{ x: 148, y: 222, angle: 59, front: 270 }, { x: 272, y: 147, angle: 59, cover: true }],
+  // The staff planted by the front foot, leaning a little back to him.
+  staff_ready: [{ x: 278, y: 213, angle: -4 }],
 };
 
 export const CLASSES: ClassDef[] = [

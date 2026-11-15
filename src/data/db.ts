@@ -1,4 +1,4 @@
-import { CLASSES } from './classes';
+import { CLASSES, PLANTED_REACH, weaponKind } from './classes';
 import { RECIPES } from './crafting';
 import { ELITE_AFFIXES } from './elites';
 import { FEATURES } from './features';
@@ -122,6 +122,14 @@ export function validateData(): void {
   }
   for (const a of ELITE_AFFIXES) checkApplies(a.applies);
   for (const item of ITEMS) if (item.type === 'weapon') checkApplies(item.proc?.applies);
+  // Every staff stands planted (the `staff_ready` stance), so its foot must reach the ground from the fist.
+  for (const item of ITEMS) {
+    if (item.type !== 'weapon' || weaponKind(item) !== 'staff') continue;
+    const reach = (1 - (item.grip ?? 0.85)) * (item.size ?? 0.6);
+    if (reach < PLANTED_REACH[0] || reach > PLANTED_REACH[1]) {
+      throw new Error(`Item ${item.id}: a staff's foot must stand on the ground; (1 - grip) * size is ${reach.toFixed(3)}, want ${PLANTED_REACH[0]}-${PLANTED_REACH[1]}`);
+    }
+  }
   for (const z of ZONES) for (const e of z.encounters) db.monster(e.monsterId);
   const gatherItems = new Set<string>();
   for (const z of ZONES) {

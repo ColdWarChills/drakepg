@@ -17,6 +17,10 @@ namespace Drakepg.Rules
         public long[] NeutralColors;
         public Location Start, TownStart, InnSpawn;
         public List<ClassDef> Classes;
+        /// <summary>Weapon kind -> the key pose the standing hero is drawn in while holding it (its ready stance).</summary>
+        public Dictionary<string, string> ReadyPose;
+        /// <summary>A wand or staff this long (of the hero's height) or longer is held and swung as a staff, a shorter one as a wand.</summary>
+        public double LongRod = 0.7;
         public List<ItemDef> Items;
         public List<SkillDef> Skills;
         public List<StatusDef> Statuses;
@@ -117,6 +121,21 @@ namespace Drakepg.Rules
         public static List<QuestDef> Quests() => Data.Quests;
         public static bool HasClass(string id) => id != null && classes.ContainsKey(id);
         public static bool HasRoom(string id) => id != null && rooms.ContainsKey(id);
+        /// <summary>
+        /// sword, axe, hammer, dagger, staff or wand: how the weapon is held and swung. Its data, else from its damage
+        /// type; a wand or staff goes by its length (a long rod is a staff, a short one a wand).
+        /// </summary>
+        public static string WeaponKind(ItemDef w)
+        {
+            var kind = w.Kind ?? (w.DamageType == "pierce" ? "dagger" : w.DamageType == "magic" ? "staff" : "sword");
+            if (kind == "wand" || kind == "staff") return (w.Size ?? 0.6) >= Data.LongRod ? "staff" : "wand";
+            return kind;
+        }
+
+        /// <summary>The ready stance for a weapon: the key pose its kind is held in at rest, or null.</summary>
+        public static string ReadyPose(ItemDef w) =>
+            w != null && Data?.ReadyPose != null && Data.ReadyPose.TryGetValue(WeaponKind(w), out var pose) ? pose : null;
+
         public static bool HasItem(string id) => id != null && items.ContainsKey(id);
         public static bool HasMonster(string id) => id != null && monsters.ContainsKey(id);
         public static bool HasLootTable(string id) => id != null && lootTables.ContainsKey(id);

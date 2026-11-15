@@ -27,6 +27,8 @@ namespace Drakepg
         Transform art;
         /// <summary>Each weapon's hand pivot and the child holding its sprites (tilted by Bend).</summary>
         readonly List<(Transform pivot, Transform held)> held = new List<(Transform, Transform)>();
+        /// <summary>Per weapon: its copy drawn in front of the body (the grip end, or more: Hand.Front) and what cuts it.</summary>
+        readonly List<(SpriteRenderer front, Sprite sprite, float grip, float height)> fronts = new List<(SpriteRenderer, Sprite, float, float)>();
         /// <summary>The body is real art (not the placeholder shape).</summary>
         bool hasArt;
 
@@ -70,7 +72,7 @@ namespace Drakepg
                     pivot.SetParent(art, false);
                     pivot.localPosition = HandAt(hand, size, s);
                     pivot.localRotation = Quaternion.Euler(0, 0, -(float)hand.Angle);
-                    standing.Hands.Add((pivot.localPosition, pivot.localRotation));
+                    standing.Hands.Add((pivot.localPosition, pivot.localRotation, FrontOf(hand, s)));
                     var ws = (float)(weapon.Size ?? 0.6) * DrawnHeight / wSize.y;
                     var offset = new Vector3(0, -(0.5f - grip) * wSize.y * ws, 0) / Design.PixelsPerUnit;
                     // The sprites hang on a child of the pivot: screens swing the pivot, Bend tilts the child.
@@ -84,7 +86,8 @@ namespace Drakepg
                     var front = AddSprite(wSprite, inHand, 15, ws);
                     front.name = wSprite.name + " grip";
                     front.transform.localPosition = offset;
-                    CutAboveGuard(front, wSprite, grip, wSize.y * ws);
+                    fronts.Add((front, wSprite, grip, wSize.y * ws));
+                    CutAboveGuard(front, wSprite, grip, wSize.y * ws, GuardRoom);
                     Weapons.Add(pivot);
                     AddGrip(standing, sprite, size, s, hand);
                 }
@@ -99,12 +102,18 @@ namespace Drakepg
                         var pic = new Picture { Body = AddSprite(pose, art, 10, s) };
                         foreach (var hand in kv.Value)
                         {
-                            pic.Hands.Add((HandAt(hand, poseSize, s), Quaternion.Euler(0, 0, -(float)hand.Angle)));
+                            // A cover hand is the second fist on a two-handed grip: drawn over the shaft, holding nothing.
+                            if (!hand.Cover) pic.Hands.Add((HandAt(hand, poseSize, s), Quaternion.Euler(0, 0, -(float)hand.Angle), FrontOf(hand, s)));
                             AddGrip(pic, pose, poseSize, s, hand);
                         }
                         Show(pic, false);
                         poses[kv.Key] = pic;
                     }
+                // At rest the hero stands in the ready stance drawn for this kind of weapon, when the look has it.
+                rest = standing;
+                var ready = Db.ReadyPose(weapon);
+                if (HasPose(ready)) Apply(poses[ready]);
+                rest = shown;
             }
             else
             {
@@ -133,32 +142,57 @@ namespace Drakepg
         {
             public SpriteRenderer Body;
             public readonly List<SpriteRenderer> Parts = new List<SpriteRenderer>();
-            public readonly List<(Vector3 at, Quaternion turn)> Hands = new List<(Vector3, Quaternion)>();
+            /// <summary>Per weapon hand: where it is, how the weapon is turned, and how far above it the weapon is in front of the body (design px).</summary>
+            public readonly List<(Vector3 at, Quaternion turn, float front)> Hands = new List<(Vector3, Quaternion, float)>();
         }
 
-        /// <summary>The bare art (null for a figure without a held weapon), the one shown, and the key poses by name.</summary>
-        Picture standing, shown;
+        /// <summary>
+        /// The bare art (null for a figure without a held weapon), the picture the hero rests in (the ready stance of the
+        /// weapon's kind, else the bare art), the one shown, and the key poses by name.
+        /// </summary>
+        Picture standing, rest, shown;
         readonly Dictionary<string, Picture> poses = new Dictionary<string, Picture>();
-        /// <summary>The key pose shown (null: standing).</summary>
+        /// <summary>The key pose shown (null: at rest).</summary>
         public string PoseName { get; private set; }
+
+        /// <summary>How far above a hand its weapon is drawn in front of the body, in design px.</summary>
+        static float FrontOf(Hand hand, float s) => hand.Front is double f ? (float)f * s : GuardRoom;
+
+        /// <summary>
+        /// The picture and weapon hands a hero rests in while holding `weapon`, for screens that draw the hero themselves
+        /// (the bag, the cheat menu): the ready stance of its kind when `bare` has it drawn, else the bare art.
+        /// </summary>
+        public static (string art, List<Hand> hands) Rest(BareLook bare, ItemDef weapon)
+        {
+            var pose = Db.ReadyPose(weapon);
+            if (pose != null && bare.Poses != null && bare.Poses.TryGetValue(pose, out var hands) && hands != null && Art.Has(bare.Art + "_" + pose))
+                return (bare.Art + "_" + pose, hands);
+            return (bare.Art, bare.Hands);
+        }
 
         /// <summary>Has a drawn key pose by this name (BareLook.Poses with art).</summary>
         public bool HasPose(string name) => name != null && poses.ContainsKey(name);
 
         /// <summary>
-        /// Swap the body to a drawn key pose (null or unknown: back to standing). The weapons move to the pose's hands
+        /// Swap the body to a drawn key pose (null or unknown: back to rest). The weapons move to the pose's hands
         /// (a weapon whose hand the pose lacks is hidden) and keep bending with the body. False if nothing changed.
         /// </summary>
         public bool SetPose(string name)
         {
             if (standing == null) return false;
-            var pic = HasPose(name) ? poses[name] : standing;
+            var pic = HasPose(name) ? poses[name] : rest;
             if (pic == shown) return false;
+            Apply(pic);
+            PoseName = pic == rest ? null : name;
+            return true;
+        }
+
+        void Apply(Picture pic)
+        {
             Show(shown, false);
             Show(pic, true);
             shown = pic;
             Body = pic.Body;
-            PoseName = pic == standing ? null : name;
             for (int i = 0; i < held.Count; i++)
             {
                 var (pivot, inHand) = held[i];
@@ -167,9 +201,10 @@ namespace Drakepg
                 if (!has) continue;
                 pivot.localPosition = pic.Hands[i].at;
                 pivot.localRotation = pic.Hands[i].turn;
+                var (front, sprite, grip, height) = fronts[i];
+                CutAboveGuard(front, sprite, grip, height, pic.Hands[i].front);
                 Bend?.SetRest(pivot, pic.Hands[i].at);
             }
-            return true;
         }
 
         static void Show(Picture pic, bool on)
@@ -281,16 +316,16 @@ namespace Drakepg
         }
 
         /// <summary>
-        /// A weapon's front copy keeps only its grip end: from `GuardRoom` above the hand (at `grip`, a fraction from the
-        /// top) down, with a 2 px soft edge. `drawnHeight`: the weapon's height in design px. Without the shader the
-        /// copy goes, and the weapon stays behind the body as before.
+        /// A weapon's front copy keeps only its grip end: from `room` design px above the hand (at `grip`, a fraction
+        /// from the top; `GuardRoom` by default) down, with a 2 px soft edge. `drawnHeight`: the weapon's height in
+        /// design px. Without the shader the copy goes, and the weapon stays behind the body as before.
         /// </summary>
-        static void CutAboveGuard(SpriteRenderer r, Sprite weapon, float grip, float drawnHeight)
+        static void CutAboveGuard(SpriteRenderer r, Sprite weapon, float grip, float drawnHeight, float room)
         {
             var tex = weapon.texture;
             var rect = weapon.rect;
             var texelsPerPx = rect.height / drawnHeight;
-            var y = rect.y + rect.height * (1 - grip) + GuardRoom * texelsPerPx;
+            var y = rect.y + rect.height * (1 - grip) + room * texelsPerPx;
             var cut = Line(new Vector2(0, y), new Vector2(1, y), new Vector2(0, rect.y), tex, 2 * texelsPerPx);
             if (!Held(r, Vector4.zero, cut, Vector4.zero)) r.enabled = false;
         }

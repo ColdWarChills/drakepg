@@ -175,8 +175,8 @@ def _trim_box(alpha: np.ndarray, pad: int = 6) -> tuple[int, int, int, int]:
     return max(0, xs.min() - pad), max(0, ys.min() - pad), min(w, xs.max() + pad + 1), min(h, ys.max() + pad + 1)
 
 
-# Key pose names (scripts/hero_poses.py): the epic ones and <weapon kind>_<beat>.
-POSE_NAME = re.compile(r"_(charge|leap|land|(?:sword|axe|hammer|dagger|staff|wand)_(?:wind|step|strike))$")
+# Key pose names (scripts/hero_poses.py): the epic ones, <weapon kind>_<beat> and the ready stances.
+POSE_NAME = re.compile(r"_(charge|leap|land|(?:sword|axe|hammer|dagger|staff|wand)_(?:wind|step|strike|ready))$")
 
 
 def _outfit_base(key: str) -> Path | None:

@@ -6,7 +6,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { BALANCE, SAVE_VERSION } from '../src/config';
-import { CLASSES } from '../src/data/classes';
+import { CLASSES, LONG_ROD, READY_POSE } from '../src/data/classes';
 import { RECIPES } from '../src/data/crafting';
 import { validateData } from '../src/data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_COLORS, ELEMENT_LABELS, ELEMENT_TEXT, ELEMENTS, NEUTRAL_COLORS, OPPOSITE } from '../src/data/elements';
@@ -43,6 +43,8 @@ const data = {
   townStart: TOWN_START,
   innSpawn: INN_SPAWN,
   classes: CLASSES,
+  readyPose: READY_POSE,
+  longRod: LONG_ROD,
   items: ITEMS,
   skills: SKILLS,
   statuses: STATUSES,

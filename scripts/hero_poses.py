@@ -133,8 +133,56 @@ POSES = {
     "wand_strike": ("flicking a wand at an enemy: three-quarter view facing right, leaning forward on the front foot, "
                     "his wand arm stretched out forward and a little up with the fist leading, as if snapping a wand "
                     "toward an enemy; his other hand open, held back beside his hip; a confident face"),
+    # Ready stances: how the standing hero holds each kind of weapon (docs/PLANS.md, "Weapon holds: ready stances").
+    # Legs, torso and head stay as in the base, so the hero doesn't jump when a blow starts or ends; only the arms are
+    # drawn for the grip. The weapon is square to the forearm in a closed fist (a wand continues the forearm).
+    "sword_ready": ("the same relaxed standing fighting stance as before, with his legs, feet, torso and head exactly "
+                    "as they are, but his arms are in a low sword guard: the arm on the right side of the picture is "
+                    "lowered and only slightly bent, reaching down and forward, with its fist held in front of his "
+                    "front hip at the height of his belt, a little away from his body, the knuckles facing forward as "
+                    "if the fist grips the handle of a sword whose blade points up and forward to the upper right; "
+                    "the arm on the left side of the picture hangs relaxed, a little behind his body, with a loose "
+                    "fist; a calm, alert face"),
+    "hammer_ready": ("the same standing fighting stance as before, with his legs, feet and head exactly as they are, "
+                     "but his arms are placed as if he held a long two-handed tool diagonally across the front of "
+                     "his body (the tool itself is not drawn, his fists are empty): "
+                     "the fist of the arm on the left side of the picture is held low in front of his belt buckle, "
+                     "and the fist of the arm on the right side of the picture is held higher and further forward, "
+                     "out in front of his chest to the right, well clear of his body; the two fists are a forearm's "
+                     "length apart and turned as if both gripped one invisible straight handle running from the "
+                     "lower fist up and forward through the upper fist; a determined face"),
+    # Both fists stay clear of the torso: the far arm leads, the near arm (toward the viewer) is drawn whole. A rear
+    # fist tucked behind the body made the second dagger look stuck in his back.
+    "dagger_ready": ("the same standing fighting stance as before, with his legs, feet, torso and head exactly as they "
+                     "are, but his arms are in a knife fighter's guard for two daggers (the daggers are not drawn, "
+                     "his fists are empty). The arm on the right side of the picture, the one that is raised in the "
+                     "original, is lowered a little: bent at the elbow, the forearm reaching forward to the right, "
+                     "its fist held out in front of his chest at the height of his lower ribs, well clear of his "
+                     "body, as if pointing a dagger forward and up. The arm on the left side of the picture, the one "
+                     "nearest to the viewer that hangs down in the original, stays on the left side of the picture "
+                     "and is drawn whole, in front of everything, nothing of it hidden: the shoulder and sleeve as in "
+                     "the original, the elbow bent and pointing back to the left, the forearm angled down, and its "
+                     "closed fist held beside his hip on the left side of the picture, a hand's width away from his "
+                     "body, lower than his belt, with the knuckles facing down as if gripping a second dagger whose "
+                     "blade points down and back. Both fists and both forearms are fully visible; no hand is behind "
+                     "his back or behind his body; a sly, focused face"),
+    "staff_ready": ("the same relaxed standing stance as before, with his legs, feet, torso and head exactly as they "
+                    "are, but standing calm like a wizard who rests one hand on a tall walking staff (the staff itself "
+                    "is not drawn, nothing is in his hands, his fists are empty): the arm on "
+                    "the right side of the picture is bent at the elbow with the forearm level, reaching forward to "
+                    "the right, its fist held far out in front of his body at the height of his belt, above the toes "
+                    "of his front foot, a forearm's length away from his stomach, closed sideways as if around an "
+                    "invisible upright pole; the arm on the left side of the picture hangs straight down, relaxed at "
+                    "his side with a loose fist; a calm, wise face"),
+    "wand_ready": ("the same relaxed standing stance as before, with his legs, feet, torso and head exactly as they "
+                   "are, but holding a wand at the ready like a duelist waiting for the duel to begin (the wand itself "
+                   "is not drawn, nothing is in his hands, his fists are empty): the arm on the right side of the "
+                   "picture is bent sharply at the elbow, the elbow tucked in close to his ribs, the forearm rising "
+                   "forward and upward to the right at a diagonal, with its fist at the height of his chest, only a "
+                   "hand's width in front of his chest, as if a thin wand in the fist points up and forward; the arm "
+                   "on the left side of the picture hangs relaxed at his side with a loose fist; a confident face"),
 }
-OPEN_HAND.update(k for k in POSES if k.startswith(("staff_", "wand_")))
+OPEN_HAND.update(k for k in POSES if k.startswith(("staff_", "wand_")) and not k.endswith("_ready"))
 
 
 # The try picked for each pose (`pick`): the outfit versions are edits of these.
@@ -143,6 +191,7 @@ PICKS = {
     "sword_wind": 4243, "sword_step": 4242, "sword_strike": 4250, "axe_wind": 4242, "axe_step": 4242, "axe_strike": 4242,
     "hammer_wind": 4242, "hammer_strike": 4242, "dagger_wind": 4243, "dagger_step": 4243, "dagger_strike": 4242,
     "staff_wind": 4242, "staff_step": 4243, "staff_strike": 4242, "wand_wind": 4243, "wand_step": 4243, "wand_strike": 4243,
+    "sword_ready": 4242, "hammer_ready": 4244, "dagger_ready": 4250, "staff_ready": 4244, "wand_ready": 4246,
 }
 OUTFIT_DIR = OUT / "outfit"
 # Extra canvas on both sides of every pose (bare and outfits), in edit px (2.154 per 1x game px: 1034 / 480). The pose

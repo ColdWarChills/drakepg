@@ -79,6 +79,10 @@ namespace Drakepg.Rules
         public double X, Y, Angle;
         /// <summary>The fingers that wrap the handle, drawn over it; null: a circle of the fist covers the grip.</summary>
         public FingersArt Fingers;
+        /// <summary>How far above the fist the weapon is drawn in front of the body, in 1x px; null: just past the guard. A two-handed hold across the chest gives the whole shaft.</summary>
+        public double? Front;
+        /// <summary>A second fist on the same weapon: it holds nothing itself, it is only drawn over the shaft.</summary>
+        public bool Cover;
     }
 
     /// <summary>A sprite of the fingers around a grip, its top-left at (X, Y) on the bare art in 1x px.</summary>

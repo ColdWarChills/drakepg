@@ -114,6 +114,13 @@ export interface Hand {
    * drawn over the grip.
    */
   fingers?: { art: string; x: number; y: number };
+  /**
+   * How far above the fist the weapon is drawn in front of the body, in 1x px (Unity). Default: just past the guard,
+   * the rest goes behind the body. A two-handed hold across the chest gives the whole shaft.
+   */
+  front?: number;
+  /** A second fist on the same weapon (a pose's two-handed grip): it holds nothing itself, it is only drawn over the shaft. */
+  cover?: boolean;
 }
 
 export interface SkillDef {

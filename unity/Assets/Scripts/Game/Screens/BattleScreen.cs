@@ -111,7 +111,8 @@ namespace Drakepg
             {
                 if (Fig == null) return;
                 for (int i = 0; i < Fig.Weapons.Count && i < WeaponAngles.Length; i++)
-                    if (Fig.Weapons[i] != null) Fig.Weapons[i].localRotation = Quaternion.Euler(0, 0, WeaponAngles[i] + WeaponTurn);
+                    if (Fig.Weapons[i] != null)
+                        Fig.Weapons[i].localRotation = Quaternion.Euler(0, 0, WeaponAngles[i] + WeaponTurn);
             }
             public readonly List<Anim.Handle> WeaponTweens = new List<Anim.Handle>();
 
@@ -1496,9 +1497,7 @@ namespace Drakepg
         string HeroWeaponKind()
         {
             var w = battle.Player.Weapon;
-            if (w == null) return "sword";
-            if (w.Kind != null) return w.Kind;
-            return w.DamageType == "pierce" ? "dagger" : w.DamageType == "magic" ? "staff" : "sword";
+            return w == null ? "sword" : Db.WeaponKind(w);
         }
 
         /// <summary>Player hits of the same skill in a row (multi-hit skills); monster moves and weapon specials stand alone.</summary>

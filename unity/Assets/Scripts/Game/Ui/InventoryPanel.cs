@@ -61,16 +61,23 @@ namespace Drakepg
             Shadow(root, x, y, w * 0.7f, 26 * k);
             if (bare != null && weaponArt != null)
             {
-                // Like Figure: each weapon whole behind the body (bare.hands are 1x art pixels from the top-left), the
-                // body, the weapon's grip end again in front (clipped from the guard down), then each fist over the grip.
+                // Like Figure: each weapon whole behind the body (hands are 1x art pixels from the top-left), the body,
+                // the weapon's grip end again in front (clipped from the guard down), then each fist over the grip.
                 var wSize = Art.Size(Art.Get(weaponArt));
                 var wh = (float)(weapon.Size ?? 0.6) * size.y * s * k;
                 var ww = wSize.y > 0 ? wSize.x * wh / wSize.y : 0;
                 var grip = (float)(weapon.Grip ?? 0.85);
-                // Figure.GuardRoom as a fraction of the weapon: the weapon is Size x 240 design px tall there.
-                var cut = Mathf.Max(0, grip - Figure.GuardRoom / ((float)(weapon.Size ?? 0.6) * Figure.ArtHeight)) * wh;
-                var hands = bare.Hands ?? new List<Hand>();
-                foreach (var hand in hands)
+                // The picture the hero rests in with this weapon (its kind's ready stance, else the bare art): drawn at
+                // the bare art's scale, centered on the same figure, feet on the same line.
+                var (restArt, hands) = Figure.Rest(bare, weapon);
+                hands ??= new List<Hand>();
+                key = restArt;
+                size = Art.Size(Art.Get(key));
+                top = y - size.y * s * k;
+                // The hands that hold a weapon: as many as the class has fists for (a cover hand only hides the shaft).
+                var holding = hands.FindAll(fist => !fist.Cover);
+                if (holding.Count > (bare.Hands?.Count ?? 0)) holding.RemoveRange(bare.Hands?.Count ?? 0, holding.Count - (bare.Hands?.Count ?? 0));
+                foreach (var hand in holding)
                 {
                     var hx = x + ((float)hand.X - size.x / 2) * s * k;
                     var hy = top + (float)hand.Y * s * k;
@@ -78,11 +85,15 @@ namespace Drakepg
                     img.style.transformOrigin = new TransformOrigin(new Length(ww / 2, LengthUnit.Pixel), new Length(grip * wh, LengthUnit.Pixel));
                     img.style.rotate = new Rotate(Angle.Degrees((float)hand.Angle));
                 }
-                Ui.Image(root, x - w / 2, top, w, h, key);
-                foreach (var hand in hands)
+                Ui.Image(root, x - size.x * s * k / 2, top, size.x * s * k, size.y * s * k, key);
+                foreach (var hand in holding)
                 {
                     var hx = x + ((float)hand.X - size.x / 2) * s * k;
                     var hy = top + (float)hand.Y * s * k;
+                    // How far above the fist the front copy reaches (Figure.GuardRoom, or the hand's own), as a
+                    // fraction of the weapon: the weapon is Size x 240 design px tall there.
+                    var room = hand.Front is double f ? (float)f * s : Figure.GuardRoom;
+                    var cut = Mathf.Max(0, grip - room / ((float)(weapon.Size ?? 0.6) * Figure.ArtHeight)) * wh;
                     var clip = new VisualElement { pickingMode = PickingMode.Ignore, name = "grip" };
                     Ui.Place(clip, hx - ww / 2, hy - grip * wh + cut);
                     Ui.Size(clip, ww, wh - cut);
