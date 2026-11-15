@@ -56,17 +56,61 @@ SLOTS = {
     "chest": ["torso", "n_upper", "n_fore", "f_upper", "f_fore"],
     "legs": ["hips", "n_thigh", "n_shin", "n_foot", "f_thigh", "f_shin", "f_foot"],
     "helm": ["head"],
+    "boots": ["n_shin", "n_foot", "f_shin", "f_foot"],  # worn over the legs' shins
 }
 GEAR = {"chest_leather": "chest", "chest_scale": "chest", "helm_cap": "helm", "helm_coif": "helm",
-        "legs_plain": "legs", "legs_plate": "legs"}
+        "legs_plain": "legs", "legs_plate": "legs", "boots_steel": "boots"}
 WEAPONS = {"iron_sword": ("wpn_iron_sword", 0.78, 0.62), "oak_staff": ("wpn_oak_staff", 0.45, 1.0),
            "rusty_dagger": ("wpn_rusty_dagger", 0.89, 0.3)}
 
 yy, xx = np.mgrid[:N, :N]
 
 
+RIM = 7  # how deep (canvas pixels) the pale light rim of the generated pictures reaches in from the outline
+_loaded: dict[str, np.ndarray] = {}
+
+
+def derim(img: np.ndarray) -> np.ndarray:
+    """The generated pictures have a pale yellow light rim along the whole outline, which today's drawn hero does not
+    have and which shows as a bright line on the dark trousers. Paint it over with the colour just inside it."""
+    r, g, b, a = (img[..., i].astype(int) for i in range(4))
+    inside = Image.fromarray(((a > 128) * 255).astype(np.uint8))
+    deep = np.asarray(inside.filter(ImageFilter.MinFilter(2 * RIM + 1))) > 0
+    band = (a > 0) & ~deep
+    pale = (r > 185) & (g > 150) & (b < 190) & (r - g < 58) & (r - g > -10) & (g - b > 30)
+    # Where the light comes from behind (the back leg of a lunge) the rim is brighter and reaches twice as deep.
+    band2 = (a > 0) & ~(np.asarray(inside.filter(ImageFilter.MinFilter(4 * RIM + 1))) > 0)
+    bright = (r > 200) & (g > 200) & (b < 190) & (g - b > 45) & (r - g > -45)
+    rim = np.asarray(Image.fromarray((((band & pale) | (band2 & bright)) * 255).astype(np.uint8)).filter(
+        ImageFilter.MaxFilter(5))) > 0
+    rim &= band2
+    out = img.astype(float)
+    known = (a > 128) & ~rim
+    todo = rim.copy()
+    for _ in range(4 * RIM + 4):
+        if not todo.any():
+            break
+        tot = np.zeros(img.shape[:2] + (3,))
+        cnt = np.zeros(img.shape[:2])
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if dx or dy:
+                    k = np.roll(known, (dy, dx), (0, 1))
+                    tot += np.roll(out[..., :3], (dy, dx), (0, 1)) * k[..., None]
+                    cnt += k
+        got = todo & (cnt > 0)
+        out[got, :3] = tot[got] / cnt[got][:, None]
+        known |= got
+        todo &= ~got
+    return np.rint(out).astype(np.uint8)
+
+
 def load(name: str) -> np.ndarray:
-    return np.asarray(hp.cleaned(OUT / f"{name}_s{hl.PICKS[name]}.png"))
+    if name not in _loaded:
+        img = derim(np.asarray(hp.cleaned(OUT / f"{name}_s{hl.PICKS[name]}.png")))
+        img.setflags(write=False)
+        _loaded[name] = img
+    return _loaded[name]
 
 
 def poly(points) -> np.ndarray:
@@ -203,12 +247,23 @@ def cut() -> None:
             mask = t[p]
             if p == "head" and name != "bare":
                 # A helm may hang below the neck line (a coif on the shoulders): keep what the edit changed there.
-                d = np.abs(img[..., :3].astype(int) - rig[..., :3].astype(int)).sum(-1)
-                changed = ((d > 90) | ((img[..., 3] > 128) != (rig[..., 3] > 128))) & (yy < 560) & (yy >= NECK_Y - 40)
+                # It may also hang over a shoulder, which the arm masks took out of the head. Shirt and skin that only
+                # shifted a little are not the helm.
+                c = img.astype(int)
+                d = np.abs(c[..., :3] - rig[..., :3].astype(int)).sum(-1)
+                shirt = (c[..., 0] > 190) & (c[..., 1] > 165) & (c[..., 2] > 100) & (c[..., 0] - c[..., 1] < 50)
+                skin = (c[..., 0] > 190) & (c[..., 0] - c[..., 1] >= 50) & (c[..., 1] - c[..., 2] > 40)
+                changed = ((d > 90) | (rig[..., 3] <= 128)) & (c[..., 3] > 128) & ~shirt & ~skin
+                changed &= (yy < 560) & (yy >= NECK_Y - 70)
                 grown = np.asarray(Image.fromarray((changed * 255).astype(np.uint8)).filter(
-                    ImageFilter.MinFilter(5)).filter(
-                    ImageFilter.MaxFilter(9))) > 0
-                mask = mask | (grown & (yy >= NECK_Y))
+                    ImageFilter.MedianFilter(7))) > 0
+                mask = mask | grown
+                held = Image.fromarray(((mask & (c[..., 3] > 128)) * 255).astype(np.uint8)).copy()
+                seed = (round(J["neck"][0]), round(J["neck"][1]) - 90)
+                ImageDraw.floodfill(held, seed, 128)
+                kept = np.asarray(held) == 128
+                if kept.any():
+                    mask = mask & kept  # only what hangs together with the head
             im, box = crop(img, mask)
             im.save(PARTS / name / f"{p}.png")
             meta["sets"][name][p] = {"file": f"{name}/{p}.png", "x": box[0], "y": box[1]}
@@ -380,7 +435,8 @@ class Rig:
         wear = {}
         for slot, parts in SLOTS.items():
             for part in parts:
-                wear[part] = (gear or {}).get(slot) or "bare"
+                if (gear or {}).get(slot) or part not in wear:
+                    wear[part] = (gear or {}).get(slot) or "bare"
         layers = []
         for part, (_, joint, z) in TREE.items():
             if p.get("far_front") and part in FAR_FRONT:
