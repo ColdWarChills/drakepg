@@ -16,6 +16,14 @@ Several chats (in the browser and on the PC) work on this repo and can't see eac
 - **Finish:** nothing counts as done on a side branch. When the user OKs the work, merge it into the default branch (PR or local merge) and push, with `docs/PLANS.md` up to date. Never leave finished work only on a `claude/*` branch.
 - If the user says "handoff", update `docs/PLANS.md`, merge and push, then reply with a short summary.
 
+## Working with the designer
+The designer asked for this on 2026-11-15 ("A lot is unclear, just random fixes ... Need better clarity in our workflow").
+- **One job at a time.** Before starting, say in one plain line what is being made and what the designer will see when it is done. No side fixes mixed in; note them in `docs/PLANS.md` and move on.
+- **Every step ends in something to look at:** a picture, a clip or the running game, of the finished thing beside the old one. Not a plan, not a list of what changed.
+- **Judge it first.** Show it only if it clearly beats what is in the game; if it doesn't, say so and change the approach.
+- **Questions:** only about something the designer has seen, with the picture next to it, in everyday words (no names made up in a chat, like "keepers"), with Claude's pick. At most one or two at a time. Small fixes and technical choices are never asked: decide, and say it in one line.
+- **Big work goes in steps** written in `docs/PLANS.md`; the next step starts after the designer's yes to the one before.
+
 ## Conventions
 - Phaser 4, not 3. Before using an unfamiliar Phaser API, check `node_modules/phaser/skills/` (incl. `v3-to-v4-migration`) or `node_modules/phaser/types/phaser.d.ts`.
 - Game rules in `src/game/` stay Phaser-free so they can be tested/simulated headless.
