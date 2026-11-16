@@ -109,6 +109,7 @@ export const SaveSystem = {
  *             bag is paid back at its old price.
  * v18 -> v19: two hands. `equipment.weapon` is now the main hand and `equipment.offhand` is new and starts empty, so
  *             every hero keeps the weapon where it was.
+ * v19 -> v20: a legs slot (`equipment.legs`), between gloves and boots; it starts empty.
  */
 /** The roll stones of save v17 and older, paid back at their shop price. */
 const OLD_STONES = ['stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor'];
@@ -211,6 +212,11 @@ function migrate(file: SaveFile): SaveFile | null {
     const p = file.player as Partial<PlayerData>;
     if (p.equipment && typeof p.equipment === 'object') (p.equipment as Record<string, unknown>).offhand = null;
     file.version = 19;
+  }
+  if (file.version < 20) {
+    const p = file.player as Partial<PlayerData>;
+    if (p.equipment && typeof p.equipment === 'object') (p.equipment as Record<string, unknown>).legs = null;
+    file.version = 20;
   }
   return file;
 }

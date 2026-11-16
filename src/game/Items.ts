@@ -46,7 +46,7 @@ export const MOD_POOLS: Record<GearDef['type'], ModKey[]> = {
 };
 
 /** Every worn equipment slot, in display order. Their stats count; the spare weapon's don't. */
-export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'offhand', 'helm', 'body', 'gloves', 'boots', 'necklace', 'ring1', 'ring2'];
+export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'offhand', 'helm', 'body', 'gloves', 'legs', 'boots', 'necklace', 'ring1', 'ring2'];
 
 /** The worn slots plus the spare weapon: everywhere equipped gear can sit. */
 export const ALL_SLOTS: EquipSlot[] = [...EQUIP_SLOTS, 'spare'];
@@ -57,6 +57,7 @@ export const SLOT_LABELS: Record<EquipSlot, string> = {
   helm: 'Helm',
   body: 'Body',
   gloves: 'Gloves',
+  legs: 'Legs',
   boots: 'Boots',
   necklace: 'Necklace',
   ring1: 'Ring',

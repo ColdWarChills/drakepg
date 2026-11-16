@@ -35,8 +35,11 @@ FACE = {"ready": None, "wind": None, "strike": "shout", "hurt": "hurt"}
 SET = {"helm": "helm_coif", "legs": "legs_plate", "boots": "boots_steel", "chest": "set", "gloves": "set"}
 # Where the legs stand under each drawn body: the waist from its rest place and the ankles from theirs, the feet's
 # turn, and how much deeper than "legs just reach" the hips sink. The hips drop until both legs reach.
+# The rig's legs are shorter than the legs the pose pictures draw (their heroes stand a head-top higher on the same
+# feet): the rig legs are drawn this much longer, so every hold stands the same height on the same ground.
+LEGS_LONG = 1.12
 STAND = {
-    "ready": dict(root=(10, 0), nfoot=(-112, 0), ffoot=(118, 0), sink=14),
+    "ready": dict(root=(10, 0), nfoot=(-112, 0), ffoot=(118, 0), sink=5),
     # The wind-up coils low over wide legs, lower than the rig's legs sit: its own drawn legs too (as the strike below).
     "wind": dict(root=(23, -24), drawn=True, nfoot=(-101, 0), ffoot=(108, 0)),
     # The lunge is deeper than the rig's legs are long (the drawn thigh is 1.7 times the rig's): it brings its own
@@ -335,8 +338,41 @@ def forearm(img, body, name, skin, colours=None):
     return whole
 
 
+def solid(mask):
+    """The mask without its dust: stray specks that touch no solid piece of it (left where a rod's end was cut away)."""
+    core = shrink(mask, 3)
+    if not core.any():
+        return mask
+    ys, xs = np.nonzero(mask)
+    y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
+    sub, reach = mask[y0:y1, x0:x1], core[y0:y1, x0:x1]
+    while True:
+        more = grow(reach, 5) & sub
+        if (more == reach).all():
+            break
+        reach = more
+    out = np.zeros_like(mask)
+    out[y0:y1, x0:x1] = reach
+    return out
+
+
+def unrim(img, body):
+    """Repaints the figure's pale rim where a pose picture drew it inside the body (along an arm that lies over the
+    shirt): there it reads as a yellow line."""
+    r, g, b, _ = chan(img)
+    line = body & shrink(body, 10) & (r > 238) & (g > 212) & (b > 105) & (b < 178)
+    if line.sum() < 40:
+        return 0
+    line = grow(line, 2) & body
+    fill(img, line, body & ~line)
+    return int(line.sum())
+
+
 def save(img, mask, path):
-    im, box = hr.crop(img, mask)
+    kept = solid(mask)
+    if (mask & ~kept).any():
+        print(f"   {path.parent.name}/{path.name}: {int((mask & ~kept).sum())} px of dust dropped")
+    im, box = hr.crop(img, kept)
     path.parent.mkdir(parents=True, exist_ok=True)
     im.save(path)
     return {"file": str(path.relative_to(PARTS)).replace("\\", "/"), "x": box[0], "y": box[1]}
@@ -346,7 +382,7 @@ def cut():
     r = hr.Rig()
     head = Head(r)
     rig = hr.load("rig")
-    out = {"moments": {}, "faces": {}, "hips": {}, "z": Z, "set": SET}
+    out = {"moments": {}, "faces": {}, "hips": {}, "z": Z, "set": SET, "legsLong": LEGS_LONG}
     debug = []
     # Faces: what a face edit changed on the rig's head.
     for name in ("shout", "hurt"):
@@ -359,7 +395,7 @@ def cut():
         box = hr.disc((np.median(xs), np.median(ys)), 150)
         out["faces"][name] = save(f, ch & box, FIGHT / f"face_{name}.png")
     # The rig's hips without their belt: every drawn body brings its own.
-    for s in ("bare", "legs_plate", "legs_plain"):
+    for s in ("bare", "legs_plate", "legs_plain", "legs_leather"):
         e = r.m["sets"][s]["hips"]
         im = np.asarray(Image.open(PARTS / e["file"]).convert("RGBA")).copy()
         cutoff = hr.BELT_BOTTOM - 14 - e["y"]
@@ -411,6 +447,9 @@ def cut():
         fill(pic, holes, body & ~c["rod"])
         body = (body | holes) & ~(c["rod"] & ~holes)
         body = forearm(pic, body, name, skin & body)
+        n = unrim(pic, body)
+        if n:
+            print(f"   {name}: {n} px of pale rim inside the body repainted")
         # The fists that grip: their skin around the grip and the outline on it.
         def fist_at(g):
             near = skin & body & hr.disc(g, 66)
@@ -497,7 +536,7 @@ BOOTS = ["n_shin", "n_foot", "f_shin", "f_foot"]
 def bones(r: hr.Rig, side, stretch=None):
     """A leg's two bones at rest, stretched: (thigh vector, shin vector, (across, along))."""
     j = r.j
-    sx, sy = (stretch or {}).get(side, (1, 1))
+    sx, sy = (stretch or {}).get(side, (1, LEGS_LONG))
     k = hr.sub(j[f"{side}_knee"], j[f"{side}_hip"])
     a = hr.sub(j[f"{side}_ankle"], j[f"{side}_knee"])
     return (k[0] * sx, k[1] * sy), (a[0] * sx, a[1] * sy), (sx, sy)

@@ -347,7 +347,7 @@ namespace Drakepg
             }
         }
 
-        /// <summary>Drawn helm, gloves or boots (until `icon_&lt;id&gt;` art exists).</summary>
+        /// <summary>Drawn helm, gloves, legs or boots (until `icon_&lt;id&gt;` art exists).</summary>
         static void DrawArmorPiece(Pen g, string slot, Color color, float s)
         {
             var dark = Shade(color, 0.5f);
@@ -370,6 +370,13 @@ namespace Drakepg
                     Poly(dx - 9, 22, dx - 9, -2, dx - 10, -14, dx - 5, -16, dx - 3, -6, dx - 1, -20, dx + 3, -20, dx + 4, -6, dx + 6, -16, dx + 10, -12, dx + 9, 22);
                     g.FillRect(dark, (dx - 9) * s, 14 * s, 18 * s, 4 * s);
                 }
+            }
+            else if (slot == "legs")
+            {
+                Poly(-15, -22, 15, -22, 19, 22, 5, 22, 0, -5, -5, 22, -19, 22);
+                g.FillRect(dark, -15 * s, -22 * s, 30 * s, 5 * s);
+                foreach (var dx in new float[] { -11, 11 }) g.FillRect(Shade(color, 0.72f), (dx - 5) * s, 3 * s, 10 * s, 7 * s);
+                g.FillRect(Alpha(0xffffff, 0.2f), -12 * s, -14 * s, 4 * s, 14 * s);
             }
             else
             {

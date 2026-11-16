@@ -1,5 +1,5 @@
 {
- "saveVersion": 19,
+ "saveVersion": 20,
  "balance": {
   "restoreAfterBattle": false,
   "innCost": 5,
@@ -172,6 +172,7 @@
    "body": 0.7,
    "helm": 0.3,
    "gloves": 0.2,
+   "legs": 0.2,
    "boots": 0.2
   },
   "setDrop": {
@@ -2812,6 +2813,21 @@
    "tier": 1
   },
   {
+   "id": "leather_leggings",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Leather Leggings",
+   "description": "Thick hide, soft at the knees.",
+   "price": 25,
+   "iconColor": 8409645,
+   "defense": {
+    "melee": 2,
+    "pierce": 1,
+    "magic": 1
+   },
+   "tier": 1
+  },
+  {
    "id": "leather_boots",
    "type": "armor",
    "slot": "boots",
@@ -2849,6 +2865,21 @@
    "description": "Cloth wraps that keep the fingers nimble for spells.",
    "price": 25,
    "iconColor": 11022898,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 2
+   },
+   "tier": 1
+  },
+  {
+   "id": "apprentice_trousers",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Apprentice Trousers",
+   "description": "Warding thread down each seam.",
+   "price": 25,
+   "iconColor": 9973294,
    "defense": {
     "melee": 1,
     "pierce": 1,
@@ -2953,6 +2984,21 @@
    "tier": 2
   },
   {
+   "id": "scale_leggings",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Scale Leggings",
+   "description": "Steel scales sewn over padded cloth.",
+   "price": 80,
+   "iconColor": 9147806,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 1
+   },
+   "tier": 2
+  },
+  {
    "id": "scale_boots",
    "type": "armor",
    "slot": "boots",
@@ -2990,6 +3036,21 @@
    "description": "Light, dry and covered in tiny runes.",
    "price": 80,
    "iconColor": 11051594,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 3
+   },
+   "tier": 2
+  },
+  {
+   "id": "reedweave_trousers",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Reedweave Trousers",
+   "description": "Dry in any marsh, and oddly light.",
+   "price": 80,
+   "iconColor": 10196546,
    "defense": {
     "melee": 1,
     "pierce": 1,
@@ -3101,6 +3162,21 @@
    "tier": 3
   },
   {
+   "id": "ridgeplate_legguards",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Ridgeplate Legguards",
+   "description": "Steel plates strapped over fur.",
+   "price": 180,
+   "iconColor": 10531258,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 1
+   },
+   "tier": 3
+  },
+  {
    "id": "ridgeplate_boots",
    "type": "armor",
    "slot": "boots",
@@ -3138,6 +3214,21 @@
    "description": "Spellwork in mittens. Hearthold insists.",
    "price": 180,
    "iconColor": 15787730,
+   "defense": {
+    "melee": 1,
+    "pierce": 1,
+    "magic": 4
+   },
+   "tier": 3
+  },
+  {
+   "id": "fleecewool_leggings",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Fleecewool Leggings",
+   "description": "Thick wool with a rune on each knee.",
+   "price": 180,
+   "iconColor": 14997955,
    "defense": {
     "melee": 1,
     "pierce": 1,
@@ -3254,6 +3345,22 @@
    "tier": 1
   },
   {
+   "id": "thornwarden_leggings",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Thornwarden Leggings",
+   "description": "Bark plates laced with bramble.",
+   "price": 90,
+   "iconColor": 5669429,
+   "defense": {
+    "melee": 2,
+    "pierce": 1,
+    "magic": 1
+   },
+   "set": "thornwarden",
+   "tier": 1
+  },
+  {
    "id": "thornwarden_boots",
    "type": "armor",
    "slot": "boots",
@@ -3322,6 +3429,22 @@
    "tier": 2
   },
   {
+   "id": "stormwatch_leggings",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Stormwatch Leggings",
+   "description": "Oiled hide, copper at the knees.",
+   "price": 220,
+   "iconColor": 3433615,
+   "defense": {
+    "melee": 2,
+    "pierce": 2,
+    "magic": 2
+   },
+   "set": "stormwatch",
+   "tier": 2
+  },
+  {
    "id": "stormwatch_boots",
    "type": "armor",
    "slot": "boots",
@@ -3377,6 +3500,22 @@
    "description": "White fur cuffs over rime-steel.",
    "price": 440,
    "iconColor": 11789820,
+   "defense": {
+    "melee": 3,
+    "pierce": 3,
+    "magic": 2
+   },
+   "set": "frostward",
+   "tier": 3
+  },
+  {
+   "id": "frostward_legguards",
+   "type": "armor",
+   "slot": "legs",
+   "name": "Frostward Legguards",
+   "description": "Rime-steel that never stiffens in the cold.",
+   "price": 440,
+   "iconColor": 10672122,
    "defense": {
     "melee": 3,
     "pierce": 3,
@@ -9090,10 +9229,12 @@
        "leather_armor",
        "leather_cap",
        "leather_gloves",
+       "leather_leggings",
        "leather_boots",
        "apprentice_robe",
        "apprentice_hood",
        "apprentice_wraps",
+       "apprentice_trousers",
        "apprentice_slippers",
        "book_field_dressing"
       ]
@@ -9141,14 +9282,17 @@
        "galeweave_robe",
        "thornwarden_helm",
        "thornwarden_gloves",
+       "thornwarden_leggings",
        "thornwarden_boots",
        "thornwarden_band",
        "stormwatch_helm",
        "stormwatch_gloves",
+       "stormwatch_leggings",
        "stormwatch_boots",
        "stormwatch_amulet",
        "frostward_helm",
        "frostward_gloves",
+       "frostward_legguards",
        "frostward_boots",
        "frostward_ring"
       ]
@@ -9863,10 +10007,12 @@
        "scale_mail",
        "scale_coif",
        "scale_gauntlets",
+       "scale_leggings",
        "scale_boots",
        "reedweave_robe",
        "reedweave_hood",
        "reedweave_wraps",
+       "reedweave_trousers",
        "reedweave_slippers"
       ]
      },
@@ -10523,10 +10669,12 @@
        "ridgeplate",
        "ridgeplate_helm",
        "ridgeplate_gauntlets",
+       "ridgeplate_legguards",
        "ridgeplate_boots",
        "fleecewool_robe",
        "fleecewool_hood",
        "fleecewool_mittens",
+       "fleecewool_leggings",
        "fleecewool_boots",
        "frostbite",
        "hoarfrost_staff",
@@ -11803,6 +11951,25 @@
    ]
   },
   {
+   "id": "thornwarden_leggings",
+   "result": "thornwarden_leggings",
+   "gold": 50,
+   "materials": [
+    {
+     "itemId": "moss_clump",
+     "qty": 4
+    },
+    {
+     "itemId": "boar_tusk",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 1
+    }
+   ]
+  },
+  {
    "id": "thornwarden_boots",
    "result": "thornwarden_boots",
    "gold": 50,
@@ -11858,6 +12025,25 @@
   {
    "id": "stormwatch_gloves",
    "result": "stormwatch_gloves",
+   "gold": 120,
+   "materials": [
+    {
+     "itemId": "fen_hide",
+     "qty": 3
+    },
+    {
+     "itemId": "storm_scale",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 2
+    }
+   ]
+  },
+  {
+   "id": "stormwatch_leggings",
+   "result": "stormwatch_leggings",
    "gold": 120,
    "materials": [
     {
@@ -11942,6 +12128,25 @@
     },
     {
      "itemId": "rime_shard",
+     "qty": 1
+    },
+    {
+     "itemId": "scrap",
+     "qty": 3
+    }
+   ]
+  },
+  {
+   "id": "frostward_legguards",
+   "result": "frostward_legguards",
+   "gold": 240,
+   "materials": [
+    {
+     "itemId": "frost_pelt",
+     "qty": 3
+    },
+    {
+     "itemId": "ram_horn",
      "qty": 1
     },
     {
@@ -12065,6 +12270,9 @@
       "itemId": "leather_boots"
      },
      {
+      "itemId": "leather_leggings"
+     },
+     {
       "itemId": "apprentice_hood"
      },
      {
@@ -12072,6 +12280,9 @@
      },
      {
       "itemId": "apprentice_slippers"
+     },
+     {
+      "itemId": "apprentice_trousers"
      }
     ],
     "uncommon": [
@@ -12148,6 +12359,9 @@
       "itemId": "scale_boots"
      },
      {
+      "itemId": "scale_leggings"
+     },
+     {
       "itemId": "reedweave_hood"
      },
      {
@@ -12155,6 +12369,9 @@
      },
      {
       "itemId": "reedweave_slippers"
+     },
+     {
+      "itemId": "reedweave_trousers"
      }
     ],
     "uncommon": [
@@ -12284,6 +12501,9 @@
       "itemId": "ridgeplate_boots"
      },
      {
+      "itemId": "ridgeplate_legguards"
+     },
+     {
       "itemId": "fleecewool_hood"
      },
      {
@@ -12291,6 +12511,9 @@
      },
      {
       "itemId": "fleecewool_boots"
+     },
+     {
+      "itemId": "fleecewool_leggings"
      }
     ],
     "uncommon": [
@@ -12456,6 +12679,7 @@
    "pieces": [
     "thornwarden_helm",
     "thornwarden_gloves",
+    "thornwarden_leggings",
     "thornwarden_boots",
     "thornwarden_band"
    ],
@@ -12479,6 +12703,7 @@
    "pieces": [
     "stormwatch_helm",
     "stormwatch_gloves",
+    "stormwatch_leggings",
     "stormwatch_boots",
     "stormwatch_amulet"
    ],
@@ -12503,6 +12728,7 @@
    "pieces": [
     "frostward_helm",
     "frostward_gloves",
+    "frostward_legguards",
     "frostward_boots",
     "frostward_ring"
    ],
@@ -12618,16 +12844,19 @@
     "warrior": [
      "leather_cap",
      "leather_gloves",
+     "leather_leggings",
      "leather_boots"
     ],
     "mage": [
      "apprentice_hood",
      "apprentice_wraps",
+     "apprentice_trousers",
      "apprentice_slippers"
     ],
     "rogue": [
      "leather_cap",
      "leather_gloves",
+     "leather_leggings",
      "leather_boots"
     ]
    },
@@ -12661,16 +12890,19 @@
     "warrior": [
      "scale_coif",
      "scale_gauntlets",
+     "scale_leggings",
      "scale_boots"
     ],
     "mage": [
      "reedweave_hood",
      "reedweave_wraps",
+     "reedweave_trousers",
      "reedweave_slippers"
     ],
     "rogue": [
      "scale_coif",
      "scale_gauntlets",
+     "scale_leggings",
      "scale_boots"
     ]
    },

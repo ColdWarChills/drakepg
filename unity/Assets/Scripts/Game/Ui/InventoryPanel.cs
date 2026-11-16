@@ -268,13 +268,14 @@ namespace Drakepg
             static readonly Dictionary<string, Vector2> EqPos = new Dictionary<string, Vector2>
             {
                 ["helm"] = new Vector2(42, 112),
-                ["body"] = new Vector2(42, 178),
-                ["gloves"] = new Vector2(42, 244),
-                ["boots"] = new Vector2(42, 310),
+                ["body"] = new Vector2(42, 172),
+                ["gloves"] = new Vector2(42, 232),
+                ["legs"] = new Vector2(42, 292),
+                ["boots"] = new Vector2(42, 352),
                 ["weapon"] = new Vector2(258, 112),
-                ["necklace"] = new Vector2(258, 178),
-                ["ring1"] = new Vector2(258, 244),
-                ["ring2"] = new Vector2(258, 310),
+                ["necklace"] = new Vector2(258, 172),
+                ["ring1"] = new Vector2(258, 232),
+                ["ring2"] = new Vector2(258, 292),
                 ["offhand"] = new Vector2(192, 112),
                 ["spare"] = new Vector2(126, 112),
             };
@@ -521,7 +522,7 @@ namespace Drakepg
 
                 var lines = StatLines();
                 var col = Flow(c);
-                Ui.Place(col, 20, 378);
+                Ui.Place(col, 20, 388);
                 col.style.width = 284;
                 for (int i = 0; i < lines.Count; i++)
                 {

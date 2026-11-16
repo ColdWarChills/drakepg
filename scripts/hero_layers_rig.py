@@ -59,7 +59,7 @@ SLOTS = {
     "boots": ["n_shin", "n_foot", "f_shin", "f_foot"],  # worn over the legs' shins
 }
 GEAR = {"chest_leather": "chest", "chest_scale": "chest", "helm_cap": "helm", "helm_coif": "helm",
-        "legs_plain": "legs", "legs_plate": "legs", "boots_steel": "boots"}
+        "legs_plain": "legs", "legs_plate": "legs", "legs_leather": "legs", "boots_steel": "boots"}
 WEAPONS = {"iron_sword": ("wpn_iron_sword", 0.78, 0.62), "oak_staff": ("wpn_oak_staff", 0.45, 1.0),
            "rusty_dagger": ("wpn_rusty_dagger", 0.89, 0.3)}
 

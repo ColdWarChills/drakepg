@@ -72,14 +72,14 @@ namespace Drakepg.Rules
         /// Worn slots in display order. Their stats count; the spare weapon's don't. `weapon` is the main hand, `offhand`
         /// the other one (a second one-handed weapon; shields later).
         /// </summary>
-        public static readonly string[] EquipSlots = { "weapon", "offhand", "helm", "body", "gloves", "boots", "necklace", "ring1", "ring2" };
+        public static readonly string[] EquipSlots = { "weapon", "offhand", "helm", "body", "gloves", "legs", "boots", "necklace", "ring1", "ring2" };
 
         /// <summary>The worn slots plus the spare weapon.</summary>
-        public static readonly string[] AllSlots = { "weapon", "offhand", "helm", "body", "gloves", "boots", "necklace", "ring1", "ring2", "spare" };
+        public static readonly string[] AllSlots = { "weapon", "offhand", "helm", "body", "gloves", "legs", "boots", "necklace", "ring1", "ring2", "spare" };
 
         public static readonly Dictionary<string, string> SlotLabels = new Dictionary<string, string>
         {
-            ["weapon"] = "Main\nhand", ["offhand"] = "Off\nhand", ["helm"] = "Helm", ["body"] = "Body", ["gloves"] = "Gloves", ["boots"] = "Boots",
+            ["weapon"] = "Main\nhand", ["offhand"] = "Off\nhand", ["helm"] = "Helm", ["body"] = "Body", ["gloves"] = "Gloves", ["legs"] = "Legs", ["boots"] = "Boots",
             ["necklace"] = "Necklace", ["ring1"] = "Ring", ["ring2"] = "Ring", ["spare"] = "Spare\nweapon",
         };
 

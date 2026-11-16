@@ -82,6 +82,11 @@ EDITS = {
                           f"undyed ochre linen with a square sewn patch on one knee, tucked into the same tall brown "
                           f"boots. His shirt, belt, head, hair and headband are unchanged. {SAME} {NOTHING} "
                           f"{RGBA_CLOSE}", None),
+    "legs_leather": ("rig", f"{RGBA_OPEN} Edit <image1>. Change only his trousers: he now wears snug leggings of "
+                            f"warm brown leather with visible stitched seams down the side, a padded darker leather "
+                            f"patch on each knee and a thin leather strap tied around each thigh, tucked into the same "
+                            f"tall brown boots. His shirt, belt, head, hair and headband are unchanged. {SAME} "
+                            f"{NOTHING} {RGBA_CLOSE}", None),
     "legs_plate": ("rig", f"{RGBA_OPEN} Edit <image1>. Change only what he wears on his legs: he now wears steel plate "
                           f"leg armor over his dark teal trousers: a steel plate on the front of each thigh, a round "
                           f"steel knee guard on each knee and steel greaves covering each shin down to the ankle, with "
@@ -201,13 +206,17 @@ ROD_LONG = ("Both of his fists firmly grip one single long straight pole: a plai
             "and his thumbs close over them, so the pole passes through both closed fists; the two fists are about "
             "two fist-widths apart near the middle of the pole. No sword, no blade, no ornament, no other object.")
 HOLDS = {
-    "left_ready": (f"a ready sword-fighting stance with the sword in his left hand: three-quarter view facing right, "
-                   f"feet planted wide apart with the front foot forward, both knees bent, his weight sunk low, his "
-                   f"chest turned a little toward the viewer; {FAR} is bent and reaches forward, its fist held out in "
-                   f"front of his body at the height of his waist, clearly visible to the right of his torso against "
-                   f"the empty background, gripping the rod so that the rod points up and forward to the upper right, "
-                   f"like a sword held in a low guard; {NEAR} is bent with an empty clenched fist held back beside "
-                   f"his near hip, well apart from the other fist; a calm, alert face", ROD_LEFT),
+    "left_ready": (f"a ready sword-fighting stance with the sword in his left hand, braced and relaxed: three-quarter "
+                   f"view facing right, feet planted wide apart with the front foot forward, both knees bent, his "
+                   f"weight sunk low, his chest turned a little toward the viewer and his shoulders broad and squared; "
+                   f"{FAR} the arm on the right side of the picture, is bent at a right angle with the elbow tucked "
+                   f"near his ribs and the forearm pointing forward to the right, level with the ground; its fist is "
+                   f"at waist height, one forearm's length in front of his belly, seen against the empty background "
+                   f"just to the right of his torso, gripping the rod so that the rod leans forward at a slant, "
+                   f"pointing up and forward to the upper right, like a sword resting in a low guard; the arm is not "
+                   f"stretched out and the rod is not upright; {NEAR} the arm on the left side of the picture, is "
+                   f"bent with an empty clenched fist held low beside his near hip, holding nothing at all; a calm, "
+                   f"alert face", ROD_LEFT + " The rod is only in the fist on the right side of the picture."),
     "left_strike": (f"the end of a big downward diagonal sword slash made with his left hand: three-quarter view facing "
                     f"right, a deep forward lunge with the front knee bent and the back leg stretched far out behind, "
                     f"his upper body bent far forward; {FAR} is swung down and forward, stretched out straight in "
@@ -264,13 +273,13 @@ EDITS.update({
                            f"and headband are unchanged. {SAME} {NOTHING} {RGBA_CLOSE}", None),
 })
 PICKS: dict[str, int] = {"rig": 6100, "grip": 6100, "chest_leather": 6100, "chest_scale": 6100, "helm_cap": 6100,
-                         "helm_coif": 6101, "legs_plain": 6100, "legs_plate": 6100,
+                         "helm_coif": 6101, "legs_plain": 6100, "legs_plate": 6100, "legs_leather": 6211,
                          "up_ready": 6100, "up_wind": 6111, "up_strike": 6100, "up_hurt": 6101,
                          "face_shout": 6100, "face_hurt": 6100, "boots_steel": 6100,
                          "set_ready": 6102, "set_wind": 6120, "set_strike": 6120, "set_hurt": 6100, "low_strike": 6101, "low_wind": 6120,
                          "arm_strike": 6120,
                          # The holds of step 2 (hands): a sword in the left hand, two weapons, one in both hands.
-                         "up_left_ready": 6200, "up_left_strike": 6200, "up_dual_ready": 6200, "up_dual_strike": 6201,
+                         "up_left_ready": 6220, "up_left_strike": 6200, "up_dual_ready": 6200, "up_dual_strike": 6201,
                          "up_staff_ready": 6200, "up_staff_strike": 6201}
 
 

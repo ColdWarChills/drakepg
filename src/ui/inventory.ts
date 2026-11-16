@@ -65,17 +65,18 @@ const CARD_Y = 70;
 const CARD_W = 358;
 const CARD_H = 590;
 const SLOT_BG = 0x2a2236;
-/** The hero's equipment slots: left column armor, right column main hand and jewelry; the off hand and the spare weapon beside the main hand. */
+/** The hero's equipment slots: left column armor (five pieces, head to feet), right column main hand and jewelry; the off hand and the spare weapon beside the main hand. */
 const EQ = 58;
 const EQ_POS: Record<EquipSlot, { x: number; y: number }> = {
   helm: { x: 42, y: 112 },
-  body: { x: 42, y: 178 },
-  gloves: { x: 42, y: 244 },
-  boots: { x: 42, y: 310 },
+  body: { x: 42, y: 172 },
+  gloves: { x: 42, y: 232 },
+  legs: { x: 42, y: 292 },
+  boots: { x: 42, y: 352 },
   weapon: { x: 258, y: 112 },
-  necklace: { x: 258, y: 178 },
-  ring1: { x: 258, y: 244 },
-  ring2: { x: 258, y: 310 },
+  necklace: { x: 258, y: 172 },
+  ring1: { x: 258, y: 232 },
+  ring2: { x: 258, y: 292 },
   offhand: { x: 192, y: 112 },
   spare: { x: 126, y: 112 },
 };
@@ -300,7 +301,7 @@ class InventoryView {
       `Max HP ${player.maxHp} · Max MP ${player.maxMp}`,
       `Gold ${player.gold}`,
     ];
-    const stats = addText(scene, 20, 378, lines.join('\n'), { size: 15, wrap: 284 }).setLineSpacing(5);
+    const stats = addText(scene, 20, 388, lines.join('\n'), { size: 15, wrap: 284 }).setLineSpacing(5);
     c.add(stats);
     // Sets being worn, and what they switch on.
     let y = stats.y + stats.height + 8;

@@ -119,12 +119,12 @@ const SUPERIOR = 'superior_health_potion';
 
 /** Helm, gloves and boots worn with each shop body armor (the same tier, heavy or light). Starter armor has none. */
 const KITS: Record<string, string[]> = {
-  leather_armor: ['leather_cap', 'leather_gloves', 'leather_boots'],
-  apprentice_robe: ['apprentice_hood', 'apprentice_wraps', 'apprentice_slippers'],
-  scale_mail: ['scale_coif', 'scale_gauntlets', 'scale_boots'],
-  reedweave_robe: ['reedweave_hood', 'reedweave_wraps', 'reedweave_slippers'],
-  ridgeplate: ['ridgeplate_helm', 'ridgeplate_gauntlets', 'ridgeplate_boots'],
-  fleecewool_robe: ['fleecewool_hood', 'fleecewool_mittens', 'fleecewool_boots'],
+  leather_armor: ['leather_cap', 'leather_gloves', 'leather_leggings', 'leather_boots'],
+  apprentice_robe: ['apprentice_hood', 'apprentice_wraps', 'apprentice_trousers', 'apprentice_slippers'],
+  scale_mail: ['scale_coif', 'scale_gauntlets', 'scale_leggings', 'scale_boots'],
+  reedweave_robe: ['reedweave_hood', 'reedweave_wraps', 'reedweave_trousers', 'reedweave_slippers'],
+  ridgeplate: ['ridgeplate_helm', 'ridgeplate_gauntlets', 'ridgeplate_legguards', 'ridgeplate_boots'],
+  fleecewool_robe: ['fleecewool_hood', 'fleecewool_mittens', 'fleecewool_leggings', 'fleecewool_boots'],
 };
 
 /**
@@ -535,17 +535,17 @@ const setKit = (set: string[], rings: Record<ClassId, string>, necklace?: string
 const THORN_SET: Loadout = {
   ...SHOP,
   label: 'thornset',
-  kit: setKit(['thornwarden_helm', 'thornwarden_gloves', 'thornwarden_boots', 'thornwarden_band'], { warrior: 'copper_band', mage: 'moonstone_ring', rogue: 'fox_ring' }, 'oak_pendant'),
+  kit: setKit(['thornwarden_helm', 'thornwarden_gloves', 'thornwarden_leggings', 'thornwarden_boots', 'thornwarden_band'], { warrior: 'copper_band', mage: 'moonstone_ring', rogue: 'fox_ring' }, 'oak_pendant'),
 };
 const STORM_SET: Loadout = {
   ...SHOP2,
   label: 'stormset',
-  kit: setKit(['stormwatch_helm', 'stormwatch_gloves', 'stormwatch_boots', 'stormwatch_amulet'], { warrior: 'silver_band', mage: 'tidepearl_ring', rogue: 'eelskin_ring' }),
+  kit: setKit(['stormwatch_helm', 'stormwatch_gloves', 'stormwatch_leggings', 'stormwatch_boots', 'stormwatch_amulet'], { warrior: 'silver_band', mage: 'tidepearl_ring', rogue: 'eelskin_ring' }),
 };
 const FROST_SET: Loadout = {
   ...SHOP3,
   label: 'frostset',
-  kit: setKit(['frostward_helm', 'frostward_gloves', 'frostward_boots', 'frostward_ring'], { warrior: 'gold_band', mage: 'rimeglass_ring', rogue: 'wolfclaw_ring' }, 'hearthstone_pendant'),
+  kit: setKit(['frostward_helm', 'frostward_gloves', 'frostward_legguards', 'frostward_boots', 'frostward_ring'], { warrior: 'gold_band', mage: 'rimeglass_ring', rogue: 'wolfclaw_ring' }, 'hearthstone_pendant'),
 };
 
 table('Sets and jewelry: shop weapon and body, the area set (4 pieces) and jewelry, 0% rolls (3 potions for bosses)', [

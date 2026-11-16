@@ -208,7 +208,7 @@ namespace Drakepg.Rules
         public string Kind;
         /// <summary>Needs both hands, so nothing goes in the off hand. Default: staffs and hammers (Items.TwoHanded).</summary>
         public bool? TwoHanded;
-        // armor (slot: body/helm/gloves/boots) and accessory (slot: ring/necklace)
+        // armor (slot: body/helm/gloves/legs/boots) and accessory (slot: ring/necklace)
         public string Slot;
         public Dictionary<string, double> Defense;
         public Dictionary<string, double> Resists;

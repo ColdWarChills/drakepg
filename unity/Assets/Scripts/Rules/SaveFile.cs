@@ -35,6 +35,7 @@ namespace Drakepg.Rules
                 if (file.Version > Db.Data.SaveVersion || file.Version < 15) return null;
                 if (file.Version < 16) MigrateToBooks(file.Player);
                 if (file.Version < 18) RefundStones(file.Player);
+                // v19 -> v20 (the legs slot): Sanitize gives every save the slots it lacks, empty.
                 return new Player(Sanitize(file.Player));
             }
             catch (Exception)

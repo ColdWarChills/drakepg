@@ -8,7 +8,7 @@ export const DESIGN = { width: GAME_WIDTH, height: GAME_HEIGHT } as const;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 19;
+export const SAVE_VERSION = 20;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -102,8 +102,8 @@ export const BALANCE = {
    * proc multiplies the weapon special's chance, power scales everything an accessory gives.
    */
   gearRolls: { damage: 0.5, crit: 0.05, proc: 0.5, defense: 0.5, hp: 0.15, power: 0.5 },
-  /** How much of an armor piece's Max HP line counts, by slot: a full set of perfect rolls gives +21% Max HP. */
-  armorHpShare: { body: 0.7, helm: 0.3, gloves: 0.2, boots: 0.2 },
+  /** How much of an armor piece's Max HP line counts, by slot: a full set of perfect rolls gives +24% Max HP. */
+  armorHpShare: { body: 0.7, helm: 0.3, gloves: 0.2, legs: 0.2, boots: 0.2 },
   /**
    * Gear sets (src/data/sets.ts): an Elite or boss killed in an area with a set (its loot table's `set`) may also
    * drop one of the set's pieces. Shown on the battle panel's loot line.

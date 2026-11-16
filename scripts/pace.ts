@@ -88,9 +88,9 @@ const CHAPTERS: Chapter[] = [
   {
     name: 'Chapter 1',
     gear: {
-      warrior: ['iron_sword', 'leather_armor', 'leather_cap', 'leather_gloves', 'leather_boots'],
-      mage: ['oak_staff', 'apprentice_robe', 'apprentice_hood', 'apprentice_wraps', 'apprentice_slippers'],
-      rogue: ['hunting_knife', 'leather_armor', 'leather_cap', 'leather_gloves', 'leather_boots'],
+      warrior: ['iron_sword', 'leather_armor', 'leather_cap', 'leather_gloves', 'leather_leggings', 'leather_boots'],
+      mage: ['oak_staff', 'apprentice_robe', 'apprentice_hood', 'apprentice_wraps', 'apprentice_trousers', 'apprentice_slippers'],
+      rogue: ['hunting_knife', 'leather_armor', 'leather_cap', 'leather_gloves', 'leather_leggings', 'leather_boots'],
     },
     potion: 'health_potion',
     quests: [],
@@ -98,9 +98,9 @@ const CHAPTERS: Chapter[] = [
   {
     name: 'Chapter 2',
     gear: {
-      warrior: ['steel_broadsword', 'scale_mail', 'scale_coif', 'scale_gauntlets', 'scale_boots'],
-      mage: ['yew_staff', 'reedweave_robe', 'reedweave_hood', 'reedweave_wraps', 'reedweave_slippers'],
-      rogue: ['fenwatch_stiletto', 'scale_mail', 'scale_coif', 'scale_gauntlets', 'scale_boots'],
+      warrior: ['steel_broadsword', 'scale_mail', 'scale_coif', 'scale_gauntlets', 'scale_leggings', 'scale_boots'],
+      mage: ['yew_staff', 'reedweave_robe', 'reedweave_hood', 'reedweave_wraps', 'reedweave_trousers', 'reedweave_slippers'],
+      rogue: ['fenwatch_stiletto', 'scale_mail', 'scale_coif', 'scale_gauntlets', 'scale_leggings', 'scale_boots'],
     },
     potion: 'greater_health_potion',
     quests: [],
@@ -108,9 +108,9 @@ const CHAPTERS: Chapter[] = [
   {
     name: 'Chapter 3',
     gear: {
-      warrior: ['hearthfire_blade', 'ridgeplate', 'ridgeplate_helm', 'ridgeplate_gauntlets', 'ridgeplate_boots'],
-      mage: ['kindling_rod', 'fleecewool_robe', 'fleecewool_hood', 'fleecewool_mittens', 'fleecewool_boots'],
-      rogue: ['salamander_kris', 'ridgeplate', 'ridgeplate_helm', 'ridgeplate_gauntlets', 'ridgeplate_boots'],
+      warrior: ['hearthfire_blade', 'ridgeplate', 'ridgeplate_helm', 'ridgeplate_gauntlets', 'ridgeplate_legguards', 'ridgeplate_boots'],
+      mage: ['kindling_rod', 'fleecewool_robe', 'fleecewool_hood', 'fleecewool_mittens', 'fleecewool_leggings', 'fleecewool_boots'],
+      rogue: ['salamander_kris', 'ridgeplate', 'ridgeplate_helm', 'ridgeplate_gauntlets', 'ridgeplate_legguards', 'ridgeplate_boots'],
     },
     spare: { warrior: 'tempered_longsword', mage: 'larchwood_staff', rogue: 'ridgerunner_kris' },
     potion: 'superior_health_potion',

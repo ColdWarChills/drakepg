@@ -212,7 +212,7 @@ export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): P
     g.fillStyle(0x8a6d3b).fillRect(-14 * s, 12 * s, 28 * s, 5 * s).fillRect(-3 * s, 17 * s, 6 * s, 12 * s);
     g.setAngle(45);
   } else if (def.type === 'armor' && armorSlot(def) !== 'body') {
-    drawArmorPiece(g, armorSlot(def) as 'helm' | 'gloves' | 'boots', color, s);
+    drawArmorPiece(g, armorSlot(def) as 'helm' | 'gloves' | 'legs' | 'boots', color, s);
   } else if (def.type === 'accessory') {
     if (def.slot === 'ring') {
       g.lineStyle(7 * s, color).strokeCircle(0, 6 * s, 15 * s);
@@ -259,8 +259,8 @@ export function drawItemIcon(scene: Phaser.Scene, def: ItemDef, size: number): P
   return c;
 }
 
-/** Drawn helm, gloves or boots (until `icon_<id>` art exists). */
-function drawArmorPiece(g: Phaser.GameObjects.Graphics, slot: 'helm' | 'gloves' | 'boots', color: number, s: number): void {
+/** Drawn helm, gloves, legs or boots (until `icon_<id>` art exists). */
+function drawArmorPiece(g: Phaser.GameObjects.Graphics, slot: 'helm' | 'gloves' | 'legs' | 'boots', color: number, s: number): void {
   const dark = shade(color, 0.5);
   const poly = (pts: number[][]) => {
     const v = pts.map(([x, y]) => new Phaser.Math.Vector2(x * s, y * s));
@@ -276,6 +276,11 @@ function drawArmorPiece(g: Phaser.GameObjects.Graphics, slot: 'helm' | 'gloves' 
       poly([[dx - 9, 22], [dx - 9, -2], [dx - 10, -14], [dx - 5, -16], [dx - 3, -6], [dx - 1, -20], [dx + 3, -20], [dx + 4, -6], [dx + 6, -16], [dx + 10, -12], [dx + 9, 22]]);
       g.fillStyle(dark).fillRect((dx - 9) * s, 14 * s, 18 * s, 4 * s);
     }
+  } else if (slot === 'legs') {
+    poly([[-15, -22], [15, -22], [19, 22], [5, 22], [0, -5], [-5, 22], [-19, 22]]);
+    g.fillStyle(dark).fillRect(-15 * s, -22 * s, 30 * s, 5 * s);
+    for (const dx of [-11, 11]) g.fillStyle(dark, 0.55).fillRect((dx - 5) * s, 3 * s, 10 * s, 7 * s);
+    g.fillStyle(0xffffff, 0.2).fillRect(-12 * s, -14 * s, 4 * s, 14 * s);
   } else {
     for (const dx of [-11, 11]) {
       poly([[dx - 7, -22], [dx + 5, -22], [dx + 5, 10], [dx + 14, 14], [dx + 14, 22], [dx - 7, 22]]);

@@ -365,6 +365,7 @@ namespace Drakepg.Test
                 sr.sprite = sprite;
                 sr.transform.localPosition = new Vector3((canvas.x - Centre) * unit, (Ground - canvas.y) * unit, 0);
                 sr.transform.localRotation = Quaternion.Euler(0, 0, -deg);
+                sr.transform.localScale = Vector3.one;
                 sr.sortingOrder = Mathf.RoundToInt(depth * 10);
             }
 
@@ -387,7 +388,10 @@ namespace Drakepg.Test
             {
                 Vector2 Hip(string side) => waist + Rot(j[side + "_hip"] - j["waist"], s.Lean);
                 Vector2 Ankle(string side) => j[side + "_ankle"] + (side == "n" ? s.NFoot : s.FFoot);
-                float Reach(string side) => (j[side + "_knee"] - j[side + "_hip"]).magnitude + (j[side + "_ankle"] - j[side + "_knee"]).magnitude;
+                // The rig's legs are drawn a little longer, to stand as tall as the drawn poses' own legs.
+                float longer = d.Fight["legsLong"] != null ? (float)d.Fight["legsLong"] : 1;
+                Vector2 Bone(string from, string to) => Vector2.Scale(j[to] - j[from], new Vector2(1, longer));
+                float Reach(string side) => Bone(side + "_hip", side + "_knee").magnitude + Bone(side + "_knee", side + "_ankle").magnitude;
                 // The hips drop until both legs reach their ankles, then sink a little more.
                 for (int i = 0; i < 200; i++)
                 {
@@ -399,7 +403,7 @@ namespace Drakepg.Test
                 Show("hips", Picture(d.Fight["hips"][legs], j["waist"]), waist, s.Lean, d.Part["hips"].z);
                 foreach (var side in new[] { "n", "f" })
                 {
-                    Vector2 k = j[side + "_knee"] - j[side + "_hip"], a = j[side + "_ankle"] - j[side + "_knee"];
+                    Vector2 k = Bone(side + "_hip", side + "_knee"), a = Bone(side + "_knee", side + "_ankle");
                     var hip = Hip(side);
                     var (d1, d2) = Ik(hip, Ankle(side), k.magnitude, a.magnitude, -1);
                     float t1 = Norm(d1 - Ang(k)), t2 = Norm(d2 - Ang(a));
@@ -409,6 +413,7 @@ namespace Drakepg.Test
                     {
                         string set = boots != null && Array.IndexOf(Boots, part) >= 0 ? boots : legs;
                         Show(part, Picture(d.Rig["sets"][set][part], j[d.Part[part].joint]), at, turn, d.Part[part].z);
+                        if (!part.EndsWith("_foot")) layers[part].transform.localScale = new Vector3(1, longer, 1);
                     }
                     Leg(side + "_thigh", hip, t1);
                     Leg(side + "_shin", knee, t2);

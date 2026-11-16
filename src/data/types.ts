@@ -244,7 +244,7 @@ export interface WeaponDef extends ItemBase {
 export type WeaponKind = 'sword' | 'axe' | 'hammer' | 'dagger' | 'staff' | 'wand';
 
 /** Where an armor piece is worn. Default: body. */
-export type ArmorSlot = 'body' | 'helm' | 'gloves' | 'boots';
+export type ArmorSlot = 'body' | 'helm' | 'gloves' | 'legs' | 'boots';
 
 export interface ArmorDef extends ItemBase {
   type: 'armor';
@@ -346,7 +346,7 @@ export interface RecipeDef {
  * `weapon` is the main hand, `offhand` the other one (a second one-handed weapon; shields later). `spare`: a second
  * weapon, carried but not worn (no stats) until swapped into the main hand (in battle or the inventory).
  */
-export type EquipSlot = 'weapon' | 'offhand' | 'helm' | 'body' | 'gloves' | 'boots' | 'necklace' | 'ring1' | 'ring2' | 'spare';
+export type EquipSlot = 'weapon' | 'offhand' | 'helm' | 'body' | 'gloves' | 'legs' | 'boots' | 'necklace' | 'ring1' | 'ring2' | 'spare';
 
 export interface MonsterAttack {
   name: string;
