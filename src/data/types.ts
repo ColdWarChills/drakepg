@@ -236,6 +236,8 @@ export interface WeaponDef extends ItemBase {
   size?: number;
   /** How it's swung in battle (Unity): a sword's arc, an axe's chop, a hammer's smash, a dagger's stabs, a staff's twirl, a wand's flick. */
   kind?: WeaponKind;
+  /** Needs both hands, so nothing goes in the off hand. Default: staffs and hammers (`twoHanded` in src/game/Items.ts). */
+  twoHanded?: boolean;
 }
 
 /** The family a weapon's attack animation comes from. */
@@ -340,8 +342,11 @@ export interface RecipeDef {
   materials: { itemId: string; qty: number }[];
   gold: number;
 }
-/** `spare`: a second weapon, carried but not worn (no stats) until swapped into the hand (in battle or the inventory). */
-export type EquipSlot = 'weapon' | 'helm' | 'body' | 'gloves' | 'boots' | 'necklace' | 'ring1' | 'ring2' | 'spare';
+/**
+ * `weapon` is the main hand, `offhand` the other one (a second one-handed weapon; shields later). `spare`: a second
+ * weapon, carried but not worn (no stats) until swapped into the main hand (in battle or the inventory).
+ */
+export type EquipSlot = 'weapon' | 'offhand' | 'helm' | 'body' | 'gloves' | 'boots' | 'necklace' | 'ring1' | 'ring2' | 'spare';
 
 export interface MonsterAttack {
   name: string;

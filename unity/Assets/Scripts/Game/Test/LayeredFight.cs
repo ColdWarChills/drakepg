@@ -24,7 +24,7 @@ namespace Drakepg.Test
         const float Ground = 1345, Centre = 760;
         static readonly string[] Legs = { "hips", "n_thigh", "n_shin", "n_foot", "f_thigh", "f_shin", "f_foot" };
         static readonly string[] Boots = { "n_shin", "n_foot", "f_shin", "f_foot" };
-        static readonly string[] Upper = { "body", "fist", "chest", "hands", "gloves", "glove_fist" };
+        static readonly string[] Upper = { "body", "fist", "fist2", "chest", "hands", "gloves", "glove_fist" };
         static readonly string[] DrawnLegs = { "legs", "legs_set", "boots_set" };
 
         class Data
@@ -54,6 +54,11 @@ namespace Drakepg.Test
         Stance stance;
         float unit, busyUntil;
         public string Weapon = "iron_sword";
+        /// <summary>The weapon in the other hand (two one-handed weapons), or null.</summary>
+        public string Weapon2;
+        /// <summary>How the weapons are held: "" (one in the right hand), "left", "dual", "staff" (both hands on one).
+        /// A hold has its own drawn moments, named hold_moment in fight.json (docs/PLANS.md "Layered hero rebuild", step 2).</summary>
+        public string Hold = "";
         /// <summary>The standing hero breathes: the hips rise and sink over planted feet.</summary>
         public bool Breathes = true;
 
@@ -166,7 +171,7 @@ namespace Drakepg.Test
             var names = new List<string>(Legs);
             names.AddRange(Upper);
             names.AddRange(DrawnLegs);
-            names.AddRange(new[] { "head", "face", "weapon" });
+            names.AddRange(new[] { "head", "face", "weapon", "weapon2" });
             foreach (var n in names)
             {
                 var sr = new GameObject(n).AddComponent<SpriteRenderer>();
@@ -237,7 +242,32 @@ namespace Drakepg.Test
             };
         }
 
-        public void Set(string moment) => Apply(stance = Of(moment));
+        /// <summary>The hold's own picture of a moment, when it has one.</summary>
+        string Named(string moment) =>
+            Hold != "" && Load().Fight["moments"][Hold + "_" + moment] != null ? Hold + "_" + moment : moment;
+
+        public void Set(string moment) => Apply(stance = Of(Named(moment)));
+
+        /// <summary>The rig's picture for a weapon: its own, else one of its kind.</summary>
+        static string WeaponArt(ItemDef def)
+        {
+            if (Load().Rig["weapons"][def.Id] != null) return def.Id;
+            string kind = Db.WeaponKind(def);
+            return kind == "staff" || kind == "hammer" ? "oak_staff" : kind == "dagger" ? "rusty_dagger" : "iron_sword";
+        }
+
+        /// <summary>Hold what is equipped (the rules' hands): the main hand is the right, the off hand the left,
+        /// a two-handed weapon takes both.</summary>
+        public void Carry(Dictionary<string, Gear> equipment)
+        {
+            var (main, off, _) = Items.Hands(equipment);
+            equipment.TryGetValue(main, out var gear);
+            var def = gear != null ? Items.GearDef(gear) : null;
+            Weapon = def != null ? WeaponArt(def) : null;
+            Weapon2 = off ? WeaponArt(Items.GearDef(equipment["offhand"])) : null;
+            Hold = def == null ? "" : Items.TwoHanded(def) ? "staff" : off ? "dual" : main == "offhand" ? "left" : "";
+            Set("ready");
+        }
 
         /// <summary>
         /// Move to another moment. The legs and the waist go there smoothly; the drawn upper body swaps `swap` of the way,
@@ -245,7 +275,7 @@ namespace Drakepg.Test
         /// </summary>
         public Anim.Handle To(string moment, float seconds, Ease ease = Ease.CubicOut, float swap = 0.5f, float before = 0, float after = 0)
         {
-            Stance a = stance, b = Of(moment);
+            Stance a = stance, b = Of(Named(moment));
             busyUntil = Time.time + seconds + 0.05f;
             return Anim.Float(0, 1, seconds, k => Apply(stance = Mix(a, b, k, swap, before, after)), ease, owner: this);
         }
@@ -397,6 +427,7 @@ namespace Drakepg.Test
             {
                 Body("body");
                 Body("fist");
+                Body("fist2");
             }
             else
             {
@@ -424,6 +455,13 @@ namespace Drakepg.Test
                 var grip = waist + Rot(V(v["grip"]) - pivot, s.Turn);
                 Show("weapon", Picture((string)w["file"], new Vector2((float)w["gx"], (float)w["gy"])), grip,
                     (float)v["blade"] + 90 + s.Turn, (float)v["weaponZ"]);
+            }
+            if (Weapon2 != null && v["grip2"] != null)
+            {
+                var w = d.Rig["weapons"][Weapon2];
+                var grip = waist + Rot(V(v["grip2"]) - pivot, s.Turn);
+                Show("weapon2", Picture((string)w["file"], new Vector2((float)w["gx"], (float)w["gy"])), grip,
+                    (float)v["blade2"] + 90 + s.Turn, (float)v["weaponZ"] - 0.5f);
             }
             if (shadow != null)
             {
@@ -497,6 +535,68 @@ namespace Drakepg.Test
                 home[hero.transform] = hero.transform.position;
             }
             return "stage";
+        }
+
+        /// <summary>
+        /// Step 2, hands: the layered hero once per loadout ("iron_sword|", "|iron_sword", "rusty_dagger|rusty_dagger",
+        /// "oak_staff|": main hand | off hand), equipped through the rules. Above standing ready, below in the strike.
+        /// </summary>
+        public static string Hands(string loadouts = "iron_sword|;|iron_sword;rusty_dagger|rusty_dagger;oak_staff|", float size = 0.8f,
+            float left = 170, float step = 300, float top = 340, float bottom = 690, float lunge = 20)
+        {
+            Clear();
+            LayeredHero.Reload();
+            FightHero.Reload();
+            root = new GameObject("layered hands test");
+            root.transform.SetParent(GameRoot.I.Screen.World, false);
+            var plate = new GameObject("plate").AddComponent<SpriteRenderer>();
+            plate.transform.SetParent(root.transform, false);
+            plate.sprite = Art.White;
+            plate.color = new Color(0.9f, 0.88f, 0.83f);
+            plate.sortingOrder = 29000;
+            plate.transform.position = Design.World(Design.Width / 2, Design.Height / 2);
+            plate.transform.localScale = new Vector3(Design.Width * 2, Design.Height * 2, 1);
+            float scale = (float)Db.Class("warrior").Look.Scale * size;
+            var said = new List<string>();
+            int col = 0;
+            foreach (var loadout in loadouts.Split(';'))
+            {
+                var p = Wear(loadout);
+                for (int row = 0; row < 2; row++)
+                {
+                    var hero = FightHero.Create(root.transform, left + col * step + (row == 1 ? lunge : 0), row == 0 ? top : bottom, scale);
+                    hero.Order = 30000;
+                    hero.Breathes = false;
+                    hero.Carry(p.Data.Equipment);
+                    hero.Set(row == 0 ? "ready" : "strike");
+                    layered.Add(hero);
+                    home[hero.transform] = hero.transform.position;
+                    if (row == 0) said.Add($"{loadout} -> hold '{hero.Hold}' {hero.Weapon} {hero.Weapon2}");
+                }
+                col++;
+            }
+            return string.Join("; ", said);
+        }
+
+        /// <summary>Put a loadout ("main|off" item ids) in the real hero's hands, through the rules (bag and hero then show the same).</summary>
+        static readonly HashSet<string> lent = new HashSet<string>();
+
+        public static Player Wear(string loadout)
+        {
+            var p = Session.Player;
+            p.Unequip("offhand");
+            p.Unequip("weapon");
+            p.Data.Gear.RemoveAll(g => lent.Contains(g.Uid));
+            var ids = loadout.Split('|');
+            for (int hand = 0; hand < 2; hand++)
+            {
+                if (hand >= ids.Length || ids[hand] == "") continue;
+                var gear = p.MakeGear(ids[hand]);
+                p.Data.Gear.Add(gear);
+                lent.Add(gear.Uid);
+                p.Equip(gear.Uid, hand == 0 ? "weapon" : "offhand");
+            }
+            return p;
         }
 
         static void Still(Transform t)

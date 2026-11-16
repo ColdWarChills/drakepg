@@ -88,7 +88,7 @@ namespace Drakepg
                 // --- Equipped (details and changes in the inventory) ---
                 Ui.Text(c, 380, 70, "Equipped", 22, Palette.TextGold, true);
                 // The weapon by name; the other 7 slots as a count, plus the sets being worn.
-                var weapon = player.Data.Equipment.TryGetValue("weapon", out var wg) ? wg : null;
+                var weapon = player.Data.Equipment.TryGetValue(player.HandSlot, out var wg) ? wg : null;
                 Ui.Text(c, 380, 108, "Weapon", 17, Palette.TextDim);
                 if (weapon != null)
                 {
@@ -96,7 +96,7 @@ namespace Drakepg
                     Ui.Text(c, 470, 108, PanelKit.LootName(def, weapon), 17, PanelKit.GradeInfo(def, weapon).NameColor, true);
                 }
                 else Ui.Text(c, 470, 108, "(none)", 17, Palette.TextDim);
-                var worn = Items.EquipSlots.Count(slot => slot != "weapon" && player.Data.Equipment.TryGetValue(slot, out var piece) && piece != null);
+                var worn = Items.EquipSlots.Count(slot => slot != player.HandSlot && player.Data.Equipment.TryGetValue(slot, out var piece) && piece != null);
                 var sets = Sets.SetCounts(player.Data.Equipment).Select(sc => $"{Db.Set(sc.id).Name} {sc.count}/{Db.Set(sc.id).Pieces.Count}");
                 Ui.Text(c, 380, 138, string.Join("  ·  ", new[] { $"Gear  {worn}/{Items.EquipSlots.Length - 1} slots" }.Concat(sets)), 17, Palette.TextDim);
                 new UiButton(c, 960, 122, "Inventory (I)", () => modal.Close(openInventory), 190, 48, 19);

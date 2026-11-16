@@ -74,13 +74,13 @@ export function openCharacterPanel(scene: Phaser.Scene, player: Player, onChange
     // --- Equipped (details and changes in the inventory) ---
     c.add(addText(scene, 380, 70, 'Equipped', { size: 22, bold: true, color: COLORS.textGold }));
     // The weapon by name; the other 7 slots as a count, plus the sets being worn.
-    const weapon = player.data.equipment.weapon;
+    const weapon = player.data.equipment[player.handSlot];
     c.add(addText(scene, 380, 108, 'Weapon', { size: 17, color: COLORS.textDim }));
     if (weapon) {
       const def = gearDef(weapon);
       c.add(addText(scene, 470, 108, lootName(def, weapon), { size: 17, bold: true, color: gradeInfo(def, weapon).nameCss }));
     } else c.add(addText(scene, 470, 108, '(none)', { size: 17, color: COLORS.textDim }));
-    const worn = EQUIP_SLOTS.filter((s) => s !== 'weapon' && player.data.equipment[s]).length;
+    const worn = EQUIP_SLOTS.filter((s) => s !== player.handSlot && player.data.equipment[s]).length;
     const sets = [...setCounts(player.data.equipment)].map(([id, n]) => `${db.set(id).name} ${n}/${db.set(id).pieces.length}`);
     c.add(addText(scene, 380, 138, [`Gear  ${worn}/${EQUIP_SLOTS.length - 1} slots`, ...sets].join('  ·  '), { size: 17, color: COLORS.textDim }));
     c.add(new Button(scene, 960, 122, 'Inventory (I)', () => modal.close(openInventory), { width: 190, height: 48, fontSize: 19 }));

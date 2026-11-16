@@ -275,7 +275,8 @@ namespace Drakepg
                 ["necklace"] = new Vector2(258, 178),
                 ["ring1"] = new Vector2(258, 244),
                 ["ring2"] = new Vector2(258, 310),
-                ["spare"] = new Vector2(192, 112),
+                ["offhand"] = new Vector2(192, 112),
+                ["spare"] = new Vector2(126, 112),
             };
 
             static readonly (string tab, string label)[] Tabs =
@@ -514,6 +515,9 @@ namespace Drakepg
                 foreach (var slot in HeroSlots) Slot(c, EqPos[slot].x, EqPos[slot].y, EquippedEntry(slot), slot, EqSize);
                 // A filled spare slot looks like any weapon: name it.
                 if (Worn("spare") != null) Ui.Text(c, EqPos["spare"].x, EqPos["spare"].y - EqSize / 2 - 3, "Spare", 12, Palette.TextDim, ax: 0.5f, ay: 1);
+                // Filled hand slots look alike: name them. An off-hand piece beside a two-handed weapon waits.
+                if (Worn("offhand") != null)
+                    Ui.Text(c, EqPos["offhand"].x, EqPos["offhand"].y - EqSize / 2 - 3, player.OffhandIdle ? "Waits" : "Off hand", 12, Palette.TextDim, ax: 0.5f, ay: 1);
 
                 var lines = StatLines();
                 var col = Flow(c);
@@ -769,8 +773,11 @@ namespace Drakepg
                     break;
                 }
                 var swap = (entry.Slot == "weapon" && target == "spare") || (entry.Slot == "spare" && target == "weapon");
+                // One hand dropped on the other changes hands.
+                var hands = (entry.Slot == "weapon" && target == "offhand") || (entry.Slot == "offhand" && target == "weapon");
                 if (entry.Slot == null && heroSide) Equip(entry, target, Local(panelPos));
                 else if (swap) SwapWeapons();
+                else if (hands) SwapHands();
                 else if (entry.Slot != null && gridZone != null && gridZone.worldBound.Contains(panelPos)) Unequip(entry.Slot);
                 else Render();
             }
@@ -879,6 +886,27 @@ namespace Drakepg
                 Sfx.Play("equip");
                 Changed();
                 foreach (var sl in new[] { "weapon", "spare" })
+                    if (slotViews.TryGetValue(sl, out var view)) Land(view, EqPos[sl], EqSize);
+                HeroHop();
+                StatFloats(before);
+            }
+
+            /// <summary>The main-hand weapon to the off hand and the other one back.</summary>
+            void SwapHands()
+            {
+                var before = Numbers();
+                statsBefore = StatLines();
+                if (!player.SwapHands())
+                {
+                    statsBefore = null;
+                    Sfx.Play("denied");
+                    Ui.Toast("That weapon needs both hands", Palette.TextBad);
+                    Render();
+                    return;
+                }
+                Sfx.Play("equip");
+                Changed();
+                foreach (var sl in new[] { "weapon", "offhand" })
                     if (slotViews.TryGetValue(sl, out var view)) Land(view, EqPos[sl], EqSize);
                 HeroHop();
                 StatFloats(before);
@@ -1092,7 +1120,7 @@ namespace Drakepg
                 var kind = entry.Def.IsGear ? Items.KindLabel(entry.Def) : NonGearKind.TryGetValue(entry.Def.Type, out var k) ? k : entry.Def.Type;
                 // Gear shows its tier, which also sets how many modifier lines it can carry.
                 var tiered = entry.Def.IsGear ? $"Tier {entry.Def.Tier} {kind}" : kind;
-                var wornText = entry.IsGear && entry.Slot != null ? (entry.Slot == "spare" ? " · Spare" : " · Equipped") : "";
+                var wornText = entry.IsGear && entry.Slot != null ? (entry.Slot == "spare" ? " · Spare" : entry.Slot == "offhand" ? " · Off hand" : entry.Slot == "weapon" ? " · Main hand" : " · Equipped") : "";
                 var sub = entry.IsGear ? $"{tiered} · {ItemUi.GradeLabel(info)}{wornText}" : entry.Kind == EntryKind.Stack ? $"{kind} · x{entry.Qty}" : tiered;
                 FlowText(head, sub, 15, Palette.TextDim);
 
@@ -1159,6 +1187,16 @@ namespace Drakepg
                 if (entry.Def.Type != "consumable" && entry.Def.Type != "material") Line(entry.Def.Description ?? "", Palette.TextDim, 15);
                 if (entry.IsGear && entry.Slot == "spare")
                     Line("Spare weapon: its lines count once it is in your hand. Swap in battle (costs your turn) or here.", Palette.TextMagic, 15);
+                // The two hands: what a weapon does in each (every rule is on the card).
+                if (entry.Def.IsWeapon)
+                {
+                    var off = N(JsMath.Round(Db.B.Hands.OffhandDamage * 100));
+                    var both = N(JsMath.Round((Db.B.Hands.TwoHandedDamage - 1) * 100));
+                    if (entry.IsGear && entry.Slot == "offhand" && player.OffhandIdle)
+                        Line("Off hand: waits while a two-handed weapon is in the main hand.", Palette.TextBad, 15);
+                    else if (Items.TwoHanded(entry.Def)) Line($"Two-handed: hits {both}% harder, and the off hand stays empty.", Palette.TextMagic, 15);
+                    else Line($"In the off hand: adds {off}% of its damage; its stats and added lines count, its special and element don't.", Palette.TextMagic, 15);
+                }
 
                 // The item's set: pieces (worn ones ticked) and bonuses (active ones lit).
                 var set = entry.Def.IsGear ? ItemUi.SetCard(entry.Def.Id, player.Data.Equipment) : null;
@@ -1212,7 +1250,8 @@ namespace Drakepg
                     {
                         if (entry.Slot != null) Add("Unequip", () => Unequip(entry.Slot));
                         else Add("Equip", () => Equip(entry));
-                        // Weapons: carry one as the spare, or swap the hand and the spare.
+                        // Weapons: a one-handed one into the off hand; carry one as the spare, or swap the hand and the spare.
+                        if (entry.Def.IsWeapon && entry.Slot == null && !Items.TwoHanded(entry.Def)) Add("Off hand", () => Equip(entry, "offhand"));
                         var spareOpen = HeroSlots.Contains("spare");
                         if (spareOpen && entry.Def.IsWeapon && entry.Slot == null) Add("As spare", () => Equip(entry, "spare"));
                         if (spareOpen && (entry.Slot == "spare" || (entry.Slot == "weapon" && Worn("spare") != null))) Add("Swap", SwapWeapons);

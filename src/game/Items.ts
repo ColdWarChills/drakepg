@@ -1,5 +1,6 @@
 import { BALANCE } from '../config';
 import { db } from '../data/db';
+import { weaponKind } from '../data/classes';
 import { ELEMENTS } from '../data/elements';
 import type { AccessoryDef, ArmorDef, ArmorSlot, Element, EquipSlot, ItemDef, StatKey, WeaponDef } from '../data/types';
 import { boosted } from './cheats';
@@ -45,13 +46,14 @@ export const MOD_POOLS: Record<GearDef['type'], ModKey[]> = {
 };
 
 /** Every worn equipment slot, in display order. Their stats count; the spare weapon's don't. */
-export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'helm', 'body', 'gloves', 'boots', 'necklace', 'ring1', 'ring2'];
+export const EQUIP_SLOTS: EquipSlot[] = ['weapon', 'offhand', 'helm', 'body', 'gloves', 'boots', 'necklace', 'ring1', 'ring2'];
 
 /** The worn slots plus the spare weapon: everywhere equipped gear can sit. */
 export const ALL_SLOTS: EquipSlot[] = [...EQUIP_SLOTS, 'spare'];
 
 export const SLOT_LABELS: Record<EquipSlot, string> = {
-  weapon: 'Weapon',
+  weapon: 'Main\nhand',
+  offhand: 'Off\nhand',
   helm: 'Helm',
   body: 'Body',
   gloves: 'Gloves',
@@ -67,21 +69,48 @@ export function armorSlot(def: ArmorDef): ArmorSlot {
   return def.slot ?? 'body';
 }
 
-/** Can the piece go in `slot`? Weapons also fit the spare slot. */
+/** Does the weapon need both hands? What its data says, else by its kind: staffs and hammers do. */
+export function twoHanded(def: WeaponDef): boolean {
+  if (def.twoHanded !== undefined) return def.twoHanded;
+  const kind = weaponKind(def);
+  return kind === 'staff' || kind === 'hammer';
+}
+
+/**
+ * The hands, as the rules see them. `main`: the slot of the weapon that strikes (the main hand's, or the off hand's
+ * when the main hand is empty); its damage type, element, special and Crit line are the hero's. `off`: a second
+ * one-handed weapon fights along: `BALANCE.hands.offhandDamage` of its damage is added, and its stats and added lines
+ * count. `idle`: the off-hand piece waits unused because the main weapon needs both hands. A two-handed weapon hits
+ * for `BALANCE.hands.twoHandedDamage` of its damage.
+ */
+export function hands(equipment: Record<EquipSlot, Gear | null>): { main: EquipSlot; off: boolean; idle: boolean } {
+  const main = equipment.weapon;
+  const off = equipment.offhand;
+  if (!main) return { main: off ? 'offhand' : 'weapon', off: false, idle: false };
+  const both = twoHanded(gearDef(main) as WeaponDef);
+  return { main: 'weapon', off: !!off && !both, idle: !!off && both };
+}
+
+/** The slots whose gear counts right now: every worn slot, without an off-hand piece that waits (`hands`). */
+export function wornSlots(equipment: Record<EquipSlot, Gear | null>): EquipSlot[] {
+  return hands(equipment).idle ? EQUIP_SLOTS.filter((s) => s !== 'offhand') : EQUIP_SLOTS;
+}
+
+/** Can the piece go in `slot`? Weapons also fit the spare slot; only one-handed ones fit the off hand. */
 export function fitsSlot(def: GearDef, slot: EquipSlot): boolean {
   return slot === 'spare' ? def.type === 'weapon' : slotsFor(def).includes(slot);
 }
 
-/** The equipment slots a piece can go in: two for rings, one for everything else (weapons: the hand, see `fitsSlot`). */
+/** The equipment slots a piece can go in: two for rings, either hand for a one-handed weapon, one for everything else. */
 export function slotsFor(def: GearDef): EquipSlot[] {
-  if (def.type === 'weapon') return ['weapon'];
+  if (def.type === 'weapon') return twoHanded(def) ? ['weapon'] : ['weapon', 'offhand'];
   if (def.type === 'armor') return [armorSlot(def)];
   return def.slot === 'ring' ? ['ring1', 'ring2'] : ['necklace'];
 }
 
 /** "Helm", "Body armor", "Ring"... for item cards. */
 export function kindLabel(def: GearDef): string {
-  if (def.type === 'weapon') return 'Weapon';
+  if (def.type === 'weapon') return twoHanded(def) ? 'Two-handed weapon' : 'One-handed weapon';
   if (def.type === 'accessory') return def.slot === 'ring' ? 'Ring' : 'Necklace';
   const slot = armorSlot(def);
   return slot === 'body' ? 'Body armor' : SLOT_LABELS[slot];

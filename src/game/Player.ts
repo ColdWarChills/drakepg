@@ -4,9 +4,9 @@ import { START } from '../data/world';
 import {
   accessoryValue,
   ALL_SLOTS,
-  EQUIP_SLOTS,
   fitsSlot,
   gearDef,
+  hands,
   isGearDef,
   lineBonus,
   modTotal,
@@ -17,6 +17,8 @@ import {
   rolledProcChance,
   sellValue,
   slotsFor,
+  twoHanded,
+  wornSlots,
   type Gear,
   type GearDef,
   type GearTraits,
@@ -208,9 +210,26 @@ export class Player {
     return this.data.gold;
   }
 
+  /** The weapon that strikes: the main hand's, or the off hand's when the main hand is empty (`hands` in Items.ts). */
   get weapon(): WeaponDef | null {
-    const g = this.data.equipment.weapon;
+    const g = this.data.equipment[this.handSlot];
     return g ? (gearDef(g) as WeaponDef) : null;
+  }
+
+  /** The slot of the weapon that strikes. */
+  get handSlot(): EquipSlot {
+    return hands(this.data.equipment).main;
+  }
+
+  /** A second one-handed weapon fighting along in the off hand (not one that waits beside a two-handed weapon). */
+  get offhandWeapon(): WeaponDef | null {
+    const e = this.data.equipment;
+    return hands(e).off && e.offhand ? (gearDef(e.offhand) as WeaponDef) : null;
+  }
+
+  /** The off-hand piece waits unused: the main weapon needs both hands. */
+  get offhandIdle(): boolean {
+    return hands(this.data.equipment).idle;
   }
 
   /** The second weapon, carried for a swap (its stats don't count until it's in hand). */
@@ -244,9 +263,19 @@ export class Player {
     return true;
   }
 
+  /** Change hands: the main-hand weapon to the off hand and the other one back. False when one of them needs both hands. */
+  swapHands(): boolean {
+    const e = this.data.equipment;
+    if (!e.weapon && !e.offhand) return false;
+    if (e.weapon && twoHanded(gearDef(e.weapon) as WeaponDef)) return false;
+    [e.weapon, e.offhand] = [e.offhand, e.weapon];
+    this.clampVitals();
+    return true;
+  }
+
   /** Sigil of the equipped weapon, for the glow in the hero's hands. */
   get weaponSigil(): SigilTier | undefined {
-    return this.data.equipment.weapon?.sigil;
+    return this.data.equipment[this.handSlot]?.sigil;
   }
 
   /** Body armor: it decides the hero's outfit. */
@@ -277,8 +306,9 @@ export class Player {
     return this.data.equipment[slot] ?? { rolls: {} };
   }
 
+  /** The gear that counts: every worn slot, without an off-hand piece that waits beside a two-handed weapon. */
   private get worn(): (Gear | null)[] {
-    return EQUIP_SLOTS.map((s) => this.data.equipment[s]);
+    return wornSlots(this.data.equipment).map((s) => this.data.equipment[s]);
   }
 
   /** Every worn piece with its item. */
@@ -360,22 +390,32 @@ export class Player {
     return this.weapon?.element;
   }
 
+  /**
+   * The hands' damage: the striking weapon's, raised by `BALANCE.hands.twoHandedDamage` when it needs both hands, plus
+   * `BALANCE.hands.offhandDamage` of a second weapon in the off hand.
+   */
   get weaponDamage(): [number, number] {
     const weapon = this.weapon;
-    return weapon ? rolledDamage(weapon, this.traitsOf('weapon')) : UNARMED;
+    if (!weapon) return UNARMED;
+    const [min, max] = rolledDamage(weapon, this.traitsOf(this.handSlot));
+    const both = twoHanded(weapon) ? BALANCE.hands.twoHandedDamage : 1;
+    const off = this.offhandWeapon;
+    const [offMin, offMax] = off ? rolledDamage(off, this.traitsOf('offhand')) : [0, 0];
+    const share = BALANCE.hands.offhandDamage;
+    return [Math.round(min * both + offMin * share), Math.round(max * both + offMax * share)];
   }
 
-  /** Chance the weapon special triggers on a landed Attack (0 without one). */
+  /** Chance the weapon special triggers on a landed Attack (0 without one). The off hand's special is not used. */
   get procChance(): number {
     const weapon = this.weapon;
-    return weapon ? rolledProcChance(weapon, this.traitsOf('weapon')) : 0;
+    return weapon ? rolledProcChance(weapon, this.traitsOf(this.handSlot)) : 0;
   }
 
   /** Crit chance added by the weapon's Crit line, crit mods, accessories and set bonuses. */
   get critBonus(): number {
     let accessories = 0;
     for (const { def, gear } of this.wornPieces) if (def.type === 'accessory' && def.crit) accessories += accessoryValue(def.crit, gear, 1);
-    return rollBonus('crit', this.traitsOf('weapon').rolls) + (modTotal(this.worn, 'crit') + accessories + this.setBonus.crit) / 100;
+    return rollBonus('crit', this.traitsOf(this.handSlot).rolls) + (modTotal(this.worn, 'crit') + accessories + this.setBonus.crit) / 100;
   }
 
   /** Crit chance before battle buffs. For UI; Battle works it out the same way. */
@@ -615,8 +655,12 @@ export class Player {
     return null;
   }
 
-  /** Where a piece would go: its only slot, or for rings the first empty ring slot (else the first). */
+  /**
+   * Where a piece would go: its only slot, or the first empty one of its two (rings), else the first. A weapon goes to
+   * the main hand; the off hand is the player's own choice (the bag's "Off hand" button, or a drag onto that slot).
+   */
   slotFor(def: GearDef): EquipSlot {
+    if (def.type === 'weapon') return 'weapon';
     const slots = slotsFor(def);
     return slots.find((s) => !this.data.equipment[s]) ?? slots[0];
   }

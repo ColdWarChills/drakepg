@@ -6,7 +6,7 @@ import { BALANCE, COLORS } from '../config';
 import { db } from '../data/db';
 import { DAMAGE_TYPE_LABELS, ELEMENT_LABELS } from '../data/elements';
 import type { BookDef, ConsumableDef, DamageType, EquipSlot, ItemDef, MaterialDef, ScrollDef } from '../data/types';
-import { ALL_SLOTS, EQUIP_SLOTS, fitsSlot, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, ROLL_LABELS, SLOT_LABELS, type Gear, type GearDef, type GearTraits, type RollKey } from '../game/Items';
+import { ALL_SLOTS, EQUIP_SLOTS, fitsSlot, gearDef, grade, gradeTier, isGearDef, kindLabel, sellValue, SIGIL_TIERS, ROLL_LABELS, SLOT_LABELS, twoHanded, type Gear, type GearDef, type GearTraits, type RollKey } from '../game/Items';
 import { activeSetBonuses, setCounts } from '../game/Sets';
 import type { Player } from '../game/Player';
 import { Button } from './Button';
@@ -65,7 +65,7 @@ const CARD_Y = 70;
 const CARD_W = 358;
 const CARD_H = 590;
 const SLOT_BG = 0x2a2236;
-/** The hero's equipment slots: left column armor, right column weapon and jewelry; the spare weapon beside the weapon. */
+/** The hero's equipment slots: left column armor, right column main hand and jewelry; the off hand and the spare weapon beside the main hand. */
 const EQ = 58;
 const EQ_POS: Record<EquipSlot, { x: number; y: number }> = {
   helm: { x: 42, y: 112 },
@@ -76,7 +76,8 @@ const EQ_POS: Record<EquipSlot, { x: number; y: number }> = {
   necklace: { x: 258, y: 178 },
   ring1: { x: 258, y: 244 },
   ring2: { x: 258, y: 310 },
-  spare: { x: 192, y: 112 },
+  offhand: { x: 192, y: 112 },
+  spare: { x: 126, y: 112 },
 };
 const EMPTY_BORDER = 0x4a3f5a;
 
@@ -280,7 +281,10 @@ class InventoryView {
     c.add(hero);
 
     for (const slot of this.heroSlots) c.add(this.slot(EQ_POS[slot].x, EQ_POS[slot].y, this.equippedEntry(slot), slot, EQ));
-    // A filled spare slot looks like any weapon: name it.
+    // Filled hand slots look alike: name them. An off-hand piece beside a two-handed weapon waits.
+    if (player.data.equipment.offhand) {
+      c.add(addText(scene, EQ_POS.offhand.x, EQ_POS.offhand.y - EQ / 2 - 3, player.offhandIdle ? 'Waits' : 'Off hand', { size: 12, color: COLORS.textDim }).setOrigin(0.5, 1));
+    }
     if (player.data.equipment.spare) c.add(addText(scene, EQ_POS.spare.x, EQ_POS.spare.y - EQ / 2 - 3, 'Spare', { size: 12, color: COLORS.textDim }).setOrigin(0.5, 1));
 
     const [min, max] = player.attackRange;
@@ -444,11 +448,14 @@ class InventoryView {
       bg.setAlpha(1);
       const heroSide = pointer.worldX < this.modal.content.x + 300;
       // Dropped on a slot it fits (a ring on the second ring slot, a weapon on the spare slot): there. Anywhere else on
-      // the hero side: its usual slot. The weapon in hand dropped on the spare slot (or back) swaps the two.
+      // the hero side: its usual slot. The weapon in hand dropped on the spare slot (or back) swaps the two; one hand
+      // dropped on the other changes hands.
       const target = this.equipSlots.find((t) => t.bg.getBounds().contains(pointer.worldX, pointer.worldY))?.slot;
       const swap = (entry.slot === 'weapon' && target === 'spare') || (entry.slot === 'spare' && target === 'weapon');
+      const hands = (entry.slot === 'weapon' && target === 'offhand') || (entry.slot === 'offhand' && target === 'weapon');
       if (!entry.slot && heroSide) this.equip(entry, target);
       else if (swap) this.swapWeapons();
+      else if (hands) this.swapHands();
       else if (entry.slot && this.gridZone.getBounds().contains(pointer.worldX, pointer.worldY)) this.unequip(entry.slot);
       else this.render();
     });
@@ -522,6 +529,17 @@ class InventoryView {
   /** The spare weapon into the hand and the old one to the spare slot (either may be empty). */
   private swapWeapons(): void {
     if (!this.player.swapWeapons()) return this.render();
+    play(this.scene, 'equip');
+    this.changed();
+  }
+
+  /** The main-hand weapon to the off hand and the other one back. */
+  private swapHands(): void {
+    if (!this.player.swapHands()) {
+      play(this.scene, 'denied');
+      toast(this.scene, 'That weapon needs both hands', COLORS.textBad);
+      return this.render();
+    }
     play(this.scene, 'equip');
     this.changed();
   }
@@ -672,6 +690,18 @@ class InventoryView {
     y += 6;
     // Potions, materials and books already show their description as their item line.
     if (!['consumable', 'material', 'book'].includes(entry.def.type)) line(entry.def.description, COLORS.textDim, 15);
+    // The two hands: what a weapon does in each (every rule is on the card).
+    if (isGearDef(entry.def) && entry.def.type === 'weapon') {
+      const off = Math.round(BALANCE.hands.offhandDamage * 100);
+      const both = Math.round((BALANCE.hands.twoHandedDamage - 1) * 100);
+      if (entry.kind === 'gear' && entry.slot === 'offhand' && this.player.offhandIdle) {
+        line('Off hand: waits while a two-handed weapon is in the main hand.', COLORS.textBad, 15);
+      } else if (twoHanded(entry.def)) {
+        line(`Two-handed: hits ${both}% harder, and the off hand stays empty.`, COLORS.textMagic, 15);
+      } else {
+        line(`In the off hand: adds ${off}% of its damage; its stats and added lines count, its special and element don't.`, COLORS.textMagic, 15);
+      }
+    }
     if (entry.kind === 'gear' && entry.slot === 'spare') {
       line('Spare weapon: its lines count once it is in your hand. Swap in battle (costs your turn) or here.', COLORS.textMagic, 15);
     }
@@ -712,6 +742,7 @@ class InventoryView {
         buttons.push(entry.slot ? { label: 'Unequip', run: () => this.unequip(entry.slot!) } : { label: 'Equip', run: () => this.equip(entry) });
         // Weapons: carry one as the spare, or swap the hand and the spare.
         const spareOpen = this.heroSlots.includes('spare');
+        if (entry.def.type === 'weapon' && !entry.slot && !twoHanded(entry.def)) buttons.push({ label: 'Off hand', run: () => this.equip(entry, 'offhand') });
         if (spareOpen && entry.def.type === 'weapon' && !entry.slot) buttons.push({ label: 'As spare', run: () => this.equip(entry, 'spare') });
         if (spareOpen && (entry.slot === 'spare' || (entry.slot === 'weapon' && this.player.data.equipment.spare))) {
           buttons.push({ label: 'Swap', run: () => this.swapWeapons() });

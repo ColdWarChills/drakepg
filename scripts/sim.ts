@@ -3,19 +3,21 @@
  * Each cell also runs a random-button bot ("rnd"): if it does nearly as well as the smart AI, choices don't matter there.
  * Run with `npm run sim` (optionally `npm run sim -- 2000` for more battles per matchup, and
  * `npm run sim -- 400 stormcoil` to print only the tables whose title or monsters mention a word).
+ * `SIM_DUAL=1 npm run sim`: every hero whose weapon is one-handed wears a second one like it in the off hand (to weigh
+ * two weapons against a two-handed one, `BALANCE.hands`).
  */
 import { BALANCE } from '../src/config';
 import { db, validateData } from '../src/data/db';
 import { MONSTERS } from '../src/data/monsters';
 import { ELEMENTS } from '../src/data/elements';
-import type { ClassId, Element, MonsterDef, SkillDef, StatKey } from '../src/data/types';
+import type { ClassId, Element, MonsterDef, SkillDef, StatKey, WeaponDef } from '../src/data/types';
 import { Battle } from '../src/game/Battle';
 import { makeElite } from '../src/game/Elites';
 import { makeHeroic } from '../src/game/Heroic';
 import { makeImpling } from '../src/game/Lucky';
 import { LOOT_TIERS, rollLootTier, tierOdds, type LootSource } from '../src/game/Loot';
 import { LOOT_TABLES } from '../src/data/loot';
-import { rollGear, type GearDef, type SigilTier } from '../src/game/Items';
+import { rollGear, twoHanded, type GearDef, type SigilTier } from '../src/game/Items';
 import { Player, xpToNext } from '../src/game/Player';
 import { seeded, type Rng } from '../src/game/rng';
 import { flightOf, floorMonster } from '../src/game/Tower';
@@ -23,6 +25,7 @@ import { learnBooks, pickLoadout } from './bookplay';
 
 const RUNS = Number(process.argv[2] ?? 400);
 const ONLY = process.argv[3]?.toLowerCase();
+const DUAL = !!process.env.SIM_DUAL;
 
 /** Where free stat points go, repeating. */
 const STAT_PLAN: Record<ClassId, StatKey[]> = {
@@ -145,6 +148,12 @@ function makePlayer(classId: ClassId, level: number, gear: Loadout, potions: num
     const piece = p.makeGear(id, { rolls: rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0, gear.sigil), sigil: gear.sigil });
     p.data.gear.push(piece);
     p.equip(piece.uid);
+  }
+  if (DUAL && !twoHanded(db.item(gear.weapon[classId]) as WeaponDef)) {
+    const id = gear.weapon[classId];
+    const piece = p.makeGear(id, { rolls: rollGear(db.item(id) as GearDef, undefined, gear.quality ?? 0, gear.sigil), sigil: gear.sigil });
+    p.data.gear.push(piece);
+    p.equip(piece.uid, 'offhand');
   }
   const spare = gear.spare?.[classId];
   if (spare) {

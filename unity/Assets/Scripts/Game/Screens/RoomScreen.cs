@@ -617,7 +617,7 @@ namespace Drakepg
         string GearKey()
         {
             var eq = P.Data.Equipment;
-            return $"{eq["weapon"]?.Uid}|{eq["body"]?.Uid}";
+            return $"{eq[P.HandSlot]?.Uid}|{eq["body"]?.Uid}";
         }
 
         /// <summary>The hero holds the equipped weapon and wears the armor's outfit, so redraw them after a gear swap.</summary>

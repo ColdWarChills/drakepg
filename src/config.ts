@@ -8,7 +8,7 @@ export const DESIGN = { width: GAME_WIDTH, height: GAME_HEIGHT } as const;
 export const FONT = 'Georgia, "Times New Roman", serif';
 
 export const SAVE_KEY = 'drakepg.save';
-export const SAVE_VERSION = 18;
+export const SAVE_VERSION = 19;
 
 /** Design knobs. Tune here instead of hunting through code. */
 export const BALANCE = {
@@ -29,6 +29,12 @@ export const BALANCE = {
   critMultiplier: 1.5,
   /** Share of the main stat (STR or INT) added to each hit. */
   statDamageScale: 0.6,
+  /**
+   * The two hands (`hands` in src/game/Items.ts). A second one-handed weapon in the off hand adds `offhandDamage` of
+   * its damage (its stats and added lines count in full; its special, element and Crit line don't). A weapon that
+   * needs both hands hits for `twoHandedDamage` of its damage, so a staff keeps up with two daggers.
+   */
+  hands: { offhandDamage: 0.25, twoHandedDamage: 1.25 },
   baseFleeChance: 0.5,
   maxLevel: 50,
   /** Skills a hero carries into battle (picked in the Character panel; new skills fill free slots). */

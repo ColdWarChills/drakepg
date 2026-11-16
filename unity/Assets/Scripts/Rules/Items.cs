@@ -68,15 +68,18 @@ namespace Drakepg.Rules
             ["accessory"] = new[] { "str", "int", "dex", "end", "crit", "hp", "mp", "resist" },
         };
 
-        /// <summary>Worn slots in display order. Their stats count; the spare weapon's don't.</summary>
-        public static readonly string[] EquipSlots = { "weapon", "helm", "body", "gloves", "boots", "necklace", "ring1", "ring2" };
+        /// <summary>
+        /// Worn slots in display order. Their stats count; the spare weapon's don't. `weapon` is the main hand, `offhand`
+        /// the other one (a second one-handed weapon; shields later).
+        /// </summary>
+        public static readonly string[] EquipSlots = { "weapon", "offhand", "helm", "body", "gloves", "boots", "necklace", "ring1", "ring2" };
 
         /// <summary>The worn slots plus the spare weapon.</summary>
-        public static readonly string[] AllSlots = { "weapon", "helm", "body", "gloves", "boots", "necklace", "ring1", "ring2", "spare" };
+        public static readonly string[] AllSlots = { "weapon", "offhand", "helm", "body", "gloves", "boots", "necklace", "ring1", "ring2", "spare" };
 
         public static readonly Dictionary<string, string> SlotLabels = new Dictionary<string, string>
         {
-            ["weapon"] = "Weapon", ["helm"] = "Helm", ["body"] = "Body", ["gloves"] = "Gloves", ["boots"] = "Boots",
+            ["weapon"] = "Main\nhand", ["offhand"] = "Off\nhand", ["helm"] = "Helm", ["body"] = "Body", ["gloves"] = "Gloves", ["boots"] = "Boots",
             ["necklace"] = "Necklace", ["ring1"] = "Ring", ["ring2"] = "Ring", ["spare"] = "Spare\nweapon",
         };
 
@@ -89,18 +92,47 @@ namespace Drakepg.Rules
 
         public static string ArmorSlot(ItemDef def) => def.Slot ?? "body";
 
+        /// <summary>Does the weapon need both hands? What its data says, else by its kind: staffs and hammers do.</summary>
+        public static bool TwoHanded(ItemDef def)
+        {
+            if (def.TwoHanded.HasValue) return def.TwoHanded.Value;
+            var kind = Db.WeaponKind(def);
+            return kind == "staff" || kind == "hammer";
+        }
+
+        /// <summary>
+        /// The hands, as the rules see them (hands() in Items.ts). `main`: the slot of the weapon that strikes (the main
+        /// hand's, or the off hand's when the main hand is empty); its damage type, element, special and Crit line are the
+        /// hero's. `off`: a second one-handed weapon fights along: `Balance.Hands.OffhandDamage` of its damage is added,
+        /// and its stats and added lines count. `idle`: the off-hand piece waits unused because the main weapon needs both
+        /// hands. A two-handed weapon hits for `Balance.Hands.TwoHandedDamage` of its damage.
+        /// </summary>
+        public static (string main, bool off, bool idle) Hands(Dictionary<string, Gear> equipment)
+        {
+            equipment.TryGetValue("weapon", out var main);
+            equipment.TryGetValue("offhand", out var off);
+            if (main == null) return (off != null ? "offhand" : "weapon", false, false);
+            var both = TwoHanded(GearDef(main));
+            return ("weapon", off != null && !both, off != null && both);
+        }
+
+        /// <summary>The slots whose gear counts right now: every worn slot, without an off-hand piece that waits.</summary>
+        public static IEnumerable<string> WornSlots(Dictionary<string, Gear> equipment) =>
+            Hands(equipment).idle ? EquipSlots.Where(s => s != "offhand") : EquipSlots;
+
+        /// <summary>Can the piece go in `slot`? Weapons also fit the spare slot; only one-handed ones fit the off hand.</summary>
         public static bool FitsSlot(ItemDef def, string slot) => slot == "spare" ? def.IsWeapon : SlotsFor(def).Contains(slot);
 
         public static string[] SlotsFor(ItemDef def)
         {
-            if (def.IsWeapon) return new[] { "weapon" };
+            if (def.IsWeapon) return TwoHanded(def) ? new[] { "weapon" } : new[] { "weapon", "offhand" };
             if (def.IsArmor) return new[] { ArmorSlot(def) };
             return def.Slot == "ring" ? new[] { "ring1", "ring2" } : new[] { "necklace" };
         }
 
         public static string KindLabel(ItemDef def)
         {
-            if (def.IsWeapon) return "Weapon";
+            if (def.IsWeapon) return TwoHanded(def) ? "Two-handed weapon" : "One-handed weapon";
             if (def.IsAccessory) return def.Slot == "ring" ? "Ring" : "Necklace";
             var slot = ArmorSlot(def);
             return slot == "body" ? "Body armor" : SlotLabels[slot];

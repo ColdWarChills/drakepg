@@ -1,5 +1,5 @@
 {
- "saveVersion": 18,
+ "saveVersion": 19,
  "balance": {
   "restoreAfterBattle": false,
   "innCost": 5,
@@ -14,6 +14,10 @@
   "critPerDex": 0.005,
   "critMultiplier": 1.5,
   "statDamageScale": 0.6,
+  "hands": {
+   "offhandDamage": 0.25,
+   "twoHandedDamage": 1.25
+  },
   "baseFleeChance": 0.5,
   "maxLevel": 50,
   "skillSlots": 5,

@@ -107,6 +107,8 @@ export const SaveSystem = {
  * v16 -> v17: the tower (`tower`: best floor and marks); sanitize() starts it empty.
  * v17 -> v18: roll stones are gone (gear is reworked for gold at the shop counter, `Gear.reworks`): each stone in the
  *             bag is paid back at its old price.
+ * v18 -> v19: two hands. `equipment.weapon` is now the main hand and `equipment.offhand` is new and starts empty, so
+ *             every hero keeps the weapon where it was.
  */
 /** The roll stones of save v17 and older, paid back at their shop price. */
 const OLD_STONES = ['stone_of_might', 'stone_of_precision', 'stone_of_warding', 'stone_of_vigor'];
@@ -204,6 +206,11 @@ function migrate(file: SaveFile): SaveFile | null {
     p.inventory = inventory.filter((e) => !OLD_STONES.includes(e?.itemId));
     p.gold = (typeof p.gold === 'number' && Number.isFinite(p.gold) ? p.gold : 0) + stones * OLD_STONE_PRICE;
     file.version = 18;
+  }
+  if (file.version < 19) {
+    const p = file.player as Partial<PlayerData>;
+    if (p.equipment && typeof p.equipment === 'object') (p.equipment as Record<string, unknown>).offhand = null;
+    file.version = 19;
   }
   return file;
 }

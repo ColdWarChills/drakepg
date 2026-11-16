@@ -119,7 +119,29 @@ namespace Drakepg.Rules
         public double Mp => Data.Mp;
         public double Gold => Data.Gold;
 
-        public ItemDef Weapon => Data.Equipment["weapon"] is Gear g ? Items.GearDef(g) : null;
+        /// <summary>The weapon that strikes: the main hand's, or the off hand's when the main hand is empty (Items.Hands).</summary>
+        public ItemDef Weapon => Data.Equipment[HandSlot] is Gear g ? Items.GearDef(g) : null;
+
+        /// <summary>The slot of the weapon that strikes.</summary>
+        public string HandSlot => Items.Hands(Data.Equipment).main;
+
+        /// <summary>A second one-handed weapon fighting along in the off hand (not one that waits beside a two-handed weapon).</summary>
+        public ItemDef OffhandWeapon => Items.Hands(Data.Equipment).off && Data.Equipment["offhand"] is Gear g ? Items.GearDef(g) : null;
+
+        /// <summary>The off-hand piece waits unused: the main weapon needs both hands.</summary>
+        public bool OffhandIdle => Items.Hands(Data.Equipment).idle;
+
+        /// <summary>Change hands: the main-hand weapon to the off hand and the other one back. False when one of them needs both hands.</summary>
+        public bool SwapHands()
+        {
+            var e = Data.Equipment;
+            if (e["weapon"] == null && e["offhand"] == null) return false;
+            if (e["weapon"] != null && Items.TwoHanded(Items.GearDef(e["weapon"]))) return false;
+            (e["weapon"], e["offhand"]) = (e["offhand"], e["weapon"]);
+            ClampVitals();
+            return true;
+        }
+
         public ItemDef SpareWeapon => Data.Equipment["spare"] is Gear g ? Items.GearDef(g) : null;
 
         public double[] SpareAttackRange => Data.Equipment["spare"] != null ? WithSpareInHand(() => AttackRange) : null;
@@ -141,7 +163,7 @@ namespace Drakepg.Rules
             return true;
         }
 
-        public string WeaponSigil => Data.Equipment["weapon"]?.Sigil;
+        public string WeaponSigil => Data.Equipment[HandSlot]?.Sigil;
 
         public ItemDef BodyArmor => Data.Equipment["body"] is Gear g ? Items.GearDef(g) : null;
 
@@ -171,7 +193,8 @@ namespace Drakepg.Rules
 
         GearTraits TraitsOf(string slot) => (GearTraits)Data.Equipment[slot] ?? new GearTraits();
 
-        IEnumerable<Gear> Worn => Items.EquipSlots.Select(s => Data.Equipment[s]);
+        /// <summary>The gear that counts: every worn slot, without an off-hand piece that waits beside a two-handed weapon.</summary>
+        IEnumerable<Gear> Worn => Items.WornSlots(Data.Equipment).Select(s => Data.Equipment[s]);
 
         IEnumerable<(ItemDef def, Gear gear)> WornPieces => Worn.Where(g => g != null).Select(g => (Items.GearDef(g), g));
 
@@ -259,9 +282,26 @@ namespace Drakepg.Rules
         /// <summary>Null = neutral.</summary>
         public string WeaponElement => Weapon?.Element;
 
-        public double[] WeaponDamage => Weapon is ItemDef w ? Items.RolledDamage(w, TraitsOf("weapon")) : Unarmed;
+        /// <summary>
+        /// The hands' damage: the striking weapon's, raised by `Balance.Hands.TwoHandedDamage` when it needs both hands,
+        /// plus `Balance.Hands.OffhandDamage` of a second weapon in the off hand.
+        /// </summary>
+        public double[] WeaponDamage
+        {
+            get
+            {
+                if (!(Weapon is ItemDef w)) return Unarmed;
+                var range = Items.RolledDamage(w, TraitsOf(HandSlot));
+                var both = Items.TwoHanded(w) ? B.Hands.TwoHandedDamage : 1;
+                var off = OffhandWeapon;
+                var offRange = off != null ? Items.RolledDamage(off, TraitsOf("offhand")) : new double[] { 0, 0 };
+                var share = B.Hands.OffhandDamage;
+                return new[] { JsMath.Round(range[0] * both + offRange[0] * share), JsMath.Round(range[1] * both + offRange[1] * share) };
+            }
+        }
 
-        public double ProcChance => Weapon is ItemDef w ? Items.RolledProcChance(w, TraitsOf("weapon")) : 0;
+        /// <summary>Chance the weapon special triggers on a landed Attack (0 without one). The off hand's special is not used.</summary>
+        public double ProcChance => Weapon is ItemDef w ? Items.RolledProcChance(w, TraitsOf(HandSlot)) : 0;
 
         public double CritBonus
         {
@@ -269,7 +309,7 @@ namespace Drakepg.Rules
             {
                 double accessories = 0;
                 foreach (var (def, gear) in WornPieces) if (def.IsAccessory && def.Crit.HasValue && def.Crit.Value != 0) accessories += Items.AccessoryValue(def.Crit.Value, gear, 1);
-                return Items.RollBonus("crit", TraitsOf("weapon").Rolls) + (Items.ModTotal(Worn, "crit") + accessories + SetBonus.Crit) / 100;
+                return Items.RollBonus("crit", TraitsOf(HandSlot).Rolls) + (Items.ModTotal(Worn, "crit") + accessories + SetBonus.Crit) / 100;
             }
         }
 
@@ -495,8 +535,13 @@ namespace Drakepg.Rules
             return null;
         }
 
+        /// <summary>
+        /// Where a piece would go: its only slot, or the first empty one of its two (rings), else the first. A weapon goes to
+        /// the main hand; the off hand is the player's own choice (the bag's "Off hand" button, or a drag onto that slot).
+        /// </summary>
         public string SlotFor(ItemDef def)
         {
+            if (def.IsWeapon) return "weapon";
             var slots = Items.SlotsFor(def);
             return slots.FirstOrDefault(s => Data.Equipment[s] == null) ?? slots[0];
         }

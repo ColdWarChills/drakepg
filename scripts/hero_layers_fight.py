@@ -37,7 +37,8 @@ SET = {"helm": "helm_coif", "legs": "legs_plate", "boots": "boots_steel", "chest
 # turn, and how much deeper than "legs just reach" the hips sink. The hips drop until both legs reach.
 STAND = {
     "ready": dict(root=(10, 0), nfoot=(-112, 0), ffoot=(118, 0), sink=14),
-    "wind": dict(root=(-46, 0), nfoot=(-112, 0), ffoot=(118, 0), sink=10),
+    # The wind-up coils low over wide legs, lower than the rig's legs sit: its own drawn legs too (as the strike below).
+    "wind": dict(root=(23, -24), drawn=True, nfoot=(-101, 0), ffoot=(108, 0)),
     # The lunge is deeper than the rig's legs are long (the drawn thigh is 1.7 times the rig's): it brings its own
     # drawn legs. root: how far the picture's belt stands from the rig's waist; its own height is kept.
     # Its legs are drawn; nfoot / ffoot say where that picture's feet are, for the rig legs on the way in and out.
@@ -45,14 +46,27 @@ STAND = {
     "hurt": dict(root=(-70, 0), nfoot=(-112, 0), ffoot=(40, -14), sink=30, f_foot=-10),
 }
 # Overrides where the picture can't tell: the blade's direction (degrees, 0 = forward, -90 = up).
-BLADE = {"wind": -128, "hurt": -16}
+BLADE = {"wind": -170, "hurt": -16}
 # The belt where the fists and the rod hide it: its middle and tilt.
 BELT = {"ready": ((780, 690), 0), "hurt": ((684, 693), 0)}
-# The far forearm in the strike runs behind the head and its headband: the pose picture has no arm there, so it is
-# painted in, from the raised fist down to the sleeve (corners in the pose picture).
-ARM = {"strike": [(606, 276), (664, 276), (682, 414), (608, 414)]}
+# The pose picture of a moment when it is not `up_<moment>`: the strike with its far arm thrown back and down like a
+# fencer's (the first one raised it behind the head, where it read as a stick once the helm covered it).
+POSE = {"strike": "arm_strike"}
+# An arm the pose picture can't show (it runs behind the head): painted in, corners in the pose picture. None now.
+ARM = {}
 WEAPON_Z = {"wind": 55}  # behind the head while it is drawn back
-Z = {"legs": 46, "legs_set": 47, "boots_set": 48, "body": 50, "chest": 51, "hands": 52, "gloves": 53, "head": 60, "face": 61, "weapon": 71, "fist": 72,
+# Step 2, hands: what else the two hands can hold, each in ready and strike (up_<hold>_<moment> in hero_layers.py).
+# left: a sword in the left fist. dual: a weapon in each fist (the left one's rod is pink). staff: one pole in both.
+HOLDS = ["left", "dual", "staff"]
+HOLD_MOMENTS = [f"{h}_{m}" for h in HOLDS for m in ("ready", "strike")]
+# Where a hold's drawn legs stand: the feet's lowest point, the middle of a ready stance, and how far the rear foot
+# steps forward into the strike (as the sword's own drawn wind-up and strike stand).
+FEET_Y, FEET_MID, STEP = 1350, 790, 110
+# Which way a hold's weapon points when the rod alone can't tell (it sticks out both sides of the fist).
+HINT = {"ready": (1, -0.5), "strike": (1, 0.3)}
+# The two fists on a pole where the picture can't tell them apart from other gaps: ((x, y), (x, y)).
+FISTS = {}
+Z = {"legs": 46, "legs_set": 47, "boots_set": 48, "body": 50, "chest": 51, "hands": 52, "gloves": 53, "head": 60, "face": 61, "weapon": 71, "fist": 72, "fist2": 72,
      "glove_fist": 73}
 
 yy, xx = hr.yy, hr.xx
@@ -142,7 +156,8 @@ def classes(img, legs_near=None):
     """The picture split into legs (trousers, boots), the green rod and the upper body."""
     r, g, b, a = chan(img)
     op = a > 128
-    green = op & (g - r > 28) & (g - b > 28)
+    pink = op & (r - g > 60) & (b - g > 60)  # the second rod (the left fist's, when both fists hold one)
+    green = (op & (g - r > 28) & (g - b > 28)) | pink
     teal = op & ~green & (g - r >= 8) & (b - r >= 4) & (r < 100) & (g < 130) & (yy > 600)
     if legs_near is not None:
         teal &= legs_near
@@ -158,7 +173,7 @@ def classes(img, legs_near=None):
     lab[op & ~green & ~teal & ~boots & ~dark & ~rim] = 2
     lab[green] = 3
     lab = spread(lab, op)
-    return {"legs": lab == 1, "up": lab == 2, "rod": grow(lab == 3, 4) & op, "green": green, "teal": teal,
+    return {"legs": lab == 1, "up": lab == 2, "rod": grow(lab == 3, 4) & op, "green": green & ~pink, "pink": pink, "teal": teal,
             "brown": brown}
 
 
@@ -178,9 +193,10 @@ def belt(img, c):
     return (float(mid[0]), float(mid[1])), math.degrees(math.atan2(d[1], d[0]))
 
 
-def rod(c, skin):
-    """Where the fist holds the rod and which way the long end points."""
-    ys, xs = np.nonzero(c["green"])
+def rod(c, skin, colour="green", hint=None, both=False):
+    """Where the fist holds the rod and which way the long end points (or, with a hint, the end on the hint's side).
+    both: one pole in two fists: (the rear fist, the front fist, the pole's middle between them, its direction)."""
+    ys, xs = np.nonzero(c[colour])
     pts = np.stack([xs, ys], 1).astype(float)
     mid = pts.mean(0)
     _, _, vt = np.linalg.svd(pts - mid, full_matrices=False)
@@ -188,15 +204,28 @@ def rod(c, skin):
     t = (pts - mid) @ d
     lo, hi = t.min(), t.max()
     bins = np.bincount(((t - lo) // 4).astype(int))
-    best, run, start = (0, 0), 0, 0
+    best, run, start, gaps = (0, 0), 0, 0, {}
     for i, v in enumerate(bins):
         if v == 0:
             if run == 0:
                 start = i
             run += 1
             best = max(best, (run, start))
+            gaps[start] = run
         else:
             run = 0
+    if both:
+        two = sorted(sorted(gaps.items(), key=lambda q: -q[1])[:2])
+        if len(two) < 2 or min(q[1] for q in two) * 4 < 16:
+            raise ValueError(f"the pole shows {sorted(gaps.items())} as gaps, not two fists")
+        a, b = (mid + d * (lo + 4 * (s + n / 2)) for s, n in two)
+        if a[0] > b[0]:
+            a, b = b, a
+        way = (b - a) / np.linalg.norm(b - a)
+        if hint is not None and way[0] * hint[0] + way[1] * hint[1] < 0:
+            way = -way
+        return (tuple(map(float, a)), tuple(map(float, b)), tuple(map(float, (a + b) / 2)),
+                math.degrees(math.atan2(way[1], way[0])))
     if best[0] * 4 >= 24:
         g = lo + 4 * (best[1] + best[0] / 2)
     else:
@@ -207,6 +236,9 @@ def rod(c, skin):
         g = max(ends)[1]
     at = mid + d * g
     blade = d if hi - g > g - lo else -d
+    # A fist near the rod's middle leaves no long end: there the hint decides.
+    if hint is not None and min(hi - g, g - lo) > 0.6 * max(hi - g, g - lo):
+        blade = d if d[0] * hint[0] + d[1] * hint[1] > 0 else -d
     return (float(at[0]), float(at[1])), math.degrees(math.atan2(blade[1], blade[0]))
 
 
@@ -335,14 +367,43 @@ def cut():
         (FIGHT / "hips").mkdir(parents=True, exist_ok=True)
         Image.fromarray(im).save(FIGHT / "hips" / f"{s}.png")
         out["hips"][s] = {"file": f"fight/hips/{s}.png", "x": e["x"], "y": e["y"]}
-    for name in MOMENTS:
-        pic = hr.load(f"up_{name}").copy()
+    ready_left = {}
+    for name in MOMENTS + [n for n in HOLD_MOMENTS if f"up_{n}" in hl.PICKS]:
+        pic = hr.load(POSE.get(name, f"up_{name}")).copy()
         c = classes(pic)
         mid, tilt = BELT.get(name) or belt(pic, c)
         at, deg, score = head.find(pic)
         skin = skin_of(pic)
-        grip, blade = rod(c, skin & c["up"])
+        hold, _, moment = name.rpartition("_")
+        hint = HINT[moment] if hold else None
+        grip2, blade2 = None, None
+        if hold == "staff":
+            if name in FISTS:
+                a, b = (np.array(q, float) for q in FISTS[name])
+                way = (b - a) if (b - a) @ np.array(hint) > 0 else (a - b)
+                a, b, grip, blade = tuple(a), tuple(b), tuple((a + b) / 2), math.degrees(math.atan2(way[1], way[0]))
+            else:
+                a, b, grip, blade = rod(c, skin & c["up"], hint=hint, both=True)
+            grips = [a, b]
+        else:
+            grip, blade = rod(c, skin & c["up"], hint=hint)
+            grips = [grip]
+            if hold == "dual":
+                grip2, blade2 = rod(c, skin & c["up"], "pink", hint)
+                blade2 = BLADE.get(name + "2", blade2)
+                grips.append(grip2)
         blade = BLADE.get(name, blade)
+        if hold:
+            # A hold's own drawn legs: feet on the ground, a ready stance in the middle, the strike a step ahead of it.
+            ys, xs = np.nonzero(c["legs"])
+            x0, x1, y1 = np.percentile(xs, 0.2), np.percentile(xs, 99.8), np.percentile(ys, 99.8)
+            if moment == "ready":
+                shift = FEET_MID - (x0 + x1) / 2
+                ready_left[hold] = x0 + shift
+            else:
+                shift = ready_left.get(hold, 411) + STEP - x0
+            STAND[name] = dict(root=(int(round(shift + mid[0] - r.j["waist"][0])), int(round(FEET_Y - y1))), drawn=True,
+                               nfoot=(0, 0), ffoot=(0, 0))
         gone, red = behead(pic, c["up"], head, at, deg)
         body = c["up"] & ~gone
         # Holes: the rod and the headband's tails where they lay over the body.
@@ -350,20 +411,26 @@ def cut():
         fill(pic, holes, body & ~c["rod"])
         body = (body | holes) & ~(c["rod"] & ~holes)
         body = forearm(pic, body, name, skin & body)
-        # The fist that grips: its skin around the grip and the outline on it.
-        near = skin & body & hr.disc(grip, 66)
-        ys, xs = np.nonzero(near)
-        i = int(np.argmin((xs - grip[0]) ** 2 + (ys - grip[1]) ** 2))
-        m = Image.fromarray(near.astype(np.uint8) * 255).copy()
-        ImageDraw.floodfill(m, (int(xs[i]), int(ys[i])), 128)
-        fist = np.asarray(m) == 128
-        fist = (grow(fist, 3) & body & hr.disc(grip, 72) & ~skin) | fist
+        # The fists that grip: their skin around the grip and the outline on it.
+        def fist_at(g):
+            near = skin & body & hr.disc(g, 66)
+            ys, xs = np.nonzero(near)
+            i = int(np.argmin((xs - g[0]) ** 2 + (ys - g[1]) ** 2))
+            m = Image.fromarray(near.astype(np.uint8) * 255).copy()
+            ImageDraw.floodfill(m, (int(xs[i]), int(ys[i])), 128)
+            fm = np.asarray(m) == 128
+            return (grow(fm, 3) & body & hr.disc(g, 72) & ~skin) | fm
+
         files = {"body": save(pic, body, FIGHT / name / "body.png"),
-                 "fist": save(pic, fist, FIGHT / name / "fist.png")}
+                 "fist": save(pic, fist_at(grips[0]), FIGHT / name / "fist.png")}
+        if len(grips) > 1:
+            files["fist2"] = save(pic, fist_at(grips[1]), FIGHT / name / "fist2.png")
         v = {"pivot": [round(mid[0], 1), round(mid[1], 1)], "lean": round(tilt, 1),
              "neck": [at[0], at[1]], "head": deg, "grip": [round(grip[0], 1), round(grip[1], 1)],
-             "blade": round(blade, 1), "weaponZ": WEAPON_Z.get(name, Z["weapon"]), "face": FACE[name],
-             "stand": STAND[name], "files": files}
+             "blade": round(blade, 1), "weaponZ": WEAPON_Z.get(name, Z["weapon"]),
+             "face": FACE.get(name, "shout" if moment == "strike" else None), "stand": STAND[name], "files": files}
+        if grip2:
+            v["grip2"], v["blade2"] = [round(grip2[0], 1), round(grip2[1], 1)], round(blade2, 1)
         print(f"{name:7} belt {v['pivot']} tilt {v['lean']}  neck {v['neck']} turn {deg} (fit {score:.3f})  "
               f"grip {v['grip']} blade {v['blade']}")
         if f"set_{name}" in hl.PICKS or (hl.OUT / f"set_{name}_s6100.png").exists():
@@ -407,12 +474,17 @@ def cut():
         dr.line((mid[0] - e[0], mid[1] - e[1], mid[0] + e[0], mid[1] + e[1]), fill=(255, 0, 255), width=5)
         e = hr.rot((220, 0), blade)
         dr.line((grip[0], grip[1], grip[0] + e[0], grip[1] + e[1]), fill=(255, 255, 0), width=5)
+        if grip2:
+            e = hr.rot((220, 0), blade2)
+            dr.line((grip2[0], grip2[1], grip2[0] + e[0], grip2[1] + e[1]), fill=(255, 120, 255), width=5)
+        for g in grips:
+            dr.ellipse((g[0] - 9, g[1] - 9, g[0] + 9, g[1] + 9), fill=(255, 60, 60))
         dr.ellipse((at[0] - 9, at[1] - 9, at[0] + 9, at[1] + 9), fill=(0, 200, 255))
         debug.append(dbg.crop((180, 120, 1380, 1400)).resize((450, 480)))
     (PARTS / "fight.json").write_text(json.dumps(out, indent=1))
-    sheet = Image.new("RGB", (450 * len(debug), 480), (70, 80, 75))
+    sheet = Image.new("RGB", (450 * 5, 480 * ((len(debug) + 4) // 5)), (70, 80, 75))
     for i, d in enumerate(debug):
-        sheet.paste(d, (450 * i, 0))
+        sheet.paste(d, (450 * (i % 5), 480 * (i // 5)))
     sheet.save(hl.OUT / "_fight_debug.png")
 
 
@@ -492,8 +564,9 @@ class Fight:
             self.img[e["file"]] = Image.open(PARTS / e["file"]).convert("RGBa")
         return self.img[e["file"]], (e["x"], e["y"])
 
-    def draw(self, name, gear=None, size=(N, N), offset=(0, 0), turn=0, extra=None, weapon="iron_sword"):
-        """gear: {slot: set}, slots helm / chest / gloves / legs / boots. turn: the upper body's extra lean."""
+    def draw(self, name, gear=None, size=(N, N), offset=(0, 0), turn=0, extra=None, weapon="iron_sword", weapon2=None):
+        """gear: {slot: set}, slots helm / chest / gloves / legs / boots. turn: the upper body's extra lean.
+        weapon2: what the other fist holds, in a moment drawn with a rod in each fist."""
         r, v, gear = self.r, self.m["moments"][name], gear or {}
         f = v["files"]
         layers = []
@@ -525,6 +598,7 @@ class Fight:
         if not chest:
             upper("body", Z["body"])
             upper("fist", Z["fist"])
+            upper("fist2", Z["fist"])
         else:
             upper("chest", Z["chest"])
             if not gloves:
@@ -544,10 +618,33 @@ class Fight:
             im, _ = self.pic({"file": w["file"], "x": 0, "y": 0})
             grip = hr.add(waist, hr.rot(hr.sub(v["grip"], v["pivot"]), turn))
             layers.append((v["weaponZ"], im, (0, 0), (w["gx"], w["gy"]), grip, v["blade"] + 90 + turn, (1, 1)))
+        if weapon2 and "grip2" in v:
+            w = r.m["weapons"][weapon2]
+            im, _ = self.pic({"file": w["file"], "x": 0, "y": 0})
+            grip = hr.add(waist, hr.rot(hr.sub(v["grip2"], v["pivot"]), turn))
+            layers.append((v["weaponZ"] - 0.5, im, (0, 0), (w["gx"], w["gy"]), grip, v["blade2"] + 90 + turn, (1, 1)))
         out = Image.new("RGBA", size, (0, 0, 0, 0))
         for z, im, origin, pivot, where, deg, sc in sorted(layers, key=lambda q: q[0]):
             paste(out, im, origin, pivot, where, deg, sc)
         return out
+
+
+HELD = {"left": ("iron_sword", None), "dual": ("rusty_dagger", "rusty_dagger"), "staff": ("oak_staff", None)}
+
+
+def show_holds():
+    """Every hold the cut has, ready and strike: art/redo/layers/_holds.png."""
+    f = Fight()
+    names = ["ready", "strike"] + [n for n in HOLD_MOMENTS if n in f.m["moments"]]
+    cell, canvas, off = 500, (2000, 1700), (240, 180)
+    h = int(cell * 0.85)
+    sheet = Image.new("RGB", (cell * 4, h * ((len(names) + 3) // 4)), (70, 80, 75))
+    for i, name in enumerate(names):
+        w, w2 = HELD.get(name.rpartition("_")[0], ("iron_sword", None))
+        im = f.draw(name, None, size=canvas, offset=off, weapon=w, weapon2=w2).resize((cell, h), Image.LANCZOS)
+        sheet.paste(im, ((i % 4) * cell, (i // 4) * h), im)
+    sheet.save(hl.OUT / "_holds.png")
+    print(hl.OUT / "_holds.png")
 
 
 def show(args):
@@ -560,7 +657,7 @@ def show(args):
     for x, name in enumerate(MOMENTS):
         if src:
             im = Image.new("RGBA", canvas, (0, 0, 0, 0))
-            im.alpha_composite(Image.fromarray(hr.load(f"up_{name}")), off)
+            im.alpha_composite(Image.fromarray(hr.load(POSE.get(name, f"up_{name}"))), off)
             im = im.resize((cell, h), Image.LANCZOS)
             sheet.paste(im, (x * cell, 0), im)
         for y, (_, gear) in enumerate(rows):
@@ -574,5 +671,7 @@ if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "show"
     if cmd == "cut":
         cut()
+    elif cmd == "holds":
+        show_holds()
     else:
         show(sys.argv[2:])
