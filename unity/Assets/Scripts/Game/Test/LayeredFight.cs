@@ -266,6 +266,9 @@ namespace Drakepg.Test
             Weapon = def != null ? WeaponArt(def) : null;
             Weapon2 = off ? WeaponArt(Items.GearDef(equipment["offhand"])) : null;
             Hold = def == null ? "" : Items.TwoHanded(def) ? "staff" : off ? "dual" : main == "offhand" ? "left" : "";
+            // The body armor worn: the full set's chest is the Scale Mail; others by their item id (body_<id> pictures).
+            equipment.TryGetValue("body", out var body);
+            wear["chest"] = body == null ? null : body.ItemId == "scale_mail" ? "set" : body.ItemId;
             Set("ready");
         }
 
@@ -428,7 +431,16 @@ namespace Drakepg.Test
                 if (f[key] != null) Show(key, Picture(f[key], pivot), waist, s.Turn, (float)z[key]);
             }
             bool chest = Worn("chest") != null && f["chest"] != null, gloves = Worn("gloves") != null && f["gloves"] != null;
-            if (!chest)
+            var armor = Worn("chest") != null ? f["body_" + Worn("chest")] : null;
+            if (armor != null)
+            {
+                // A body armor drawn on this moment (step 4a): its whole upper body, the hands as drawn.
+                Show("chest", Picture(armor, pivot), waist, s.Turn, (float)z["chest"]);
+                Body("fist");
+                Body("fist2");
+                gloves = false;
+            }
+            else if (!chest)
             {
                 Body("body");
                 Body("fist");
@@ -540,6 +552,61 @@ namespace Drakepg.Test
                 home[hero.transform] = hero.transform.position;
             }
             return "stage";
+        }
+
+        /// <summary>
+        /// Step 4a, body armor: one row for one armor (an item id): today's drawn hero in that outfit in ready and strike,
+        /// then the layered hero wearing it (put on through the rules, so it is what the bag holds) in ready, wind-up,
+        /// strike and hurt.
+        /// </summary>
+        public static string Armor(string armor = "leather_armor", float size = 0.72f, float left = 150, float step = 185, float feet = 520)
+        {
+            Clear();
+            LayeredHero.Reload();
+            FightHero.Reload();
+            root = new GameObject("layered armor test");
+            root.transform.SetParent(GameRoot.I.Screen.World, false);
+            var plate = new GameObject("plate").AddComponent<SpriteRenderer>();
+            plate.transform.SetParent(root.transform, false);
+            plate.sprite = Art.White;
+            plate.color = new Color(0.9f, 0.88f, 0.83f);
+            plate.sortingOrder = 29000;
+            plate.transform.position = Design.World(Design.Width / 2, Design.Height / 2);
+            plate.transform.localScale = new Vector3(Design.Width * 2, Design.Height * 2, 1);
+            var bare = Db.Class("warrior").Look;
+            var look = bare.Clone();
+            var b = look.Bare[0];
+            look.Bare = new List<BareLook> { new BareLook { Art = "char_hero_" + armor, Hands = b.Hands, Poses = b.Poses } };
+            var poses = new[] { "sword_ready", "sword_strike" };
+            for (int i = 0; i < poses.Length; i++)
+            {
+                var fig = Figure.Create(root.transform, left + i * step, feet, look, 1, Db.Item("iron_sword"));
+                fig.transform.localScale *= size;
+                fig.Order = 30000;
+                fig.EnableBend();
+                fig.SetPose(poses[i]);
+                drawn.Add(fig);
+            }
+            var p = Wear("iron_sword|");
+            var worn = p.Data.Equipment.TryGetValue("body", out var old) ? old : null;
+            var gear = p.MakeGear(armor);
+            p.Data.Gear.Add(gear);
+            p.Equip(gear.Uid, "body");
+            var moments = new[] { "ready", "wind", "strike", "hurt" };
+            for (int i = 0; i < moments.Length; i++)
+            {
+                var hero = FightHero.Create(root.transform, left + (i + 2.2f + (i == 3 ? 0.3f : 0)) * step, feet, (float)bare.Scale * size * 0.95f);
+                hero.Order = 30000;
+                hero.Breathes = false;
+                hero.Carry(p.Data.Equipment);
+                hero.Set(moments[i]);
+                layered.Add(hero);
+            }
+            // Put the bag back as it was.
+            p.Unequip("body");
+            p.Data.Gear.Remove(gear);
+            if (worn != null) p.Equip(worn.Uid, "body");
+            return armor;
         }
 
         /// <summary>

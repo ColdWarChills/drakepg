@@ -272,6 +272,27 @@ EDITS.update({
                            f"foot, with brown leather straps. His trousers above the knee, his belt, shirt, head, hair "
                            f"and headband are unchanged. {SAME} {NOTHING} {RGBA_CLOSE}", None),
 })
+# --- Step 4a, body armor: each body armor drawn on each sword moment (body_<armor>_<moment>), the hands left bare.
+# The armor comes from its finished outfit picture (art/raw/char_hero_<armor>.png); a robe keeps its long skirt, which
+# hero_layers_fight.py cuts as its own piece over the legs. Scale Mail is the set_<moment> pictures. ---
+BODY_ARMOR = {
+    "leather_armor": ("the brown leather chest piece with its straps and buckles worn over the cream shirt, the leather "
+                      "shoulder pads, and a brown leather bracer on each forearm"),
+    "apprentice_robe": ("the long deep red hooded robe with wide sleeves and orange rune embroidery along the hems, the "
+                        "hood lying down on his back, closed at the waist by the brown leather belt, its skirt hanging "
+                        "down to just below his knees and parting over his legs as he moves"),
+}
+for _armor, _what in BODY_ARMOR.items():
+    for _m in ("ready", "wind", "strike", "hurt"):
+        EDITS[f"body_{_armor}_{_m}"] = (
+            EDITS[f"set_{_m}"][0],
+            f"{RGBA_OPEN} Edit <image1>. Change only his clothes: dress him in exactly the armor of <image2>: {_what}. "
+            f"Take only these clothes from <image2>, not its pose. His hands stay bare. The green rod in his fist is "
+            f"unchanged, held exactly as before. Keep everything else of <image1> exactly the same: the same hero, the "
+            f"same face, hair and headband, the same trousers and boots, exactly the same pose with every limb and both "
+            f"fists in exactly the same place, {STYLE}. No sword, no blade, no ground, no shadow, no text. {RGBA_CLOSE}",
+            f"char_hero_{_armor}")
+
 PICKS: dict[str, int] = {"rig": 6100, "grip": 6100, "chest_leather": 6100, "chest_scale": 6100, "helm_cap": 6100,
                          "helm_coif": 6101, "legs_plain": 6100, "legs_plate": 6100, "legs_leather": 6211,
                          "up_ready": 6100, "up_wind": 6111, "up_strike": 6100, "up_hurt": 6101,
@@ -280,7 +301,8 @@ PICKS: dict[str, int] = {"rig": 6100, "grip": 6100, "chest_leather": 6100, "ches
                          "arm_strike": 6120,
                          # The holds of step 2 (hands): a sword in the left hand, two weapons, one in both hands.
                          "up_left_ready": 6220, "up_left_strike": 6200, "up_dual_ready": 6200, "up_dual_strike": 6201,
-                         "up_staff_ready": 6200, "up_staff_strike": 6201}
+                         "up_staff_ready": 6200, "up_staff_strike": 6201,
+                         **{f"body_{a}_{m}": 6300 for a in ("apprentice_robe", "leather_armor") for m in ("ready", "wind", "strike", "hurt")}}
 
 
 def source(name: str) -> Image.Image:

@@ -456,3 +456,9 @@ Step 2 of PLANS "Layered hero rebuild": a main hand and an off hand. The rules a
 - **Bag:** five armor slots on the left at a 60 px step (browser `src/ui/inventory.ts`, Unity `Ui/InventoryPanel.cs`); a drawn trousers icon in `itemUi.ts` and `ItemUi.cs`.
 - **Hero art:** `legs_leather` (seed 6211) joins the rig sets beside `legs_plain` and `legs_plate`; `FightHero.Wear("legs", set)` swaps them in the rig-leg moments.
 - **Sheet:** `art/tests/sheets/layered_hero_legs.webp`. Rating, weak points: in PLANS (step 3).
+
+## Layered hero, step 4a: body armor (2026-11-16, designer: "Yes, do 4b")
+- **Pictures:** `body_<armor>_<moment>` edits in `scripts/hero_layers.py` (`BODY_ARMOR`: Leather Armor, Apprentice Robe; each sword moment's pose with the finished outfit picture `art/raw/char_hero_<armor>.png` as the clothes reference, hands bare; seed 6300 for all eight). Scale Mail is the existing `set_<moment>` pictures.
+- **Cut** (`scripts/hero_layers_fight.py`): each armor picture becomes `fight/<moment>/body_<armor>.png`, the whole drawn upper body with a robe's skirt; it loses the bare pose's head area (its own red search took the red robe), below the belt only what the armor changed, and the rod is filled where armor lies above and below it. `ONLY=ready,wind,...` re-cuts just those moments.
+- **Unity** (`LayeredFight.cs`): `FightHero.Carry` reads the body armor from the equipment (Scale Mail -> the set chest, others -> `body_<id>`), drawn in the chest layer with the bare fists on top; `LayeredFightDemo.Armor(id)` stands one armor in a row beside today's hero.
+- **Sheet:** `art/tests/sheets/layered_hero_body_armor.webp`. Rating, weak points: in PLANS (step 4a).

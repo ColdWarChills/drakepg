@@ -15,6 +15,7 @@ Usage (from the repo root):
   python scripts/hero_layers_fight.py show [--src]   # art/redo/layers/_fight.png (bare and the full set)
 """
 import json
+import os
 import math
 import sys
 from pathlib import Path
@@ -404,7 +405,12 @@ def cut():
         Image.fromarray(im).save(FIGHT / "hips" / f"{s}.png")
         out["hips"][s] = {"file": f"fight/hips/{s}.png", "x": e["x"], "y": e["y"]}
     ready_left = {}
+    only = [n for n in os.environ.get("ONLY", "").split(",") if n]
+    if only:
+        out["moments"] = json.loads((PARTS / "fight.json").read_text())["moments"]
     for name in MOMENTS + [n for n in HOLD_MOMENTS if f"up_{n}" in hl.PICKS]:
+        if only and name not in only:
+            continue
         pic = hr.load(POSE.get(name, f"up_{name}")).copy()
         c = classes(pic)
         mid, tilt = BELT.get(name) or belt(pic, c)
@@ -472,16 +478,35 @@ def cut():
             v["grip2"], v["blade2"] = [round(grip2[0], 1), round(grip2[1], 1)], round(blade2, 1)
         print(f"{name:7} belt {v['pivot']} tilt {v['lean']}  neck {v['neck']} turn {deg} (fit {score:.3f})  "
               f"grip {v['grip']} blade {v['blade']}")
-        if f"set_{name}" in hl.PICKS or (hl.OUT / f"set_{name}_s6100.png").exists():
-            hl.PICKS.setdefault(f"set_{name}", 6100)
-            sp = hr.load(f"set_{name}").copy()
+        # The full set's chest and gloves (set_<moment>), and each body armor drawn on this moment (body_<armor>_<moment>,
+        # step 4a: the whole drawn upper body incl. a robe's skirt, the hands as drawn, no gloves split).
+        for armor in ["set"] + list(hl.BODY_ARMOR):
+            key = f"set_{name}" if armor == "set" else f"body_{armor}_{name}"
+            if not (key in hl.PICKS or (hl.OUT / f"{key}_s6100.png").exists()):
+                continue
+            hl.PICKS.setdefault(key, 6100)
+            sp = hr.load(key).copy()
             sc = classes(sp, grow(c["legs"], 14))
-            sgone, sred = behead(sp, sc["up"], head, at, deg)
+            if armor != "set":  # all of it but the rod (a robe's shaded red reads as boots); the rod's outline goes too
+                sc["rod"] = grow(sc["rod"], 4) & (sp[..., 3] > 128)
+                sc["up"] = (sp[..., 3] > 128) & ~sc["rod"]
+            # The head stays where the bare pose has it, so an armor picture loses that same head and headband (its own
+            # red search would take a red robe or reddish leather with it).
+            sgone, sred = behead(sp, sc["up"], head, at, deg) if armor == "set" else (grow(gone, 2) & sc["up"], red)
             sbody = sc["up"] & ~sgone
             sholes = (sc["rod"] | (grow(sred, 4) & sgone)) & enclosed(sbody, 40)
+            if armor != "set":  # a rod lying across a robe pokes out past its edge: fill it where armor is above and below
+                sholes |= sc["rod"] & np.maximum.accumulate(sbody, 0) & np.maximum.accumulate(sbody[::-1], 0)[::-1]
             fill(sp, sholes, sbody & ~sc["rod"])
             sbody = (sbody | sholes) & ~(sc["rod"] & ~sholes)
             sbody = forearm(sp, sbody, name, skin & body, pic)
+            if armor != "set":
+                # Below the belt only what the armor changed (a robe's skirt): the legs and boots it left as they were
+                # are the legs' own layers.
+                same = np.abs(sp[..., :3].astype(int) - pic[..., :3].astype(int)).sum(-1) < 70
+                sbody &= ~(grow(c["legs"], 3) & (same | ~(sp[..., 3] > 128)))
+                files[f"body_{armor}"] = save(sp, sbody, FIGHT / name / f"body_{armor}.png")
+                continue
             gloves = gear_split(sp, sc, skin & body) & sbody
             files["chest"] = save(sp, sbody & ~gloves, FIGHT / name / "chest.png")
             files["gloves"] = save(sp, gloves, FIGHT / name / "gloves.png")
@@ -634,7 +659,13 @@ class Fight:
                 layers.append((z, im, origin, v["pivot"], waist, turn, (1, 1)))
 
         chest, gloves = gear.get("chest") and "chest" in f, gear.get("gloves") and "gloves" in f
-        if not chest:
+        armor = f"body_{gear.get('chest')}"
+        if armor in f:  # a body armor drawn on this moment: its whole upper body, the hands as drawn
+            chest = gloves = False
+            upper(armor, Z["chest"])
+            upper("fist", Z["fist"])
+            upper("fist2", Z["fist"])
+        elif not chest:
             upper("body", Z["body"])
             upper("fist", Z["fist"])
             upper("fist2", Z["fist"])
