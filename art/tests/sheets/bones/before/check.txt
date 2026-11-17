@@ -1,0 +1,4 @@
+(a) in one piece: pass
+(b) joints covered: pass
+    joint cover, lowest / usual: f_ankle 100%/100%, f_elbow 100%/100%, f_hip 100%/100%, f_knee 100%/100%, f_shoulder 100%/100%, f_wrist 100%/100%, n_ankle 100%/100%, n_elbow 100%/100%, n_hip 100%/100%, n_knee 100%/100%, n_shoulder 100%/100%, n_wrist 100%/100%, neck 75%/79%, waist 100%/100%
+(c) weapon in hand: pass (max 0.00 px)

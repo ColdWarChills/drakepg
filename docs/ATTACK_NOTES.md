@@ -193,6 +193,9 @@ How to read a move card:
 - **Swaps**: which shared swap pictures (3.4) the move uses: F-shout, F-hurt (faces, already drawn), F-grit, T-away,
   T-toward, H-open-n / H-open-f, A-fore. **Cost** = new pictures bare / with every gear piece (3.4 formula).
   "0 / 0" means the move works with what exists.
+- **Chest turn (orchestrator's correction, 2026-11-17):** a forehand blow with the near hand opens the chest to the
+  viewer on the coil (T-toward) and turns it away, back showing, on the strike (T-away). A backhand (D3) is the
+  other way round. The rule and how it was checked are in 3.3.
 - Footwork words: **planted** (feet stay), **step** (one foot moves), **hop** (both leave the ground a little),
   **leap**, **spin**, **slide**.
 - All tip paths in screen terms, the hero facing right: "up-back" = above and behind the head.
@@ -220,7 +223,7 @@ chest height.
 - Follow 100 ms (6f): blade carries on to point down-forward (40-60 deg), body pitches in, back heel lifts.
 - Held 60 ms (4f).
 - Home 300 ms (18f): hop back on a low arc, blade swings up to ready, land squash.
-- **Total 740 ms.** Camera: kick 6-10 px forward on contact. Swaps: F-shout (optional T-away on the coil, T-toward
+- **Total 740 ms.** Camera: kick 6-10 px forward on contact. Swaps: F-shout (optional T-toward on the coil, T-away
   on contact). Cost 0 / 0 (or 2 / 24 with the two torsos).
 
 **S2. Rising cut** (everyday alternate)
@@ -273,7 +276,7 @@ chest height.
 - Follow 220 ms (13f): blade buried low in front, knees deep, dust ring; held 120 ms.
 - Home 340 ms (20f).
 - **Total about 1.3 s + freeze.** Leads: legs (jump), then the whole body; the arm only at the drop.
-  Swaps: F-shout (have), T-away for the hang (optional). Cost 0 / 0 (1 / 12 with T-away).
+  Swaps: F-shout (have), T-toward for the hang (optional). Cost 0 / 0 (1 / 12 with T-toward).
 
 **S7. Turnaround cut** (skill, spin; risky; needs rig code: root scale)
 - Coil 140 ms: wind the whole body back (torso -20 deg, sword low behind). Hold 20 ms.
@@ -517,7 +520,7 @@ the spell. Casts are quick flicks or traced shapes; melee is a jab. **Feel: nimb
 bolt's flight.
 
 **W2. Wand jab** (everyday melee)
-- Coil 80 ms: wand hand pulled back by the hip, body turned away a little. Hold 40 ms.
+- Coil 80 ms: wand hand pulled back by the hip, chest opened to the viewer a little. Hold 40 ms.
 - Dash 100 ms (stops 20 px closer, as today), jab 40 ms: a straight poke at the monster's face, tip sparkles.
 - Contact: freeze 50; stab mark plus a few sparks.
 - Follow 60 ms: the wrist flicks the wand up. Home 240 ms.
@@ -567,11 +570,24 @@ bolt's flight.
 
 ### 3.3 Faking depth and twist with flat parts
 
+> **Which way the chest turns (orchestrator's correction, 2026-11-17).** The first version of these notes had it the
+> wrong way round for a forehand blow. Checked against the drawn wind-up and strike
+> (`art/tests/sheets/bones/baseline/warrior_sword/key_006_sword_wind.webp`, `key_024_sword_strike.webp`): on a
+> **forehand** blow with the near hand (the weapon starts on the near side: S1, S6, the overhead blows, a jab pulled
+> back at the hip) the **coil pulls the near shoulder back and opens the chest to the viewer**; the **strike drives
+> the near shoulder forward and turns the chest away**, back and near side showing, the body bent over the cut. A
+> **backhand** (D3: the fist is pulled across to the far shoulder first) is the other way round. The swap pictures
+> are named for what they show (T-toward = chest open to the viewer, T-away = back showing more); each move says
+> which one it shows when.
+
 None of these need a new picture. Try them before drawing swaps:
 - **Torso squeeze**: scale the torso x to 0.85-0.92 when it turns away or toward the viewer; back to 1 when side-on.
-- **Shoulder slide**: move the shoulder joints when the chest turns: turning away (coil), the near shoulder slides
-  back 10-25 rig px and the far shoulder slides forward / hides more behind the torso; turning toward (strike), the
-  near shoulder comes forward and the far shoulder shows more. The arms are attached there, so they follow.
+  (Orchestrator's note: the base torso is drawn 3/4 front, so by plain geometry it is widest opened to the viewer and
+  narrowest side-on. Try the squeeze both ways and keep what reads.)
+- **Shoulder slide**: move the shoulder joints when the chest turns: opening to the viewer (forehand coil), the near
+  shoulder slides back 10-25 rig px and the far shoulder slides forward and shows more; turning away (forehand
+  strike), the near shoulder comes forward and the far shoulder hides more behind the torso. The arms are attached
+  there, so they follow.
 - **Hips against shoulders**: in the coil the hips turn back less than the shoulders (a wound spring); in the strike
   the hips arrive first and the shoulders whip after. The visible angle between them is the twist.
 - **Head lag and counter-turn**: the head arrives 2-3 frames after the torso and tilts the other way a little,
@@ -598,8 +614,8 @@ The shared set every move should draw from (don't invent per-move swaps):
 | F-shout | head (face) | shouting | strikes, crits | **already drawn** (2 x 10 with hurt) |
 | F-hurt | head (face) | pain | being hit | **already drawn** |
 | F-grit | head (face) | gritted teeth, eyes narrowed | coils, charges (the calm wind-up face was a complaint) | 1 / 10 |
-| T-away | torso | chest turned away, back showing more | coils, wind-ups | 1 / 12 |
-| T-toward | torso | chest open to the viewer | strikes, follow-throughs | 1 / 12 |
+| T-away | torso | chest turned away, back showing more | forehand strikes and follow-throughs; backhand coils | 1 / 12 |
+| T-toward | torso | chest open to the viewer | forehand coils and wind-ups; backhand strikes | 1 / 12 |
 | H-open-n / H-open-f | hand | open flat hand | casting, pushing, balance | 1 / 10 each |
 | A-fore | forearm + fist | forearm pointing at the viewer, fist big | punches or reaches toward the camera; rare in side view | 2 / 22 (forearm 1+11, fist 1+9) |
 
