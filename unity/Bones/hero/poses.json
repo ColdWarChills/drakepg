@@ -1,0 +1,321 @@
+{
+ "rest": {
+  "hips": 0,
+  "torso": 0,
+  "head": 0,
+  "root": [
+   0,
+   0
+  ],
+  "far_front": false,
+  "on": null,
+  "n_hand": 0,
+  "n_upper": 0.0,
+  "n_fore": 0.0,
+  "f_hand": 0,
+  "f_upper": 0.0,
+  "f_fore": 0.0,
+  "n_ankle": [
+   0,
+   0
+  ],
+  "f_ankle": [
+   0,
+   0
+  ],
+  "weapon": []
+ },
+ "sword_ready": {
+  "hips": 0,
+  "torso": 4,
+  "head": 0,
+  "root": [
+   0,
+   32
+  ],
+  "far_front": false,
+  "on": null,
+  "n_hand": -77.76628023715939,
+  "n_upper": -37.34450169340869,
+  "n_fore": -132.21903323542583,
+  "f_hand": -31.282779329858926,
+  "f_upper": 64.92376042025566,
+  "f_fore": -31.282779329858926,
+  "n_ankle": [
+   -10,
+   0
+  ],
+  "f_ankle": [
+   36,
+   0
+  ],
+  "weapon": [
+   "iron_sword"
+  ]
+ },
+ "sword_wind": {
+  "hips": 0,
+  "torso": -9,
+  "head": -3,
+  "root": [
+   -28,
+   18
+  ],
+  "far_front": false,
+  "on": null,
+  "n_hand": -149.65404678588357,
+  "n_upper": 54.524556196287676,
+  "n_fore": 177.89320021585002,
+  "f_hand": -85.20449993848324,
+  "f_upper": 25.426182574740807,
+  "f_fore": -85.20449993848324,
+  "n_ankle": [
+   -10,
+   0
+  ],
+  "f_ankle": [
+   36,
+   0
+  ],
+  "weapon": [
+   "iron_sword"
+  ]
+ },
+ "sword_strike": {
+  "hips": 0,
+  "torso": 26,
+  "head": -12,
+  "root": [
+   120,
+   72
+  ],
+  "far_front": false,
+  "on": null,
+  "n_hand": -37.11849926629088,
+  "n_upper": -76.96865220625628,
+  "n_fore": -104.5712522645573,
+  "f_hand": 6.660703918992226,
+  "f_upper": 111.08833596100828,
+  "f_fore": 6.660703918992226,
+  "n_ankle": [
+   -40,
+   0
+  ],
+  "f_ankle": [
+   230,
+   0
+  ],
+  "weapon": [
+   "iron_sword"
+  ]
+ },
+ "staff_ready": {
+  "hips": 0,
+  "torso": 3,
+  "head": 0,
+  "root": [
+   0,
+   32
+  ],
+  "far_front": true,
+  "on": {
+   "t": -220,
+   "bend": -1
+  },
+  "n_hand": -100.85986087160028,
+  "n_upper": -54.755604429555106,
+  "n_fore": -163.3126138698667,
+  "f_hand": -55.859860871600276,
+  "f_upper": 25.82811425395576,
+  "f_fore": 73.27525729459842,
+  "n_ankle": [
+   -10,
+   0
+  ],
+  "f_ankle": [
+   36,
+   0
+  ],
+  "weapon": [
+   "oak_staff"
+  ]
+ },
+ "staff_wind": {
+  "hips": 0,
+  "torso": -7,
+  "head": -3,
+  "root": [
+   -24,
+   16
+  ],
+  "far_front": true,
+  "on": {
+   "t": -200,
+   "bend": -1
+  },
+  "n_hand": -118.5783808725923,
+  "n_upper": -90.10893354733611,
+  "n_fore": 176.96886612914125,
+  "f_hand": -73.5783808725923,
+  "f_upper": -20.25197859474366,
+  "f_fore": 66.38766046591525,
+  "n_ankle": [
+   -10,
+   0
+  ],
+  "f_ankle": [
+   36,
+   0
+  ],
+  "weapon": [
+   "oak_staff"
+  ]
+ },
+ "staff_strike": {
+  "hips": 0,
+  "torso": 22,
+  "head": -10,
+  "root": [
+   105,
+   66
+  ],
+  "far_front": true,
+  "on": {
+   "t": -160,
+   "bend": -1
+  },
+  "n_hand": -76.48611215585233,
+  "n_upper": -69.87360309498133,
+  "n_fore": -138.93886515411876,
+  "f_hand": -31.48611215585234,
+  "f_upper": 1.5387589376997823,
+  "f_fore": 99.67766693458515,
+  "n_ankle": [
+   -40,
+   0
+  ],
+  "f_ankle": [
+   215,
+   0
+  ],
+  "weapon": [
+   "oak_staff"
+  ]
+ },
+ "dagger_ready": {
+  "hips": 0,
+  "torso": 5,
+  "head": 0,
+  "root": [
+   0,
+   32
+  ],
+  "far_front": false,
+  "on": null,
+  "n_hand": -88.11565793586902,
+  "n_upper": -39.39235586962795,
+  "n_fore": -145.56841093413544,
+  "f_hand": -55.8323092919765,
+  "f_upper": 23.170428317424495,
+  "f_fore": -75.50133905078205,
+  "n_ankle": [
+   -10,
+   0
+  ],
+  "f_ankle": [
+   36,
+   0
+  ],
+  "weapon": [
+   "rusty_dagger",
+   "rusty_dagger"
+  ]
+ },
+ "dagger_wind": {
+  "hips": 0,
+  "torso": -4,
+  "head": 0,
+  "root": [
+   -20,
+   26
+  ],
+  "far_front": false,
+  "on": null,
+  "n_hand": -28.405564427315994,
+  "n_upper": 52.39134820906054,
+  "n_fore": -80.85831742558244,
+  "f_hand": -76.50356281069246,
+  "f_upper": 10.43348732767231,
+  "f_fore": -91.17259256949802,
+  "n_ankle": [
+   -10,
+   0
+  ],
+  "f_ankle": [
+   36,
+   0
+  ],
+  "weapon": [
+   "rusty_dagger",
+   "rusty_dagger"
+  ]
+ },
+ "dagger_strike": {
+  "hips": 0,
+  "torso": 26,
+  "head": -12,
+  "root": [
+   125,
+   72
+  ],
+  "far_front": false,
+  "on": null,
+  "n_hand": -65.99533353989823,
+  "n_upper": -78.41265429139813,
+  "n_fore": -140.44808653816466,
+  "f_hand": -1.962369833551037,
+  "f_upper": 107.96757629560364,
+  "f_fore": -6.6313995923565585,
+  "n_ankle": [
+   -40,
+   0
+  ],
+  "f_ankle": [
+   235,
+   0
+  ],
+  "weapon": [
+   "rusty_dagger",
+   "rusty_dagger"
+  ]
+ },
+ "sword_left_ready": {
+  "hips": 0,
+  "torso": 4,
+  "head": 0,
+  "root": [
+   0,
+   32
+  ],
+  "far_front": false,
+  "on": null,
+  "n_hand": -105.21848941739243,
+  "n_upper": -12.375195870044337,
+  "n_fore": -105.21848941739243,
+  "f_hand": -47.367381154398686,
+  "f_upper": 32.3378074178803,
+  "f_fore": -64.03641091320425,
+  "n_ankle": [
+   -10,
+   0
+  ],
+  "f_ankle": [
+   36,
+   0
+  ],
+  "weapon": [
+   null,
+   "iron_sword"
+  ]
+ }
+}

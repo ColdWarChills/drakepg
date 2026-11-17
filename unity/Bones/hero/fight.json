@@ -1,0 +1,1599 @@
+{
+ "moments": {
+  "ready": {
+   "pivot": [
+    780,
+    690
+   ],
+   "lean": 0,
+   "neck": [
+    800.0,
+    426.0
+   ],
+   "head": 0,
+   "grip": [
+    771.4,
+    674.5
+   ],
+   "blade": -27.3,
+   "weaponZ": 71,
+   "face": null,
+   "stand": {
+    "root": [
+     10,
+     0
+    ],
+    "nfoot": [
+     -112,
+     0
+    ],
+    "ffoot": [
+     118,
+     0
+    ],
+    "sink": 5
+   },
+   "files": {
+    "body": {
+     "file": "fight/ready/body.png",
+     "x": 528,
+     "y": 416
+    },
+    "fist": {
+     "file": "fight/ready/fist.png",
+     "x": 704,
+     "y": 633
+    },
+    "chest": {
+     "file": "fight/ready/chest.png",
+     "x": 540,
+     "y": 403
+    },
+    "gloves": {
+     "file": "fight/ready/gloves.png",
+     "x": 640,
+     "y": 454
+    },
+    "glove_fist": {
+     "file": "fight/ready/glove_fist.png",
+     "x": 688,
+     "y": 617
+    },
+    "hands": {
+     "file": "fight/ready/hands.png",
+     "x": 635,
+     "y": 449
+    },
+    "body_leather_armor": {
+     "file": "fight/ready/body_leather_armor.png",
+     "x": 524,
+     "y": 405
+    },
+    "body_apprentice_robe": {
+     "file": "fight/ready/body_apprentice_robe.png",
+     "x": 432,
+     "y": 397
+    },
+    "body_novice_robe": {
+     "file": "fight/ready/body_novice_robe.png",
+     "x": 433,
+     "y": 418
+    },
+    "body_reedweave_robe": {
+     "file": "fight/ready/body_reedweave_robe.png",
+     "x": 433,
+     "y": 406
+    },
+    "body_stormweave_robe": {
+     "file": "fight/ready/body_stormweave_robe.png",
+     "x": 433,
+     "y": 417
+    },
+    "body_galeweave_robe": {
+     "file": "fight/ready/body_galeweave_robe.png",
+     "x": 416,
+     "y": 418
+    },
+    "body_fleecewool_robe": {
+     "file": "fight/ready/body_fleecewool_robe.png",
+     "x": 432,
+     "y": 397
+    },
+    "body_marshhide_vest": {
+     "file": "fight/ready/body_marshhide_vest.png",
+     "x": 525,
+     "y": 391
+    },
+    "body_frostpelt_vest": {
+     "file": "fight/ready/body_frostpelt_vest.png",
+     "x": 526,
+     "y": 398
+    },
+    "body_ridgeplate": {
+     "file": "fight/ready/body_ridgeplate.png",
+     "x": 528,
+     "y": 393
+    },
+    "gloves_leather_gloves": {
+     "file": "fight/ready/gloves_leather_gloves.png",
+     "x": 577,
+     "y": 572
+    },
+    "glove_fist_leather_gloves": {
+     "file": "fight/ready/glove_fist_leather_gloves.png",
+     "x": 688,
+     "y": 618
+    },
+    "gloves_apprentice_wraps": {
+     "file": "fight/ready/gloves_apprentice_wraps.png",
+     "x": 577,
+     "y": 573
+    },
+    "glove_fist_apprentice_wraps": {
+     "file": "fight/ready/glove_fist_apprentice_wraps.png",
+     "x": 688,
+     "y": 627
+    },
+    "gloves_scale_gauntlets": {
+     "file": "fight/ready/gloves_scale_gauntlets.png",
+     "x": 577,
+     "y": 557
+    },
+    "glove_fist_scale_gauntlets": {
+     "file": "fight/ready/glove_fist_scale_gauntlets.png",
+     "x": 688,
+     "y": 607
+    },
+    "gloves_reedweave_wraps": {
+     "file": "fight/ready/gloves_reedweave_wraps.png",
+     "x": 641,
+     "y": 623
+    },
+    "glove_fist_reedweave_wraps": {
+     "file": "fight/ready/glove_fist_reedweave_wraps.png",
+     "x": 737,
+     "y": 633
+    },
+    "gloves_ridgeplate_gauntlets": {
+     "file": "fight/ready/gloves_ridgeplate_gauntlets.png",
+     "x": 577,
+     "y": 556
+    },
+    "glove_fist_ridgeplate_gauntlets": {
+     "file": "fight/ready/glove_fist_ridgeplate_gauntlets.png",
+     "x": 688,
+     "y": 602
+    },
+    "gloves_fleecewool_mittens": {
+     "file": "fight/ready/gloves_fleecewool_mittens.png",
+     "x": 577,
+     "y": 566
+    },
+    "glove_fist_fleecewool_mittens": {
+     "file": "fight/ready/glove_fist_fleecewool_mittens.png",
+     "x": 688,
+     "y": 608
+    },
+    "gloves_thornwarden_gloves": {
+     "file": "fight/ready/gloves_thornwarden_gloves.png",
+     "x": 577,
+     "y": 572
+    },
+    "glove_fist_thornwarden_gloves": {
+     "file": "fight/ready/glove_fist_thornwarden_gloves.png",
+     "x": 688,
+     "y": 618
+    },
+    "gloves_stormwatch_gloves": {
+     "file": "fight/ready/gloves_stormwatch_gloves.png",
+     "x": 577,
+     "y": 571
+    },
+    "glove_fist_stormwatch_gloves": {
+     "file": "fight/ready/glove_fist_stormwatch_gloves.png",
+     "x": 688,
+     "y": 618
+    },
+    "gloves_frostward_gloves": {
+     "file": "fight/ready/gloves_frostward_gloves.png",
+     "x": 577,
+     "y": 566
+    },
+    "glove_fist_frostward_gloves": {
+     "file": "fight/ready/glove_fist_frostward_gloves.png",
+     "x": 688,
+     "y": 602
+    }
+   },
+   "skirts": [
+    "apprentice_robe",
+    "novice_robe",
+    "reedweave_robe",
+    "stormweave_robe",
+    "galeweave_robe",
+    "fleecewool_robe"
+   ]
+  },
+  "wind": {
+   "pivot": [
+    707.9,
+    756.4
+   ],
+   "lean": 11.0,
+   "neck": [
+    822.0,
+    462.0
+   ],
+   "head": 7,
+   "grip": [
+    567.6,
+    298.8
+   ],
+   "blade": -170,
+   "weaponZ": 55,
+   "face": null,
+   "stand": {
+    "root": [
+     23,
+     -24
+    ],
+    "drawn": true,
+    "nfoot": [
+     -101,
+     0
+    ],
+    "ffoot": [
+     108,
+     0
+    ]
+   },
+   "files": {
+    "body": {
+     "file": "fight/wind/body.png",
+     "x": 417,
+     "y": 251
+    },
+    "fist": {
+     "file": "fight/wind/fist.png",
+     "x": 513,
+     "y": 251
+    },
+    "chest": {
+     "file": "fight/wind/chest.png",
+     "x": 434,
+     "y": 334
+    },
+    "gloves": {
+     "file": "fight/wind/gloves.png",
+     "x": 490,
+     "y": 252
+    },
+    "glove_fist": {
+     "file": "fight/wind/glove_fist.png",
+     "x": 494,
+     "y": 252
+    },
+    "hands": {
+     "file": "fight/wind/hands.png",
+     "x": 485,
+     "y": 251
+    },
+    "body_leather_armor": {
+     "file": "fight/wind/body_leather_armor.png",
+     "x": 411,
+     "y": 251
+    },
+    "body_apprentice_robe": {
+     "file": "fight/wind/body_apprentice_robe.png",
+     "x": 315,
+     "y": 251
+    },
+    "body_novice_robe": {
+     "file": "fight/wind/body_novice_robe.png",
+     "x": 315,
+     "y": 251
+    },
+    "body_reedweave_robe": {
+     "file": "fight/wind/body_reedweave_robe.png",
+     "x": 315,
+     "y": 251
+    },
+    "body_stormweave_robe": {
+     "file": "fight/wind/body_stormweave_robe.png",
+     "x": 315,
+     "y": 251
+    },
+    "body_galeweave_robe": {
+     "file": "fight/wind/body_galeweave_robe.png",
+     "x": 315,
+     "y": 251
+    },
+    "body_fleecewool_robe": {
+     "file": "fight/wind/body_fleecewool_robe.png",
+     "x": 315,
+     "y": 251
+    },
+    "body_marshhide_vest": {
+     "file": "fight/wind/body_marshhide_vest.png",
+     "x": 411,
+     "y": 251
+    },
+    "body_frostpelt_vest": {
+     "file": "fight/wind/body_frostpelt_vest.png",
+     "x": 409,
+     "y": 251
+    },
+    "body_ridgeplate": {
+     "file": "fight/wind/body_ridgeplate.png",
+     "x": 413,
+     "y": 251
+    },
+    "gloves_leather_gloves": {
+     "file": "fight/wind/gloves_leather_gloves.png",
+     "x": 479,
+     "y": 251
+    },
+    "glove_fist_leather_gloves": {
+     "file": "fight/wind/glove_fist_leather_gloves.png",
+     "x": 497,
+     "y": 251
+    },
+    "gloves_apprentice_wraps": {
+     "file": "fight/wind/gloves_apprentice_wraps.png",
+     "x": 497,
+     "y": 252
+    },
+    "glove_fist_apprentice_wraps": {
+     "file": "fight/wind/glove_fist_apprentice_wraps.png",
+     "x": 501,
+     "y": 252
+    },
+    "gloves_scale_gauntlets": {
+     "file": "fight/wind/gloves_scale_gauntlets.png",
+     "x": 452,
+     "y": 250
+    },
+    "glove_fist_scale_gauntlets": {
+     "file": "fight/wind/glove_fist_scale_gauntlets.png",
+     "x": 494,
+     "y": 250
+    },
+    "gloves_reedweave_wraps": {
+     "file": "fight/wind/gloves_reedweave_wraps.png",
+     "x": 468,
+     "y": 251
+    },
+    "glove_fist_reedweave_wraps": {
+     "file": "fight/wind/glove_fist_reedweave_wraps.png",
+     "x": 501,
+     "y": 251
+    },
+    "gloves_ridgeplate_gauntlets": {
+     "file": "fight/wind/gloves_ridgeplate_gauntlets.png",
+     "x": 469,
+     "y": 244
+    },
+    "glove_fist_ridgeplate_gauntlets": {
+     "file": "fight/wind/glove_fist_ridgeplate_gauntlets.png",
+     "x": 490,
+     "y": 244
+    },
+    "gloves_fleecewool_mittens": {
+     "file": "fight/wind/gloves_fleecewool_mittens.png",
+     "x": 487,
+     "y": 249
+    },
+    "glove_fist_fleecewool_mittens": {
+     "file": "fight/wind/glove_fist_fleecewool_mittens.png",
+     "x": 497,
+     "y": 249
+    },
+    "gloves_thornwarden_gloves": {
+     "file": "fight/wind/gloves_thornwarden_gloves.png",
+     "x": 467,
+     "y": 250
+    },
+    "glove_fist_thornwarden_gloves": {
+     "file": "fight/wind/glove_fist_thornwarden_gloves.png",
+     "x": 501,
+     "y": 250
+    },
+    "gloves_stormwatch_gloves": {
+     "file": "fight/wind/gloves_stormwatch_gloves.png",
+     "x": 477,
+     "y": 251
+    },
+    "glove_fist_stormwatch_gloves": {
+     "file": "fight/wind/glove_fist_stormwatch_gloves.png",
+     "x": 497,
+     "y": 251
+    },
+    "gloves_frostward_gloves": {
+     "file": "fight/wind/gloves_frostward_gloves.png",
+     "x": 465,
+     "y": 252
+    },
+    "glove_fist_frostward_gloves": {
+     "file": "fight/wind/glove_fist_frostward_gloves.png",
+     "x": 490,
+     "y": 252
+    },
+    "legs": {
+     "file": "fight/wind/legs.png",
+     "x": 316,
+     "y": 727
+    },
+    "legs_set": {
+     "file": "fight/wind/legs_set.png",
+     "x": 318,
+     "y": 727
+    },
+    "boots_set": {
+     "file": "fight/wind/boots_set.png",
+     "x": 318,
+     "y": 727
+    },
+    "legs_leather_leggings": {
+     "file": "fight/wind/legs_leather_leggings.png",
+     "x": 315,
+     "y": 727
+    },
+    "legs_apprentice_trousers": {
+     "file": "fight/wind/legs_apprentice_trousers.png",
+     "x": 315,
+     "y": 727
+    },
+    "legs_scale_leggings": {
+     "file": "fight/wind/legs_scale_leggings.png",
+     "x": 315,
+     "y": 727
+    },
+    "legs_reedweave_trousers": {
+     "file": "fight/wind/legs_reedweave_trousers.png",
+     "x": 315,
+     "y": 727
+    },
+    "legs_ridgeplate_legguards": {
+     "file": "fight/wind/legs_ridgeplate_legguards.png",
+     "x": 315,
+     "y": 727
+    },
+    "legs_fleecewool_leggings": {
+     "file": "fight/wind/legs_fleecewool_leggings.png",
+     "x": 315,
+     "y": 727
+    },
+    "legs_thornwarden_leggings": {
+     "file": "fight/wind/legs_thornwarden_leggings.png",
+     "x": 315,
+     "y": 727
+    },
+    "legs_stormwatch_leggings": {
+     "file": "fight/wind/legs_stormwatch_leggings.png",
+     "x": 315,
+     "y": 727
+    },
+    "legs_frostward_legguards": {
+     "file": "fight/wind/legs_frostward_legguards.png",
+     "x": 315,
+     "y": 727
+    },
+    "boots_leather_boots": {
+     "file": "fight/wind/boots_leather_boots.png",
+     "x": 314,
+     "y": 727
+    },
+    "boots_apprentice_slippers": {
+     "file": "fight/wind/boots_apprentice_slippers.png",
+     "x": 313,
+     "y": 727
+    },
+    "boots_scale_boots": {
+     "file": "fight/wind/boots_scale_boots.png",
+     "x": 315,
+     "y": 727
+    },
+    "boots_reedweave_slippers": {
+     "file": "fight/wind/boots_reedweave_slippers.png",
+     "x": 316,
+     "y": 727
+    },
+    "boots_ridgeplate_boots": {
+     "file": "fight/wind/boots_ridgeplate_boots.png",
+     "x": 307,
+     "y": 727
+    },
+    "boots_fleecewool_boots": {
+     "file": "fight/wind/boots_fleecewool_boots.png",
+     "x": 316,
+     "y": 727
+    },
+    "boots_thornwarden_boots": {
+     "file": "fight/wind/boots_thornwarden_boots.png",
+     "x": 308,
+     "y": 727
+    },
+    "boots_stormwatch_boots": {
+     "file": "fight/wind/boots_stormwatch_boots.png",
+     "x": 325,
+     "y": 727
+    },
+    "boots_frostward_boots": {
+     "file": "fight/wind/boots_frostward_boots.png",
+     "x": 314,
+     "y": 727
+    }
+   },
+   "skirts": [
+    "apprentice_robe",
+    "novice_robe",
+    "reedweave_robe",
+    "stormweave_robe",
+    "galeweave_robe",
+    "fleecewool_robe"
+   ]
+  },
+  "strike": {
+   "pivot": [
+    644.7,
+    725.7
+   ],
+   "lean": 7.2,
+   "neck": [
+    786.0,
+    454.0
+   ],
+   "head": 13,
+   "grip": [
+    1084.2,
+    818.6
+   ],
+   "blade": 28.3,
+   "weaponZ": 71,
+   "face": "shout",
+   "stand": {
+    "root": [
+     262,
+     0
+    ],
+    "drawn": true,
+    "nfoot": [
+     -10,
+     0
+    ],
+    "ffoot": [
+     548,
+     0
+    ]
+   },
+   "files": {
+    "body": {
+     "file": "fight/strike/body.png",
+     "x": 448,
+     "y": 393
+    },
+    "fist": {
+     "file": "fight/strike/fist.png",
+     "x": 1019,
+     "y": 756
+    },
+    "chest": {
+     "file": "fight/strike/chest.png",
+     "x": 458,
+     "y": 393
+    },
+    "gloves": {
+     "file": "fight/strike/gloves.png",
+     "x": 447,
+     "y": 509
+    },
+    "glove_fist": {
+     "file": "fight/strike/glove_fist.png",
+     "x": 1002,
+     "y": 739
+    },
+    "hands": {
+     "file": "fight/strike/hands.png",
+     "x": 448,
+     "y": 504
+    },
+    "body_leather_armor": {
+     "file": "fight/strike/body_leather_armor.png",
+     "x": 448,
+     "y": 394
+    },
+    "body_apprentice_robe": {
+     "file": "fight/strike/body_apprentice_robe.png",
+     "x": 132,
+     "y": 383
+    },
+    "body_novice_robe": {
+     "file": "fight/strike/body_novice_robe.png",
+     "x": 132,
+     "y": 394
+    },
+    "body_reedweave_robe": {
+     "file": "fight/strike/body_reedweave_robe.png",
+     "x": 132,
+     "y": 394
+    },
+    "body_stormweave_robe": {
+     "file": "fight/strike/body_stormweave_robe.png",
+     "x": 132,
+     "y": 394
+    },
+    "body_galeweave_robe": {
+     "file": "fight/strike/body_galeweave_robe.png",
+     "x": 132,
+     "y": 393
+    },
+    "body_fleecewool_robe": {
+     "file": "fight/strike/body_fleecewool_robe.png",
+     "x": 132,
+     "y": 392
+    },
+    "body_marshhide_vest": {
+     "file": "fight/strike/body_marshhide_vest.png",
+     "x": 449,
+     "y": 394
+    },
+    "body_frostpelt_vest": {
+     "file": "fight/strike/body_frostpelt_vest.png",
+     "x": 448,
+     "y": 393
+    },
+    "body_ridgeplate": {
+     "file": "fight/strike/body_ridgeplate.png",
+     "x": 449,
+     "y": 394
+    },
+    "gloves_leather_gloves": {
+     "file": "fight/strike/gloves_leather_gloves.png",
+     "x": 447,
+     "y": 509
+    },
+    "glove_fist_leather_gloves": {
+     "file": "fight/strike/glove_fist_leather_gloves.png",
+     "x": 1002,
+     "y": 738
+    },
+    "gloves_apprentice_wraps": {
+     "file": "fight/strike/gloves_apprentice_wraps.png",
+     "x": 447,
+     "y": 514
+    },
+    "glove_fist_apprentice_wraps": {
+     "file": "fight/strike/glove_fist_apprentice_wraps.png",
+     "x": 1004,
+     "y": 740
+    },
+    "gloves_scale_gauntlets": {
+     "file": "fight/strike/gloves_scale_gauntlets.png",
+     "x": 441,
+     "y": 487
+    },
+    "glove_fist_scale_gauntlets": {
+     "file": "fight/strike/glove_fist_scale_gauntlets.png",
+     "x": 1001,
+     "y": 736
+    },
+    "gloves_reedweave_wraps": {
+     "file": "fight/strike/gloves_reedweave_wraps.png",
+     "x": 447,
+     "y": 511
+    },
+    "glove_fist_reedweave_wraps": {
+     "file": "fight/strike/glove_fist_reedweave_wraps.png",
+     "x": 1006,
+     "y": 738
+    },
+    "gloves_ridgeplate_gauntlets": {
+     "file": "fight/strike/gloves_ridgeplate_gauntlets.png",
+     "x": 433,
+     "y": 493
+    },
+    "glove_fist_ridgeplate_gauntlets": {
+     "file": "fight/strike/glove_fist_ridgeplate_gauntlets.png",
+     "x": 1001,
+     "y": 735
+    },
+    "gloves_fleecewool_mittens": {
+     "file": "fight/strike/gloves_fleecewool_mittens.png",
+     "x": 441,
+     "y": 498
+    },
+    "glove_fist_fleecewool_mittens": {
+     "file": "fight/strike/glove_fist_fleecewool_mittens.png",
+     "x": 1001,
+     "y": 735
+    },
+    "gloves_thornwarden_gloves": {
+     "file": "fight/strike/gloves_thornwarden_gloves.png",
+     "x": 435,
+     "y": 490
+    },
+    "glove_fist_thornwarden_gloves": {
+     "file": "fight/strike/glove_fist_thornwarden_gloves.png",
+     "x": 1001,
+     "y": 735
+    },
+    "gloves_stormwatch_gloves": {
+     "file": "fight/strike/gloves_stormwatch_gloves.png",
+     "x": 447,
+     "y": 498
+    },
+    "glove_fist_stormwatch_gloves": {
+     "file": "fight/strike/glove_fist_stormwatch_gloves.png",
+     "x": 1001,
+     "y": 738
+    },
+    "gloves_frostward_gloves": {
+     "file": "fight/strike/gloves_frostward_gloves.png",
+     "x": 433,
+     "y": 497
+    },
+    "glove_fist_frostward_gloves": {
+     "file": "fight/strike/glove_fist_frostward_gloves.png",
+     "x": 1001,
+     "y": 735
+    },
+    "legs": {
+     "file": "fight/strike/legs.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_set": {
+     "file": "fight/strike/legs_set.png",
+     "x": 140,
+     "y": 678
+    },
+    "boots_set": {
+     "file": "fight/strike/boots_set.png",
+     "x": 140,
+     "y": 678
+    },
+    "legs_leather_leggings": {
+     "file": "fight/strike/legs_leather_leggings.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_apprentice_trousers": {
+     "file": "fight/strike/legs_apprentice_trousers.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_scale_leggings": {
+     "file": "fight/strike/legs_scale_leggings.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_reedweave_trousers": {
+     "file": "fight/strike/legs_reedweave_trousers.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_ridgeplate_legguards": {
+     "file": "fight/strike/legs_ridgeplate_legguards.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_fleecewool_leggings": {
+     "file": "fight/strike/legs_fleecewool_leggings.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_thornwarden_leggings": {
+     "file": "fight/strike/legs_thornwarden_leggings.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_stormwatch_leggings": {
+     "file": "fight/strike/legs_stormwatch_leggings.png",
+     "x": 132,
+     "y": 678
+    },
+    "legs_frostward_legguards": {
+     "file": "fight/strike/legs_frostward_legguards.png",
+     "x": 132,
+     "y": 678
+    },
+    "boots_leather_boots": {
+     "file": "fight/strike/boots_leather_boots.png",
+     "x": 132,
+     "y": 678
+    },
+    "boots_apprentice_slippers": {
+     "file": "fight/strike/boots_apprentice_slippers.png",
+     "x": 139,
+     "y": 678
+    },
+    "boots_scale_boots": {
+     "file": "fight/strike/boots_scale_boots.png",
+     "x": 133,
+     "y": 678
+    },
+    "boots_reedweave_slippers": {
+     "file": "fight/strike/boots_reedweave_slippers.png",
+     "x": 147,
+     "y": 678
+    },
+    "boots_ridgeplate_boots": {
+     "file": "fight/strike/boots_ridgeplate_boots.png",
+     "x": 156,
+     "y": 678
+    },
+    "boots_fleecewool_boots": {
+     "file": "fight/strike/boots_fleecewool_boots.png",
+     "x": 144,
+     "y": 678
+    },
+    "boots_thornwarden_boots": {
+     "file": "fight/strike/boots_thornwarden_boots.png",
+     "x": 130,
+     "y": 678
+    },
+    "boots_stormwatch_boots": {
+     "file": "fight/strike/boots_stormwatch_boots.png",
+     "x": 131,
+     "y": 678
+    },
+    "boots_frostward_boots": {
+     "file": "fight/strike/boots_frostward_boots.png",
+     "x": 134,
+     "y": 678
+    }
+   },
+   "skirts": [
+    "apprentice_robe",
+    "novice_robe",
+    "reedweave_robe",
+    "stormweave_robe",
+    "galeweave_robe",
+    "fleecewool_robe"
+   ]
+  },
+  "hurt": {
+   "pivot": [
+    684,
+    693
+   ],
+   "lean": 0,
+   "neck": [
+    770.0,
+    402.0
+   ],
+   "head": -21,
+   "grip": [
+    883.0,
+    774.0
+   ],
+   "blade": -16,
+   "weaponZ": 71,
+   "face": "hurt",
+   "stand": {
+    "root": [
+     -70,
+     0
+    ],
+    "nfoot": [
+     -112,
+     0
+    ],
+    "ffoot": [
+     40,
+     -14
+    ],
+    "sink": 30,
+    "f_foot": -10
+   },
+   "files": {
+    "body": {
+     "file": "fight/hurt/body.png",
+     "x": 582,
+     "y": 379
+    },
+    "fist": {
+     "file": "fight/hurt/fist.png",
+     "x": 819,
+     "y": 713
+    },
+    "chest": {
+     "file": "fight/hurt/chest.png",
+     "x": 582,
+     "y": 408
+    },
+    "gloves": {
+     "file": "fight/hurt/gloves.png",
+     "x": 718,
+     "y": 379
+    },
+    "glove_fist": {
+     "file": "fight/hurt/glove_fist.png",
+     "x": 804,
+     "y": 693
+    },
+    "hands": {
+     "file": "fight/hurt/hands.png",
+     "x": 713,
+     "y": 379
+    },
+    "body_leather_armor": {
+     "file": "fight/hurt/body_leather_armor.png",
+     "x": 583,
+     "y": 378
+    },
+    "body_apprentice_robe": {
+     "file": "fight/hurt/body_apprentice_robe.png",
+     "x": 434,
+     "y": 378
+    },
+    "body_novice_robe": {
+     "file": "fight/hurt/body_novice_robe.png",
+     "x": 580,
+     "y": 378
+    },
+    "body_reedweave_robe": {
+     "file": "fight/hurt/body_reedweave_robe.png",
+     "x": 581,
+     "y": 378
+    },
+    "body_stormweave_robe": {
+     "file": "fight/hurt/body_stormweave_robe.png",
+     "x": 580,
+     "y": 378
+    },
+    "body_galeweave_robe": {
+     "file": "fight/hurt/body_galeweave_robe.png",
+     "x": 414,
+     "y": 378
+    },
+    "body_fleecewool_robe": {
+     "file": "fight/hurt/body_fleecewool_robe.png",
+     "x": 486,
+     "y": 377
+    },
+    "body_marshhide_vest": {
+     "file": "fight/hurt/body_marshhide_vest.png",
+     "x": 579,
+     "y": 378
+    },
+    "body_frostpelt_vest": {
+     "file": "fight/hurt/body_frostpelt_vest.png",
+     "x": 567,
+     "y": 378
+    },
+    "body_ridgeplate": {
+     "file": "fight/hurt/body_ridgeplate.png",
+     "x": 577,
+     "y": 378
+    },
+    "gloves_leather_gloves": {
+     "file": "fight/hurt/gloves_leather_gloves.png",
+     "x": 780,
+     "y": 384
+    },
+    "glove_fist_leather_gloves": {
+     "file": "fight/hurt/glove_fist_leather_gloves.png",
+     "x": 805,
+     "y": 693
+    },
+    "gloves_apprentice_wraps": {
+     "file": "fight/hurt/gloves_apprentice_wraps.png",
+     "x": 781,
+     "y": 384
+    },
+    "glove_fist_apprentice_wraps": {
+     "file": "fight/hurt/glove_fist_apprentice_wraps.png",
+     "x": 805,
+     "y": 696
+    },
+    "gloves_scale_gauntlets": {
+     "file": "fight/hurt/gloves_scale_gauntlets.png",
+     "x": 753,
+     "y": 384
+    },
+    "glove_fist_scale_gauntlets": {
+     "file": "fight/hurt/glove_fist_scale_gauntlets.png",
+     "x": 805,
+     "y": 691
+    },
+    "gloves_reedweave_wraps": {
+     "file": "fight/hurt/gloves_reedweave_wraps.png",
+     "x": 781,
+     "y": 443
+    },
+    "glove_fist_reedweave_wraps": {
+     "file": "fight/hurt/glove_fist_reedweave_wraps.png",
+     "x": 806,
+     "y": 707
+    },
+    "gloves_ridgeplate_gauntlets": {
+     "file": "fight/hurt/gloves_ridgeplate_gauntlets.png",
+     "x": 748,
+     "y": 384
+    },
+    "glove_fist_ridgeplate_gauntlets": {
+     "file": "fight/hurt/glove_fist_ridgeplate_gauntlets.png",
+     "x": 800,
+     "y": 690
+    },
+    "gloves_fleecewool_mittens": {
+     "file": "fight/hurt/gloves_fleecewool_mittens.png",
+     "x": 770,
+     "y": 384
+    },
+    "glove_fist_fleecewool_mittens": {
+     "file": "fight/hurt/glove_fist_fleecewool_mittens.png",
+     "x": 801,
+     "y": 691
+    },
+    "gloves_thornwarden_gloves": {
+     "file": "fight/hurt/gloves_thornwarden_gloves.png",
+     "x": 722,
+     "y": 384
+    },
+    "glove_fist_thornwarden_gloves": {
+     "file": "fight/hurt/glove_fist_thornwarden_gloves.png",
+     "x": 804,
+     "y": 691
+    },
+    "gloves_stormwatch_gloves": {
+     "file": "fight/hurt/gloves_stormwatch_gloves.png",
+     "x": 777,
+     "y": 384
+    },
+    "glove_fist_stormwatch_gloves": {
+     "file": "fight/hurt/glove_fist_stormwatch_gloves.png",
+     "x": 805,
+     "y": 694
+    },
+    "gloves_frostward_gloves": {
+     "file": "fight/hurt/gloves_frostward_gloves.png",
+     "x": 721,
+     "y": 384
+    },
+    "glove_fist_frostward_gloves": {
+     "file": "fight/hurt/glove_fist_frostward_gloves.png",
+     "x": 800,
+     "y": 690
+    }
+   },
+   "skirts": [
+    "apprentice_robe",
+    "novice_robe",
+    "reedweave_robe",
+    "stormweave_robe",
+    "galeweave_robe",
+    "fleecewool_robe"
+   ]
+  },
+  "left_ready": {
+   "pivot": [
+    688.7,
+    692.2
+   ],
+   "lean": -1.5,
+   "neck": [
+    768.0,
+    436.0
+   ],
+   "head": 0,
+   "grip": [
+    937.9,
+    665.1
+   ],
+   "blade": -32.2,
+   "weaponZ": 71,
+   "face": null,
+   "stand": {
+    "root": [
+     -21,
+     34
+    ],
+    "drawn": true,
+    "nfoot": [
+     0,
+     0
+    ],
+    "ffoot": [
+     0,
+     0
+    ]
+   },
+   "files": {
+    "body": {
+     "file": "fight/left_ready/body.png",
+     "x": 492,
+     "y": 426
+    },
+    "fist": {
+     "file": "fight/left_ready/fist.png",
+     "x": 870,
+     "y": 600
+    },
+    "legs": {
+     "file": "fight/left_ready/legs.png",
+     "x": 361,
+     "y": 669
+    }
+   }
+  },
+  "left_strike": {
+   "pivot": [
+    719.5,
+    745.6
+   ],
+   "lean": 9.0,
+   "neck": [
+    874.0,
+    482.0
+   ],
+   "head": 8,
+   "grip": [
+    1221.7,
+    838.3
+   ],
+   "blade": -9.6,
+   "weaponZ": 71,
+   "face": "shout",
+   "stand": {
+    "root": [
+     195,
+     16
+    ],
+    "drawn": true,
+    "nfoot": [
+     0,
+     0
+    ],
+    "ffoot": [
+     0,
+     0
+    ]
+   },
+   "files": {
+    "body": {
+     "file": "fight/left_strike/body.png",
+     "x": 337,
+     "y": 395
+    },
+    "fist": {
+     "file": "fight/left_strike/fist.png",
+     "x": 1154,
+     "y": 775
+    },
+    "legs": {
+     "file": "fight/left_strike/legs.png",
+     "x": 287,
+     "y": 695
+    }
+   }
+  },
+  "dual_ready": {
+   "pivot": [
+    731.2,
+    699.2
+   ],
+   "lean": 2.3,
+   "neck": [
+    796.0,
+    428.0
+   ],
+   "head": 6,
+   "grip": [
+    513.3,
+    579.8
+   ],
+   "blade": -112.5,
+   "weaponZ": 71,
+   "face": null,
+   "stand": {
+    "root": [
+     4,
+     5
+    ],
+    "drawn": true,
+    "nfoot": [
+     0,
+     0
+    ],
+    "ffoot": [
+     0,
+     0
+    ]
+   },
+   "files": {
+    "body": {
+     "file": "fight/dual_ready/body.png",
+     "x": 461,
+     "y": 408
+    },
+    "fist": {
+     "file": "fight/dual_ready/fist.png",
+     "x": 461,
+     "y": 521
+    },
+    "fist2": {
+     "file": "fight/dual_ready/fist2.png",
+     "x": 1056,
+     "y": 525
+    },
+    "legs": {
+     "file": "fight/dual_ready/legs.png",
+     "x": 396,
+     "y": 678
+    }
+   },
+   "grip2": [
+    1122.0,
+    576.7
+   ],
+   "blade2": -55.7
+  },
+  "dual_strike": {
+   "pivot": [
+    660.1,
+    680.8
+   ],
+   "lean": 7.0,
+   "neck": [
+    856.0,
+    452.0
+   ],
+   "head": 0,
+   "grip": [
+    1068.1,
+    812.5
+   ],
+   "blade": 22.4,
+   "weaponZ": 71,
+   "face": "shout",
+   "stand": {
+    "root": [
+     222,
+     40
+    ],
+    "drawn": true,
+    "nfoot": [
+     0,
+     0
+    ],
+    "ffoot": [
+     0,
+     0
+    ]
+   },
+   "files": {
+    "body": {
+     "file": "fight/dual_strike/body.png",
+     "x": 564,
+     "y": 384
+    },
+    "fist": {
+     "file": "fight/dual_strike/fist.png",
+     "x": 1008,
+     "y": 747
+    },
+    "fist2": {
+     "file": "fight/dual_strike/fist2.png",
+     "x": 1085,
+     "y": 408
+    },
+    "legs": {
+     "file": "fight/dual_strike/legs.png",
+     "x": 217,
+     "y": 627
+    }
+   },
+   "grip2": [
+    1153.3,
+    463.0
+   ],
+   "blade2": -7.9
+  },
+  "staff_ready": {
+   "pivot": [
+    754.6,
+    702.4
+   ],
+   "lean": -0.5,
+   "neck": [
+    800.0,
+    426.0
+   ],
+   "head": 0,
+   "grip": [
+    866.5,
+    577.3
+   ],
+   "blade": -49.9,
+   "weaponZ": 71,
+   "face": null,
+   "stand": {
+    "root": [
+     26,
+     5
+    ],
+    "drawn": true,
+    "nfoot": [
+     0,
+     0
+    ],
+    "ffoot": [
+     0,
+     0
+    ]
+   },
+   "files": {
+    "body": {
+     "file": "fight/staff_ready/body.png",
+     "x": 518,
+     "y": 382
+    },
+    "fist": {
+     "file": "fight/staff_ready/fist.png",
+     "x": 674,
+     "y": 679
+    },
+    "fist2": {
+     "file": "fight/staff_ready/fist2.png",
+     "x": 941,
+     "y": 382
+    },
+    "legs": {
+     "file": "fight/staff_ready/legs.png",
+     "x": 396,
+     "y": 674
+    }
+   }
+  },
+  "staff_strike": {
+   "pivot": [
+    663.9,
+    695.1
+   ],
+   "lean": 11.6,
+   "neck": [
+    830.0,
+    472.0
+   ],
+   "head": 14,
+   "grip": [
+    1023.3,
+    792.6
+   ],
+   "blade": 23.7,
+   "weaponZ": 71,
+   "face": "shout",
+   "stand": {
+    "root": [
+     189,
+     49
+    ],
+    "drawn": true,
+    "nfoot": [
+     0,
+     0
+    ],
+    "ffoot": [
+     0,
+     0
+    ]
+   },
+   "files": {
+    "body": {
+     "file": "fight/staff_strike/body.png",
+     "x": 580,
+     "y": 415
+    },
+    "fist": {
+     "file": "fight/staff_strike/fist.png",
+     "x": 895,
+     "y": 695
+    },
+    "fist2": {
+     "file": "fight/staff_strike/fist2.png",
+     "x": 1027,
+     "y": 761
+    },
+    "legs": {
+     "file": "fight/staff_strike/legs.png",
+     "x": 252,
+     "y": 643
+    }
+   }
+  }
+ },
+ "faces": {
+  "shout": {
+   "file": "fight/face_shout.png",
+   "x": 752,
+   "y": 287
+  },
+  "shout_helm_cap": {
+   "file": "fight/face_shout_helm_cap.png",
+   "x": 752,
+   "y": 292
+  },
+  "shout_helm_coif": {
+   "file": "fight/face_shout_helm_coif.png",
+   "x": 770,
+   "y": 287
+  },
+  "shout_apprentice_hood": {
+   "file": "fight/face_shout_apprentice_hood.png",
+   "x": 752,
+   "y": 287
+  },
+  "shout_reedweave_hood": {
+   "file": "fight/face_shout_reedweave_hood.png",
+   "x": 753,
+   "y": 287
+  },
+  "shout_ridgeplate_helm": {
+   "file": "fight/face_shout_ridgeplate_helm.png",
+   "x": 752,
+   "y": 289
+  },
+  "shout_fleecewool_hood": {
+   "file": "fight/face_shout_fleecewool_hood.png",
+   "x": 752,
+   "y": 288
+  },
+  "shout_thornwarden_helm": {
+   "file": "fight/face_shout_thornwarden_helm.png",
+   "x": 752,
+   "y": 289
+  },
+  "shout_stormwatch_helm": {
+   "file": "fight/face_shout_stormwatch_helm.png",
+   "x": 769,
+   "y": 289
+  },
+  "shout_frostward_helm": {
+   "file": "fight/face_shout_frostward_helm.png",
+   "x": 759,
+   "y": 290
+  },
+  "hurt": {
+   "file": "fight/face_hurt.png",
+   "x": 775,
+   "y": 287
+  },
+  "hurt_helm_cap": {
+   "file": "fight/face_hurt_helm_cap.png",
+   "x": 775,
+   "y": 292
+  },
+  "hurt_helm_coif": {
+   "file": "fight/face_hurt_helm_coif.png",
+   "x": 775,
+   "y": 287
+  },
+  "hurt_apprentice_hood": {
+   "file": "fight/face_hurt_apprentice_hood.png",
+   "x": 775,
+   "y": 287
+  },
+  "hurt_reedweave_hood": {
+   "file": "fight/face_hurt_reedweave_hood.png",
+   "x": 775,
+   "y": 287
+  },
+  "hurt_ridgeplate_helm": {
+   "file": "fight/face_hurt_ridgeplate_helm.png",
+   "x": 775,
+   "y": 290
+  },
+  "hurt_fleecewool_hood": {
+   "file": "fight/face_hurt_fleecewool_hood.png",
+   "x": 776,
+   "y": 288
+  },
+  "hurt_thornwarden_helm": {
+   "file": "fight/face_hurt_thornwarden_helm.png",
+   "x": 775,
+   "y": 289
+  },
+  "hurt_stormwatch_helm": {
+   "file": "fight/face_hurt_stormwatch_helm.png",
+   "x": 775,
+   "y": 290
+  },
+  "hurt_frostward_helm": {
+   "file": "fight/face_hurt_frostward_helm.png",
+   "x": 775,
+   "y": 290
+  }
+ },
+ "hips": {
+  "bare": {
+   "file": "fight/hips/bare.png",
+   "x": 670,
+   "y": 655
+  },
+  "legs_plain": {
+   "file": "fight/hips/legs_plain.png",
+   "x": 670,
+   "y": 655
+  },
+  "legs_plate": {
+   "file": "fight/hips/legs_plate.png",
+   "x": 670,
+   "y": 655
+  },
+  "legs_leather": {
+   "file": "fight/hips/legs_leather.png",
+   "x": 670,
+   "y": 655
+  },
+  "leather_leggings": {
+   "file": "fight/hips/leather_leggings.png",
+   "x": 670,
+   "y": 655
+  },
+  "apprentice_trousers": {
+   "file": "fight/hips/apprentice_trousers.png",
+   "x": 670,
+   "y": 655
+  },
+  "scale_leggings": {
+   "file": "fight/hips/scale_leggings.png",
+   "x": 671,
+   "y": 655
+  },
+  "reedweave_trousers": {
+   "file": "fight/hips/reedweave_trousers.png",
+   "x": 670,
+   "y": 655
+  },
+  "ridgeplate_legguards": {
+   "file": "fight/hips/ridgeplate_legguards.png",
+   "x": 655,
+   "y": 655
+  },
+  "fleecewool_leggings": {
+   "file": "fight/hips/fleecewool_leggings.png",
+   "x": 671,
+   "y": 655
+  },
+  "thornwarden_leggings": {
+   "file": "fight/hips/thornwarden_leggings.png",
+   "x": 668,
+   "y": 655
+  },
+  "stormwatch_leggings": {
+   "file": "fight/hips/stormwatch_leggings.png",
+   "x": 670,
+   "y": 655
+  },
+  "frostward_legguards": {
+   "file": "fight/hips/frostward_legguards.png",
+   "x": 671,
+   "y": 655
+  }
+ },
+ "z": {
+  "legs": 46,
+  "legs_set": 47,
+  "boots_set": 48,
+  "body": 50,
+  "chest": 51,
+  "hands": 52,
+  "gloves": 53,
+  "head": 60,
+  "face": 61,
+  "weapon": 71,
+  "fist": 72,
+  "fist2": 72,
+  "glove_fist": 73
+ },
+ "set": {
+  "helm": "helm_coif",
+  "legs": "legs_plate",
+  "boots": "boots_steel",
+  "chest": "set",
+  "gloves": "set"
+ },
+ "legsLong": 1.12
+}

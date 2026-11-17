@@ -1,0 +1,1097 @@
+{
+ "scale": 0.23210831721470018,
+ "joints": {
+  "waist": [
+   780,
+   690
+  ],
+  "neck": [
+   800,
+   425
+  ],
+  "n_shoulder": [
+   688,
+   495
+  ],
+  "n_elbow": [
+   573.4,
+   600.0
+  ],
+  "n_wrist": [
+   456.4,
+   733.4
+  ],
+  "f_shoulder": [
+   843,
+   500
+  ],
+  "f_elbow": [
+   955.1,
+   625.6
+  ],
+  "f_wrist": [
+   1056.6,
+   740.2
+  ],
+  "n_hip": [
+   738,
+   770
+  ],
+  "n_knee": [
+   676.1,
+   984.0
+  ],
+  "n_ankle": [
+   596.4,
+   1268.5
+  ],
+  "f_hip": [
+   828,
+   770
+  ],
+  "f_knee": [
+   852.0,
+   984.6
+  ],
+  "f_ankle": [
+   887.5,
+   1260.9
+  ]
+ },
+ "radius": {
+  "neck": 34,
+  "n_shoulder": 62,
+  "f_shoulder": 62,
+  "n_hip": 70,
+  "f_hip": 65,
+  "n_elbow": 58,
+  "n_wrist": 30,
+  "f_elbow": 50,
+  "f_wrist": 24,
+  "n_knee": 54,
+  "n_ankle": 42,
+  "f_knee": 55,
+  "f_ankle": 54
+ },
+ "sets": {
+  "bare": {
+   "hips": {
+    "file": "bare/hips.png",
+    "x": 670,
+    "y": 655
+   },
+   "torso": {
+    "file": "bare/torso.png",
+    "x": 626,
+    "y": 425
+   },
+   "head": {
+    "file": "bare/head.png",
+    "x": 590,
+    "y": 189
+   },
+   "n_upper": {
+    "file": "bare/n_upper.png",
+    "x": 516,
+    "y": 381
+   },
+   "n_fore": {
+    "file": "bare/n_fore.png",
+    "x": 427,
+    "y": 566
+   },
+   "n_hand": {
+    "file": "bare/n_hand.png",
+    "x": 392,
+    "y": 715
+   },
+   "f_upper": {
+    "file": "bare/f_upper.png",
+    "x": 838,
+    "y": 380
+   },
+   "f_fore": {
+    "file": "bare/f_fore.png",
+    "x": 920,
+    "y": 593
+   },
+   "f_hand": {
+    "file": "bare/f_hand.png",
+    "x": 1041,
+    "y": 727
+   },
+   "n_thigh": {
+    "file": "bare/n_thigh.png",
+    "x": 623,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "bare/n_shin.png",
+    "x": 555,
+    "y": 970
+   },
+   "n_foot": {
+    "file": "bare/n_foot.png",
+    "x": 545,
+    "y": 1258
+   },
+   "f_thigh": {
+    "file": "bare/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "bare/f_shin.png",
+    "x": 799,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "bare/f_foot.png",
+    "x": 832,
+    "y": 1255
+   }
+  },
+  "chest_leather": {
+   "torso": {
+    "file": "chest_leather/torso.png",
+    "x": 626,
+    "y": 425
+   },
+   "n_upper": {
+    "file": "chest_leather/n_upper.png",
+    "x": 516,
+    "y": 381
+   },
+   "n_fore": {
+    "file": "chest_leather/n_fore.png",
+    "x": 427,
+    "y": 566
+   },
+   "f_upper": {
+    "file": "chest_leather/f_upper.png",
+    "x": 837,
+    "y": 380
+   },
+   "f_fore": {
+    "file": "chest_leather/f_fore.png",
+    "x": 920,
+    "y": 592
+   }
+  },
+  "chest_scale": {
+   "torso": {
+    "file": "chest_scale/torso.png",
+    "x": 626,
+    "y": 425
+   },
+   "n_upper": {
+    "file": "chest_scale/n_upper.png",
+    "x": 516,
+    "y": 381
+   },
+   "n_fore": {
+    "file": "chest_scale/n_fore.png",
+    "x": 427,
+    "y": 566
+   },
+   "f_upper": {
+    "file": "chest_scale/f_upper.png",
+    "x": 837,
+    "y": 380
+   },
+   "f_fore": {
+    "file": "chest_scale/f_fore.png",
+    "x": 920,
+    "y": 592
+   }
+  },
+  "helm_cap": {
+   "head": {
+    "file": "helm_cap/head.png",
+    "x": 673,
+    "y": 173
+   }
+  },
+  "helm_coif": {
+   "head": {
+    "file": "helm_coif/head.png",
+    "x": 672,
+    "y": 182
+   }
+  },
+  "legs_plain": {
+   "hips": {
+    "file": "legs_plain/hips.png",
+    "x": 670,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "legs_plain/n_thigh.png",
+    "x": 622,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "legs_plain/n_shin.png",
+    "x": 555,
+    "y": 970
+   },
+   "n_foot": {
+    "file": "legs_plain/n_foot.png",
+    "x": 545,
+    "y": 1258
+   },
+   "f_thigh": {
+    "file": "legs_plain/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "legs_plain/f_shin.png",
+    "x": 798,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "legs_plain/f_foot.png",
+    "x": 832,
+    "y": 1255
+   }
+  },
+  "legs_plate": {
+   "hips": {
+    "file": "legs_plate/hips.png",
+    "x": 670,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "legs_plate/n_thigh.png",
+    "x": 623,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "legs_plate/n_shin.png",
+    "x": 555,
+    "y": 970
+   },
+   "n_foot": {
+    "file": "legs_plate/n_foot.png",
+    "x": 545,
+    "y": 1258
+   },
+   "f_thigh": {
+    "file": "legs_plate/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "legs_plate/f_shin.png",
+    "x": 798,
+    "y": 977
+   },
+   "f_foot": {
+    "file": "legs_plate/f_foot.png",
+    "x": 832,
+    "y": 1255
+   }
+  },
+  "legs_leather": {
+   "hips": {
+    "file": "legs_leather/hips.png",
+    "x": 670,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "legs_leather/n_thigh.png",
+    "x": 605,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "legs_leather/n_shin.png",
+    "x": 555,
+    "y": 965
+   },
+   "n_foot": {
+    "file": "legs_leather/n_foot.png",
+    "x": 546,
+    "y": 1258
+   },
+   "f_thigh": {
+    "file": "legs_leather/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "legs_leather/f_shin.png",
+    "x": 805,
+    "y": 977
+   },
+   "f_foot": {
+    "file": "legs_leather/f_foot.png",
+    "x": 832,
+    "y": 1255
+   }
+  },
+  "boots_steel": {
+   "n_shin": {
+    "file": "boots_steel/n_shin.png",
+    "x": 555,
+    "y": 973
+   },
+   "n_foot": {
+    "file": "boots_steel/n_foot.png",
+    "x": 545,
+    "y": 1258
+   },
+   "f_shin": {
+    "file": "boots_steel/f_shin.png",
+    "x": 798,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "boots_steel/f_foot.png",
+    "x": 831,
+    "y": 1255
+   }
+  },
+  "apprentice_hood": {
+   "head": {
+    "file": "apprentice_hood/head.png",
+    "x": 638,
+    "y": 195
+   }
+  },
+  "reedweave_hood": {
+   "head": {
+    "file": "reedweave_hood/head.png",
+    "x": 620,
+    "y": 192
+   }
+  },
+  "ridgeplate_helm": {
+   "head": {
+    "file": "ridgeplate_helm/head.png",
+    "x": 700,
+    "y": 159
+   }
+  },
+  "fleecewool_hood": {
+   "head": {
+    "file": "fleecewool_hood/head.png",
+    "x": 650,
+    "y": 197
+   }
+  },
+  "thornwarden_helm": {
+   "head": {
+    "file": "thornwarden_helm/head.png",
+    "x": 683,
+    "y": 146
+   }
+  },
+  "stormwatch_helm": {
+   "head": {
+    "file": "stormwatch_helm/head.png",
+    "x": 690,
+    "y": 161
+   }
+  },
+  "frostward_helm": {
+   "head": {
+    "file": "frostward_helm/head.png",
+    "x": 685,
+    "y": 150
+   }
+  },
+  "leather_leggings": {
+   "hips": {
+    "file": "leather_leggings/hips.png",
+    "x": 670,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "leather_leggings/n_thigh.png",
+    "x": 622,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "leather_leggings/n_shin.png",
+    "x": 555,
+    "y": 970
+   },
+   "n_foot": {
+    "file": "leather_leggings/n_foot.png",
+    "x": 546,
+    "y": 1258
+   },
+   "f_thigh": {
+    "file": "leather_leggings/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "leather_leggings/f_shin.png",
+    "x": 797,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "leather_leggings/f_foot.png",
+    "x": 832,
+    "y": 1255
+   }
+  },
+  "apprentice_trousers": {
+   "hips": {
+    "file": "apprentice_trousers/hips.png",
+    "x": 670,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "apprentice_trousers/n_thigh.png",
+    "x": 622,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "apprentice_trousers/n_shin.png",
+    "x": 555,
+    "y": 970
+   },
+   "n_foot": {
+    "file": "apprentice_trousers/n_foot.png",
+    "x": 546,
+    "y": 1259
+   },
+   "f_thigh": {
+    "file": "apprentice_trousers/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "apprentice_trousers/f_shin.png",
+    "x": 797,
+    "y": 977
+   },
+   "f_foot": {
+    "file": "apprentice_trousers/f_foot.png",
+    "x": 833,
+    "y": 1255
+   }
+  },
+  "scale_leggings": {
+   "hips": {
+    "file": "scale_leggings/hips.png",
+    "x": 671,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "scale_leggings/n_thigh.png",
+    "x": 618,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "scale_leggings/n_shin.png",
+    "x": 555,
+    "y": 968
+   },
+   "n_foot": {
+    "file": "scale_leggings/n_foot.png",
+    "x": 546,
+    "y": 1259
+   },
+   "f_thigh": {
+    "file": "scale_leggings/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "scale_leggings/f_shin.png",
+    "x": 799,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "scale_leggings/f_foot.png",
+    "x": 833,
+    "y": 1255
+   }
+  },
+  "reedweave_trousers": {
+   "hips": {
+    "file": "reedweave_trousers/hips.png",
+    "x": 670,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "reedweave_trousers/n_thigh.png",
+    "x": 622,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "reedweave_trousers/n_shin.png",
+    "x": 555,
+    "y": 970
+   },
+   "n_foot": {
+    "file": "reedweave_trousers/n_foot.png",
+    "x": 546,
+    "y": 1259
+   },
+   "f_thigh": {
+    "file": "reedweave_trousers/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "reedweave_trousers/f_shin.png",
+    "x": 798,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "reedweave_trousers/f_foot.png",
+    "x": 833,
+    "y": 1255
+   }
+  },
+  "ridgeplate_legguards": {
+   "hips": {
+    "file": "ridgeplate_legguards/hips.png",
+    "x": 655,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "ridgeplate_legguards/n_thigh.png",
+    "x": 607,
+    "y": 746
+   },
+   "n_shin": {
+    "file": "ridgeplate_legguards/n_shin.png",
+    "x": 555,
+    "y": 967
+   },
+   "n_foot": {
+    "file": "ridgeplate_legguards/n_foot.png",
+    "x": 545,
+    "y": 1258
+   },
+   "f_thigh": {
+    "file": "ridgeplate_legguards/f_thigh.png",
+    "x": 772,
+    "y": 763
+   },
+   "f_shin": {
+    "file": "ridgeplate_legguards/f_shin.png",
+    "x": 782,
+    "y": 976
+   },
+   "f_foot": {
+    "file": "ridgeplate_legguards/f_foot.png",
+    "x": 833,
+    "y": 1255
+   }
+  },
+  "fleecewool_leggings": {
+   "hips": {
+    "file": "fleecewool_leggings/hips.png",
+    "x": 671,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "fleecewool_leggings/n_thigh.png",
+    "x": 614,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "fleecewool_leggings/n_shin.png",
+    "x": 555,
+    "y": 967
+   },
+   "n_foot": {
+    "file": "fleecewool_leggings/n_foot.png",
+    "x": 546,
+    "y": 1259
+   },
+   "f_thigh": {
+    "file": "fleecewool_leggings/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "fleecewool_leggings/f_shin.png",
+    "x": 793,
+    "y": 977
+   },
+   "f_foot": {
+    "file": "fleecewool_leggings/f_foot.png",
+    "x": 833,
+    "y": 1255
+   }
+  },
+  "thornwarden_leggings": {
+   "hips": {
+    "file": "thornwarden_leggings/hips.png",
+    "x": 668,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "thornwarden_leggings/n_thigh.png",
+    "x": 612,
+    "y": 751
+   },
+   "n_shin": {
+    "file": "thornwarden_leggings/n_shin.png",
+    "x": 530,
+    "y": 965
+   },
+   "n_foot": {
+    "file": "thornwarden_leggings/n_foot.png",
+    "x": 528,
+    "y": 1255
+   },
+   "f_thigh": {
+    "file": "thornwarden_leggings/f_thigh.png",
+    "x": 772,
+    "y": 763
+   },
+   "f_shin": {
+    "file": "thornwarden_leggings/f_shin.png",
+    "x": 782,
+    "y": 977
+   },
+   "f_foot": {
+    "file": "thornwarden_leggings/f_foot.png",
+    "x": 825,
+    "y": 1252
+   }
+  },
+  "stormwatch_leggings": {
+   "hips": {
+    "file": "stormwatch_leggings/hips.png",
+    "x": 670,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "stormwatch_leggings/n_thigh.png",
+    "x": 622,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "stormwatch_leggings/n_shin.png",
+    "x": 555,
+    "y": 971
+   },
+   "n_foot": {
+    "file": "stormwatch_leggings/n_foot.png",
+    "x": 546,
+    "y": 1259
+   },
+   "f_thigh": {
+    "file": "stormwatch_leggings/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "stormwatch_leggings/f_shin.png",
+    "x": 798,
+    "y": 977
+   },
+   "f_foot": {
+    "file": "stormwatch_leggings/f_foot.png",
+    "x": 833,
+    "y": 1255
+   }
+  },
+  "frostward_legguards": {
+   "hips": {
+    "file": "frostward_legguards/hips.png",
+    "x": 671,
+    "y": 655
+   },
+   "n_thigh": {
+    "file": "frostward_legguards/n_thigh.png",
+    "x": 623,
+    "y": 753
+   },
+   "n_shin": {
+    "file": "frostward_legguards/n_shin.png",
+    "x": 555,
+    "y": 971
+   },
+   "n_foot": {
+    "file": "frostward_legguards/n_foot.png",
+    "x": 546,
+    "y": 1259
+   },
+   "f_thigh": {
+    "file": "frostward_legguards/f_thigh.png",
+    "x": 772,
+    "y": 765
+   },
+   "f_shin": {
+    "file": "frostward_legguards/f_shin.png",
+    "x": 798,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "frostward_legguards/f_foot.png",
+    "x": 833,
+    "y": 1255
+   }
+  },
+  "leather_boots": {
+   "n_shin": {
+    "file": "leather_boots/n_shin.png",
+    "x": 549,
+    "y": 974
+   },
+   "n_foot": {
+    "file": "leather_boots/n_foot.png",
+    "x": 528,
+    "y": 1256
+   },
+   "f_shin": {
+    "file": "leather_boots/f_shin.png",
+    "x": 798,
+    "y": 979
+   },
+   "f_foot": {
+    "file": "leather_boots/f_foot.png",
+    "x": 819,
+    "y": 1253
+   }
+  },
+  "apprentice_slippers": {
+   "n_shin": {
+    "file": "apprentice_slippers/n_shin.png",
+    "x": 555,
+    "y": 970
+   },
+   "n_foot": {
+    "file": "apprentice_slippers/n_foot.png",
+    "x": 546,
+    "y": 1258
+   },
+   "f_shin": {
+    "file": "apprentice_slippers/f_shin.png",
+    "x": 798,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "apprentice_slippers/f_foot.png",
+    "x": 836,
+    "y": 1254
+   }
+  },
+  "scale_boots": {
+   "n_shin": {
+    "file": "scale_boots/n_shin.png",
+    "x": 550,
+    "y": 974
+   },
+   "n_foot": {
+    "file": "scale_boots/n_foot.png",
+    "x": 529,
+    "y": 1256
+   },
+   "f_shin": {
+    "file": "scale_boots/f_shin.png",
+    "x": 798,
+    "y": 979
+   },
+   "f_foot": {
+    "file": "scale_boots/f_foot.png",
+    "x": 828,
+    "y": 1253
+   }
+  },
+  "reedweave_slippers": {
+   "n_shin": {
+    "file": "reedweave_slippers/n_shin.png",
+    "x": 554,
+    "y": 970
+   },
+   "n_foot": {
+    "file": "reedweave_slippers/n_foot.png",
+    "x": 544,
+    "y": 1257
+   },
+   "f_shin": {
+    "file": "reedweave_slippers/f_shin.png",
+    "x": 797,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "reedweave_slippers/f_foot.png",
+    "x": 837,
+    "y": 1254
+   }
+  },
+  "ridgeplate_boots": {
+   "n_shin": {
+    "file": "ridgeplate_boots/n_shin.png",
+    "x": 546,
+    "y": 975
+   },
+   "n_foot": {
+    "file": "ridgeplate_boots/n_foot.png",
+    "x": 525,
+    "y": 1255
+   },
+   "f_shin": {
+    "file": "ridgeplate_boots/f_shin.png",
+    "x": 781,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "ridgeplate_boots/f_foot.png",
+    "x": 832,
+    "y": 1248
+   }
+  },
+  "fleecewool_boots": {
+   "n_shin": {
+    "file": "fleecewool_boots/n_shin.png",
+    "x": 551,
+    "y": 973
+   },
+   "n_foot": {
+    "file": "fleecewool_boots/n_foot.png",
+    "x": 537,
+    "y": 1257
+   },
+   "f_shin": {
+    "file": "fleecewool_boots/f_shin.png",
+    "x": 789,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "fleecewool_boots/f_foot.png",
+    "x": 828,
+    "y": 1255
+   }
+  },
+  "thornwarden_boots": {
+   "n_shin": {
+    "file": "thornwarden_boots/n_shin.png",
+    "x": 531,
+    "y": 973
+   },
+   "n_foot": {
+    "file": "thornwarden_boots/n_foot.png",
+    "x": 510,
+    "y": 1251
+   },
+   "f_shin": {
+    "file": "thornwarden_boots/f_shin.png",
+    "x": 794,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "thornwarden_boots/f_foot.png",
+    "x": 818,
+    "y": 1250
+   }
+  },
+  "stormwatch_boots": {
+   "n_shin": {
+    "file": "stormwatch_boots/n_shin.png",
+    "x": 549,
+    "y": 974
+   },
+   "n_foot": {
+    "file": "stormwatch_boots/n_foot.png",
+    "x": 532,
+    "y": 1256
+   },
+   "f_shin": {
+    "file": "stormwatch_boots/f_shin.png",
+    "x": 798,
+    "y": 978
+   },
+   "f_foot": {
+    "file": "stormwatch_boots/f_foot.png",
+    "x": 825,
+    "y": 1254
+   }
+  },
+  "frostward_boots": {
+   "n_shin": {
+    "file": "frostward_boots/n_shin.png",
+    "x": 553,
+    "y": 973
+   },
+   "n_foot": {
+    "file": "frostward_boots/n_foot.png",
+    "x": 534,
+    "y": 1257
+   },
+   "f_shin": {
+    "file": "frostward_boots/f_shin.png",
+    "x": 797,
+    "y": 979
+   },
+   "f_foot": {
+    "file": "frostward_boots/f_foot.png",
+    "x": 828,
+    "y": 1255
+   }
+  }
+ },
+ "weapons": {
+  "iron_sword": {
+   "file": "iron_sword.png",
+   "gx": 72.0,
+   "gy": 500.0
+  },
+  "oak_staff": {
+   "file": "oak_staff.png",
+   "gx": 83.5,
+   "gy": 465.3
+  },
+  "rusty_dagger": {
+   "file": "rusty_dagger.png",
+   "gx": 36.0,
+   "gy": 275.9
+  }
+ },
+ "parts": [
+  {
+   "name": "hips",
+   "parent": null,
+   "joint": "waist",
+   "z": 30
+  },
+  {
+   "name": "torso",
+   "parent": "hips",
+   "joint": "waist",
+   "z": 50
+  },
+  {
+   "name": "head",
+   "parent": "torso",
+   "joint": "neck",
+   "z": 60
+  },
+  {
+   "name": "n_upper",
+   "parent": "torso",
+   "joint": "n_shoulder",
+   "z": 74
+  },
+  {
+   "name": "n_fore",
+   "parent": "n_upper",
+   "joint": "n_elbow",
+   "z": 70
+  },
+  {
+   "name": "n_hand",
+   "parent": "n_fore",
+   "joint": "n_wrist",
+   "z": 72
+  },
+  {
+   "name": "f_upper",
+   "parent": "torso",
+   "joint": "f_shoulder",
+   "z": 10
+  },
+  {
+   "name": "f_fore",
+   "parent": "f_upper",
+   "joint": "f_elbow",
+   "z": 8
+  },
+  {
+   "name": "f_hand",
+   "parent": "f_fore",
+   "joint": "f_wrist",
+   "z": 9.4
+  },
+  {
+   "name": "n_thigh",
+   "parent": "hips",
+   "joint": "n_hip",
+   "z": 42
+  },
+  {
+   "name": "n_shin",
+   "parent": "n_thigh",
+   "joint": "n_knee",
+   "z": 40
+  },
+  {
+   "name": "n_foot",
+   "parent": "n_shin",
+   "joint": "n_ankle",
+   "z": 41
+  },
+  {
+   "name": "f_thigh",
+   "parent": "hips",
+   "joint": "f_hip",
+   "z": 22
+  },
+  {
+   "name": "f_shin",
+   "parent": "f_thigh",
+   "joint": "f_knee",
+   "z": 20
+  },
+  {
+   "name": "f_foot",
+   "parent": "f_shin",
+   "joint": "f_ankle",
+   "z": 21
+  }
+ ],
+ "weaponZ": {
+  "n": 71,
+  "f": 9.2
+ },
+ "farFront": {
+  "f_fore": 76,
+  "f_hand": 78,
+  "f_weapon": 77
+ },
+ "slots": {
+  "chest": [
+   "torso",
+   "n_upper",
+   "n_fore",
+   "f_upper",
+   "f_fore"
+  ],
+  "legs": [
+   "hips",
+   "n_thigh",
+   "n_shin",
+   "n_foot",
+   "f_thigh",
+   "f_shin",
+   "f_foot"
+  ],
+  "helm": [
+   "head"
+  ],
+  "boots": [
+   "n_shin",
+   "n_foot",
+   "f_shin",
+   "f_foot"
+  ]
+ },
+ "grips": {
+  "n": {
+   "at": [
+    432.3,
+    765.6
+   ],
+   "angle": 18.9
+  },
+  "f": {
+   "at": [
+    1095.7,
+    781.0
+   ],
+   "angle": -26.3
+  }
+ }
+}
