@@ -24,6 +24,12 @@ The designer asked for this on 2026-11-15 ("A lot is unclear, just random fixes 
 - **Questions:** only about something the designer has seen, with the picture next to it, in everyday words (no names made up in a chat, like "keepers"), with Claude's pick. At most one or two at a time. Small fixes and technical choices are never asked: decide, and say it in one line.
 - **Big work goes in steps** written in `docs/PLANS.md`; the next step starts after the designer's yes to the one before.
 
+## Advisor
+Only when the advisor tool is on (`/advisor fable`: a stronger model that reads the whole chat when called; not the game-design-advisor skill). Subagents and new sessions get the same advisor.
+- **Fable as the main model = orchestrator.** Plan, split the job, and hand the building to `advised-worker` subagents (Opus, `.claude/agents/advised-worker.md`) or to sessions started with model `opus` whose brief says to use the `advised` skill. Why: the advisor reads a worker's whole run (every command and result), not just its summary, and a fresh worker's run is short, so each call is cheap. Leave the Agent call's `model` unset (it would override Opus), don't fork (a fork runs on Fable), and don't call the advisor yourself (it would be Fable re-reading your long chat). Review = each worker's report (advisor calls, what they changed, the final check's verdict) plus a look at the result; a big job with zero advisor calls gets a second look. Parallel workers never share files (`isolation: worktree` if they must).
+- **Opus or Sonnet as the main model, or a worker:** on work with more than 3 steps, call it before choosing an approach, when the same failure comes back twice, and before saying the work is done. Not for small edits. After each call, one line on what it changed in the plan.
+- `/advised <task>` (`.claude/skills/advised/`) runs one task with all three calls and ends with how many were made.
+
 ## Conventions
 - Phaser 4, not 3. Before using an unfamiliar Phaser API, check `node_modules/phaser/skills/` (incl. `v3-to-v4-migration`) or `node_modules/phaser/types/phaser.d.ts`.
 - Game rules in `src/game/` stay Phaser-free so they can be tested/simulated headless.

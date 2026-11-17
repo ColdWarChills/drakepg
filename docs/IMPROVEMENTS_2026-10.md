@@ -475,3 +475,9 @@ The designer's proposal (PLANS: "a skeleton like Spine"): the bare hero on bones
 - **Clip:** `art/tests/sheets/skeleton_swing.mp4` (Drive.Record at 30 fps, labelled and encoded with ffmpeg, normal then half speed).
 - **4c parked:** the 96 helm/gloves/legs/boots pictures and their cuts stay in `art/redo/layers` (not committed); the boots-over-legs fix (boots' shins keep only the boot, Unity draws the legs' shin under it) is in the scripts.
 
+
+## Advisor setup (2026-11-17)
+- **Rule:** "Advisor" section in CLAUDE.md: with the advisor tool on, ask it before the approach, on a repeat failure and before "done"; one line on what it changed.
+- **Skill:** `/advised <task>` (`.claude/skills/advised/SKILL.md`): checks the advisor tool is really attached (Claude Code drops a refused one silently), skips small tasks, reads files first, the three calls, ends with changed / doubts / call count.
+- **Fable orchestrator:** the designer runs Fable (max) as the main model; it hands building to `advised-worker` subagents (`.claude/agents/advised-worker.md`: Opus, effort high, the `advised` skill preloaded) or Opus sessions, and those ask the Fable advisor, which reads their whole run, not just the summary. Rules in CLAUDE.md "Advisor".
+- **Not in the repo's settings:** the on-switch is per person (`/advisor fable`, saved in the user's own settings), so chats on this repo don't spend Fable credits unasked.
