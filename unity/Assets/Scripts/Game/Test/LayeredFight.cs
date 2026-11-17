@@ -172,6 +172,7 @@ namespace Drakepg.Test
             var names = new List<string>(Legs);
             names.AddRange(Upper);
             names.AddRange(DrawnLegs);
+            names.AddRange(new[] { "n_shin_boots", "f_shin_boots" });
             names.AddRange(new[] { "head", "face", "weapon", "weapon2" });
             foreach (var n in names)
             {
@@ -216,6 +217,9 @@ namespace Drakepg.Test
             foreach (var s in (JObject)Load().Fight["set"]) wear[s.Key] = on ? (string)s.Value : null;
             if (stance != null) Apply(stance);
         }
+
+        static readonly Dictionary<string, string> RigSet = new Dictionary<string, string>
+            { { "leather_cap", "helm_cap" }, { "scale_coif", "helm_coif" } };
 
         string Worn(string slot) => wear.TryGetValue(slot, out var w) ? w : null;
 
@@ -270,6 +274,15 @@ namespace Drakepg.Test
             // The body armor worn: the full set's chest is the Scale Mail; others by their item id (body_<id> pictures).
             equipment.TryGetValue("body", out var body);
             wear["chest"] = body == null ? null : body.ItemId == "scale_mail" ? "set" : body.ItemId;
+            // Helm, legs and boots by their rig set (the item id, or the test's set for three of them); gloves by item id.
+            string Piece(string slot)
+            {
+                equipment.TryGetValue(slot, out var g);
+                if (g == null) return null;
+                string id = RigSet.TryGetValue(g.ItemId, out var named) ? named : g.ItemId;
+                return slot == "gloves" || Load().Rig["sets"][id] != null ? id : null;
+            }
+            foreach (var slot in new[] { "helm", "gloves", "legs", "boots" }) wear[slot] = Piece(slot);
             Set("ready");
         }
 
@@ -376,10 +389,14 @@ namespace Drakepg.Test
             if (drawn)
             {
                 waist.y += s.Sink;
-                foreach (var key in DrawnLegs)
+                // The bare legs, then the legs piece and the boots drawn on them (step 4c: <slot>_<set>; the test's set
+                // has legs_set and boots_set).
+                if (f["legs"] != null) Show("legs", Picture(f["legs"], pivot), waist, s.Turn, (float)z["legs"]);
+                foreach (var slot in new[] { "legs", "boots" })
                 {
-                    string slot = key == "legs" ? null : key == "legs_set" ? "legs" : "boots";
-                    if (f[key] != null && (slot == null || Worn(slot) != null)) Show(key, Picture(f[key], pivot), waist, s.Turn, (float)z[key]);
+                    string w = Worn(slot);
+                    var pic = w == null ? null : f[slot + "_" + w] ?? (w == (string)d.Fight["set"][slot] ? f[slot + "_set"] : null);
+                    if (pic != null) Show(slot + "_set", Picture(pic, pivot), waist, s.Turn, (float)z[slot + "_set"]);
                 }
                 var feet = layers["legs"];
                 if (feet.enabled)
@@ -417,9 +434,16 @@ namespace Drakepg.Test
                     void Leg(string part, Vector2 at, float turn)
                     {
                         if (skirt) return; // a robe brings its own drawn legs
-                        string set = boots != null && Array.IndexOf(Boots, part) >= 0 ? boots : legs;
-                        Show(part, Picture(d.Rig["sets"][set][part], j[d.Part[part].joint]), at, turn, d.Part[part].z);
-                        if (!part.EndsWith("_foot")) layers[part].transform.localScale = new Vector3(1, longer, 1);
+                        bool booted = boots != null && Array.IndexOf(Boots, part) >= 0;
+                        // A booted shin is the legs' shin with the boots' over it (step 4c: the boots' picture keeps only
+                        // the boot, the legs piece shows above its top).
+                        var keys = !booted ? new[] { (part, legs, 0f) } : part.EndsWith("_shin")
+                            ? new[] { (part, legs, 0f), (part + "_boots", boots, 0.5f) } : new[] { (part, boots, 0f) };
+                        foreach (var (layer, set, up) in keys)
+                        {
+                            Show(layer, Picture(d.Rig["sets"][set][part], j[d.Part[part].joint]), at, turn, d.Part[part].z + up);
+                            if (!part.EndsWith("_foot")) layers[layer].transform.localScale = new Vector3(1, longer, 1);
+                        }
                     }
                     Leg(side + "_thigh", hip, t1);
                     Leg(side + "_shin", knee, t2);
@@ -433,7 +457,10 @@ namespace Drakepg.Test
             {
                 if (f[key] != null) Show(key, Picture(f[key], pivot), waist, s.Turn, (float)z[key]);
             }
-            bool chest = Worn("chest") != null && f["chest"] != null, gloves = Worn("gloves") != null && f["gloves"] != null;
+            bool chest = Worn("chest") != null && f["chest"] != null, gloves = Worn("gloves") == "set" && f["gloves"] != null;
+            // A pair of gloves drawn on this moment (step 4c), over any chest.
+            string gw = Worn("gloves");
+            var glovePic = gw != null && gw != "set" ? f["gloves_" + gw] : null;
             var armor = Worn("chest") != null ? f["body_" + Worn("chest")] : null;
             if (armor != null)
             {
@@ -463,12 +490,18 @@ namespace Drakepg.Test
                 Body("gloves");
                 Body("glove_fist");
             }
+            if (glovePic != null)
+            {
+                Show("gloves", Picture(glovePic, pivot), waist, s.Turn, (float)z["gloves"]);
+                Show("glove_fist", Picture(f["glove_fist_" + gw], pivot), waist, s.Turn, (float)z["glove_fist"]);
+            }
 
             var neck = waist + Rot(V(v["neck"]) - pivot, s.Turn);
             float nod = (float)v["head"] + s.Turn;
             Show("head", Picture(d.Rig["sets"][Worn("helm") ?? "bare"]["head"], j["neck"]), neck, nod, (float)z["head"]);
             if (v["face"].Type != JTokenType.Null)
-                Show("face", Picture(d.Fight["faces"][(string)v["face"]], j["neck"]), neck, nod, (float)z["face"]);
+                Show("face", Picture(d.Fight["faces"][(string)v["face"] + "_" + Worn("helm")] ?? d.Fight["faces"][(string)v["face"]], j["neck"]),
+                    neck, nod, (float)z["face"]);
             if (Weapon != null)
             {
                 var w = d.Rig["weapons"][Weapon];
@@ -562,7 +595,10 @@ namespace Drakepg.Test
         /// then the layered hero wearing it (put on through the rules, so it is what the bag holds) in ready, wind-up,
         /// strike and hurt.
         /// </summary>
-        public static string Armor(string armor = "leather_armor", float size = 0.72f, float left = 150, float step = 185, float feet = 520)
+        /// Step 4c: `pieces` (item ids, comma-separated) are worn too, each in its own slot; `armor` "" is none, and
+        /// `today` false leaves today's hero out.
+        public static string Armor(string armor = "leather_armor", float size = 0.72f, float left = 150, float step = 185, float feet = 520,
+            string pieces = "", bool today = true)
         {
             Clear();
             LayeredHero.Reload();
@@ -580,7 +616,7 @@ namespace Drakepg.Test
             var look = bare.Clone();
             var b = look.Bare[0];
             look.Bare = new List<BareLook> { new BareLook { Art = "char_hero_" + armor, Hands = b.Hands, Poses = b.Poses } };
-            var poses = new[] { "sword_ready", "sword_strike" };
+            var poses = today ? new[] { "sword_ready", "sword_strike" } : new string[0];
             for (int i = 0; i < poses.Length; i++)
             {
                 var fig = Figure.Create(root.transform, left + i * step, feet, look, 1, Db.Item("iron_sword"));
@@ -591,10 +627,15 @@ namespace Drakepg.Test
                 drawn.Add(fig);
             }
             var p = Wear("iron_sword|");
-            var worn = p.Data.Equipment.TryGetValue("body", out var old) ? old : null;
-            var gear = p.MakeGear(armor);
-            p.Data.Gear.Add(gear);
-            p.Equip(gear.Uid, "body");
+            var before = new Dictionary<string, Gear>(p.Data.Equipment);
+            var made = new List<Gear>();
+            foreach (var id in (armor + "," + pieces).Split(',').Where(x => x != ""))
+            {
+                var gear = p.MakeGear(id);
+                p.Data.Gear.Add(gear);
+                made.Add(gear);
+                p.Equip(gear.Uid, p.SlotFor(Db.Item(id)));
+            }
             var moments = new[] { "ready", "wind", "strike", "hurt" };
             for (int i = 0; i < moments.Length; i++)
             {
@@ -606,10 +647,14 @@ namespace Drakepg.Test
                 layered.Add(hero);
             }
             // Put the bag back as it was.
-            p.Unequip("body");
-            p.Data.Gear.Remove(gear);
-            if (worn != null) p.Equip(worn.Uid, "body");
-            return armor;
+            foreach (var gear in made)
+            {
+                foreach (var slot in p.Data.Equipment.Where(e => e.Value == gear).Select(e => e.Key).ToList()) p.Unequip(slot);
+                p.Data.Gear.Remove(gear);
+            }
+            foreach (var e in before)
+                if (e.Value != null && (!p.Data.Equipment.TryGetValue(e.Key, out var now) || now != e.Value)) p.Equip(e.Value.Uid, e.Key);
+            return armor + " " + pieces;
         }
 
         /// <summary>

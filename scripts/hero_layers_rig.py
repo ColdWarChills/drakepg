@@ -60,6 +60,7 @@ SLOTS = {
 }
 GEAR = {"chest_leather": "chest", "chest_scale": "chest", "helm_cap": "helm", "helm_coif": "helm",
         "legs_plain": "legs", "legs_plate": "legs", "legs_leather": "legs", "boots_steel": "boots"}
+GEAR.update({i: slot for i, (slot, _) in hl.PIECES.items() if slot != "gloves" and i not in hl.RIG_SET})  # step 4c
 WEAPONS = {"iron_sword": ("wpn_iron_sword", 0.78, 0.62), "oak_staff": ("wpn_oak_staff", 0.45, 1.0),
            "rusty_dagger": ("wpn_rusty_dagger", 0.89, 0.3)}
 
@@ -264,6 +265,12 @@ def cut() -> None:
                 kept = np.asarray(held) == 128
                 if kept.any():
                     mask = mask & kept  # only what hangs together with the head
+            if GEAR.get(name) == "boots" and p.endswith("_shin"):
+                # Step 4c: the trousers a boots edit left as they were (above a boot top) are the legs' own: dropped,
+                # so the legs piece under the boots shows there.
+                c, b = img.astype(int), rig.astype(int)
+                teal = (b[..., 0] < 90) & (b[..., 1] > b[..., 0]) & (b[..., 2] > b[..., 0])
+                mask = mask & ~((np.abs(c[..., :3] - b[..., :3]).sum(-1) < 70) & teal)
             im, box = crop(img, mask)
             im.save(PARTS / name / f"{p}.png")
             meta["sets"][name][p] = {"file": f"{name}/{p}.png", "x": box[0], "y": box[1]}

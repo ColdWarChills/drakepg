@@ -315,6 +315,97 @@ for _armor, _what in BODY_ARMOR.items():
             f"fists in exactly the same place, {STYLE}. No sword, no blade, no ground, no shadow, no text. {RGBA_CLOSE}",
             f"char_hero_{_armor}")
 
+# --- Step 4c: helm, gloves, legs and boots for every piece. Helms, legs and boots are rig edits (named by the item id;
+# Leather Cap, Scale Coif and Leather Leggings keep the test's helm_cap, helm_coif and legs_leather); gloves are drawn on
+# each sword moment (<id>_<moment>); legs and boots also on the moments with drawn legs (<id>_wind, <id>_strike). Boots
+# all reach up to just below the knee like the hero's own, so any legs piece can sit under any boots.
+PIECES = {  # id: (slot, what it looks like)
+    "apprentice_hood": ("helm", "deep red cloth hood with glowing orange runes stitched round its rim, pulled up over his "
+                                "hair, its edge resting on his shoulders"),
+    "reedweave_hood": ("helm", "hood of woven yellow-green reeds with faint glowing light-blue runes, pulled up over his "
+                               "hair, a short fringe of reeds resting on his shoulders"),
+    "ridgeplate_helm": ("helm", "steel helm with a thick white fur lining showing round its rim and a short steel crest "
+                                "on top"),
+    "fleecewool_hood": ("helm", "cream-white wool hood with blue rune embroidery along its front edge, pulled up over his "
+                                "hair, its edge resting on his shoulders"),
+    "thornwarden_helm": ("helm", "rounded helm of dark brown bark and bramble with a small sprig of green leaves on top"),
+    "stormwatch_helm": ("helm", "dark navy-blue steel helm with a copper crest on top and copper trim round its rim"),
+    "frostward_helm": ("helm", "pale ice-blue rime-steel helm with frosty white highlights and a short crest"),
+    "leather_gloves": ("gloves", "plain brown leather gloves"),
+    "apprentice_wraps": ("gloves", "red cloth wraps with glowing orange runes, wound round each hand and wrist"),
+    "scale_gauntlets": ("gloves", "steel gauntlets with jointed steel plates over the fingers and brown leather cuffs"),
+    "reedweave_wraps": ("gloves", "wraps of woven yellow-green reeds with tiny glowing light-blue runes, wound round each "
+                                  "hand and wrist"),
+    "ridgeplate_gauntlets": ("gloves", "grey steel plate gauntlets with thick white fur cuffs"),
+    "fleecewool_mittens": ("gloves", "thick cream-white wool mittens with blue rune embroidery and a cuff over each wrist"),
+    "thornwarden_gloves": ("gloves", "gloves of brown bark strips bound with bramble twine, small thorns on the knuckles"),
+    "stormwatch_gloves": ("gloves", "dark navy-blue oiled hide gloves with copper studs on the knuckles and cuffs"),
+    "frostward_gloves": ("gloves", "pale ice-blue rime-steel gauntlets with white fur cuffs"),
+    "leather_leggings": ("legs", "snug leggings of warm brown leather with stitched seams down the side and a padded "
+                                 "darker leather patch on each knee"),
+    "apprentice_trousers": ("legs", "loose trousers of deep red cloth with a line of small glowing orange rune stitches "
+                                    "down the outer seam of each leg"),
+    "scale_leggings": ("legs", "leggings covered in small overlapping steel scales sewn over padded dark cloth, a brown "
+                               "leather strap below each knee"),
+    "reedweave_trousers": ("legs", "trousers of tightly woven yellow-green reeds in a plaited pattern, with faint glowing "
+                                   "light-blue rune lines in the weave"),
+    "ridgeplate_legguards": ("legs", "thick grey-white fur trousers with a polished steel plate strapped on the front of "
+                                     "each thigh and a round steel knee guard on each knee, brown leather straps"),
+    "fleecewool_leggings": ("legs", "thick cream-white wool leggings with a blue embroidered rune on each knee"),
+    "thornwarden_leggings": ("legs", "dark green trousers covered by plates of rough brown bark laced on with thorny "
+                                     "green bramble vines"),
+    "stormwatch_leggings": ("legs", "dark navy-blue oiled hide leggings with a round copper cap on each knee and copper "
+                                    "rivets down the sides"),
+    "frostward_legguards": ("legs", "pale ice-blue rime-steel plates covering each thigh and knee, with frosty white "
+                                    "highlights, over pale grey trousers"),
+    "leather_boots": ("boots", "brown laced leather boots with thick soles"),
+    "apprentice_slippers": ("boots", "soft red cloth slippers with orange rune stitching, and red cloth wraps wound round "
+                                     "each shin from the ankle all the way up to just below the knee"),
+    "scale_boots": ("boots", "boots covered in small overlapping steel scales, with brown leather soles"),
+    "reedweave_slippers": ("boots", "woven yellow-green reed slippers, and woven reed wraps wound round each shin from "
+                                    "the ankle all the way up to just below the knee"),
+    "ridgeplate_boots": ("boots", "tall grey steel plate boots reaching up to just below the knee, a thick white fur "
+                                   "cuff at the top and short steel spikes on the soles"),
+    "fleecewool_boots": ("boots", "cream-white wool boots with fluffy fur tops and blue rune embroidery"),
+    "thornwarden_boots": ("boots", "brown leather boots laced with twisting roots, with green moss and small leaves"),
+    "stormwatch_boots": ("boots", "dark navy-blue boots with copper buckles"),
+    "frostward_boots": ("boots", "pale ice-blue rime-steel plate boots with frosty white highlights"),
+}
+# The rig sets the test already has for three of them.
+RIG_SET = {"leather_cap": "helm_cap", "scale_coif": "helm_coif"}
+# Redrawn (seed 6301): the first boots stopped mid-shin, and the test's leather leggings were another brown.
+REDO = ["apprentice_slippers", "reedweave_slippers", "ridgeplate_boots", "leather_leggings"]
+_KEEP = (f"His face is unchanged. The green rod in his fist is unchanged, held exactly as before. Keep everything else of "
+         f"<image1> exactly the same: the same hero, the same face, exactly the same pose with every limb, both fists, "
+         f"both legs and both feet in exactly the same place, {STYLE}. No sword, no blade, no ground, no shadow, no text.")
+for _id, (_slot, _what) in PIECES.items():
+    _icon = f"icon_{_id}" if _slot != "legs" else None
+    _of = f"exactly the {_what} of <image2> (take only that from <image2>, not its shape on the page)" if _icon else _what
+    if _slot == "helm":
+        EDITS[_id] = ("rig", f"{RGBA_OPEN} Edit <image1>. Change only what he wears on his head: he now wears {_of}, "
+                             f"sitting firmly on his head over his hair and leaving his whole face visible. The red "
+                             f"headband is gone. His face is unchanged. His shirt, belt, trousers and boots are "
+                             f"unchanged. {SAME} {NOTHING} {RGBA_CLOSE}", _icon)
+    elif _slot == "gloves":
+        for _m in ("ready", "wind", "strike", "hurt"):
+            EDITS[f"{_id}_{_m}"] = (
+                EDITS[f"set_{_m}"][0],
+                f"{RGBA_OPEN} Edit <image1>. Change only his hands: he now wears {_of} on both hands, covering each hand "
+                f"and wrist up to the rolled-up sleeve. His fists stay clenched exactly as before. His shirt, belt, "
+                f"trousers, boots, head, hair and headband are unchanged. {_KEEP} {RGBA_CLOSE}", _icon)
+    else:
+        if _slot == "legs":
+            change = (f"Change only his trousers: he now wears {_of}, tucked into the same tall brown boots. His shirt, "
+                      f"belt, boots, head, hair and headband are unchanged.")
+        else:
+            change = (f"Change only what he wears on his feet and lower legs: instead of the brown boots he now wears "
+                      f"{_of}, reaching from his feet up to just below the knee, where the old boots ended. His trousers "
+                      f"above the knee, his shirt, belt, head, hair and headband are unchanged.")
+        if _id not in RIG_SET:
+            EDITS[_id] = ("rig", f"{RGBA_OPEN} Edit <image1>. {change} {SAME} {NOTHING} {RGBA_CLOSE}", _icon)
+        for _m in ("wind", "strike"):
+            EDITS[f"{_id}_{_m}"] = (EDITS[f"low_{_m}"][0], f"{RGBA_OPEN} Edit <image1>. {change} {_KEEP} {RGBA_CLOSE}", _icon)
+
 PICKS: dict[str, int] = {"rig": 6100, "grip": 6100, "chest_leather": 6100, "chest_scale": 6100, "helm_cap": 6100,
                          "helm_coif": 6101, "legs_plain": 6100, "legs_plate": 6100, "legs_leather": 6211,
                          "up_ready": 6100, "up_wind": 6111, "up_strike": 6100, "up_hurt": 6101,
@@ -325,6 +416,9 @@ PICKS: dict[str, int] = {"rig": 6100, "grip": 6100, "chest_leather": 6100, "ches
                          "up_left_ready": 6220, "up_left_strike": 6200, "up_dual_ready": 6200, "up_dual_strike": 6201,
                          "up_staff_ready": 6200, "up_staff_strike": 6201,
                          **{f"body_{a}_{m}": 6300 for a in BODY_ARMOR for m in ("ready", "wind", "strike", "hurt")}}
+# Step 4c's pieces count once their picture is there (so a half-done batch can be cut).
+PICKS.update({n: 6300 for n in EDITS if (n in PIECES or n.rpartition("_")[0] in PIECES) and (OUT / f"{n}_s6300.png").exists()})
+PICKS.update({n: 6301 for n in EDITS if (n in REDO or n.rpartition("_")[0] in REDO) and (OUT / f"{n}_s6301.png").exists()})
 
 
 def source(name: str) -> Image.Image:

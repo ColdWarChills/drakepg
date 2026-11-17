@@ -467,3 +467,11 @@ Step 2 of PLANS "Layered hero rebuild": a main hand and an off hand. The rules a
 - **Pictures:** eight more `BODY_ARMOR` entries in `scripts/hero_layers.py` (each described from its outfit picture), 32 edits, seed 6300, all first tries kept.
 - **Robes** (`*_robe`): the cut keeps the robe picture's own legs and boots and lists the robe in the moment's `skirts`; `FightHero` then hides the leg layers and hips in ready and hurt (`LayeredFight.cs`). Vests and plate keep the leg layers.
 - **Sheet:** `art/tests/sheets/layered_hero_body_armor_2.webp`; the 4a sheet's Apprentice Robe row reshot with the robe fix. Rating, weak points: in PLANS (step 4b).
+
+## Skeleton swing (2026-11-17, shown, waiting; not committed)
+The designer's proposal (PLANS: "a skeleton like Spine"): the bare hero on bones with one sword, as a clip beside today's hero.
+- **No new art:** the rig parts (`art/redo/layers/parts/bare`) on the existing bones of `LayeredHero` (now with `Show(Pose)` and a few rig accessors).
+- **`unity/Assets/Scripts/Game/Test/SkeletonSwing.cs`:** keys (ready, wind, coil, strike, follow, hurt) as where the hips, feet, sword grip and far fist go plus the blade angle; arms solved with two-bone IK, the sword hand travelling on an arc round the shoulder; eases per segment (slow wind-up, fast strike, overshoot, settle); breathing; shout and hurt faces on the head bone; fading blade copies during the strike. `SkeletonSwingDemo.Stage/Hold/Play`; the clip is timed on game time (`Director`), because Anim's timers ran ahead of the frame-by-frame recorder.
+- **Clip:** `art/tests/sheets/skeleton_swing.mp4` (Drive.Record at 30 fps, labelled and encoded with ffmpeg, normal then half speed).
+- **4c parked:** the 96 helm/gloves/legs/boots pictures and their cuts stay in `art/redo/layers` (not committed); the boots-over-legs fix (boots' shins keep only the boot, Unity draws the legs' shin under it) is in the scripts.
+

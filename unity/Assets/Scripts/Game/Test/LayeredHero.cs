@@ -155,6 +155,14 @@ namespace Drakepg.Test
 
         public void Set(string name) => Apply(pose = Named(name));
 
+        // For the skeleton swing (SkeletonSwing.cs): poses made in code, and the rig's numbers and pictures.
+        public void Show(Pose p) => Apply(pose = p);
+        public static Vector2 Joint(string name) => Load().J[name];
+        public static JObject RigJson => Load().Json;
+        public static Sprite PartSprite(string file, Vector2 pivot) => Picture(file, pivot);
+        public static float Unit => Load().Scale / Design.PixelsPerUnit;
+        public static Vector2 Canvas(Vector2 c) => new Vector2((c.x - Centre) * Unit, (Ground - c.y) * Unit);
+
         /// <summary>Move from the pose it is in to another one.</summary>
         public Anim.Handle To(string name, float seconds, Ease ease = Ease.CubicOut)
         {

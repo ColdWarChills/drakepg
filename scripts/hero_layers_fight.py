@@ -395,8 +395,19 @@ def cut():
         ys, xs = np.nonzero(ch)
         box = hr.disc((np.median(xs), np.median(ys)), 150)
         out["faces"][name] = save(f, ch & box, FIGHT / f"face_{name}.png")
+        # Step 4c: under a helm that covers part of the face (cheek guards, a nose guard), only what shows of it.
+        for helm, e in r.m["sets"].items():
+            if helm == "bare" or set(e) != {"head"}:
+                continue
+            hp_ = np.asarray(Image.open(PARTS / e["head"]["file"]).convert("RGBA"))
+            canvas = np.zeros((N, N, 4), np.uint8)
+            x, y = e["head"]["x"], e["head"]["y"]
+            canvas[y:y + hp_.shape[0], x:x + hp_.shape[1]] = hp_[:N - y, :N - x]
+            shows = ch & box & grow(skin_of(canvas), 3)
+            if shows.sum() < 0.97 * (ch & box).sum():
+                out["faces"][f"{name}_{helm}"] = save(f, shows, FIGHT / f"face_{name}_{helm}.png")
     # The rig's hips without their belt: every drawn body brings its own.
-    for s in ("bare", "legs_plate", "legs_plain", "legs_leather"):
+    for s in [k for k, v in r.m["sets"].items() if "hips" in v]:
         e = r.m["sets"][s]["hips"]
         im = np.asarray(Image.open(PARTS / e["file"]).convert("RGBA")).copy()
         cutoff = hr.BELT_BOTTOM - 14 - e["y"]
@@ -517,6 +528,24 @@ def cut():
             files["gloves"] = save(sp, gloves, FIGHT / name / "gloves.png")
             files["glove_fist"] = save(sp, gloves & hr.disc(grip, 84), FIGHT / name / "glove_fist.png")
             files["hands"] = save(pic, body & grow(gloves, 5), FIGHT / name / "hands.png")
+        # Step 4c: each pair of gloves drawn on this moment (<id>_<moment>): what the edit changed around the bare hands,
+        # the rod's line through the fist filled like the body's; the part around the grip lies over the weapon.
+        arms = skin & body & ~hr.disc(at, 170)
+        for gid, (slot, _) in hl.PIECES.items():
+            key = f"{gid}_{name}"
+            if slot != "gloves" or key not in hl.PICKS:
+                continue
+            gp = hr.load(key).copy()
+            gc = classes(gp, grow(c["legs"], 14))
+            rodm = grow(gc["rod"], 4) & (gp[..., 3] > 128)
+            d = np.abs(gp[..., :3].astype(int) - pic[..., :3].astype(int)).sum(-1)
+            gl = (gp[..., 3] > 128) & ~rodm & grow(arms, 26) & ((d > 80) | (arms & ~skin_of(gp)))
+            gl = shrink(grow(gl, 4), 4) & (gp[..., 3] > 128) & ~rodm
+            gholes = rodm & enclosed(gl, 40)
+            fill(gp, gholes, gl)
+            gl |= gholes
+            files[f"gloves_{gid}"] = save(gp, gl, FIGHT / name / f"gloves_{gid}.png")
+            files[f"glove_fist_{gid}"] = save(gp, gl & hr.disc(grip, 84), FIGHT / name / f"glove_fist_{gid}.png")
         if STAND[name].get("drawn"):
             lg = c["legs"]
             lholes = c["rod"] & enclosed(lg, 40)
@@ -536,6 +565,26 @@ def cut():
                 area |= c["rod"] & enclosed(area, 40)
                 files["legs_set"] = save(lp, area, FIGHT / name / "legs_set.png")
                 files["boots_set"] = save(lp, area & (lab == 2), FIGHT / name / "boots_set.png")
+            # Step 4c: each legs and boots piece drawn on these legs (<id>_<moment>): a legs piece is the whole drawn legs
+            # (in the bare boots), a boots piece what lies where the bare legs wear their boots.
+            for pid, (slot, _) in hl.PIECES.items():
+                key = f"{pid}_{name}"
+                if slot not in ("legs", "boots") or key not in hl.PICKS:
+                    continue
+                lp = hr.load(key).copy()
+                lr, lgr, lb, la = chan(lp)
+                area = (la > 128) & ~((lgr - lr > 45) & (lgr - lb > 45)) & grow(lg, 16) & ~c["up"]
+                lab = np.zeros((N, N), np.uint8)
+                lab[c["teal"] & lg] = 1
+                lab[c["brown"] & lg] = 2
+                lab = spread(lab, area | lg)
+                fill(lp, c["rod"] & enclosed(area, 40), area & ~c["rod"])
+                area |= c["rod"] & enclosed(area, 40)
+                worn = hl.RIG_SET.get(pid, pid)  # named as the hero wears it (its rig set)
+                # Boots: the bare boots' place, less the trousers left as they were, plus a cuff the boots grew above it.
+                d = np.abs(lp[..., :3].astype(int) - pic[..., :3].astype(int)).sum(-1)
+                boot = area & (((lab == 2) & ~((d < 50) & c["teal"])) | ((d > 80) & grow(lab == 2, 24) & ~c["up"]))
+                files[f"{slot}_{worn}"] = save(lp, area if slot == "legs" else boot, FIGHT / name / f"{slot}_{worn}.png")
         out["moments"][name] = v
         dbg = Image.fromarray(pic).convert("RGB")
         dr = ImageDraw.Draw(dbg)
