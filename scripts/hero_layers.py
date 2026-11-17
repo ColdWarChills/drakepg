@@ -281,6 +281,28 @@ BODY_ARMOR = {
     "apprentice_robe": ("the long deep red hooded robe with wide sleeves and orange rune embroidery along the hems, the "
                         "hood lying down on his back, closed at the waist by the brown leather belt, its skirt hanging "
                         "down to just below his knees and parting over his legs as he moves"),
+    # Step 4b: the other eight (Travel Garb has no outfit picture: it is the plain shirt).
+    "novice_robe": ("the plain lilac linen robe with its sleeves rolled up to the elbow, tied at the waist with a thin "
+                    "knotted rope cord, its skirt hanging down to just below his knees with a simple stitched hem, "
+                    "parting over his legs as he moves"),
+    "reedweave_robe": ("the olive-gold robe of woven reeds with short sleeves and small patches of blue-grey weave, "
+                       "closed by the brown leather belt, its skirt ending at the knees in a fringe of hanging reeds, "
+                       "parting over his legs as he moves"),
+    "stormweave_robe": ("the pale silver-blue silk robe with yellow lightning-bolt trim along its front edges, sleeve "
+                        "cuffs and hem, closed by the brown leather belt and open at the front below it, its skirt "
+                        "hanging down to just below his knees, parting over his legs as he moves"),
+    "galeweave_robe": ("the light green wrapped robe with wide flowing sleeves, tied at the waist with a green cloth "
+                       "sash, its flared skirt hanging down to just below his knees, parting over his legs as he "
+                       "moves"),
+    "fleecewool_robe": ("the thick cream wool coat-robe with a fur-lined collar and fur cuffs and blue rune embroidery "
+                        "along its front edges, cuffs and hem, closed by the brown leather belt, its skirt hanging "
+                        "down to just below his knees, parting over his legs as he moves"),
+    "marshhide_vest": ("the dark green leather vest closed with bone toggles, worn over a long-sleeved grey shirt "
+                       "instead of the cream one, and a brown leather bracer on each forearm"),
+    "frostpelt_vest": ("the brown hide vest with thick white fur along its collar, edges and hem, worn over the cream "
+                       "shirt, and a brown leather bracer on each forearm"),
+    "ridgeplate": ("the steel breastplate with a raised ridge down the middle, round steel shoulder plates and a "
+                   "white fur collar, worn over the cream shirt"),
 }
 for _armor, _what in BODY_ARMOR.items():
     for _m in ("ready", "wind", "strike", "hurt"):
@@ -302,7 +324,7 @@ PICKS: dict[str, int] = {"rig": 6100, "grip": 6100, "chest_leather": 6100, "ches
                          # The holds of step 2 (hands): a sword in the left hand, two weapons, one in both hands.
                          "up_left_ready": 6220, "up_left_strike": 6200, "up_dual_ready": 6200, "up_dual_strike": 6201,
                          "up_staff_ready": 6200, "up_staff_strike": 6201,
-                         **{f"body_{a}_{m}": 6300 for a in ("apprentice_robe", "leather_armor") for m in ("ready", "wind", "strike", "hurt")}}
+                         **{f"body_{a}_{m}": 6300 for a in BODY_ARMOR for m in ("ready", "wind", "strike", "hurt")}}
 
 
 def source(name: str) -> Image.Image:

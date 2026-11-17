@@ -42,7 +42,10 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
        - **Done 2026-11-17 (designer: "Yes, do 4b").** Sheet `art/tests/sheets/layered_hero_body_armor.webp`: per armor, today's hero (ready, strike) beside the layered one (ready, wind-up, strike, hurt). The layered hero takes the body armor from the bag (`FightHero.Carry`). How it is made: IMPROVEMENTS "Layered hero, step 4a".
        - **Claude's rating:** each armor now shows in all four moments (today's hero has no hurt picture); the robe's skirt follows the lunge and the wind-up; strike and hurt read better than today's.
        - **Weak, noted, not fixed:** a few white flecks around the raised fist in the hurt (leather, robe); the wind-up's face stays calm (as in step 1); armor without its own pictures (the other nine) shows as the bare shirt; the hold moments (left hand, two weapons, staff) don't show body armor yet (4d).
-     - **4b. The other nine body armors**, the same way.
+     - **4b. The other body armors.** Built and shown 2026-11-17, **waiting for the designer's yes; not committed.** Eight more (Novice, Reedweave, Stormweave, Galeweave and Fleecewool Robe, Marshhide and Frostpelt Vest, Ridgeplate); Travel Garb has no outfit picture and stays the plain shirt, as today. Sheet `art/tests/sheets/layered_hero_body_armor_2.webp` (and the 4a sheet's robe row redone).
+       - **Robes:** in ready and hurt a robe brings its own drawn legs and boots and the leg layers are hidden, because the leg layers' thighs and knees stuck out beside the skirt.
+       - **Claude's rating:** all eight read as the same armor as today's hero, in four moments instead of two; every first try was usable.
+       - **Weak, noted, not fixed:** in a robe's hurt the feet stand a little closer and lower than the leg layers would put them; Galeweave's wide sleeves come out shorter than its outfit picture; the white flecks around the raised fist in the hurt (as in 4a).
      - **4c. Helm, gloves, legs and boots for every piece:** a look per kind (cloth, leather, steel) and the item's colour, set pieces their own; legs and boots also in the moments with drawn legs.
      - **4d. The same in the hold moments** (sword in the left hand, two weapons, staff).
      - **4e. Necklace** at the neck.

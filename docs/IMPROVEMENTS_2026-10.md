@@ -462,3 +462,8 @@ Step 2 of PLANS "Layered hero rebuild": a main hand and an off hand. The rules a
 - **Cut** (`scripts/hero_layers_fight.py`): each armor picture becomes `fight/<moment>/body_<armor>.png`, the whole drawn upper body with a robe's skirt; it loses the bare pose's head area (its own red search took the red robe), below the belt only what the armor changed, and the rod is filled where armor lies above and below it. `ONLY=ready,wind,...` re-cuts just those moments.
 - **Unity** (`LayeredFight.cs`): `FightHero.Carry` reads the body armor from the equipment (Scale Mail -> the set chest, others -> `body_<id>`), drawn in the chest layer with the bare fists on top; `LayeredFightDemo.Armor(id)` stands one armor in a row beside today's hero.
 - **Sheet:** `art/tests/sheets/layered_hero_body_armor.webp`. Rating, weak points: in PLANS (step 4a).
+
+## Layered hero, step 4b: the other body armors (2026-11-17, shown, waiting for the designer's yes, not committed)
+- **Pictures:** eight more `BODY_ARMOR` entries in `scripts/hero_layers.py` (each described from its outfit picture), 32 edits, seed 6300, all first tries kept.
+- **Robes** (`*_robe`): the cut keeps the robe picture's own legs and boots and lists the robe in the moment's `skirts`; `FightHero` then hides the leg layers and hips in ready and hurt (`LayeredFight.cs`). Vests and plate keep the leg layers.
+- **Sheet:** `art/tests/sheets/layered_hero_body_armor_2.webp`; the 4a sheet's Apprentice Robe row reshot with the robe fix. Rating, weak points: in PLANS (step 4b).

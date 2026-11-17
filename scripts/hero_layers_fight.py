@@ -504,7 +504,12 @@ def cut():
                 # Below the belt only what the armor changed (a robe's skirt): the legs and boots it left as they were
                 # are the legs' own layers.
                 same = np.abs(sp[..., :3].astype(int) - pic[..., :3].astype(int)).sum(-1) < 70
-                sbody &= ~(grow(c["legs"], 3) & (same | ~(sp[..., 3] > 128)))
+                # A robe keeps the legs and boots of its own picture (the legs' layers are hidden under it: their thighs and
+                # knees stuck out beside the skirt).
+                if armor.endswith("_robe"):
+                    v.setdefault("skirts", []).append(armor)
+                else:
+                    sbody &= ~(grow(c["legs"], 3) & (same | ~(sp[..., 3] > 128)))
                 files[f"body_{armor}"] = save(sp, sbody, FIGHT / name / f"body_{armor}.png")
                 continue
             gloves = gear_split(sp, sc, skin & body) & sbody

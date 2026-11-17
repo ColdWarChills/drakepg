@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Drakepg.Rules;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -403,7 +404,8 @@ namespace Drakepg.Test
                 }
                 waist.y += s.Sink;
                 string legs = Worn("legs") ?? "bare", boots = Worn("boots");
-                Show("hips", Picture(d.Fight["hips"][legs], j["waist"]), waist, s.Lean, d.Part["hips"].z);
+                bool skirt = Worn("chest") != null && v["skirts"] is JArray robes && robes.Any(r => (string)r == Worn("chest"));
+                if (!skirt) Show("hips", Picture(d.Fight["hips"][legs], j["waist"]), waist, s.Lean, d.Part["hips"].z);
                 foreach (var side in new[] { "n", "f" })
                 {
                     Vector2 k = Bone(side + "_hip", side + "_knee"), a = Bone(side + "_knee", side + "_ankle");
@@ -414,6 +416,7 @@ namespace Drakepg.Test
                     var ankle = knee + Rot(a, t2);
                     void Leg(string part, Vector2 at, float turn)
                     {
+                        if (skirt) return; // a robe brings its own drawn legs
                         string set = boots != null && Array.IndexOf(Boots, part) >= 0 ? boots : legs;
                         Show(part, Picture(d.Rig["sets"][set][part], j[d.Part[part].joint]), at, turn, d.Part[part].z);
                         if (!part.EndsWith("_foot")) layers[part].transform.localScale = new Vector3(1, longer, 1);
