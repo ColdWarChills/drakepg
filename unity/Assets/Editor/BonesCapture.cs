@@ -214,6 +214,35 @@ namespace Drakepg.EditorTools
         }
 
         /// <summary>
+        /// The hero on the new bones core (Drakepg.Bones.BoneHero, e.g. Drakepg.Test.BoneStage.Hero): weapon tip, the
+        /// weapon's grip (the weapon's own grip anchor = its pivot), the hand's grip point (n_hand_grip: a child of the
+        /// hand placed from the hand picture's own grip data, so it doesn't just repeat where the weapon was put), the
+        /// far hand's and far weapon's the same way, every joint, the hero's box; watches for the face, the torso and
+        /// hand pictures shown and the draw order of the far forearm.
+        /// </summary>
+        public static string BoneCore(GameObject hero)
+        {
+            var bh = hero != null ? hero.GetComponent<Drakepg.Bones.BoneHero>() : null;
+            if (bh == null) return "no BoneHero";
+            var spec = "tip=near weapon#tip; grip=near weapon; hand_grip=n_hand_grip; far_grip=far weapon; far_hand_grip=f_hand_grip";
+            if (Find(hero.transform, "far weapon") is Transform fw && fw.GetComponent<SpriteRenderer>().enabled) spec += "; far_tip=far weapon#tip";
+            foreach (var p in bh.Rig.Parts) spec += "; j_" + p.Joint + "=" + p.Name;
+            var found = Follow(hero, spec);
+            Box("hero", () => BoundsOf(hero));
+            Clocks();
+            SpriteRenderer Sr(string n) => Find(hero.transform, n)?.GetComponent<SpriteRenderer>();
+            var face = Sr("face");
+            var torso = Sr("torso");
+            var hand = Sr("n_hand");
+            var ffore = Sr("f_fore");
+            Watch("face", () => face != null && face.enabled && face.sprite != null ? face.sprite.name : "none");
+            Watch("torso_pic", () => torso != null && torso.sprite != null ? torso.sprite.name : "none");
+            Watch("n_hand_pic", () => hand != null && hand.sprite != null ? hand.sprite.name : "none");
+            Watch("f_fore_z", () => ffore != null ? ffore.sortingOrder.ToString() : "?");
+            return found;
+        }
+
+        /// <summary>
         /// The hero on bones that SkeletonSwingDemo.Stage() made last (read from the demo, since a Find by name can
         /// still meet the one being destroyed); also the drawn hero beside it.
         /// </summary>

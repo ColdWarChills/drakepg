@@ -1,0 +1,35 @@
+{
+  "name": "sword_swing_old",
+  "note": "The old test swing (Test/SkeletonSwing.cs Blow) carried over key for key: same poses, same times. Blade angles unwrapped along the old path; both hands swing on arcs round their shoulders (the far hand under, not through the shoulder); the elbow side changes over a short window instead of snapping; the face changes at a named time.",
+  "weapon": "sword",
+  "kind": "everyday",
+  "weapons": { "n": "iron_sword" },
+  "reach": 170,
+  "arc": { "n": true, "f": true },
+  "keys": [
+    { "t": 0, "name": "ready", "root": [0, 30], "hips": 0, "torso": 6, "head": -3, "n.foot": [-30, 0], "f.foot": [40, 0],
+      "n.hand": [70, -40], "n.blade": -45, "n.bend": 1, "f.hand": [150, -150], "f.bend": 1 },
+    { "t": 60, "ease": "QuadInOut", "n.bend": -1 },
+    { "t": 300, "name": "wind", "ease": "QuadInOut", "root": [-25, 55], "hips": -4, "torso": -14, "head": 6, "n.foot": [-60, 0], "f.foot": [60, 0],
+      "n.hand": [-280, -290], "n.sweep": 1, "n.blade": -155, "f.hand": [170, -170] },
+    { "t": 360, "name": "coil", "ease": "QuadOut", "root": [-30, 60], "hips": -5, "torso": -17, "head": 7, "n.foot": [-60, 0], "f.foot": [60, 0],
+      "n.hand": [-300, -270], "n.blade": -165, "f.hand": [175, -160] },
+    { "t": 380, "ease": "Linear", "n.bend": -1 },
+    { "t": 420, "ease": "QuadInOut", "n.bend": 1 },
+    { "t": 440, "name": "contact", "ease": "QuadIn", "root": [110, 130], "hips": 10, "torso": 32, "head": 6, "n.foot": [-80, 0], "f.foot": [260, 0],
+      "n.hand": [290, -120], "n.sweep": 1, "n.blade": 5, "f.hand": [-190, -170], "f.sweep": 1 },
+    { "t": 520, "name": "follow", "ease": "QuadOut", "root": [120, 140], "hips": 12, "torso": 36, "head": 6, "n.foot": [-80, 0], "f.foot": [260, 0],
+      "n.hand": [260, -20], "n.blade": 40, "f.hand": [-200, -140] },
+    { "t": 800, "name": "back", "ease": "QuadInOut", "root": [120, 140], "hips": 12, "torso": 36, "head": 6, "n.foot": [-80, 0], "f.foot": [260, 0],
+      "n.hand": [260, -20], "n.blade": 40, "f.hand": [-200, -140] },
+    { "t": 1160, "name": "ready", "ease": "QuadInOut", "root": [0, 30], "hips": 0, "torso": 6, "head": -3, "n.foot": [-30, 0], "f.foot": [40, 0],
+      "n.hand": [70, -40], "n.blade": -45, "f.hand": [150, -150] }
+  ],
+  "events": [
+    [370, "trail:on"],
+    [400, "face:shout"],
+    [440, "contact"],
+    [560, "trail:off"],
+    [980, "face:none"]
+  ]
+}

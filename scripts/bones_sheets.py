@@ -32,6 +32,9 @@ HOW TO (record a move and get every picture):
    For a fight: python scripts/bones_sheets.py all DIR --follow hero --end <last frame> --out ...
    (strip, keys, clip + half-speed clip, timeline, tip and, with a clean pass, check). Each command also runs on its
    own; see --help. Beside the reference:  side "A|name|frames" "B|name|frames" --out x.webp ; reel a.mp4|name ...
+   Captioned panels (a tour, a before/after): panels "DIR|@mark:swap|caption" "DIR2|12|caption" --out x.webp
+   The new bones core (Drakepg.Bones, unity/Bones/HOWTO.md): Drakepg.Test.BoneStage.Open(...), then
+   BonesCapture.BoneCore(Drakepg.Test.BoneStage.Hero.gameObject) instead of Bones(hero).
 
 Caveat: the game's hit-stop ends on real time, so a recording shows it shorter than play (2-3 frames instead of
 70-120 ms); everything else runs on game time and is frame-exact.
@@ -817,6 +820,53 @@ def cmd_reel(a):
     print(a.out, f"{os.path.getsize(a.out) // 1024} KB")
 
 
+# --- panels ---------------------------------------------------------------------------------------------------------
+
+def cmd_panels(a):
+    """Chosen frames from one or more takes, each with its own caption under it (a tour of abilities, a before/after).
+    A frame is a number or "@event" (the first frame logging that event, e.g. @mark:swap) or "@event+3"."""
+    cells = []
+    import textwrap
+    for spec in a.panels:
+        folder, frame, caption = (spec.split("|", 2) + ["", ""])[:3]
+        t = Take(folder)
+        if frame.startswith("@"):
+            name, _, plus = frame[1:].partition("+")
+            hit = next((i for i in range(t.n) if name in t.events(i)), None)
+            if hit is None:
+                raise SystemExit(f"no event {name} in {folder}")
+            i = min(t.n - 1, hit + (int(plus) if plus else 0))
+        else:
+            i = int(frame)
+        crop = parse_crop(a.crop) or t.crop(a.margin, a.boxes.split(",") if a.boxes else None)
+        im = t.image(i).crop(crop)
+        im = im.resize((int(im.width * a.cell_height / im.height), a.cell_height), Image.LANCZOS)
+        if not a.no_tag:
+            label(im, f"#{i} {t.ms(i)} ms", 13)
+        lines = textwrap.wrap(caption, max(12, im.width // 9))
+        cap = Image.new("RGB", (im.width, 8 + 19 * max(1, len(lines))), (24, 24, 28))
+        d = ImageDraw.Draw(cap)
+        for k, line in enumerate(lines):
+            d.text((6, 4 + 19 * k), line, font=font(15), fill=(255, 235, 170))
+        cell = Image.new("RGB", (im.width, im.height + cap.height), (24, 24, 28))
+        cell.paste(im, (0, 0))
+        cell.paste(cap, (0, im.height))
+        cells.append(cell)
+    cols = min(a.cols, len(cells))
+    cw = max(c.width for c in cells)
+    ch = max(c.height for c in cells)
+    head = 34 if a.title else 0
+    rows = (len(cells) + cols - 1) // cols
+    sheet = Image.new("RGB", (cw * cols + 4 * (cols - 1), ch * rows + 4 * (rows - 1) + head), (24, 24, 28))
+    if a.title:
+        label(sheet, a.title, 20, (8, 6), bg=(24, 24, 28))
+    for k, c in enumerate(cells):
+        sheet.paste(c, ((k % cols) * (cw + 4), (k // cols) * (ch + 4) + head))
+    if sheet.width > a.max_width:
+        sheet = sheet.resize((a.max_width, int(sheet.height * a.max_width / sheet.width)), Image.LANCZOS)
+    print(save_webp(sheet, a.out, a.max_kb), sheet.size)
+
+
 # --- all ------------------------------------------------------------------------------------------------------------
 
 def cmd_all(a):
@@ -959,6 +1009,20 @@ def main():
     s.add_argument("--width", type=int, default=640, help="frame width when one after another")
     s.add_argument("--across", action="store_true", help="side by side instead of one after another")
     s.set_defaults(fn=cmd_reel)
+
+    s = sub.add_parser("panels", help="chosen frames with a caption each: folder|frame|caption (frame: 12 or @event)")
+    s.add_argument("panels", nargs="+")
+    s.add_argument("--out", required=True)
+    s.add_argument("--crop", help="x0,y0,x1,y1 for every panel (default: each take's tracked boxes + margin)")
+    s.add_argument("--boxes")
+    s.add_argument("--margin", type=int, default=30)
+    s.add_argument("--cols", type=int, default=4)
+    s.add_argument("--cell-height", type=int, default=300)
+    s.add_argument("--max-width", type=int, default=2000)
+    s.add_argument("--max-kb", type=int, default=580)
+    s.add_argument("--title")
+    s.add_argument("--no-tag", action="store_true", help="no frame number / time tag (frames not on one clock)")
+    s.set_defaults(fn=cmd_panels)
 
     s = sub.add_parser("all", help="strip, keys, clip, timeline, tip (and check with --clean) in one go")
     common(s, "output folder")
