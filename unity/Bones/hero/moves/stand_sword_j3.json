@@ -1,0 +1,71 @@
+{
+ "name": "stand_sword_j3",
+ "note": "STILL, standing hold try (2026-11-18, after the designer's arrows): j1 with the free arm reaching further forward, more level (grip2)",
+ "weapon": "sword",
+ "kind": "everyday",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "root": [
+    55,
+    135
+   ],
+   "hips": -8,
+   "torso": 20,
+   "head": -10,
+   "n.foot": [
+    -150,
+    0
+   ],
+   "f.foot": [
+    175,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    -360,
+    -47
+   ],
+   "n.blade": 160,
+   "n.bend": 1,
+   "f.hand": [
+    397,
+    9
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0
+  }
+ ],
+ "events": [
+  [
+   0,
+   "hand:n_hand=n_hand_grip2"
+  ]
+ ]
+}
