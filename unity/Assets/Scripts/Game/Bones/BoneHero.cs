@@ -594,21 +594,64 @@ namespace Drakepg.Bones
             float from = playedTo;
             foreach (var e in m.Events)
                 if (e.T > from && e.T <= ms) handler?.OnBoneEvent(this, e);
+            // ghost:<alpha>,<ms>[,<at>]: a fading pale copy of the pose at move time `at` (default: this frame)
+            foreach (var e in m.Events)
+                if (e.T > from && e.T <= ms && e.Name == "ghost")
+                {
+                    float at = BoneGameEvents.Num(e, 2, -1);
+                    if (at >= 0) Show(m, at);
+                    Ghost(BoneGameEvents.Num(e, 0, 0.3f), BoneGameEvents.Num(e, 1, 200));
+                }
             Show(m, ms);
-            bool on = m.Last("trail", ms) == "on";
+            string mode = m.Last("trail", ms);
+            bool on = mode == "on" || mode == "smear";
             if (on || (trail != null && trail.Busy))
             {
                 if (trail == null) trail = BoneTrail.Create(this);
                 trail.Order = Order + 1;
+                if (on) trail.Smear = mode == "smear";
                 // The arc between two drawn frames, from poses a few ms apart (a quarter turn inside one frame still
                 // draws round).
                 float start = Mathf.Max(0, from);
                 for (float t = start + BoneTrail.StepMs; t < ms; t += BoneTrail.StepMs)
-                    if (m.Last("trail", t) == "on") AddTrail(m, t);
+                {
+                    var mt = m.Last("trail", t);
+                    if (mt == "on" || mt == "smear") AddTrail(m, t);
+                }
                 if (on) AddTrail(m, ms);
                 trail.Age(ms);
             }
             playedTo = ms;
+        }
+
+        /// <summary>
+        /// A pale copy of the hero as it is drawn now (every shown picture, filled with `color`), just behind it, fading
+        /// out over `ms` on the Anim clock (x2 reaches it) and then destroyed. Beside the hero, named "bone ghost", so the
+        /// kit's clean pass and box skip it. Like the battle's pose ghost and afterimages (BattleScreen Ghost).
+        /// </summary>
+        public void Ghost(float alpha, float ms, Color? color = null)
+        {
+            var c = color ?? Color.white;
+            var root = new GameObject("bone ghost");
+            root.transform.SetParent(transform.parent, false);
+            root.transform.localPosition = transform.localPosition;
+            root.transform.localRotation = transform.localRotation;
+            root.transform.localScale = transform.localScale;
+            root.AddComponent<SortingGroup>().sortingOrder = Order - 1;
+            var copy = Instantiate(puppet.gameObject, root.transform, false);
+            copy.name = "puppet";
+            var rs = new List<SpriteRenderer>();
+            foreach (var sr in copy.GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                if (!sr.enabled || sr.sprite == null) { sr.enabled = false; continue; }
+                sr.sharedMaterial = Fx.FillMaterial;
+                sr.color = new Color(c.r, c.g, c.b, alpha);
+                rs.Add(sr);
+            }
+            Anim.Float(1, 0, Mathf.Max(0.01f, ms / 1000f), k =>
+            {
+                foreach (var sr in rs) if (sr != null) sr.color = new Color(c.r, c.g, c.b, alpha * k);
+            }, Ease.QuadIn).OnComplete(() => { if (root != null) Destroy(root); });
         }
 
         void AddTrail(BoneMove m, float t)

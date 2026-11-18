@@ -42,14 +42,17 @@ namespace Drakepg.Test
         static StageScreen screen;
         static float speedWas = 1;
 
-        public static string Open(string weapon = "iron_sword", string monster = "bog_lurker", string zone = "fen")
+        /// <summary>The base part set the stage's hero wears (swaps.json "sets"); null = the first bare set.</summary>
+        public const string DefaultBaseSet = "bare_v2";
+
+        public static string Open(string weapon = "iron_sword", string monster = "bog_lurker", string zone = "fen", string baseSet = DefaultBaseSet)
         {
             Source = new BoneDiskSource();
             BoneRig.Forget();
             speedWas = Anim.Speed;
-            screen = new StageScreen(weapon, monster, zone);
+            screen = new StageScreen(weapon, monster, zone, baseSet);
             GameRoot.I.Go(screen, 0);
-            return $"opening the stage: {weapon} against {monster} in {zone}";
+            return $"opening the stage: {weapon} against {monster} in {zone}, parts {baseSet ?? "bare"}";
         }
 
         public static BoneMove Load(string name)
@@ -102,7 +105,7 @@ namespace Drakepg.Test
         /// <summary>The stage's screen: no HUD; ticks the monster's place, tilt and squash like the battle's Fighter.</summary>
         class StageScreen : GameScreen
         {
-            readonly string weapon, monsterId, zoneId;
+            readonly string weapon, monsterId, zoneId, baseSet;
             public BoneHero Hero;
             public Figure Monster;
             public BoneGameEvents Events;
@@ -112,11 +115,12 @@ namespace Drakepg.Test
             Anim.Handle recoil, shaping, dimming;
             bool twin;
 
-            public StageScreen(string weapon, string monster, string zone)
+            public StageScreen(string weapon, string monster, string zone, string baseSet)
             {
                 this.weapon = weapon;
                 monsterId = monster;
                 zoneId = zone;
+                this.baseSet = baseSet;
             }
 
             public override void Enter()
@@ -132,6 +136,11 @@ namespace Drakepg.Test
                 var look = Db.Class("warrior").Look;
                 Hero = BoneHero.Create(World, Source, PlayerX, GroundY, (float)look.Scale * SizeFactor);
                 Hero.Order = Design.Depth(GroundY);
+                if (!string.IsNullOrEmpty(baseSet) && baseSet != "bare")
+                {
+                    Hero.BaseSets.Add(baseSet);
+                    Hero.Reload();
+                }
                 Hero.Hold(weapon);
                 var shadow = new GameObject("shadow").AddComponent<SpriteRenderer>();
                 shadow.transform.SetParent(Hero.transform, false);

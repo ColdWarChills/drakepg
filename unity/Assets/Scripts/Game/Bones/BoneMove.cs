@@ -77,6 +77,7 @@ namespace Drakepg.Bones
         static readonly HashSet<string> EventNames = new HashSet<string>
         {
             "contact", "face", "torso", "hand", "order", "trail", "sound", "freeze", "shake", "kick", "zoom", "dim", "mark", "weapon", "key",
+            "ghost", "lines",
         };
 
         void Warn(string text)

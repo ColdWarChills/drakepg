@@ -91,7 +91,10 @@ them). The move's length = its last key, hold or event, plus the largest lag.
 | `hand:<swap>` (its part says which hand), `hand:n_hand=<swap>`, `hand:f_hand=none`, `hand:none` | swap a hand picture |
 | `order:<name>` / `order:rest` | draw order (`far_front` from rig.json or the move's `orders`) |
 | `weapon:n=<id>`, `weapon:f=<id>`, `=none` | change a held weapon mid-move |
-| `trail:on` / `trail:off` | the blade trail |
+| `trail:on` / `trail:off` | the blade trail (a fan between the tip and mid-blade, 110 ms) |
+| `trail:smear` | the blade smear instead: a short tapered crescent near the tip (60 ms, older edges shrink to the tip); for the 2-3 fastest frames of a cut, then `trail:off` |
+| `ghost:<alpha>,<ms>[,<at>]` | a pale white copy of the hero fading over `ms` (Anim clock), just behind it; `at` = the move time whose pose it shows (default: now). The pose a key leaves (`at` = the earlier key) or afterimages on a lunge (3 in a row, alpha 0.35/0.28/0.21, 220 ms), like the drawn blow's |
+| `lines` | speed lines behind the hero where it stands now (`Fx.SpeedLines`) |
 | `sound:<name>` | `Sfx.Play` |
 | `freeze:<ms>` | `Fx.HitStop` |
 | `shake:<ms>,<px>` | `GameRoot.Shake` |
@@ -116,7 +119,8 @@ Named points for the recorder: child objects `n_hand_grip`/`f_hand_grip` (the ha
 ## The stage (play mode, through the MCP's execute_code)
 
 ```csharp
-Drakepg.Test.BoneStage.Open("iron_sword", "bog_lurker", "fen");  // wait until BoneStage.Ready
+Drakepg.Test.BoneStage.Open("iron_sword", "bog_lurker", "fen");  // wait until BoneStage.Ready; parts: bare_v2 (the default)
+// a 4th argument picks the base part set: Open(..., "fen", "bare") for the old bare parts (BoneStage.DefaultBaseSet)
 Drakepg.Test.BoneStage.Play("sword_swing_old");                  // returns the length and warnings
 Drakepg.Test.BoneStage.Hold("sword_swing_old", 440);             // a still pose
 Drakepg.Test.BoneStage.Speed(2);                                 // battle speed x2 (stage only)

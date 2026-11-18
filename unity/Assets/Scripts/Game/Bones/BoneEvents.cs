@@ -56,7 +56,15 @@ namespace Drakepg.Bones
                 }
                 case "sound": if (e.Arg != null) Sfx.Play(e.Arg); break;
                 case "dim": Dim?.Invoke(Num(e, 0, 0.35f), Num(e, 1, 180)); break;
-                case "face": case "torso": case "hand": case "order": case "trail": case "key": case "mark": case "weapon": break;
+                case "lines":
+                {
+                    // speed lines streaking behind the hero where it is now (the battle's lunge: Fx.SpeedLines)
+                    var t = hero.Frame != null ? hero.Frame.Travel : 0;
+                    float x = Mathf.LerpUnclamped(hero.Home.x, hero.TargetSpot.x, t);
+                    Fx.SpeedLines(hero.transform.parent, x, hero.Home.y, hero.Facing);
+                    break;
+                }
+                case "face": case "torso": case "hand": case "order": case "trail": case "key": case "mark": case "weapon": case "ghost": break;
                 default:
                     if (warned.Add(e.Name)) Debug.LogWarning("bones: no one handles the event '" + e.Raw + "'");
                     break;

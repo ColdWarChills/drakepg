@@ -1,6 +1,6 @@
 {
  "name": "sword_cut",
- "note": "The everyday sword cut (take d, 2026-11-18): wind-up with the blade level behind the head and the chest opened (torso_toward + widened, shoulders slid), a stride with the sword still up, then hips, chest, free fist, arm, blade and head arrive one after another into a low lunge with the chest turned away (torso_away + squeeze, shade); the blade lands on the monster and the hit fires together (312 ms); short settle, hop home. No trail.",
+ "note": "The everyday sword cut (take e, 2026-11-18): take d with the ready hand low (no forearm across the belly), a coiled wind-up (weight back, free fist forward at chest height), the sword hand passing over the head (not across the face), a deeper lunge, the blade mid-cut on the hit and low on a real follow-through (body carries on, back heel lifts); two faint pose ghosts (the wind-up left at the step, the step left at the hit) and speed lines, a short tapered blade smear on the strike.",
  "weapon": "sword",
  "kind": "everyday",
  "weapons": {
@@ -37,14 +37,14 @@
     1
    ],
    "n.hand": [
-    70,
-    -40
+    60,
+    30
    ],
-   "n.blade": -45,
+   "n.blade": -20,
    "n.bend": 1,
    "f.hand": [
     150,
-    -150
+    -140
    ],
    "f.bend": 1,
    "scale.torso": [
@@ -62,16 +62,20 @@
    "shade.torso": 0
   },
   {
+   "t": 0,
+   "n.toe": 0
+  },
+  {
    "t": 130,
    "name": "wind",
    "ease": "CubicOut",
    "root": [
-    -35,
-    55
+    -48,
+    62
    ],
-   "hips": -6,
-   "torso": -16,
-   "head": 0,
+   "hips": -9,
+   "torso": -20,
+   "head": -4,
    "n.foot": [
     -70,
     0
@@ -87,8 +91,8 @@
    "n.sweep": -1,
    "n.blade": -176,
    "f.hand": [
-    190,
-    -210
+    200,
+    -140
    ],
    "squash": [
     1.04,
@@ -113,12 +117,12 @@
    "t": 170,
    "ease": "Linear",
    "root": [
-    -38,
-    57
+    -50,
+    64
    ],
-   "hips": -7,
-   "torso": -17,
-   "head": 0,
+   "hips": -10,
+   "torso": -21,
+   "head": -4,
    "n.foot": [
     -70,
     0
@@ -134,8 +138,8 @@
    ],
    "n.blade": -177,
    "f.hand": [
-    190,
-    -210
+    200,
+    -140
    ],
    "squash": [
     1.04,
@@ -185,8 +189,8 @@
    ],
    "n.blade": -178,
    "f.hand": [
-    200,
-    -200
+    210,
+    -150
    ],
    "squash": [
     0.95,
@@ -201,8 +205,8 @@
     -325
    ],
    "f.hand": [
-    200,
-    -200
+    210,
+    -150
    ],
    "n.bend": -1
   },
@@ -249,33 +253,51 @@
   {
    "t": 288,
    "ease": "QuadIn",
-   "hips": 24
+   "hips": 30
+  },
+  {
+   "t": 290,
+   "ease": "QuadIn",
+   "n.hand": [
+    40,
+    -440
+   ],
+   "n.sweep": 1
   },
   {
    "t": 295,
    "ease": "QuadIn",
    "travel": 1,
    "root": [
-    130,
-    170
+    150,
+    205
    ],
    "n.foot": [
-    -150,
+    -135,
     0
    ],
    "f.foot": [
-    290,
+    315,
     0
    ],
    "squash": [
-    1.05,
-    0.95
+    1.06,
+    0.94
    ]
   },
   {
    "t": 298,
    "ease": "CubicIn",
-   "torso": 56
+   "torso": 64
+  },
+  {
+   "t": 299,
+   "ease": "Linear",
+   "n.hand": [
+    380,
+    -330
+   ],
+   "n.sweep": 1
   },
   {
    "t": 302,
@@ -308,8 +330,8 @@
    "name": "arm",
    "ease": "QuadIn",
    "n.hand": [
-    310,
-    -30
+    370,
+    20
    ],
    "n.sweep": 1,
    "n.bend": 1
@@ -318,41 +340,63 @@
    "t": 312,
    "name": "contact",
    "ease": "QuadIn",
-   "n.blade": 44
+   "n.blade": 18
+  },
+  {
+   "t": 312,
+   "ease": "Linear",
+   "n.toe": 0
   },
   {
    "t": 322,
    "ease": "QuadOut",
-   "head": 28
+   "head": 34
   },
   {
    "t": 345,
    "ease": "QuadOut",
-   "n.blade": 38
+   "n.blade": 40
   },
   {
    "t": 390,
    "name": "follow",
    "ease": "QuadOut",
    "root": [
-    140,
-    178
+    185,
+    215
    ],
-   "hips": 26,
-   "torso": 60,
-   "head": 26,
+   "hips": 32,
+   "torso": 68,
+   "head": 30,
    "n.hand": [
-    300,
-    30
+    380,
+    70
    ],
-   "n.blade": 55,
+   "n.blade": 62,
    "f.hand": [
-    -140,
-    -320
+    -160,
+    -330
    ],
    "squash": [
     1,
     1
+   ],
+   "n.foot": [
+    -135,
+    0
+   ],
+   "f.foot": [
+    315,
+    0
+   ],
+   "n.toe": 16
+  },
+  {
+   "t": 390,
+   "ease": "QuadOut",
+   "n.foot": [
+    -128,
+    -12
    ]
   },
   {
@@ -360,29 +404,29 @@
    "ease": "Linear",
    "travel": 1,
    "root": [
-    140,
-    178
+    185,
+    215
    ],
-   "hips": 26,
-   "torso": 60,
-   "head": 26,
+   "hips": 32,
+   "torso": 68,
+   "head": 30,
    "n.foot": [
-    -150,
-    0
+    -128,
+    -12
    ],
    "f.foot": [
-    290,
+    315,
     0
    ],
    "plant": 1,
    "n.hand": [
-    300,
-    30
+    380,
+    70
    ],
-   "n.blade": 55,
+   "n.blade": 62,
    "f.hand": [
-    -140,
-    -320
+    -160,
+    -330
    ]
   },
   {
@@ -401,6 +445,11 @@
     0
    ],
    "shade.torso": 0.14
+  },
+  {
+   "t": 440,
+   "ease": "Linear",
+   "n.toe": 16
   },
   {
    "t": 590,
@@ -427,7 +476,7 @@
     120,
     -60
    ],
-   "n.blade": -30,
+   "n.blade": -20,
    "f.hand": [
     160,
     -170
@@ -452,6 +501,11 @@
    "shade.torso": 0
   },
   {
+   "t": 590,
+   "ease": "SineInOut",
+   "n.toe": 0
+  },
+  {
    "t": 670,
    "name": "land",
    "ease": "QuadIn",
@@ -473,13 +527,13 @@
     0
    ],
    "n.hand": [
-    70,
-    -40
+    60,
+    30
    ],
-   "n.blade": -45,
+   "n.blade": -20,
    "f.hand": [
     150,
-    -150
+    -140
    ],
    "squash": [
     1.05,
@@ -522,12 +576,24 @@
    "mark:step"
   ],
   [
+   245,
+   "ghost:0.2,110,170"
+  ],
+  [
+   250,
+   "lines"
+  ],
+  [
    255,
    "sound:whoosh"
   ],
   [
    285,
    "face:shout"
+  ],
+  [
+   290,
+   "trail:smear"
   ],
   [
    296,
@@ -540,6 +606,14 @@
   [
    312,
    "mark:hit"
+  ],
+  [
+   312,
+   "ghost:0.18,110,262"
+  ],
+  [
+   332,
+   "trail:off"
   ],
   [
    400,

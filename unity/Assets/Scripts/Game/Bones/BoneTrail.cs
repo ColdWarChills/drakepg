@@ -18,6 +18,13 @@ namespace Drakepg.Bones
         public float LifeMs = 110;
         public float Alpha = 0.55f;
         public Color Tint = new Color(1, 0.98f, 0.92f);
+        /// <summary>
+        /// Smear mode ("trail:smear"): a short solid crescent instead of a fan. Each sampled edge spans only the outer
+        /// part of the blade (SmearInner..tip), older edges shrink toward the tip (a tapered tail), and the inner edge
+        /// keeps some alpha, so it reads as the blade's own blur on the fastest frames, not a pale sheet.
+        /// </summary>
+        public bool Smear;
+        public float SmearLifeMs = 60, SmearAlpha = 0.85f, SmearInner = 0.55f;
 
         struct Edge
         {
@@ -74,7 +81,8 @@ namespace Drakepg.Bones
         public void Age(float t)
         {
             now = t;
-            edges.RemoveAll(e => now - e.T > LifeMs);
+            float life = Smear ? SmearLifeMs : LifeMs;
+            edges.RemoveAll(e => now - e.T > life);
             Build();
         }
 
@@ -90,6 +98,21 @@ namespace Drakepg.Bones
                 foreach (var e in edges)
                 {
                     if (e.Side != side) continue;
+                    if (Smear)
+                    {
+                        float ks = Mathf.Clamp01(1 - (now - e.T) / SmearLifeMs);
+                        // the band near the tip, narrowing to the tip as it ages
+                        var inner = Vector3.Lerp(e.Tip, Vector3.Lerp(e.Inner, e.Tip, SmearInner), ks);
+                        verts.Add(e.Tip);
+                        verts.Add(inner);
+                        var cs = Tint;
+                        cs.a = SmearAlpha * ks;
+                        cols.Add(cs);
+                        cs.a = SmearAlpha * ks * 0.45f;
+                        cols.Add(cs);
+                        n++;
+                        continue;
+                    }
                     float k = Mathf.Clamp01(1 - (now - e.T) / LifeMs);
                     verts.Add(e.Tip);
                     verts.Add(e.Inner);
