@@ -1,0 +1,68 @@
+{
+ "name": "stand_sword_d3",
+ "note": "STILL, standing hold try (2026-11-18): two-hand guard pushed forward and lower: both fists on the handle clear in front of the chest, blade steep up-forward",
+ "weapon": "sword",
+ "kind": "everyday",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "root": [
+    0,
+    30
+   ],
+   "hips": 0,
+   "torso": 6,
+   "head": -3,
+   "n.foot": [
+    -30,
+    0
+   ],
+   "f.foot": [
+    40,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    250,
+    -130
+   ],
+   "n.blade": -68,
+   "n.bend": 1,
+   "f.hand": [
+    250,
+    -130
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0,
+   "f.on": 1,
+   "f.onT": -60
+  }
+ ],
+ "events": []
+}
