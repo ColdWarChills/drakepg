@@ -1,0 +1,71 @@
+{
+ "name": "stand_sword_e4",
+ "note": "STILL, standing hold try (2026-11-18): hammer-fist carry: wide stance leaning in, the hammer fist beside the rear hip, the blade rising steeply up-back; free fist forward",
+ "weapon": "sword",
+ "kind": "everyday",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "root": [
+    20,
+    90
+   ],
+   "hips": -5,
+   "torso": 10,
+   "head": -6,
+   "n.foot": [
+    -115,
+    0
+   ],
+   "f.foot": [
+    130,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    -173,
+    79
+   ],
+   "n.blade": -118,
+   "n.bend": 1,
+   "f.hand": [
+    290,
+    -130
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0
+  }
+ ],
+ "events": [
+  [
+   0,
+   "hand:n_hand=n_hand_hammer"
+  ]
+ ]
+}

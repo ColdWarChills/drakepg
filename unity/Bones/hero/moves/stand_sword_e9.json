@@ -1,0 +1,71 @@
+{
+ "name": "stand_sword_e9",
+ "note": "STILL, standing hold try (2026-11-18): high guard, tuned (e2): wider and lower, leaning in, chin down, grip2 fist behind the rear shoulder, blade 45 deg up-back; free fist forward",
+ "weapon": "sword",
+ "kind": "everyday",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "root": [
+    30,
+    100
+   ],
+   "hips": -6,
+   "torso": 12,
+   "head": 4,
+   "n.foot": [
+    -125,
+    0
+   ],
+   "f.foot": [
+    145,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    -306,
+    -212
+   ],
+   "n.blade": -135,
+   "n.bend": -1,
+   "f.hand": [
+    330,
+    -170
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0
+  }
+ ],
+ "events": [
+  [
+   0,
+   "hand:n_hand=n_hand_grip2"
+  ]
+ ]
+}

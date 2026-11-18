@@ -1,0 +1,71 @@
+{
+ "name": "stand_sword_e1",
+ "note": "STILL, standing hold try (2026-11-18): dash-ready, sword trailing: wide low stance leaning in, front knee bent, sword fist cocked behind the rear hip, blade trailing back nearly level, tip up off the ground (grip2); free fist forward at chest height",
+ "weapon": "sword",
+ "kind": "everyday",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "root": [
+    45,
+    115
+   ],
+   "hips": -6,
+   "torso": 16,
+   "head": -8,
+   "n.foot": [
+    -135,
+    0
+   ],
+   "f.foot": [
+    160,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    -324,
+    18
+   ],
+   "n.blade": 160,
+   "n.bend": -1,
+   "f.hand": [
+    300,
+    -110
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0
+  }
+ ],
+ "events": [
+  [
+   0,
+   "hand:n_hand=n_hand_grip2"
+  ]
+ ]
+}

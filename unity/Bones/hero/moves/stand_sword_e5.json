@@ -1,0 +1,71 @@
+{
+ "name": "stand_sword_e5",
+ "note": "STILL, standing hold try (2026-11-18): coiled crouch: deep and low, leaning in hard, sword fist at the rear hip, the blade level behind him with the tip a little up (grip2); free fist forward low",
+ "weapon": "sword",
+ "kind": "everyday",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "root": [
+    -10,
+    155
+   ],
+   "hips": -8,
+   "torso": 22,
+   "head": -12,
+   "n.foot": [
+    -140,
+    0
+   ],
+   "f.foot": [
+    150,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    -337,
+    -106
+   ],
+   "n.blade": -170,
+   "n.bend": -1,
+   "f.hand": [
+    300,
+    -80
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0
+  }
+ ],
+ "events": [
+  [
+   0,
+   "hand:n_hand=n_hand_grip2"
+  ]
+ ]
+}

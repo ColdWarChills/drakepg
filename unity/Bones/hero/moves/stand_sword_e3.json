@@ -1,0 +1,75 @@
+{
+ "name": "stand_sword_e3",
+ "note": "STILL, standing hold try (2026-11-18): proud power stance: wide, chest open to the viewer (torso_toward swap), upright, blade on a 130 deg diagonal behind him, tip off the ground (grip2); free fist low forward",
+ "weapon": "sword",
+ "kind": "everyday",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "root": [
+    0,
+    85
+   ],
+   "hips": 0,
+   "torso": -3,
+   "head": -6,
+   "n.foot": [
+    -120,
+    0
+   ],
+   "f.foot": [
+    125,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    -362,
+    61
+   ],
+   "n.blade": 130,
+   "n.bend": 1,
+   "f.hand": [
+    250,
+    -60
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0
+  }
+ ],
+ "events": [
+  [
+   0,
+   "hand:n_hand=n_hand_grip2"
+  ],
+  [
+   0,
+   "torso:torso_toward"
+  ]
+ ]
+}
