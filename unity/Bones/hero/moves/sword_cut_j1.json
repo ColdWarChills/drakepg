@@ -1,0 +1,889 @@
+{
+ "name": "sword_cut_j1",
+ "note": "TRIAL (2026-11-18), the everyday cut from the accepted stance stand_sword_j6 and back to it. From the wind (old t130) to the end of the follow (old t440) it is sword_cut exactly, 100 ms later. Start: a small sink with the sword dipping lower behind, little steps in, the sword rising clockwise behind the back into the wind. Return: a recoil on planted feet with the blade carried on down past the near thigh, a bound back home (travel only while both feet are up), a landing that sinks past the stance with the sword swinging a little past its rest, then the stance (the last frame is stand_sword_j6@0). Made by art/redo/stand/mktrial_j.py.",
+ "weapon": "sword",
+ "kind": "everyday",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "reach": 230,
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "root": [
+    55,
+    135
+   ],
+   "hips": -8,
+   "torso": 20,
+   "head": -10,
+   "n.foot": [
+    -150,
+    0
+   ],
+   "f.foot": [
+    175,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    -320,
+    11
+   ],
+   "n.blade": -220,
+   "n.bend": 1,
+   "f.hand": [
+    191,
+    -115
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0
+  },
+  {
+   "t": 30,
+   "ease": "Linear",
+   "f.foot": [
+    175,
+    0
+   ]
+  },
+  {
+   "t": 70,
+   "ease": "SineInOut",
+   "root": [
+    62,
+    148
+   ],
+   "hips": -8,
+   "torso": 24,
+   "head": -8,
+   "squash": [
+    1.02,
+    0.98
+   ]
+  },
+  {
+   "t": 70,
+   "ease": "SineInOut",
+   "n.hand": [
+    -295,
+    30
+   ],
+   "n.sweep": 0,
+   "n.blade": -214
+  },
+  {
+   "t": 80,
+   "ease": "Linear",
+   "n.bend": 1
+  },
+  {
+   "t": 95,
+   "ease": "QuadOut",
+   "f.foot": [
+    115,
+    -45
+   ]
+  },
+  {
+   "t": 100,
+   "ease": "Linear",
+   "n.foot": [
+    -150,
+    0
+   ]
+  },
+  {
+   "t": 150,
+   "ease": "QuadIn",
+   "f.foot": [
+    50,
+    0
+   ]
+  },
+  {
+   "t": 150,
+   "ease": "QuadOut",
+   "n.foot": [
+    -110,
+    -40
+   ]
+  },
+  {
+   "t": 180,
+   "ease": "QuadInOut",
+   "n.hand": [
+    -180,
+    -360
+   ],
+   "n.sweep": 1,
+   "n.blade": -150
+  },
+  {
+   "t": 200,
+   "ease": "QuadIn",
+   "n.foot": [
+    -70,
+    0
+   ]
+  },
+  {
+   "t": 230,
+   "name": "wind",
+   "ease": "CubicOut",
+   "root": [
+    -48,
+    62
+   ],
+   "hips": -9,
+   "torso": -20,
+   "head": -4,
+   "n.foot": [
+    -70,
+    0
+   ],
+   "f.foot": [
+    50,
+    0
+   ],
+   "n.hand": [
+    -245,
+    -318
+   ],
+   "n.sweep": -1,
+   "n.blade": -176,
+   "f.hand": [
+    200,
+    -140
+   ],
+   "squash": [
+    1.04,
+    0.96
+   ],
+   "scale.torso": [
+    1.06,
+    1
+   ],
+   "slide.n_shoulder": [
+    -22,
+    0
+   ],
+   "slide.f_shoulder": [
+    14,
+    0
+   ],
+   "shade.torso": -0.06,
+   "n.bend": -1
+  },
+  {
+   "t": 270,
+   "ease": "Linear",
+   "root": [
+    -50,
+    64
+   ],
+   "hips": -10,
+   "torso": -21,
+   "head": -4,
+   "n.foot": [
+    -70,
+    0
+   ],
+   "f.foot": [
+    50,
+    0
+   ],
+   "travel": 0,
+   "n.hand": [
+    -247,
+    -318
+   ],
+   "n.blade": -177,
+   "f.hand": [
+    200,
+    -140
+   ],
+   "squash": [
+    1.04,
+    0.96
+   ],
+   "scale.torso": [
+    1.06,
+    1
+   ],
+   "slide.n_shoulder": [
+    -22,
+    0
+   ],
+   "slide.f_shoulder": [
+    14,
+    0
+   ],
+   "shade.torso": -0.06
+  },
+  {
+   "t": 310,
+   "ease": "QuadOut",
+   "f.foot": [
+    190,
+    -220
+   ]
+  },
+  {
+   "t": 345,
+   "name": "step",
+   "ease": "QuadIn",
+   "travel": 0.72,
+   "root": [
+    0,
+    25
+   ],
+   "hips": -2,
+   "torso": -10,
+   "head": 0,
+   "n.foot": [
+    -70,
+    0
+   ],
+   "n.hand": [
+    -235,
+    -325
+   ],
+   "n.blade": -178,
+   "f.hand": [
+    210,
+    -150
+   ],
+   "squash": [
+    0.95,
+    1.06
+   ]
+  },
+  {
+   "t": 350,
+   "ease": "Linear",
+   "n.hand": [
+    -235,
+    -325
+   ],
+   "f.hand": [
+    210,
+    -150
+   ],
+   "n.bend": -1
+  },
+  {
+   "t": 355,
+   "ease": "Linear",
+   "f.foot": [
+    230,
+    -170
+   ]
+  },
+  {
+   "t": 362,
+   "ease": "Linear",
+   "torso": -10
+  },
+  {
+   "t": 362,
+   "ease": "Linear",
+   "scale.torso": [
+    1.06,
+    1
+   ],
+   "slide.n_shoulder": [
+    -22,
+    0
+   ],
+   "slide.f_shoulder": [
+    14,
+    0
+   ],
+   "shade.torso": -0.06
+  },
+  {
+   "t": 362,
+   "ease": "Linear",
+   "n.blade": -178
+  },
+  {
+   "t": 385,
+   "ease": "Linear",
+   "head": 0
+  },
+  {
+   "t": 388,
+   "ease": "QuadIn",
+   "hips": 30
+  },
+  {
+   "t": 390,
+   "ease": "QuadIn",
+   "n.hand": [
+    40,
+    -440
+   ],
+   "n.sweep": 1
+  },
+  {
+   "t": 395,
+   "ease": "QuadIn",
+   "travel": 1,
+   "root": [
+    150,
+    205
+   ],
+   "n.foot": [
+    -135,
+    0
+   ],
+   "f.foot": [
+    315,
+    0
+   ],
+   "squash": [
+    1.06,
+    0.94
+   ]
+  },
+  {
+   "t": 398,
+   "ease": "CubicIn",
+   "torso": 64
+  },
+  {
+   "t": 399,
+   "ease": "Linear",
+   "n.hand": [
+    380,
+    -330
+   ],
+   "n.sweep": 1
+  },
+  {
+   "t": 402,
+   "ease": "CubicIn",
+   "scale.torso": [
+    0.88,
+    1
+   ],
+   "slide.n_shoulder": [
+    22,
+    4
+   ],
+   "slide.f_shoulder": [
+    -20,
+    0
+   ],
+   "shade.torso": 0.14
+  },
+  {
+   "t": 402,
+   "ease": "CubicIn",
+   "f.hand": [
+    -120,
+    -330
+   ],
+   "f.sweep": -1
+  },
+  {
+   "t": 406,
+   "name": "arm",
+   "ease": "QuadIn",
+   "n.hand": [
+    370,
+    20
+   ],
+   "n.sweep": 1,
+   "n.bend": 1
+  },
+  {
+   "t": 412,
+   "name": "contact",
+   "ease": "QuadIn",
+   "n.blade": 18
+  },
+  {
+   "t": 412,
+   "ease": "Linear",
+   "n.toe": 0
+  },
+  {
+   "t": 422,
+   "ease": "QuadOut",
+   "head": 34
+  },
+  {
+   "t": 445,
+   "ease": "QuadOut",
+   "n.blade": 40
+  },
+  {
+   "t": 490,
+   "name": "follow",
+   "ease": "QuadOut",
+   "root": [
+    185,
+    215
+   ],
+   "hips": 32,
+   "torso": 68,
+   "head": 30,
+   "n.hand": [
+    380,
+    70
+   ],
+   "n.blade": 62,
+   "f.hand": [
+    -160,
+    -330
+   ],
+   "squash": [
+    1,
+    1
+   ],
+   "n.foot": [
+    -135,
+    0
+   ],
+   "f.foot": [
+    315,
+    0
+   ],
+   "n.toe": 16
+  },
+  {
+   "t": 490,
+   "ease": "QuadOut",
+   "n.foot": [
+    -128,
+    -12
+   ]
+  },
+  {
+   "t": 540,
+   "ease": "Linear",
+   "travel": 1,
+   "root": [
+    185,
+    215
+   ],
+   "hips": 32,
+   "torso": 68,
+   "head": 30,
+   "n.foot": [
+    -128,
+    -12
+   ],
+   "f.foot": [
+    315,
+    0
+   ],
+   "plant": 1,
+   "n.hand": [
+    380,
+    70
+   ],
+   "n.blade": 62,
+   "f.hand": [
+    -160,
+    -330
+   ]
+  },
+  {
+   "t": 540,
+   "ease": "Linear",
+   "scale.torso": [
+    0.88,
+    1
+   ],
+   "slide.n_shoulder": [
+    22,
+    4
+   ],
+   "slide.f_shoulder": [
+    -20,
+    0
+   ],
+   "shade.torso": 0.14
+  },
+  {
+   "t": 540,
+   "ease": "Linear",
+   "n.toe": 16
+  },
+  {
+   "t": 600,
+   "ease": "Linear",
+   "n.foot": [
+    -128,
+    -12
+   ],
+   "f.foot": [
+    315,
+    0
+   ]
+  },
+  {
+   "t": 610,
+   "name": "recoil",
+   "ease": "QuadOut",
+   "root": [
+    150,
+    150
+   ],
+   "hips": 22,
+   "torso": 40,
+   "head": 16,
+   "n.hand": [
+    170,
+    40
+   ],
+   "n.sweep": 1,
+   "n.blade": 92,
+   "f.hand": [
+    20,
+    -260
+   ],
+   "f.sweep": 0,
+   "n.toe": 6
+  },
+  {
+   "t": 610,
+   "ease": "QuadOut",
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0
+  },
+  {
+   "t": 640,
+   "name": "push",
+   "ease": "SineInOut",
+   "root": [
+    125,
+    170
+   ],
+   "torso": 32,
+   "head": 8,
+   "squash": [
+    1.03,
+    0.97
+   ],
+   "n.hand": [
+    40,
+    60
+   ],
+   "n.sweep": 1,
+   "n.blade": 118,
+   "n.toe": 0
+  },
+  {
+   "t": 640,
+   "ease": "Linear",
+   "travel": 1,
+   "n.foot": [
+    -128,
+    0
+   ],
+   "f.foot": [
+    315,
+    0
+   ]
+  },
+  {
+   "t": 720,
+   "name": "air",
+   "ease": "QuadOut",
+   "root": [
+    60,
+    -40
+   ],
+   "hips": 0,
+   "torso": 10,
+   "head": -4,
+   "squash": [
+    0.97,
+    1.03
+   ],
+   "n.foot": [
+    -60,
+    -190
+   ],
+   "f.foot": [
+    120,
+    -230
+   ]
+  },
+  {
+   "t": 720,
+   "ease": "SineInOut",
+   "n.hand": [
+    -140,
+    40
+   ],
+   "n.sweep": 1,
+   "n.blade": 132,
+   "f.hand": [
+    150,
+    -200
+   ],
+   "f.sweep": 0
+  },
+  {
+   "t": 760,
+   "ease": "Linear",
+   "n.bend": 1
+  },
+  {
+   "t": 810,
+   "ease": "SineInOut",
+   "travel": 0
+  },
+  {
+   "t": 810,
+   "name": "touch",
+   "ease": "QuadIn",
+   "root": [
+    60,
+    95
+   ],
+   "torso": 22,
+   "head": -10,
+   "squash": [
+    1,
+    1
+   ],
+   "n.foot": [
+    -150,
+    0
+   ],
+   "f.foot": [
+    175,
+    0
+   ]
+  },
+  {
+   "t": 810,
+   "ease": "SineInOut",
+   "n.hand": [
+    -285,
+    25
+   ],
+   "n.sweep": 1,
+   "n.blade": 138,
+   "f.hand": [
+    205,
+    -95
+   ]
+  },
+  {
+   "t": 855,
+   "name": "sink",
+   "ease": "QuadOut",
+   "root": [
+    60,
+    150
+   ],
+   "hips": -10,
+   "torso": 22,
+   "head": -12,
+   "squash": [
+    1.04,
+    0.96
+   ]
+  },
+  {
+   "t": 865,
+   "ease": "QuadOut",
+   "n.hand": [
+    -300,
+    14
+   ],
+   "n.blade": 147,
+   "f.hand": [
+    198,
+    -100
+   ]
+  },
+  {
+   "t": 960,
+   "ease": "QuadOut",
+   "travel": 0
+  },
+  {
+   "t": 960,
+   "root": [
+    55,
+    135
+   ],
+   "hips": -8,
+   "torso": 20,
+   "head": -10,
+   "n.foot": [
+    -150,
+    0
+   ],
+   "f.foot": [
+    175,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    -320,
+    11
+   ],
+   "n.blade": 140,
+   "n.bend": 1,
+   "f.hand": [
+    191,
+    -115
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0,
+   "name": "stance",
+   "ease": "QuadOut"
+  }
+ ],
+ "events": [
+  [
+   0,
+   "mark:ready"
+  ],
+  [
+   0,
+   "hand:n_hand=n_hand_grip2"
+  ],
+  [
+   140,
+   "face:grit"
+  ],
+  [
+   140,
+   "hand:none"
+  ],
+  [
+   155,
+   "torso:torso_toward"
+  ],
+  [
+   230,
+   "mark:wind"
+  ],
+  [
+   345,
+   "mark:step"
+  ],
+  [
+   345,
+   "ghost:0.2,110,270"
+  ],
+  [
+   350,
+   "lines"
+  ],
+  [
+   355,
+   "sound:whoosh"
+  ],
+  [
+   385,
+   "face:shout"
+  ],
+  [
+   390,
+   "trail:smear"
+  ],
+  [
+   396,
+   "torso:torso_away"
+  ],
+  [
+   412,
+   "contact"
+  ],
+  [
+   412,
+   "mark:hit"
+  ],
+  [
+   412,
+   "ghost:0.18,110,362"
+  ],
+  [
+   432,
+   "trail:off"
+  ],
+  [
+   500,
+   "mark:follow"
+  ],
+  [
+   620,
+   "torso:none"
+  ],
+  [
+   650,
+   "face:none"
+  ],
+  [
+   760,
+   "hand:n_hand=n_hand_grip2"
+  ],
+  [
+   960,
+   "mark:settled"
+  ]
+ ]
+}
