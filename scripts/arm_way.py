@@ -27,6 +27,8 @@ BASE = ROOT / "art" / "raw" / "char_hero_bare.png"
 BODY_DIR = Path(sys.argv[sys.argv.index("--bodies") + 1]) if "--bodies" in sys.argv else OUT / "bodies2"
 FIRST_SEED = 7200
 GUARD_AT = float(sys.argv[sys.argv.index("--guard") + 1]) if "--guard" in sys.argv else None
+# --hand x,y,deg: the fist's centre on the handle and the blade's direction, measured by hand on the try
+HAND = [float(v) for v in sys.argv[sys.argv.index("--hand") + 1].split(",")] if "--hand" in sys.argv else None
 ALPHA_FLOOR = 10
 
 STYLE = ("the same flat cartoon art style with hard-edged cel shadows, thin dark outlines and a warm golden rim light "
@@ -61,6 +63,23 @@ VARIANTS = {
                   "the upper arm pointing up beside his head, the elbow bent and lifted to about the height of the top "
                   "of his head, the fist above and slightly behind his head. The wrist is cocked back so the blade hangs "
                   "behind his head and shoulders, pointing down and back on a slant, its tip behind his back.", True),
+    # wind_high came back with no upper arm: the bones body keeps a short sleeve at the shoulder and Qwen read it as
+    # the rolled cuff at the elbow, growing the forearm straight out of the shoulder. Say what the sleeve is.
+    "wind_side": ("wind", "noarm", NEAR + " He is winding up for a big overhead sword cut. The short cream sleeve at "
+                  "his shoulder is the top of his upper arm: the upper arm continues in that loose cream shirt sleeve, "
+                  "full length, raised up and back beside his head and seen from the side, to the elbow, where the "
+                  "sleeve is rolled up into a thick cuff. The elbow is bent sharply and clearly visible above and "
+                  "behind the top of his head. Only the forearm and the fist are bare skin; the fist is above and "
+                  "behind his head. The blade hangs down behind his back, to the left of his head and well away from "
+                  "it, never across his hair or face.", True),
+    # wind_side drew the same cuff-at-the-shoulder arm. The game's own drawn wind-up (char_hero_bare_sword_wind) has
+    # the arm right: upper arm out to the side in the sleeve, a sharp elbow at the cuff. It goes in as <image3>.
+    "wind_ref": ("wind", "noarm", NEAR + " He is winding up for a big overhead sword cut, his sword arm placed exactly "
+                 "like the raised arm on the left side of <image3> (another drawing of him): the upper arm in the loose "
+                 "cream shirt sleeve reaching out and up behind him, the elbow bent sharply at the thick rolled cuff "
+                 "and clearly visible, the bare forearm going up to the fist above and behind his head. The blade "
+                 "hangs down behind his back, well away from his hair and face. Take only that arm's position from "
+                 "<image3>; draw it in the style of <image1>.", True, "char_hero_bare_sword_wind"),
     # The sword cocked on the shoulder (as in old fencing books): fist by the chin, elbow down, blade back over it.
     "wind_shoulder": ("wind", "noarm", NEAR + " He is winding up for a strong sword cut with the sword cocked on his "
                       "shoulder: the fist is up beside his near shoulder at the height of his chin, the elbow bent tight "
@@ -120,8 +139,13 @@ def gen(names: list[str], seeds: int, first: int) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     sword = comfy.upload("armway_sword.png", png(sword_on_white()))
     for name in names:
-        moment, suffix, text, other_arm = VARIANTS[name]
+        moment, suffix, text, other_arm, *pose_ref = VARIANTS[name]
         body = comfy.upload(f"armway2_{moment}_{suffix}.png", png(keyed_white(BODY_DIR / f"{moment}_{suffix}.png")))
+        refs = [body, sword]
+        if pose_ref:                          # a drawing of him whose arm position is the one wanted
+            a = np.asarray(Image.open(ROOT / "art" / "raw" / f"{pose_ref[0]}.png").convert("RGB")).astype(np.int16)
+            a[np.abs(a - [167, 55, 209]).sum(-1) < 60] = 255
+            refs.append(comfy.upload(f"armway_ref_{pose_ref[0]}.png", png(Image.fromarray(a.astype(np.uint8)))))
         for i in range(seeds):
             seed = first + i
             out = OUT / f"{name}_s{seed}.png"
@@ -129,7 +153,7 @@ def gen(names: list[str], seeds: int, first: int) -> None:
                 continue
             print(out.relative_to(ROOT), flush=True)
             try:
-                out.write_bytes(comfy.generate(prompt(text, other_arm), [body, sword], None, seed, 30))
+                out.write_bytes(comfy.generate(prompt(text, other_arm), refs, None, seed, 30))
             except RuntimeError as e:
                 print(f"  ComfyUI error: {e}", flush=True)
                 continue
@@ -210,11 +234,35 @@ def tidy(rgba: np.ndarray, parts: int = 3) -> np.ndarray:
     """Drop the key's magenta fringe and every loose fleck or faint ghost line away from his body."""
     r, g, b, a = (rgba[..., i].astype(np.int16) for i in range(4))
     out = rgba.copy()
-    out[..., 3][(r - g > 60) & (b - g > 60)] = 0
+    out[..., 3][(r - g > 35) & (b - g > 35)] = 0
     solid = out[..., 3] > 128
     if solid.any():
         out[..., 3][~grow(big_parts(solid, 1500, parts), 3)] = 0
     return out
+
+
+def patch(rgba: np.ndarray, gone: np.ndarray, r: int = 22) -> np.ndarray:
+    """Fill where the drawn sword lay across his body from the drawing's own colours around it (peeled in from the
+    edges), so a blade over his back leaves no hole and no piece of the bones body shows through."""
+    have = rgba[..., 3] > 128
+    hole = shrink(grow(have, r), r) & ~have & grow(gone, 2)
+    out = rgba.astype(np.float32).copy()
+    known = have.copy()
+    for _ in range(2 * r):
+        todo = hole & ~known
+        if not todo.any():
+            break
+        acc = np.zeros(out.shape[:2] + (3,), np.float32)
+        cnt = np.zeros(out.shape[:2], np.float32)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            k = np.roll(known, (dy, dx), (0, 1))
+            acc += np.roll(out[..., :3], (dy, dx), (0, 1)) * k[..., None]
+            cnt += k
+        new = todo & (cnt > 0)
+        out[..., :3][new] = acc[new] / cnt[new][:, None]
+        out[..., 3][new] = 255
+        known |= new
+    return out.astype(np.uint8)
 
 
 def compose(try_path: Path, moment: str, blade_hint: float, sword_front: bool, out_dir: Path, arms: int = 1) -> dict:
@@ -267,6 +315,9 @@ def compose(try_path: Path, moment: str, blade_hint: float, sword_front: bool, o
         pass
     else:
         ax = hint_ax
+    if HAND is not None:                      # measured by hand for this pose: the fist's centre on the handle
+        grip = np.array(HAND[:2], float)        # and the blade's direction (as the game's hand anchors are)
+        ax = np.array([np.cos(np.radians(HAND[2])), np.sin(np.radians(HAND[2]))])
     angle = float(np.degrees(np.arctan2(ax[1], ax[0])))
     # Everything along the drawn sword's line that is not skin or cloth goes: its outline, guard and pommel too (a band
     # along the line, wider at the fist's two ends where the guard and the pommel are). Under it the bones body shows.
@@ -280,8 +331,21 @@ def compose(try_path: Path, moment: str, blade_hint: float, sword_front: bool, o
     # pommel side to just past the fist
     band = drawn & (al > min(al_pts.min(), -fist_half) - 40) & (al < max(al_pts.max(), SWORD_LEN_RENDER) + 40) & (
         (ac < 42) | ((ac < 80) & (al > -fist_half - 45) & (al < fist_half + 55)))
+    if GUARD_AT is not None and sword_front:  # the drawn guard's tips reach far out across the line (behind him
+        # the game's sword hides them; there the wide cut would take his hair and eyes)
+        r_, g_, b_ = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+        steel = (np.abs(r_ - g_) < 20) & (np.abs(g_ - b_) < 20)               # grey steel and its dark outline
+        gold = (r_ > 170) & (g_ > 140) & (b_ < 130) & (r_ - g_ < 60)          # its rim light; not boots or trousers
+        band = band | (drawn & (steel | gold) & (ac < 145) & (np.abs(al - GUARD_AT - 10) < 32))
     warm_thick = grow(shrink(warm & band, 3), 3)   # the fist's skin; the drawn blade's thin golden rim light is not
-    drop = band & (~warm_thick | (al > 0.6 * SWORD_LEN_RENDER))   # out along the blade nothing of his can be thick
+    drop = band & ~warm_thick
+    if not sword_front:                       # behind him the line runs under his hair and face: take only what
+        r_, g_, b_ = rgb[..., 0], rgb[..., 1], rgb[..., 2]          # looks like the drawn sword (grey steel, its
+        steel = (np.abs(r_ - g_) < 20) & (np.abs(g_ - b_) < 20) & (mx > 70)   # gold rim) and its edge
+        gold = (r_ > 170) & (g_ > 140) & (b_ < 130) & (r_ - g_ < 60)
+        drop = drop & grow(band & (steel | gold), 4)
+    if sword_front:                           # out along a blade in front nothing of his can be thick (a blade down
+        drop = drop | (band & (al > 0.6 * SWORD_LEN_RENDER))   # his back runs behind his shirt, which stays)
     arm_keep = arm_keep & ~drop
     sword_px = sword_px | drop
     # the fist's edge on the blade side: walking the sword's line from the pommel side, the last place where his skin
@@ -357,9 +421,15 @@ def compose(try_path: Path, moment: str, blade_hint: float, sword_front: bool, o
     whole_img = Image.new("RGBA", bones_img.size, (0, 0, 0, 0))
     fill = np.asarray(bones_img).copy()      # where the drawn sword lay over his body, the same pose's bones body
     fill[..., 3][~grow(sword_px | drop, 2)] = 0
+    # only inside the drawing's own outline without its blade: outside it the bones body has things the drawing
+    # moved away (the arm's stump at the shoulder)
+    blade_from = (GUARD_AT if GUARD_AT is not None else fist_half) + 25
+    his = (t[..., 3] > 128) & ~((ac < 44) & (al > blade_from))
+    if not sword_front:                       # (in front, under the blade his legs are the bones' legs: keep them)
+        fill[..., 3][~shrink(grow(his, 22), 22)] = 0
     whole_img.alpha_composite(Image.fromarray(fill))
     whole_img.alpha_composite(Image.fromarray(whole_body.astype(np.uint8)))
-    whole_img = Image.fromarray(tidy(np.asarray(whole_img), 3))
+    whole_img = Image.fromarray(tidy(patch(np.asarray(whole_img), sword_px | drop), 3))   # what is still open
     for name, under in (("whole", whole_img), ("pinned", bones_img)):
         canvas = Image.new("RGBA", under.size, (0, 0, 0, 0))
         layers = [under, sword, arm_img] if sword_front else [sword, under, arm_img]
@@ -448,7 +518,10 @@ def show(pairs: list[str], size: str, name: str, upper: bool = False) -> Path:
 
 # --- The proof sheets: old beside new, at the designer's size and as close-ups of the arms ---------------------------
 PROOF = ROOT / "art" / "tests" / "sheets" / "armway"
-PICKS = {"wind": "wind_high_s7200_whole", "hit": "hit_s7201_whole", "after": "after_s7201_whole"}
+PICKS = {"wind": "wind_side_s7202_whole", "hit": "hit_s7200_whole", "after": "after_s7200_whole"}
+# the hand anchors measured by hand on each pick (compose <try> <hint> front|back --hand x,y,deg --guard px):
+#   wind_side_s7202 137 back --hand 824,394,137 --guard 110 (the game's handle is longer than the drawn one)
+#   hit_s7200 30 front --hand 910,953,18 --guard 60;  after_s7200 30 front --hand 866,978,53 --guard 62
 MOMENTS = {"stand": "standing", "wind": "wound up", "hit": "the hit", "after": "after the hit"}
 BASE_H = 958       # the base drawing at the bones hero's size (head to belt matched: 472 px there, 438 here)
 
@@ -514,7 +587,7 @@ def proof() -> list[Path]:
     for m in ("stand", "wind", "hit", "after"):
         b = [figure_box(old[m]), figure_box(new[m])]
         y0, y1 = min(x[1] for x in b) - 20, max(x[3] for x in b)
-        y1 = y0 + int((y1 - y0) * 0.66)
+        y1 = y0 + int((y1 - y0) * (0.66 if m in ("stand", "wind") else 0.86))   # the fist is low at the hit
         cols = np.nonzero(np.asarray(old[m])[y0:y1, :, 3].max(0) + np.asarray(new[m])[y0:y1, :, 3].max(0) > 128)[0]
         box = (int(cols.min()) - 20, y0, int(cols.max()) + 20, y1)
         cell = lambda im: on_bg(im.crop(box)).resize((round((box[2] - box[0]) * k), round((box[3] - box[1]) * k)), Image.LANCZOS)
@@ -538,14 +611,15 @@ def main() -> None:
         args.remove(str(seeds))
     if "--bodies" in sys.argv:
         args.remove(str(BODY_DIR))
-    if "--guard" in sys.argv:
-        args.remove(sys.argv[sys.argv.index("--guard") + 1])
+    for flag in ("--guard", "--hand"):
+        if flag in sys.argv:
+            args.remove(sys.argv[sys.argv.index(flag) + 1])
     if args and args[0] == "gen":
         gen(args[1:], seeds, FIRST_SEED)
     elif args and args[0] == "compose":
         # compose <try.png> <blade_hint_deg> front|back   (moment and arms from the try's variant name)
         try_path = Path(args[1])
-        moment, suffix, _, _ = VARIANTS[try_path.stem.rsplit("_s", 1)[0]]
+        moment, suffix = VARIANTS[try_path.stem.rsplit("_s", 1)[0]][:2]
         r = compose(try_path, moment, float(args[2]), args[3] == "front", OUT / "composed", 2 if suffix == "noarms" else 1)
         print({k: (str(v) if isinstance(v, Path) else v) for k, v in r.items()})
     elif args and args[0] == "show":
