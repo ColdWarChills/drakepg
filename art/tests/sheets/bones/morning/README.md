@@ -1,0 +1,5 @@
+- `reel.mp4`: three parts at x1, 1280 wide: (1) the everyday sword blow, today's drawn hero above, the bones cut (s1b pick) below; (2) the leaping smash, the drawn Earthshaker above, the bones leap (`sword_leap_c`, burst 3b) below; (3) the bones three-cut chain (`sword_chain_b`) alone. In each pair both start together; the shorter one holds its last frame.
+- `reel_half.mp4`: the same reel at half speed.
+- Frame strips and checks for the new bones attacks: `art/tests/sheets/bones/s3/sword_leap_x1`, `_x2`, `sword_chain_x1`, `_x2` (`strip.webp`, `keys`, `check.txt`, `clip.mp4`); raw frames in `art/redo/bones_frames/s3/`.
+- Old against new, frame by frame: `art/tests/sheets/bones/s3/before_after.webp`; the leap beside the drawn one: `s3/vs_drawn.webp` (and `s3/vs_drawn_blind.webp`, rows tagged only A/B).
+- The drawn clips come from `art/tests/sheets/bones/baseline/warrior_sword` and `warrior_earthshaker` (their frames are in `art/redo/bones_frames/baseline/`).

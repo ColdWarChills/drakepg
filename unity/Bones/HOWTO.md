@@ -123,7 +123,7 @@ Drakepg.Test.BoneStage.Open("iron_sword", "bog_lurker", "fen");  // wait until B
 // a 4th argument picks the base part set: Open(..., "fen", "bare") for the old bare parts (BoneStage.DefaultBaseSet)
 Drakepg.Test.BoneStage.Play("sword_swing_old");                  // returns the length and warnings
 Drakepg.Test.BoneStage.Hold("sword_swing_old", 440);             // a still pose
-Drakepg.Test.BoneStage.Stills("sword_leap@230=crouch sword_leap@700=hit sword_chain@412", DIR);  // still poses as frames
+Drakepg.Test.BoneStage.Stills("sword_leap@560=charge sword_leap@860=top sword_leap@1030=hit sword_chain@540", DIR);  // still poses as frames
 // (f000.jpg..., track.json with each label as its event; wait until BoneStage.Busy is false): key poses before a take
 Drakepg.Test.BoneStage.Speed(2);                                 // battle speed x2 (stage only)
 Drakepg.Test.BoneStage.Close();                                  // back to the title screen

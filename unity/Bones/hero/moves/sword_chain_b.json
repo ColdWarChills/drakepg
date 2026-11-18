@@ -1,0 +1,842 @@
+{
+ "name": "sword_chain_b",
+ "note": "Three-cut chain, try b (burst 3b): three bodies. A forehand cut that carries on low (low lunge, near foot back); a real coil (turned away, hips leading, blade lagging low) stepping through into a tall rising backhand (near foot in front, chest open, blade high); a low coil with the blade drawn back beside the hip, then a long low thrust off the front leg. ~1480 ms in play at x1.",
+ "weapon": "sword",
+ "kind": "skill",
+ "weapons": {
+  "n": "iron_sword"
+ },
+ "reach": 230,
+ "arc": {
+  "n": true,
+  "f": true
+ },
+ "keys": [
+  {
+   "t": 0,
+   "name": "ready",
+   "ease": "SineInOut",
+   "root": [
+    0,
+    30
+   ],
+   "rootTurn": 0,
+   "hips": 0,
+   "torso": 6,
+   "head": -3,
+   "n.foot": [
+    -30,
+    0
+   ],
+   "f.foot": [
+    40,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1,
+    1
+   ],
+   "n.hand": [
+    60,
+    30
+   ],
+   "n.blade": -20,
+   "n.bend": 1,
+   "f.hand": [
+    150,
+    -140
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0,
+   "f.toe": 0,
+   "f.on": 0,
+   "f.onT": -70
+  },
+  {
+   "t": 130,
+   "name": "wind",
+   "ease": "CubicOut",
+   "scale.torso": [
+    1.06,
+    1
+   ],
+   "slide.n_shoulder": [
+    -22,
+    0
+   ],
+   "slide.f_shoulder": [
+    14,
+    0
+   ],
+   "shade.torso": -0.06,
+   "root": [
+    -48,
+    62
+   ],
+   "hips": -12,
+   "torso": -22,
+   "head": -4,
+   "n.foot": [
+    -70,
+    0
+   ],
+   "f.foot": [
+    50,
+    0
+   ],
+   "n.hand": [
+    -245,
+    -318
+   ],
+   "n.sweep": -1,
+   "n.blade": -176,
+   "f.hand": [
+    200,
+    -140
+   ],
+   "squash": [
+    1.04,
+    0.96
+   ],
+   "n.bend": -1
+  },
+  {
+   "t": 180,
+   "ease": "Linear",
+   "root": [
+    -50,
+    64
+   ],
+   "n.hand": [
+    -247,
+    -320
+   ],
+   "n.blade": -178,
+   "f.foot": [
+    80,
+    -60
+   ]
+  },
+  {
+   "t": 212,
+   "ease": "Linear",
+   "plant": 1
+  },
+  {
+   "t": 245,
+   "name": "step",
+   "ease": "QuadIn",
+   "travel": 0.72,
+   "root": [
+    40,
+    40
+   ],
+   "torso": -6,
+   "hips": 6,
+   "f.foot": [
+    230,
+    -150
+   ],
+   "squash": [
+    0.95,
+    1.06
+   ]
+  },
+  {
+   "t": 312,
+   "name": "hit1",
+   "ease": "QuadIn",
+   "scale.torso": [
+    0.88,
+    1
+   ],
+   "slide.n_shoulder": [
+    22,
+    4
+   ],
+   "slide.f_shoulder": [
+    -20,
+    0
+   ],
+   "shade.torso": 0.14,
+   "travel": 1,
+   "root": [
+    150,
+    230
+   ],
+   "torso": 66,
+   "hips": 28,
+   "head": 30,
+   "rootTurn": 4,
+   "n.foot": [
+    -160,
+    0
+   ],
+   "f.foot": [
+    315,
+    0
+   ],
+   "n.hand": [
+    355,
+    40
+   ],
+   "n.sweep": 1,
+   "n.blade": 28,
+   "n.bend": 1,
+   "f.hand": [
+    -140,
+    -320
+   ],
+   "f.sweep": -1,
+   "squash": [
+    1.06,
+    0.94
+   ]
+  },
+  {
+   "t": 345,
+   "ease": "Linear",
+   "n.hand": [
+    352,
+    56
+   ],
+   "n.blade": 34,
+   "root": [
+    152,
+    236
+   ]
+  },
+  {
+   "t": 385,
+   "name": "low1",
+   "ease": "QuadOut",
+   "n.hand": [
+    290,
+    190
+   ],
+   "n.blade": 78,
+   "root": [
+    150,
+    250
+   ],
+   "torso": 72,
+   "head": 34
+  },
+  {
+   "t": 440,
+   "name": "coil2",
+   "ease": "CubicOut",
+   "scale.torso": [
+    0.88,
+    1
+   ],
+   "slide.n_shoulder": [
+    22,
+    4
+   ],
+   "slide.f_shoulder": [
+    -20,
+    0
+   ],
+   "shade.torso": 0.25,
+   "travel": 0.95,
+   "root": [
+    110,
+    240
+   ],
+   "hips": 50,
+   "torso": 52,
+   "head": 30,
+   "rootTurn": 10,
+   "n.hand": [
+    -60,
+    150
+   ],
+   "n.sweep": -1,
+   "n.blade": 160,
+   "n.bend": 1,
+   "f.hand": [
+    -220,
+    -220
+   ],
+   "n.foot": [
+    80,
+    -90
+   ],
+   "f.foot": [
+    300,
+    0
+   ]
+  },
+  {
+   "t": 540,
+   "name": "hit2",
+   "ease": "QuadIn",
+   "scale.torso": [
+    1.06,
+    1
+   ],
+   "slide.n_shoulder": [
+    -22,
+    0
+   ],
+   "slide.f_shoulder": [
+    14,
+    0
+   ],
+   "shade.torso": -0.06,
+   "travel": 1,
+   "root": [
+    175,
+    40
+   ],
+   "hips": -6,
+   "torso": -12,
+   "head": -16,
+   "rootTurn": -4,
+   "n.foot": [
+    330,
+    0
+   ],
+   "f.foot": [
+    80,
+    0
+   ],
+   "f.toe": -20,
+   "n.hand": [
+    440,
+    90
+   ],
+   "n.sweep": -1,
+   "n.blade": 14,
+   "f.hand": [
+    -260,
+    -60
+   ],
+   "squash": [
+    0.96,
+    1.05
+   ]
+  },
+  {
+   "t": 575,
+   "ease": "Linear",
+   "n.hand": [
+    436,
+    60
+   ],
+   "n.blade": 8,
+   "root": [
+    176,
+    30
+   ]
+  },
+  {
+   "t": 615,
+   "name": "tall2",
+   "ease": "QuadOut",
+   "n.hand": [
+    170,
+    -470
+   ],
+   "n.blade": -82,
+   "root": [
+    176,
+    0
+   ],
+   "torso": -24,
+   "head": -26,
+   "squash": [
+    0.95,
+    1.06
+   ],
+   "f.hand": [
+    -250,
+    -20
+   ]
+  },
+  {
+   "t": 660,
+   "ease": "Linear",
+   "n.hand": [
+    165,
+    -472
+   ],
+   "n.blade": -84,
+   "root": [
+    174,
+    4
+   ]
+  },
+  {
+   "t": 740,
+   "name": "coil3",
+   "ease": "CubicOut",
+   "scale.torso": [
+    1.06,
+    1
+   ],
+   "slide.n_shoulder": [
+    -22,
+    0
+   ],
+   "slide.f_shoulder": [
+    14,
+    0
+   ],
+   "shade.torso": -0.06,
+   "travel": 0.9,
+   "root": [
+    50,
+    230
+   ],
+   "hips": -20,
+   "torso": 34,
+   "head": 8,
+   "rootTurn": -4,
+   "n.hand": [
+    -200,
+    -40
+   ],
+   "n.sweep": -1,
+   "n.blade": -12,
+   "n.bend": 1,
+   "f.hand": [
+    260,
+    -230
+   ],
+   "f.sweep": 1,
+   "n.foot": [
+    330,
+    0
+   ],
+   "f.foot": [
+    -120,
+    0
+   ],
+   "f.toe": 0,
+   "squash": [
+    1.06,
+    0.94
+   ]
+  },
+  {
+   "t": 770,
+   "ease": "Linear",
+   "root": [
+    56,
+    214
+   ],
+   "n.hand": [
+    -210,
+    -40
+   ]
+  },
+  {
+   "t": 850,
+   "name": "hit3",
+   "ease": "QuadIn",
+   "scale.torso": [
+    0.88,
+    1
+   ],
+   "slide.n_shoulder": [
+    22,
+    4
+   ],
+   "slide.f_shoulder": [
+    -20,
+    0
+   ],
+   "shade.torso": 0.14,
+   "travel": 1,
+   "root": [
+    230,
+    260
+   ],
+   "hips": 34,
+   "torso": 60,
+   "head": 22,
+   "rootTurn": 6,
+   "n.hand": [
+    520,
+    20
+   ],
+   "n.blade": 4,
+   "f.hand": [
+    -230,
+    -240
+   ],
+   "f.sweep": -1,
+   "f.foot": [
+    -250,
+    0
+   ],
+   "squash": [
+    1.05,
+    0.95
+   ]
+  },
+  {
+   "t": 890,
+   "ease": "Linear",
+   "n.hand": [
+    528,
+    22
+   ],
+   "root": [
+    236,
+    262
+   ]
+  },
+  {
+   "t": 930,
+   "name": "recoil3",
+   "ease": "QuadOut",
+   "n.hand": [
+    380,
+    -120
+   ],
+   "n.blade": -14,
+   "root": [
+    190,
+    240
+   ],
+   "torso": 36,
+   "head": 8
+  },
+  {
+   "t": 1000,
+   "ease": "Linear",
+   "travel": 1.0,
+   "root": [
+    188,
+    238
+   ]
+  },
+  {
+   "t": 1080,
+   "name": "up",
+   "ease": "SineInOut",
+   "root": [
+    120,
+    80
+   ],
+   "torso": 14,
+   "hips": 6,
+   "head": 0,
+   "squash": [
+    1,
+    1
+   ],
+   "plant": 1
+  },
+  {
+   "t": 1170,
+   "name": "hop",
+   "ease": "SineInOut",
+   "travel": 0.35,
+   "plant": 0,
+   "root": [
+    30,
+    -20
+   ],
+   "squash": [
+    1,
+    1
+   ],
+   "hips": 4,
+   "torso": 10,
+   "head": 0,
+   "rootTurn": 0,
+   "n.foot": [
+    -30,
+    -10
+   ],
+   "f.foot": [
+    60,
+    -20
+   ],
+   "n.hand": [
+    120,
+    -60
+   ],
+   "n.blade": -20,
+   "f.hand": [
+    160,
+    -170
+   ],
+   "f.sweep": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0
+  },
+  {
+   "t": 1250,
+   "name": "land",
+   "ease": "QuadIn",
+   "root": [
+    0,
+    45
+   ],
+   "rootTurn": 0,
+   "hips": 0,
+   "torso": 6,
+   "head": -3,
+   "n.foot": [
+    -30,
+    0
+   ],
+   "f.foot": [
+    40,
+    0
+   ],
+   "travel": 0,
+   "plant": 1,
+   "squash": [
+    1.05,
+    0.95
+   ],
+   "n.hand": [
+    60,
+    30
+   ],
+   "n.blade": -20,
+   "n.bend": 1,
+   "f.hand": [
+    150,
+    -140
+   ],
+   "f.bend": 1,
+   "scale.torso": [
+    1,
+    1
+   ],
+   "slide.n_shoulder": [
+    0,
+    0
+   ],
+   "slide.f_shoulder": [
+    0,
+    0
+   ],
+   "shade.torso": 0,
+   "n.toe": 0,
+   "f.toe": 0,
+   "f.on": 0,
+   "f.onT": -70
+  },
+  {
+   "t": 1310,
+   "name": "ready",
+   "ease": "QuadOut",
+   "root": [
+    0,
+    30
+   ],
+   "squash": [
+    1,
+    1
+   ]
+  }
+ ],
+ "events": [
+  [
+   0,
+   "mark:ready"
+  ],
+  [
+   40,
+   "face:grit"
+  ],
+  [
+   55,
+   "torso:torso_toward"
+  ],
+  [
+   130,
+   "mark:wind"
+  ],
+  [
+   245,
+   "mark:step"
+  ],
+  [
+   245,
+   "ghost:0.2,110,180"
+  ],
+  [
+   250,
+   "lines"
+  ],
+  [
+   255,
+   "sound:whoosh"
+  ],
+  [
+   285,
+   "face:shout"
+  ],
+  [
+   290,
+   "trail:smear"
+  ],
+  [
+   296,
+   "torso:torso_away"
+  ],
+  [
+   312,
+   "contact"
+  ],
+  [
+   312,
+   "mark:hit"
+  ],
+  [
+   312,
+   "ghost:0.18,110,245"
+  ],
+  [
+   335,
+   "trail:off"
+  ],
+  [
+   440,
+   "mark:coil2"
+  ],
+  [
+   445,
+   "face:grit"
+  ],
+  [
+   490,
+   "torso:torso_toward"
+  ],
+  [
+   500,
+   "trail:smear"
+  ],
+  [
+   505,
+   "sound:whoosh"
+  ],
+  [
+   520,
+   "face:shout"
+  ],
+  [
+   540,
+   "contact"
+  ],
+  [
+   540,
+   "mark:hit2"
+  ],
+  [
+   565,
+   "trail:off"
+  ],
+  [
+   615,
+   "mark:tall2"
+  ],
+  [
+   690,
+   "face:grit"
+  ],
+  [
+   740,
+   "mark:coil3"
+  ],
+  [
+   800,
+   "sound:whoosh"
+  ],
+  [
+   805,
+   "lines"
+  ],
+  [
+   810,
+   "torso:torso_away"
+  ],
+  [
+   815,
+   "face:shout"
+  ],
+  [
+   815,
+   "trail:smear"
+  ],
+  [
+   850,
+   "contact"
+  ],
+  [
+   850,
+   "mark:hit3"
+  ],
+  [
+   850,
+   "freeze:120"
+  ],
+  [
+   850,
+   "kick:10,0"
+  ],
+  [
+   850,
+   "shake:120,6"
+  ],
+  [
+   850,
+   "ghost:0.2,140,770"
+  ],
+  [
+   870,
+   "trail:off"
+  ],
+  [
+   930,
+   "mark:recoil3"
+  ],
+  [
+   1080,
+   "torso:none"
+  ],
+  [
+   1100,
+   "face:none"
+  ],
+  [
+   1310,
+   "mark:settled"
+  ]
+ ]
+}
