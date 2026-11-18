@@ -103,6 +103,16 @@ them). The move's length = its last key, hold or event, plus the largest lag.
 | `dim:<alpha>,<ms>` | the caller dims the backdrop |
 | `mark:<name>` | nothing; a name for the recorder (panels) |
 
+### Grip hands (the near sword hand)
+
+`hero.NewHands = true` lets the near hand pick its picture by the wrist bend while it holds a blade and the move
+names no `hand:` event (an event always wins). Candidates are the rig fist and the swaps with a `relation`
+(swaps.json; see PARTS.md). The nearest drawn relation shows; within `gripBand` deg (swaps.json, 30) of the change
+the arm's aim blends between the two wrist-to-grip offsets. The hand is pinned on the grip, so the grip and the tip
+stay exactly where the move puts them; the arm is re-aimed at the hand's wrist (three passes), and the elbow may fold
+at most `hero.FoldCap` deg (30) more than the move's own so a short reach doesn't crumple the arm. Only the near
+hand so far; the far hand is unchanged.
+
 ## Code
 
 ```csharp
@@ -125,6 +135,10 @@ Drakepg.Test.BoneStage.Play("sword_swing_old");                  // returns the 
 Drakepg.Test.BoneStage.Hold("sword_swing_old", 440);             // a still pose
 Drakepg.Test.BoneStage.Stills("sword_leap@560=charge sword_leap@860=top sword_leap@1030=hit sword_chain@540", DIR);  // still poses as frames
 // (f000.jpg..., track.json with each label as its event; wait until BoneStage.Busy is false): key poses before a take
+Drakepg.Test.BoneStage.Hands(true, 30);                          // grip hands on (fold cap 30); Hands(false) = the old fist
+Drakepg.Test.BoneStage.Close("sword_cut@300=hit ...", DIR, 12, 480);  // the same poses zoomed 12x on the near grip
+// (f000.jpg..., labels.txt with the hand shown, the relation and the wrist gap; wait until Busy is false)
+Drakepg.Test.BoneStage.Path2("sword_cut", 5);                    // TSV every 5 ms: grip, tip, hand, elbow, hand picture, relation, gap
 Drakepg.Test.BoneStage.Speed(2);                                 // battle speed x2 (stage only)
 Drakepg.Test.BoneStage.Close();                                  // back to the title screen
 ```

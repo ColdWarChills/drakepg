@@ -1145,9 +1145,133 @@ def check():
             print(f"{name} {pn}: one piece {share:.1%}", "pass" if share > 0.98 else "FAIL")
 
 
+# ------------------------------------------------------------------------------------------------ the sword hand
+# The near hand gripping in line with the forearm (back of the hand to the viewer), for the "extended" relation the
+# kept sword moves hold at rest and at every hit. Its pose already exists in the drawn strike stance
+# (art/redo/layers/arm_strike_s6110.png: the near fist on a green rod); the edit only takes the rod out of the closed
+# fist, so the handle can pass behind the hand. Tries: art/redo/hand/qwen/hand_<kind>_s<seed>.png.
+HAND = ROOT / "art" / "redo" / "hand"
+HAND_SRC = ROOT / "art" / "redo" / "layers" / "arm_strike_s6110.png"
+HAND_BOX = (930, 640, 1250, 960)  # the near forearm's end, the fist and the rod on the 1536 canvas
+HAND_UP = 3
+HAND_QWEN = {
+    "closed": ("Edit <image1>. It shows the right forearm and closed right fist of a cartoon hero, seen from the back of "
+               "the hand, holding a bright green rod. Remove the green rod completely. The fist stays tightly closed, "
+               "exactly as it is, at the same place and the same size, the fingers curled shut and the thumb over them: "
+               "where the rod covered the fist, show the curled fingers and knuckles of the closed fist, drawn the same "
+               "way. Keep the forearm, the skin colour, the thin dark outlines, the hard-edged cel shadows and the warm "
+               "rim light exactly the same. No rod, no weapon, nothing in the hand. No ground, no shadow, no text."),
+}
+
+
+def hand_qwen(kind, seeds):
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import hero_poses as hp
+    from qwen_batch import RGBA_CLOSE, RGBA_OPEN, Comfy
+    out = HAND / "qwen"
+    out.mkdir(parents=True, exist_ok=True)
+    comfy = Comfy("http://127.0.0.1:8188")
+    comfy.check()
+    src = hp.cleaned(HAND_SRC).crop(HAND_BOX)
+    src = src.resize((src.width * HAND_UP, src.height * HAND_UP), Image.LANCZOS)
+    ref = comfy.upload("bones_hand_strike.png", hp.on_white(src))
+    prompt = f"{RGBA_OPEN} {HAND_QWEN[kind]} {RGBA_CLOSE}"
+    for seed in seeds:
+        path = out / f"hand_{kind}_s{seed}.png"
+        if path.exists():
+            continue
+        print(path.relative_to(ROOT), flush=True)
+        path.write_bytes(comfy.generate(prompt, [ref], None, seed, 30))
+        (path.with_suffix(".txt")).write_text(f"{prompt}\nseed {seed}, steps 30\n", encoding="utf-8")
+
+
+HAND_ROD = ((1211.56, 880.26), 30.03)  # the green rod's axis in the strike stance (centre, deg): the handle's line
+HAND_GUARD = 44  # rig px from the guard's lower edge to the sword's grip point (iron_sword.png rows 456 -> 500)
+RIG_WRIST_W = 44  # the rig forearm's width 15-60 px above the wrist joint (bare/n_fore.png)
+
+
+def hand_axis(a, wrist, guess):
+    """The forearm's axis through `wrist` (canvas px) on alpha mask `a`: midpoints of cross-sections 20-90 px up the
+    arm from the wrist, a line fitted through them. Returns (direction deg, from the elbow toward the hand; width px)."""
+    d = np.array([math.cos(math.radians(guess)), math.sin(math.radians(guess))])
+    n = np.array([-d[1], d[0]])
+    mids, widths = [], []
+    for back in range(20, 91, 10):
+        c = np.array(wrist) - d * back
+        on = [s for s in np.arange(-80, 80, 0.5)
+              if a[int(round(c[1] + n[1] * s)), int(round(c[0] + n[0] * s))]]
+        if on:
+            mids.append(c + n * (min(on) + max(on)) / 2)
+            widths.append(max(on) - min(on))
+    m = np.array(mids)
+    u = np.linalg.svd(m - m.mean(0))[2][0]
+    if u @ d < 0:
+        u = -u
+    return math.degrees(math.atan2(u[1], u[0])), float(np.median(widths)), m.mean(0)
+
+
+def hand_cut(seed, kind="closed", wrist=(1041, 777), name="n_hand_grip"):
+    """Cut the grip hand from an edit: the fist and a round wrist end (a disc about the wrist joint, the forearm's
+    half width) so it covers the forearm's end at any turn; scaled so its wrist is as wide as the rig's; written to
+    art/redo/hand/cut/<name>_s<seed>.png with its swaps.json entry (placed with its wrist on the rig's n_wrist)."""
+    src = Image.open(HAND / "qwen" / f"hand_{kind}_s{seed}.png").convert("RGBA")
+    src = src.resize((src.width // HAND_UP, src.height // HAND_UP), Image.LANCZOS)
+    canvas = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    canvas.alpha_composite(src, HAND_BOX[:2])
+    arr = np.asarray(canvas).copy()
+    a = arr[..., 3] > 128
+    axis, width, mid = hand_axis(a, wrist, 39.5)
+    # the wrist joint: on the axis, at the given point's place along it
+    d = np.array([math.cos(math.radians(axis)), math.sin(math.radians(axis))])
+    w = mid + d * ((np.array(wrist) - mid) @ d)
+    (rx, ry), rang = HAND_ROD
+    r = np.array([math.cos(math.radians(rang)), math.sin(math.radians(rang))])
+    # the fingers' front edge on the handle's line: walk in from far out until the hand starts
+    t = 200.0
+    while t > -100 and not a[int(round(ry + r[1] * t)), int(round(rx + r[0] * t))]:
+        t -= 0.5
+    front = np.array([rx, ry]) + r * t
+    scale = RIG_WRIST_W / width
+    grip = front - r * (HAND_GUARD / scale)
+    yy, xx = np.mgrid[0:N, 0:N]
+    rel = np.stack([xx - w[0], yy - w[1]], -1)
+    keep = ((rel @ d) > 0) | (np.hypot(rel[..., 0], rel[..., 1]) < width / 2 * 1.08)
+    arr[..., 3] = np.where(keep, arr[..., 3], 0)
+    cut = Image.fromarray(arr)
+    box = cut.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
+    pic = cut.crop(box)
+    pic = pic.resize((max(1, round(pic.width * scale)), max(1, round(pic.height * scale))), Image.LANCZOS)
+    # picture coords -> rig canvas: the wrist lands on the rig's n_wrist
+    rig_w = np.array(json.loads((BONES / "rig.json").read_text())["joints"]["n_wrist"])
+    wpic = (w - np.array(box[:2])) * scale
+    corner = rig_w - wpic
+    gpic = (grip - np.array(box[:2])) * scale
+    out = HAND / "cut"
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / f"{name}_s{seed}.png"
+    pic.save(path)
+    rel_angle = (axis - rang + 180) % 360 - 180
+    entry = {"part": "n_hand", "file": f"bare/{name}.png", "x": round(float(corner[0]), 1), "y": round(float(corner[1]), 1),
+             "joints": {"n_wrist": [round(float(rig_w[0]), 1), round(float(rig_w[1]), 1)]},
+             "grip": {"at": [round(float(corner[0] + gpic[0]), 1), round(float(corner[1] + gpic[1]), 1)], "angle": round(rang, 1)},
+             "relation": round(rel_angle, 1), "weaponZ": 69,
+             "note": ""}
+    print(path, pic.size, "forearm axis", round(axis, 1), "width", round(width, 1), "scale", round(scale, 3),
+          "wrist", w.round(1), "front", front.round(1), "grip", grip.round(1),
+          "wrist->grip rig px", round(float(np.hypot(*(gpic - wpic))), 1))
+    print(json.dumps(entry))
+    return path, entry
+
+
 def main():
     args = sys.argv[1:]
     cmd = args.pop(0)
+    if cmd == "handcut":  # handcut <seed> [kind]: cut the grip hand from an edit, print its swaps.json entry
+        hand_cut(int(args[0]), *(args[1:2] or ["closed"]))
+        return
+    if cmd == "handqwen":  # handqwen <kind> <seed>..: the sword hand edits (HAND_QWEN)
+        hand_qwen(args[0], [int(a) for a in args[1:]])
+        return
     if cmd == "writeswaps":  # the kept torsos and grit face (new names only) and swaps.json swaps/faces/cost
         write_swaps(force="--force" in args)
     elif cmd == "sheets234":  # proof sheets of jobs 2-4 into art/tests/sheets/bones/parts

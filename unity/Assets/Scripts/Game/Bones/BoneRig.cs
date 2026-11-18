@@ -35,7 +35,20 @@ namespace Drakepg.Bones
             /// <summary>A swap hand's own grip point and angle (null: the rig's).</summary>
             public Vector2? GripAt;
             public float GripAngle;
+            /// <summary>
+            /// A grip hand for the automatic choice (BoneHero.NewHands): the angle from the blade to the forearm this
+            /// picture is drawn for (deg, screen: forearm direction minus blade direction). Null: not a grip hand.
+            /// </summary>
+            public float? Relation;
+            /// <summary>The held weapon's draw order while this hand shows (null: rig.json weaponZ).</summary>
+            public float? WeaponZ;
         }
+
+        /// <summary>
+        /// swaps.json "gripBand": the width (deg) over which the arm blends between two grip hands' wrist-to-grip
+        /// offsets around the angle where the shown picture changes (BoneHero.NewHands).
+        /// </summary>
+        public float GripBand = 30;
 
         public readonly IBoneSource Source;
         public float Scale;
@@ -122,6 +135,9 @@ namespace Drakepg.Bones
                 foreach (var j in rad)
                     try { Radius[j.Key] = (float)j.Value; }
                     catch (Exception) { Debug.LogWarning("bones: swaps.json radius." + j.Key + " is not a number"); }
+            if (Swaps["gripBand"] != null)
+                try { GripBand = (float)Swaps["gripBand"]; }
+                catch (Exception) { Debug.LogWarning("bones: swaps.json gripBand is not a number"); }
             if (!(Swaps["swaps"] is JObject list)) return;
             foreach (var s in list)
             {
@@ -152,6 +168,8 @@ namespace Drakepg.Bones
                     sw.GripAt = V(g["at"]);
                     sw.GripAngle = g["angle"] != null ? (float)g["angle"] : 0;
                 }
+                if (o["relation"] != null) sw.Relation = (float)o["relation"];
+                if (o["weaponZ"] != null) sw.WeaponZ = (float)o["weaponZ"];
                 return sw;
             }
             catch (Exception e)

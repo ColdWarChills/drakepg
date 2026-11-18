@@ -31,6 +31,18 @@ namespace Drakepg.Bones
         public readonly List<string> BaseSets = new List<string>();
         /// <summary>Weapons in hand (rig weapon ids), [0] near, [1] far; null: the move's own.</summary>
         public readonly string[] Held = new string[2];
+        /// <summary>
+        /// The sword hand (HOWTO "Grip hands"): false = the old hand exactly (one fist, turned with the blade, hung on
+        /// the forearm's end). True = while the near hand holds a weapon with its blade keyed and no hand: event says
+        /// otherwise, the grip hand drawn for the blade-to-forearm angle shows (swaps.json swaps with a "relation", or
+        /// the rig's own fist), pinned to the weapon by its own grip; the arm then reaches for that hand's wrist, its
+        /// elbow folding at most FoldCap degrees more than before (the rest of the way the forearm's end slides under
+        /// the fist). The weapon's grip and blade are the same either way.
+        /// </summary>
+        public bool NewHands;
+        /// <summary>How many degrees more the near elbow may fold to reach a grip hand's wrist (NewHands).</summary>
+        public float FoldCap = 30;
+        readonly string[] eventHand = new string[2];
 
         Transform puppet;
         readonly Dictionary<string, SpriteRenderer> parts = new Dictionary<string, SpriteRenderer>();
@@ -233,7 +245,8 @@ namespace Drakepg.Bones
 
         float Z(string part)
         {
-            float z = part == "n_weapon" ? Rig.WeaponZ("n") : part == "f_weapon" ? Rig.WeaponZ("f") : Rig.PartOf[part].Z;
+            float z = part == "n_weapon" ? (SwapOn("n_hand")?.WeaponZ ?? Rig.WeaponZ("n"))
+                : part == "f_weapon" ? (SwapOn("f_hand")?.WeaponZ ?? Rig.WeaponZ("f")) : Rig.PartOf[part].Z;
             if (orderNow == null || orderNow == "rest") return z;
             if (orderNow == "far_front") return Rig.FarFront(part) ?? z;
             if (playing != null && playing.Orders.TryGetValue(orderNow, out var map) && map.TryGetValue(part, out var oz)) return oz;
@@ -254,6 +267,13 @@ namespace Drakepg.Bones
             /// <summary>The weapon's direction on screen (deg, 0 = forward): where the blade points.</summary>
             public readonly float[] Blade = new float[2];
             public readonly bool[] Armed = new bool[2];
+            /// <summary>NewHands: the grip hand chosen (a swap name, null = the rig's fist), whether it was chosen
+            /// here, the blade-to-forearm angle it was chosen by, and how far the forearm's end is from that hand's
+            /// wrist (canvas px; hidden under the fist when the elbow may not fold enough).</summary>
+            public readonly string[] HandPic = new string[2];
+            public readonly bool[] HandAuto = new bool[2];
+            public readonly float[] Relation = new float[2];
+            public readonly float[] WristGap = new float[2];
             public Vector2 Squash = Vector2.one;
             public float RootTurn, Facing = 1, Travel;
         }
@@ -340,10 +360,15 @@ namespace Drakepg.Bones
                 bool armed = held[i] != null && Rig.Weapon(held[i]) != null;
                 var shoulder = Place(f, p, s + "_upper");
                 var elbowJ = J[s + "_elbow"];
-                var wristJ = JointIn(s + "_hand", s + "_wrist");
+                // NewHands: the first pass is always the old fist's (so the grip, the blade and the hand chosen never
+                // depend on the picture shown now); GripHand then swaps the hand and re-aims the arm.
+                bool auto = NewHands && i == 0 && eventHand[i] == null;
+                var wristJ = auto ? J[s + "_wrist"] : JointIn(s + "_hand", s + "_wrist");
                 Vector2 up = elbowJ - J[s + "_shoulder"], fore = J[s + "_wrist"] - elbowJ;
                 float upper = p.F(s + ".upper"), foreTurn = p.F(s + ".fore"), ik = Mathf.Clamp01(p.F(s + ".ik"));
-                var (gat, gang) = GripOf(i);
+                float upperFK = upper, foreFK = foreTurn;
+                bool targeted = false;
+                var (gat, gang) = auto ? Rig.Grip(s) : GripOf(i);
                 float inhand = p.F(s + ".inhand");
                 bool bladeKeyed = armed && p.Has(s + ".blade");
                 float handTurn = bladeKeyed ? p.F(s + ".blade") - gang - inhand : 0;
@@ -351,6 +376,7 @@ namespace Drakepg.Bones
                 bool aimed = p.Has(s + ".aim");
                 if (ik > 0 && (aimed || p.Has(s + ".hand")))
                 {
+                    targeted = true;
                     float aim = p.F(s + ".aim") * Mathf.Deg2Rad;
                     var target = aimed ? shoulder + p.F(s + ".reach") * new Vector2(Mathf.Cos(aim), Mathf.Sin(aim)) : f.Waist + p.V(s + ".hand");
                     var wristTarget = bladeKeyed ? target - Rot(Vector2.Scale(gat - wristJ, handScale), handTurn) : target;
@@ -397,8 +423,79 @@ namespace Drakepg.Bones
                     f.Grip[i] = f.At[s + "_hand"] + Rot(Vector2.Scale(gat - wristJ, handScale), handTurn);
                     f.Blade[i] = handTurn + gang + inhand;
                 }
+                if (auto && armed && bladeKeyed && on <= 0)
+                    GripHand(f, p, i, shoulder, up, fore, upperFK, foreFK, targeted ? ik : 0, inhand, handScale, gat - wristJ, gang);
             }
             return f;
+        }
+
+        /// <summary>
+        /// NewHands, after the first pass (the old fist): pick the grip hand drawn nearest to this blade-to-forearm angle
+        /// (the rig's fist or a swap with a "relation"), pin it to the weapon by its own grip (so the grip and blade stay
+        /// exactly the first pass's), and aim the arm at its wrist. The arm's aim blends between the two nearest hands'
+        /// wrists over Rig.GripBand degrees round the angle where the picture changes (no jump of the arm), and the elbow
+        /// folds at most FoldCap more than in the first pass; what is left, the forearm's end slides under the fist.
+        /// </summary>
+        void GripHand(BoneFrame f, BonePose p, int i, Vector2 shoulder, Vector2 up, Vector2 fore, float upperFK, float foreFK,
+            float ik, float inhand, Vector2 handScale, Vector2 oldV, float oldAngle)
+        {
+            string s = Sides[i];
+            float blade = f.Blade[i];
+            var grip = f.Grip[i];
+            float rel = Norm(Ang(fore) + f.Turn[s + "_fore"] - blade);
+            var names = new List<string> { null };
+            var rels = new List<float> { Norm(Ang(fore) - oldAngle) };
+            var vs = new List<Vector2> { oldV };
+            var angles = new List<float> { oldAngle };
+            foreach (var kv in Rig.SwapPics)
+            {
+                var sw = kv.Value;
+                if (sw.Part != s + "_hand" || !sw.Relation.HasValue || !sw.GripAt.HasValue || !sw.Joints.TryGetValue(s + "_wrist", out var w)) continue;
+                names.Add(kv.Key);
+                rels.Add(sw.Relation.Value);
+                vs.Add(sw.GripAt.Value - w);
+                angles.Add(sw.GripAngle);
+            }
+            int k1 = 0, k2 = -1;
+            for (int k = 1; k < names.Count; k++)
+                if (Mathf.Abs(Norm(rel - rels[k])) < Mathf.Abs(Norm(rel - rels[k1]))) k1 = k;
+            for (int k = 0; k < names.Count; k++)
+                if (k != k1 && (k2 < 0 || Mathf.Abs(Norm(rel - rels[k])) < Mathf.Abs(Norm(rel - rels[k2])))) k2 = k;
+            float t = k2 < 0 ? 0 : Mathf.Clamp01(0.5f - (Mathf.Abs(Norm(rel - rels[k2])) - Mathf.Abs(Norm(rel - rels[k1]))) / (2 * Mathf.Max(1, Rig.GripBand)));
+            f.HandPic[i] = names[k1];
+            f.HandAuto[i] = true;
+            f.Relation[i] = rel;
+            f.WristGap[i] = 0;
+            if (k1 == 0 && t <= 0) return; // the old fist, as before
+            Vector2 Off(int k) => Rot(Vector2.Scale(vs[k], handScale), blade - angles[k] - inhand);
+            var u1 = Off(k1);
+            var u2 = k2 >= 0 ? Off(k2) : u1;
+            float ua = Mathf.LerpAngle(Ang(u1), Ang(u2), t) * Mathf.Deg2Rad, ul = Mathf.Lerp(u1.magnitude, u2.magnitude, t);
+            var wristTarget = grip - ul * new Vector2(Mathf.Cos(ua), Mathf.Sin(ua));
+            if (ik > 0)
+            {
+                float l1 = up.magnitude, l2 = fore.magnitude;
+                float fold = Mathf.Abs(Norm(f.Turn[s + "_fore"] + Ang(fore) - f.Turn[s + "_upper"] - Ang(up)));
+                float maxFold = Mathf.Min(179, fold + Mathf.Max(0, FoldCap)) * Mathf.Deg2Rad;
+                float dMin = Mathf.Sqrt(Mathf.Max(0, l1 * l1 + l2 * l2 + 2 * l1 * l2 * Mathf.Cos(maxFold)));
+                var to = wristTarget - shoulder;
+                var aimAt = to.magnitude < dMin ? shoulder + (to.sqrMagnitude > 1e-6f ? to.normalized : Vector2.right) * dMin : wristTarget;
+                // While the elbow changes side (|bend| < 1) the two-bone blend lands past its target: aim again by the
+                // miss, twice, so the forearm's end meets the pinned hand.
+                var aim = aimAt;
+                for (int pass = 0; pass < 3; pass++)
+                {
+                    Ik(shoulder, aim, l1, l2, p.F(s + ".bend"), out var a1, out var a2);
+                    Put(f, p, s + "_upper", Mathf.LerpAngle(upperFK, Norm(a1 - Ang(up)), ik));
+                    Put(f, p, s + "_fore", Mathf.LerpAngle(foreFK, Norm(a2 - Ang(fore)), ik));
+                    aim -= Place(f, p, s + "_hand") - aimAt;
+                }
+            }
+            var end = Place(f, p, s + "_hand");
+            float turn = blade - angles[k1] - inhand;
+            f.Turn[s + "_hand"] = turn;
+            f.At[s + "_hand"] = grip - Rot(Vector2.Scale(vs[k1], handScale), turn);
+            f.WristGap[i] = (end - f.At[s + "_hand"]).magnitude;
         }
 
         /// <summary>Where the shoulder of a side is, from the waist, in this pose (BoneMove.Compile's arcs).</summary>
@@ -485,6 +582,7 @@ namespace Drakepg.Bones
         {
             Stop();
             playing = null;
+            eventHand[0] = eventHand[1] = null;
             Slots(null, null, null, null, null, Held[0], Held[1]);
             Apply(Solve(new BonePose(), Held[0], Held[1]));
         }
@@ -532,8 +630,16 @@ namespace Drakepg.Bones
             }
             string torso = NoneIsNull(m.Last("torso", ms));
             if (torso != null && !Rig.SwapPics.ContainsKey(torso)) torso = null;
-            Slots(torso, nHand, fHand, NoneIsNull(m.Last("face", ms)), m.Last("order", ms), Weapon(m, 0, ms), Weapon(m, 1, ms));
-            Apply(Solve(m.Sample(ms), weaponNow[0], weaponNow[1]));
+            eventHand[0] = nHand;
+            eventHand[1] = fHand;
+            string face = NoneIsNull(m.Last("face", ms)), order = m.Last("order", ms);
+            // NewHands: the solve never reads the near hand shown when it chooses it, so keep the one shown until then
+            Slots(torso, nHand ?? (NewHands ? handSwap[0] : null), fHand, face, order, Weapon(m, 0, ms), Weapon(m, 1, ms));
+            var f = Solve(m.Sample(ms), weaponNow[0], weaponNow[1]);
+            // the grip hand the solve chose shows (the automatic rule; a hand: event wins)
+            var want = f.HandAuto[0] ? f.HandPic[0] : nHand;
+            if (want != handSwap[0]) Slots(torso, want, fHand, face, order, weaponNow[0], weaponNow[1]);
+            Apply(f);
         }
 
         void Prepare(BoneMove m)

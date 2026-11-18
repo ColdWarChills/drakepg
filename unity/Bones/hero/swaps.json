@@ -84,6 +84,28 @@
     ]
    },
    "note": "Chest turned away: the back of the shirt and the shoulder blades, no collar (cut from an edit of the drawn wind-up stance, arms moved out). The base head stays 3/4 front, so he looks over his shoulder; z as the torso."
+  },
+  "n_hand_grip": {
+   "part": "n_hand",
+   "file": "bare/n_hand_grip.png",
+   "x": 432.8,
+   "y": 709.7,
+   "joints": {
+    "n_wrist": [
+     456.4,
+     733.4
+    ]
+   },
+   "grip": {
+    "at": [
+     497.8,
+     758.7
+    ],
+    "angle": 30.0
+   },
+   "relation": 10.6,
+   "weaponZ": 69,
+   "note": "The sword fist seen from the back of the hand, the handle running on through the curled fingers in line with the forearm (the drawn strike stance's near fist, its green rod taken out by a Qwen edit, seed 8102; cut with a round wrist end; scaled 0.664 to the rig forearm's width). Shown by the automatic grip-hand rule (BoneHero.NewHands) when the blade runs within ~50 deg of the forearm's line (relation 10.6); the weapon goes under the forearm and hand (weaponZ 69), so the handle hides behind them."
   }
  },
  "faces": {
@@ -105,6 +127,11 @@
   "grit": {
    "gear": "helm",
    "pictures": 9
+  },
+  "n_hand_grip": {
+   "gear": "gloves",
+   "pictures": 9
   }
- }
+ },
+ "gripBand": 30
 }

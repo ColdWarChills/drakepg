@@ -51,6 +51,20 @@ Commands:
    cut (its far eye: the hole filled from the edit, the grey smear under it painted as cheek).
 6. Look at the proof sheets (below). Keep a swap only if it clearly beats the base part in the poses.
 
+## The sword hand (grip hands)
+The near hand that holds the sword in line with the forearm (`n_hand_grip`, swaps.json): the back of the fist, the
+forearm going into it, the blade out of the curled fingers. It is a grip hand: `relation` (forearm direction minus
+blade direction it is drawn for, deg), its own `grip` and `n_wrist`, and `weaponZ` 69 (the handle under the forearm
+and fist). The old fist (`bare/n_hand.png`, relation 112.4) stays for the cocked poses; `BoneHero.NewHands` picks.
+1. `handqwen closed <seeds>`: Qwen edit of the drawn strike stance's near hand (`HAND_SRC`, `HAND_BOX`, x3 on white):
+   the green rod removed, the fist kept closed. Tries in `art/redo/hand/qwen/`.
+2. `handcut <seed> [kind]`: keeps the hand beyond the wrist line plus a round wrist stub, scales it so the wrist is
+   44 px wide (the rig forearm), puts its wrist on the rig's `n_wrist`, and sets the grip `HAND_GUARD` (44 px) behind
+   the front of the fingers along the rod. Writes `art/redo/hand/cut/n_hand_grip_s<seed>.png` and prints the entry;
+   copy the picture to `hero/bare/` under a new name and the entry into swaps.json.
+3. Kept: seed 8102 (one picture). Glove versions: the same edit from `art/redo/layers/<glove>_strike_s6300.png`, cut
+   with the same numbers. 9 gloves today (`cost.n_hand_grip`). Not made yet.
+
 ## Gear versions of a swap
 Never drawn by hand. A gear version is the same edit made from the gear's own rig picture, or from its drawn
 stance. It is cut with the same `TORSO_SRC` joints and seams, so it hangs from the same points. (Untested so far: no

@@ -140,6 +140,107 @@ namespace Drakepg.Test
             Busy = false;
         }
 
+        /// <summary>The sword hand: old (false) or the grip hands (BoneHero.NewHands), with the elbow's fold cap (deg).</summary>
+        public static string Hands(bool grip, float foldCap = 30)
+        {
+            if (!Ready) return "stage not open";
+            Hero.NewHands = grip;
+            Hero.FoldCap = foldCap;
+            Hero.Reload();
+            Hero.Rest();
+            return grip ? $"grip hands, elbow folds at most {foldCap} deg more" : "old hand";
+        }
+
+        /// <summary>
+        /// Still poses as close-ups, like Stills, the camera zoomed `zoom` x on the near weapon's grip (the same point
+        /// for the old and the grip hands): dir/f000.jpg... square, `size` px; labels.txt one label per line. The camera
+        /// is put back after.
+        /// </summary>
+        public static string Close(string spec, string dir, float zoom = 5, int size = 720)
+        {
+            if (!Ready) return "stage not open";
+            if (Busy) return "busy";
+            var list = new List<string[]>();
+            foreach (var s in spec.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                int at = s.IndexOf('@');
+                if (at < 0) continue;
+                string rest = s.Substring(at + 1);
+                int eq = rest.IndexOf('=');
+                list.Add(new[] { s.Substring(0, at), eq < 0 ? rest : rest.Substring(0, eq), eq < 0 ? s : rest.Substring(eq + 1) });
+            }
+            Busy = true;
+            GameRoot.I.StartCoroutine(CloseLoop(list, dir, zoom, size));
+            return list.Count + " close-ups to " + dir;
+        }
+
+        static IEnumerator CloseLoop(List<string[]> list, string dir, float zoom, int size)
+        {
+            Directory.CreateDirectory(dir);
+            foreach (var f in Directory.GetFiles(dir, "f*.jpg")) File.Delete(f);
+            var labels = new StringBuilder();
+            var out1 = new Texture2D(size, size, TextureFormat.RGB24, false);
+            var rt = new RenderTexture(size, size, 0);
+            try
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    float ms = float.Parse(list[i][1], System.Globalization.CultureInfo.InvariantCulture);
+                    Hold(list[i][0], ms);
+                    var w = BonesFind(Hero.transform, "near weapon");
+                    var at = Design.FromWorld(w != null && w.GetComponent<SpriteRenderer>().enabled ? w.position : BonesFind(Hero.transform, "n_hand").position);
+                    GameRoot.I.View(at.x, at.y, zoom, 0.0001f);
+                    yield return null;
+                    yield return null;
+                    yield return new WaitForEndOfFrame();
+                    var tex = ScreenCapture.CaptureScreenshotAsTexture();
+                    int side = Mathf.Min(tex.width, tex.height);
+                    // the middle square of the screen, scaled to `size`
+                    var sq = new Texture2D(side, side, TextureFormat.RGB24, false);
+                    sq.SetPixels(tex.GetPixels((tex.width - side) / 2, (tex.height - side) / 2, side, side));
+                    sq.Apply();
+                    Graphics.Blit(sq, rt);
+                    RenderTexture.active = rt;
+                    out1.ReadPixels(new Rect(0, 0, size, size), 0, 0);
+                    out1.Apply();
+                    RenderTexture.active = null;
+                    File.WriteAllBytes(Path.Combine(dir, $"f{i:000}.jpg"), out1.EncodeToJPG(92));
+                    Object.Destroy(tex);
+                    Object.Destroy(sq);
+                    var fr = Hero.Frame;
+                    labels.AppendLine($"{list[i][2]}\t{list[i][0]}@{list[i][1]}\thand={(fr.HandPic[0] ?? "rig")}\trel={fr.Relation[0]:0}\tgap={fr.WristGap[0]:0.0}");
+                }
+            }
+            finally
+            {
+                GameRoot.I.ResetView();
+                File.WriteAllText(Path.Combine(dir, "labels.txt"), labels.ToString());
+                Object.Destroy(rt);
+                Object.Destroy(out1);
+                Busy = false;
+            }
+        }
+
+        /// <summary>
+        /// Per sample every `step` ms of a move: the near grip, blade tip and wrist (canvas px), the hand shown, the
+        /// blade-to-forearm angle and the forearm's gap to the hand's wrist; tab separated, for comparing hand styles.
+        /// </summary>
+        public static string Path2(string move, float step = 5)
+        {
+            if (!Ready) return "stage not open";
+            var m = Load(move);
+            var sb = new StringBuilder();
+            for (float t = 0; t <= m.Length + 0.01f; t += step)
+            {
+                Hero.Sample(m, t);
+                var f = Hero.Frame;
+                Hero.Blade(f, 0, out var tip, out _);
+                sb.AppendLine($"{t:0}\t{f.Grip[0].x:0.00}\t{f.Grip[0].y:0.00}\t{tip.x:0.00}\t{tip.y:0.00}\t{f.At["n_hand"].x:0.0}\t{f.At["n_hand"].y:0.0}\t{f.At["n_fore"].x:0.0}\t{f.At["n_fore"].y:0.0}\t{f.HandPic[0] ?? "rig"}\t{f.Relation[0]:0}\t{f.WristGap[0]:0.0}");
+            }
+            Hero.Rest();
+            return sb.ToString();
+        }
+
         /// <summary>The battle speed option for the stage only (Anim.Speed; the saved setting is not touched).</summary>
         public static string Speed(float x)
         {
