@@ -87,6 +87,59 @@ namespace Drakepg.Test
             return $"{m.Name} at {ms} ms";
         }
 
+        /// <summary>
+        /// Still poses as pictures, several moves in one go: `spec` = "move@ms[=label] move@ms ..." (dir/f000.jpg...,
+        /// track.json with each still's label as its event and the hero box), for `bones_sheets.py strip DIR --every 1`
+        /// or panels. For trying key poses before recording a take.
+        /// </summary>
+        public static string Stills(string spec, string dir)
+        {
+            if (!Ready) return "stage not open";
+            if (Busy) return "busy";
+            var list = new List<string[]>();
+            foreach (var s in spec.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                int at = s.IndexOf('@');
+                if (at < 0) continue;
+                string rest = s.Substring(at + 1);
+                int eq = rest.IndexOf('=');
+                list.Add(new[] { s.Substring(0, at), eq < 0 ? rest : rest.Substring(0, eq), eq < 0 ? s : rest.Substring(eq + 1) });
+            }
+            Busy = true;
+            GameRoot.I.StartCoroutine(StillsLoop(list, dir));
+            return list.Count + " stills to " + dir;
+        }
+
+        static IEnumerator StillsLoop(List<string[]> list, string dir)
+        {
+            Directory.CreateDirectory(dir);
+            foreach (var f in Directory.GetFiles(dir, "f*.jpg")) File.Delete(f);
+            BonesTrack.Begin(Path.Combine(dir, "track.json"), 1, 1280, 720);
+            var rt = new RenderTexture(1280, 720, 0);
+            var small = new Texture2D(1280, 720, TextureFormat.RGB24, false);
+            for (int i = 0; i < list.Count; i++)
+            {
+                float ms = float.Parse(list[i][1], System.Globalization.CultureInfo.InvariantCulture);
+                Hold(list[i][0], ms);
+                BonesTrack.Event(list[i][2]);
+                yield return new WaitForEndOfFrame();
+                var tex = ScreenCapture.CaptureScreenshotAsTexture();
+                Graphics.Blit(tex, rt);
+                RenderTexture.active = rt;
+                small.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
+                small.Apply();
+                RenderTexture.active = null;
+                File.WriteAllBytes(Path.Combine(dir, $"f{i:000}.jpg"), small.EncodeToJPG(92));
+                Object.Destroy(tex);
+                if (Hero != null) BonesTrack.Box("hero", BoundsOf(Hero.gameObject));
+                BonesTrack.Next(i);
+            }
+            BonesTrack.End();
+            Object.Destroy(rt);
+            Object.Destroy(small);
+            Busy = false;
+        }
+
         /// <summary>The battle speed option for the stage only (Anim.Speed; the saved setting is not touched).</summary>
         public static string Speed(float x)
         {
