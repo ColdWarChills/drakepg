@@ -64,7 +64,7 @@ namespace Drakepg.Bones
                     Fx.SpeedLines(hero.transform.parent, x, hero.Home.y, hero.Facing);
                     break;
                 }
-                case "face": case "torso": case "hand": case "order": case "trail": case "key": case "mark": case "weapon": case "ghost": break;
+                case "face": case "torso": case "hand": case "order": case "trail": case "key": case "mark": case "weapon": case "ghost": case "grip": break;
                 default:
                     if (warned.Add(e.Name)) Debug.LogWarning("bones: no one handles the event '" + e.Raw + "'");
                     break;

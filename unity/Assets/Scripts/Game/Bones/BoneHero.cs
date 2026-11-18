@@ -44,6 +44,15 @@ namespace Drakepg.Bones
         public float FoldCap = 30;
         readonly string[] eventHand = new string[2];
 
+        // NewHands with zones (swaps.json "zone"): the switches of the near grip hand along the playing move, built
+        // once per move from its relation path (hysteresis between zones), and the move time being solved.
+        BoneMove planFor;
+        BoneRig planRig;
+        string planStart;
+        readonly List<(float t, string from, string to)> gripPlan = new List<(float, string, string)>();
+        float solveMs = -1;
+        bool planning, planHands;
+
         Transform puppet;
         readonly Dictionary<string, SpriteRenderer> parts = new Dictionary<string, SpriteRenderer>();
         readonly SpriteRenderer[] weapons = new SpriteRenderer[2];
@@ -245,6 +254,10 @@ namespace Drakepg.Bones
 
         float Z(string part)
         {
+            var nsw = part == "n_weapon" ? SwapOn("n_hand") : null;
+            if (nsw != null && (orderNow == null || orderNow == "rest") && nsw.WeaponZBent.HasValue && nsw.Relation.HasValue && lastFrame != null && lastFrame.HandAuto[0]
+                && Mathf.Abs(Norm(lastFrame.Relation[0] - nsw.Relation.Value)) > nsw.WeaponZBent.Value.x)
+                return nsw.WeaponZBent.Value.y;
             float z = part == "n_weapon" ? (SwapOn("n_hand")?.WeaponZ ?? Rig.WeaponZ("n"))
                 : part == "f_weapon" ? (SwapOn("f_hand")?.WeaponZ ?? Rig.WeaponZ("f")) : Rig.PartOf[part].Z;
             if (orderNow == null || orderNow == "rest") return z;
@@ -423,7 +436,7 @@ namespace Drakepg.Bones
                     f.Grip[i] = f.At[s + "_hand"] + Rot(Vector2.Scale(gat - wristJ, handScale), handTurn);
                     f.Blade[i] = handTurn + gang + inhand;
                 }
-                if (auto && armed && bladeKeyed && on <= 0)
+                if (auto && armed && (bladeKeyed || Zoned(s + "_hand").Count > 0) && on <= 0)
                     GripHand(f, p, i, shoulder, up, fore, upperFK, foreFK, targeted ? ik : 0, inhand, handScale, gat - wristJ, gang);
             }
             return f;
@@ -457,11 +470,43 @@ namespace Drakepg.Bones
                 angles.Add(sw.GripAngle);
             }
             int k1 = 0, k2 = -1;
-            for (int k = 1; k < names.Count; k++)
-                if (Mathf.Abs(Norm(rel - rels[k])) < Mathf.Abs(Norm(rel - rels[k1]))) k1 = k;
-            for (int k = 0; k < names.Count; k++)
-                if (k != k1 && (k2 < 0 || Mathf.Abs(Norm(rel - rels[k])) < Mathf.Abs(Norm(rel - rels[k2])))) k2 = k;
-            float t = k2 < 0 ? 0 : Mathf.Clamp01(0.5f - (Mathf.Abs(Norm(rel - rels[k2])) - Mathf.Abs(Norm(rel - rels[k1]))) / (2 * Mathf.Max(1, Rig.GripBand)));
+            float t;
+            var zoned = Zoned(s + "_hand");
+            if (zoned.Count > 0)
+            {
+                // Zones: only zoned hands; along a move the plan's switches (hysteresis), the arm blending between the
+                // two hands' wrists GripBlendMs each side of a switch; without a move, the zone the relation is in.
+                f.HandAuto[i] = true;
+                f.Relation[i] = rel;
+                f.WristGap[i] = 0;
+                if (planning) return;
+                string pic = null, other = null;
+                t = 0;
+                if (playing != null && planFor == playing && solveMs >= 0 && planStart != null)
+                {
+                    pic = planStart;
+                    foreach (var sw in gripPlan) if (solveMs >= sw.t) pic = sw.to;
+                    float w = Mathf.Max(1, Rig.GripBlendMs);
+                    foreach (var sw in gripPlan)
+                    {
+                        float d = solveMs - sw.t;
+                        if (Mathf.Abs(d) < w) { other = d < 0 ? sw.to : sw.from; t = 0.5f - Mathf.Abs(d) / (2 * w); }
+                    }
+                }
+                if (pic == null) pic = ZoneOf(rel, null, zoned);
+                k1 = names.IndexOf(pic);
+                k2 = other != null ? names.IndexOf(other) : -1;
+                if (k1 < 0) k1 = 0;
+                if (k2 < 0) t = 0;
+            }
+            else
+            {
+                for (int k = 1; k < names.Count; k++)
+                    if (Mathf.Abs(Norm(rel - rels[k])) < Mathf.Abs(Norm(rel - rels[k1]))) k1 = k;
+                for (int k = 0; k < names.Count; k++)
+                    if (k != k1 && (k2 < 0 || Mathf.Abs(Norm(rel - rels[k])) < Mathf.Abs(Norm(rel - rels[k2])))) k2 = k;
+                t = k2 < 0 ? 0 : Mathf.Clamp01(0.5f - (Mathf.Abs(Norm(rel - rels[k2])) - Mathf.Abs(Norm(rel - rels[k1]))) / (2 * Mathf.Max(1, Rig.GripBand)));
+            }
             f.HandPic[i] = names[k1];
             f.HandAuto[i] = true;
             f.Relation[i] = rel;
@@ -497,6 +542,89 @@ namespace Drakepg.Bones
             f.At[s + "_hand"] = grip - Rot(Vector2.Scale(vs[k1], handScale), turn);
             f.WristGap[i] = (end - f.At[s + "_hand"]).magnitude;
         }
+
+        /// <summary>The grip hands with a zone for this hand part (swaps.json "zone").</summary>
+        List<BoneRig.Swap> Zoned(string part)
+        {
+            var list = new List<BoneRig.Swap>();
+            foreach (var sw in Rig.SwapPics.Values)
+                if (sw.Part == part && sw.Zone.HasValue && sw.Relation.HasValue && sw.GripAt.HasValue
+                    && sw.Joints.ContainsKey(part.Substring(0, 2) + "wrist"))
+                    list.Add(sw);
+            return list;
+        }
+
+        static bool InZone(float rel, Vector2 z) => Mathf.Repeat(rel - z.x, 360) <= Mathf.Repeat(z.y - z.x, 360);
+
+        /// <summary>The zoned hand for a relation: the zone it is in, else `keep` (between zones), else the nearest edge.</summary>
+        static string ZoneOf(float rel, string keep, List<BoneRig.Swap> zoned)
+        {
+            foreach (var sw in zoned) if (InZone(rel, sw.Zone.Value)) return sw.Name;
+            if (keep != null) return keep;
+            string best = null;
+            float bd = float.MaxValue;
+            foreach (var sw in zoned)
+            {
+                float d = Mathf.Min(Mathf.Abs(Mathf.DeltaAngle(rel, sw.Zone.Value.x)), Mathf.Abs(Mathf.DeltaAngle(rel, sw.Zone.Value.y)));
+                if (d < bd) { bd = d; best = sw.Name; }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// NewHands with zones: walk the move every 5 ms, read the near hand's blade-to-forearm angle (the old fist's
+        /// first pass, so it never depends on the picture), and note where the zoned hand changes. Between zones the
+        /// hand shown stays (hysteresis), so a pose hovering near a zone's edge never flickers.
+        /// </summary>
+        void BuildGripPlan(BoneMove m)
+        {
+            gripPlan.Clear();
+            planStart = null;
+            planFor = m;
+            planRig = Rig;
+            planHands = NewHands;
+            var zoned = Zoned("n_hand");
+            if (!NewHands || zoned.Count == 0) return;
+            var keepTorso = torsoSwap;
+            var keepEvent = eventHand[0];
+            eventHand[0] = null;
+            planning = true;
+            string cur = null, inZone = null, forced = null;
+            try
+            {
+                for (float t = 0; t <= m.Length + 0.01f; t += 5)
+                {
+                    torsoSwap = m.Last("torso", t) is string ts && ts != "none" && Rig.SwapPics.ContainsKey(ts) ? ts : null;
+                    var f = Solve(m.Sample(t), Weapon(m, 0, t), Weapon(m, 1, t));
+                    if (!f.HandAuto[0]) continue;
+                    // the zone the angle is in now (null between zones); the hand changes when the angle enters another
+                    // hand's zone, or at a "grip:<hand>" hint (the move's own: a change put where the arm moves)
+                    string zone = null;
+                    foreach (var sw in zoned) if (InZone(f.Relation[0], sw.Zone.Value)) zone = sw.Name;
+                    string pick = cur ?? ZoneOf(f.Relation[0], null, zoned);
+                    if (cur != null && zone != null && zone != inZone && zone != cur) pick = zone;
+                    var hint = m.Last("grip", t);
+                    if (hint != forced)
+                    {
+                        forced = hint;
+                        if (hint != null && hint != "auto" && zoned.Exists(sw => sw.Name == hint)) pick = hint;
+                    }
+                    inZone = zone;
+                    if (cur == null) planStart = pick;
+                    else if (pick != cur) gripPlan.Add((t - 2.5f, cur, pick));
+                    cur = pick;
+                }
+            }
+            finally
+            {
+                planning = false;
+                torsoSwap = keepTorso;
+                eventHand[0] = keepEvent;
+            }
+        }
+
+        /// <summary>The near grip hand's switches along the playing move (time, from, to); empty without zones.</summary>
+        public IReadOnlyList<(float t, string from, string to)> GripPlan => gripPlan;
 
         /// <summary>Where the shoulder of a side is, from the waist, in this pose (BoneMove.Compile's arcs).</summary>
         Vector2 ShoulderFromWaist(BonePose p, string side, float ms)
@@ -583,8 +711,13 @@ namespace Drakepg.Bones
             Stop();
             playing = null;
             eventHand[0] = eventHand[1] = null;
-            Slots(null, null, null, null, null, Held[0], Held[1]);
-            Apply(Solve(new BonePose(), Held[0], Held[1]));
+            solveMs = -1;
+            Slots(null, NewHands ? handSwap[0] : null, null, null, null, Held[0], Held[1]);
+            var f = Solve(new BonePose(), Held[0], Held[1]);
+            // NewHands with zones: the grip hand for the rest pose shows too
+            if (f.HandAuto[0] && f.HandPic[0] != handSwap[0]) Slots(null, f.HandPic[0], null, null, null, Held[0], Held[1]);
+            else if (!f.HandAuto[0] && handSwap[0] != null) Slots(null, null, null, null, null, Held[0], Held[1]);
+            Apply(f);
         }
 
         void Redraw()
@@ -635,6 +768,7 @@ namespace Drakepg.Bones
             string face = NoneIsNull(m.Last("face", ms)), order = m.Last("order", ms);
             // NewHands: the solve never reads the near hand shown when it chooses it, so keep the one shown until then
             Slots(torso, nHand ?? (NewHands ? handSwap[0] : null), fHand, face, order, Weapon(m, 0, ms), Weapon(m, 1, ms));
+            solveMs = ms;
             var f = Solve(m.Sample(ms), weaponNow[0], weaponNow[1]);
             // the grip hand the solve chose shows (the automatic rule; a hand: event wins)
             var want = f.HandAuto[0] ? f.HandPic[0] : nHand;
@@ -656,6 +790,7 @@ namespace Drakepg.Bones
                     }
             playing = m;
             m.Compile(Rig, ShoulderFromWaist);
+            if (planFor != m || planRig != Rig || planHands != NewHands) BuildGripPlan(m);
         }
 
         /// <summary>Put the hero in the move's pose at `ms` (x1) without playing: sheets, checks, scrubbing.</summary>

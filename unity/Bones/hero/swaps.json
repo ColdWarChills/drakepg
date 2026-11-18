@@ -106,6 +106,62 @@
    "relation": 10.6,
    "weaponZ": 69,
    "note": "The sword fist seen from the back of the hand, the handle running on through the curled fingers in line with the forearm (the drawn strike stance's near fist, its green rod taken out by a Qwen edit, seed 8102; cut with a round wrist end; scaled 0.664 to the rig forearm's width). Shown by the automatic grip-hand rule (BoneHero.NewHands) when the blade runs within ~50 deg of the forearm's line (relation 10.6); the weapon goes under the forearm and hand (weaponZ 69), so the handle hides behind them."
+  },
+  "n_hand_hammer": {
+   "part": "n_hand",
+   "file": "bare/n_hand_hammer.png",
+   "x": 423.8,
+   "y": 661.6,
+   "joints": {
+    "n_wrist": [
+     456.4,
+     733.4
+    ]
+   },
+   "grip": {
+    "at": [
+     468.8,
+     695.1
+    ],
+    "angle": 180.0
+   },
+   "relation": 121.7,
+   "zone": [
+    33,
+    240
+   ],
+   "weaponZ": 71,
+   "note": "Hammer hold: the back of the closed fist, the handle crossing it at about a right angle to the forearm (the drawn wind-up stance's near fist, its green rod taken out by a Qwen edit, seed 8200; pale rim light dropped in the cut; scaled 0.962). Its wrist is set from its grip by the old fist's offset (40.2 px at 107.9 deg from the blade), so wherever it shows the arm is exactly where the old fist put it. Shown by BoneHero.NewHands in its zone (relation 33..240: ready, wind-up, overhead, back, rest); the weapon over the forearm, under the fist (weaponZ 71, as the old fist)."
+  },
+  "n_hand_grip2": {
+   "part": "n_hand",
+   "file": "bare/n_hand_grip2.png",
+   "x": 432.8,
+   "y": 709.7,
+   "joints": {
+    "n_wrist": [
+     456.4,
+     733.4
+    ]
+   },
+   "grip": {
+    "at": [
+     497.8,
+     758.7
+    ],
+    "angle": 30.0
+   },
+   "relation": 10.6,
+   "zone": [
+    -120,
+    24
+   ],
+   "weaponZ": 69,
+   "note": "n_hand_grip recut (same edit, seed 8102, same numbers) with its pale rim light dropped (the seam at ready). Shown by BoneHero.NewHands in its zone (relation -120..24: the swing, the hits, the leap's charge). When the wrist bends more than 25 deg off its relation (the hits) the weapon draws over the forearm (weaponZBent), so the handle runs on from the fist to the pommel instead of the pommel showing loose beside the forearm.",
+   "weaponZBent": [
+    25,
+    71
+   ]
   }
  },
  "faces": {
@@ -131,7 +187,17 @@
   "n_hand_grip": {
    "gear": "gloves",
    "pictures": 9
+  },
+  "n_hand_hammer": {
+   "gear": "gloves",
+   "pictures": 9
+  },
+  "n_hand_grip2": {
+   "gear": "gloves",
+   "pictures": 0,
+   "note": "replaces n_hand_grip's 9"
   }
  },
- "gripBand": 30
+ "gripBand": 30,
+ "gripBlendMs": 20
 }

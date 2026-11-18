@@ -65,6 +65,21 @@ and fist). The old fist (`bare/n_hand.png`, relation 112.4) stays for the cocked
 3. Kept: seed 8102 (one picture). Glove versions: the same edit from `art/redo/layers/<glove>_strike_s6300.png`, cut
    with the same numbers. 9 gloves today (`cost.n_hand_grip`). Not made yet.
 
+Second pass (what is used now, zones; see HOWTO "Grip hands"): two pictures.
+- `n_hand_hammer`: the hammer hold, the back of the fist with the handle crossing it (relation 121.7, zone 33..240,
+  weaponZ 71 as the old fist). `handqwen hammer --src wind 8200` (the drawn wind-up stance's near fist, `HAND_SRCS`,
+  rod removed), then `handcut2 8200 hammer_wind n_hand_hammer`: the grip is set from the guard (the fist's front edge
+  on the blade side along the rod, `HAND_GUARD` back in), and the wrist from the grip by the old fist's offset
+  (`OLD_FIST_OFFSET`), so the arm is exactly the old one wherever it shows (the drawn wrist is 12.6 px away, inside the
+  forearm). The ready-stance source (`--src ready`, seeds 8210-8211) gave a side-on fist; not used.
+- `n_hand_grip2`: `n_hand_grip` recut (`handcut2 8102 closed n_hand_grip2`, same numbers) without the pale rim light
+  (`rim_off`: edge pixels brighter than the skin's median take the median; the seam at ready was drawn rim light, not
+  alpha fringe). Zone -120..24, weaponZ 69, and `weaponZBent` [25, 71]: past 25 deg off its relation (the hits) the
+  sword draws over the forearm, so the handle runs on from the fist to the pommel instead of the pommel showing loose.
+- `handcut2` writes new names only and prints the swaps.json entry (add `zone`, `weaponZ`, `note` by hand).
+- Cost: 2 pictures per glove piece (hammer + in-line), 18 for the 9 gloves (`cost` in swaps.json). The first pass's
+  `n_hand_grip` stays on disk but is no longer picked (no zone).
+
 ## Gear versions of a swap
 Never drawn by hand. A gear version is the same edit made from the gear's own rig picture, or from its drawn
 stance. It is cut with the same `TORSO_SRC` joints and seams, so it hangs from the same points. (Untested so far: no

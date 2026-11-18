@@ -102,16 +102,31 @@ them). The move's length = its last key, hold or event, plus the largest lag.
 | `zoom:<x>,<ms>` | `GameRoot.View`, kept inside the picture |
 | `dim:<alpha>,<ms>` | the caller dims the backdrop |
 | `mark:<name>` | nothing; a name for the recorder (panels) |
+| `grip:<swap>` / `grip:auto` | NewHands with zones: the near grip hand changes to `<swap>` here (see Grip hands) |
 
 ### Grip hands (the near sword hand)
 
-`hero.NewHands = true` lets the near hand pick its picture by the wrist bend while it holds a blade and the move
-names no `hand:` event (an event always wins). Candidates are the rig fist and the swaps with a `relation`
-(swaps.json; see PARTS.md). The nearest drawn relation shows; within `gripBand` deg (swaps.json, 30) of the change
-the arm's aim blends between the two wrist-to-grip offsets. The hand is pinned on the grip, so the grip and the tip
-stay exactly where the move puts them; the arm is re-aimed at the hand's wrist (three passes), and the elbow may fold
-at most `hero.FoldCap` deg (30) more than the move's own so a short reach doesn't crumple the arm. Only the near
-hand so far; the far hand is unchanged.
+`hero.NewHands = true` lets the near hand pick its picture by the wrist bend (the relation: forearm direction minus
+blade direction) while it holds a blade and the move names no `hand:` event (an event always wins). The hand is pinned
+on the grip, so the grip and the tip stay exactly where the move puts them; the arm is re-aimed at the hand's wrist
+(three passes), and the elbow may fold at most `hero.FoldCap` deg (30) more than the move's own. Only the near hand;
+the far hand is unchanged.
+
+Zones (second pass, what the kept moves use): when any grip swap has a `zone` [from, to] (deg, going up, may wrap),
+only zoned hands are picked, never the rig's fist. Today: `n_hand_hammer` (33..240: ready, wind-up, overhead, back,
+rest) and `n_hand_grip2` (-120..24: the swing, the hits, the leap's charge). Between two zones the hand shown stays
+(hysteresis), so a pose that hovers near an edge never flickers. The switches are found once per move (`BuildGripPlan`:
+the move walked every 5 ms on the old fist's angles, so stills and play agree; `hero.GripPlan` lists them), and the arm
+blends between the two hands' wrists `gripBlendMs` (swaps.json, 20) each side of a switch. A move can place a switch
+itself with `grip:<swap>` (`grip:auto` clears it): the hand changes there and the zones take over again when the angle
+next enters another hand's zone. Put it where the arm starts moving (sword_cut: `[480, "grip:n_hand_hammer"]`, the end
+of the hit hold, so the back pose keeps the old arm). Without zones the first pass's rule applies (nearest relation,
+blended over `gripBand`). Rest (no move) picks by zone too.
+
+Choosing a hand picture: its wrist-to-grip offset decides where the arm goes, not its look. A hand whose offset equals
+the old fist's (40.2 px at 107.9 deg from the blade, `OLD_FIST_OFFSET` in bones_parts.py) leaves the arm exactly where
+it was, so give that offset to the picture shown in the held poses (`handcut2 ... derive`). A hand with its own offset
+(the in-line grip: 48.5 px along the forearm) moves the arm 12-17 px at 1280; keep it to the moving parts.
 
 ## Code
 

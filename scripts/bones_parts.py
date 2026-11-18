@@ -1164,7 +1164,25 @@ HAND_QWEN = {
 }
 
 
-def hand_qwen(kind, seeds):
+# Second pass: the "hammer hold" (the back of the fist, the handle crossing it at about a right angle to the forearm)
+# for the bent-wrist poses (ready, wind-up, overhead, back, rest). Sources: the drawn wind-up stance's near fist (rod
+# level over the head, forearm rising into it) and the drawn ready stance's near fist (rod across the body).
+HAND_SRCS = {
+    "strike": (HAND_SRC, HAND_BOX),
+    "wind": (ROOT / "art" / "redo" / "layers" / "up_wind_s6100.png", (440, 80, 760, 400)),
+    "ready": (ROOT / "art" / "redo" / "layers" / "up_ready_s6100.png", (600, 520, 920, 840)),
+}
+HAND_QWEN["hammer"] = (
+    "Edit <image1>. It shows the right forearm and closed right fist of a cartoon hero holding a bright green rod "
+    "that crosses the fist. Remove the green rod completely, on both sides of the fist. The fist stays tightly closed, "
+    "exactly as it is, at the same place, the same angle and the same size, the fingers curled shut around an empty "
+    "tube-shaped hole: where the rod covered the fist, show the curled fingers and knuckles of the closed fist, drawn "
+    "the same way. Keep the forearm, the skin colour, the thin dark outlines and the hard-edged cel shadows exactly the "
+    "same. Plain flat edges, no glow, no pale outline. No rod, no weapon, nothing in the hand. No hair, no head, no "
+    "shirt, no ground, no shadow, no text.")
+
+
+def hand_qwen(kind, seeds, srcname="strike"):
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import hero_poses as hp
     from qwen_batch import RGBA_CLOSE, RGBA_OPEN, Comfy
@@ -1172,12 +1190,14 @@ def hand_qwen(kind, seeds):
     out.mkdir(parents=True, exist_ok=True)
     comfy = Comfy("http://127.0.0.1:8188")
     comfy.check()
-    src = hp.cleaned(HAND_SRC).crop(HAND_BOX)
+    spath, sbox = HAND_SRCS[srcname]
+    src = hp.cleaned(spath).crop(sbox)
     src = src.resize((src.width * HAND_UP, src.height * HAND_UP), Image.LANCZOS)
-    ref = comfy.upload("bones_hand_strike.png", hp.on_white(src))
+    ref = comfy.upload(f"bones_hand_{srcname}.png", hp.on_white(src))
     prompt = f"{RGBA_OPEN} {HAND_QWEN[kind]} {RGBA_CLOSE}"
+    tag = kind if srcname == "strike" else f"{kind}_{srcname}"
     for seed in seeds:
-        path = out / f"hand_{kind}_s{seed}.png"
+        path = out / f"hand_{tag}_s{seed}.png"
         if path.exists():
             continue
         print(path.relative_to(ROOT), flush=True)
@@ -1263,14 +1283,113 @@ def hand_cut(seed, kind="closed", wrist=(1041, 777), name="n_hand_grip"):
     return path, entry
 
 
+OLD_FIST_OFFSET = (40.2, 107.9)  # the rig fist's wrist from its grip: rig px, and deg from the blade (rig.json grips.n)
+# Per source: the rod axis measured on the unedited stance's green pixels (centre, the blade's direction, deg), the
+# forearm's axis guess (deg, elbow -> hand) and the drawn wrist (canvas px, to check the derived one against).
+HAND_CUTS = {
+    "closed": dict(src="strike", rod=HAND_ROD, axis=39.5, wrist=(1041, 777), derive=False),
+    "hammer_wind": dict(src="wind", rod=((586.0, 239.9), 180.0), axis=-50.0, wrist=(600, 293), derive=True),
+}
+
+
+def rim_off(arr, band=3, lift=14):
+    """Drop the drawn pale rim light on a cut's edge: pixels within `band` px of the transparent edge that are brighter
+    than the skin's median by `lift` take the median skin colour (keeps the alpha). Returns how many changed."""
+    from PIL import ImageFilter
+    a = Image.fromarray(arr[..., 3])
+    inner = np.asarray(a.point(lambda v: 255 if v > 128 else 0).filter(ImageFilter.MinFilter(2 * band + 1))) > 0
+    solid = arr[..., 3] > 8
+    edge = solid & ~inner
+    rgb = arr[..., :3].astype(int)
+    lum = rgb @ np.array([0.299, 0.587, 0.114])
+    skin = inner & (lum > 60)
+    med = np.median(rgb[skin], 0)
+    hot = edge & (lum > med @ np.array([0.299, 0.587, 0.114]) + lift)
+    arr[..., :3][hot] = med.astype(np.uint8)
+    return int(hot.sum())
+
+
+def hand_cut2(seed, kind, name):
+    """Second-pass cut (any source in HAND_CUTS). The grip is set from the guard: the fist's front edge on the blade
+    side along the rod, HAND_GUARD rig px back into the fist. With `derive`, the wrist joint is placed at the rig fist's
+    wrist-from-grip offset (OLD_FIST_OFFSET, in the blade's frame), so wherever this hand shows, the arm sits exactly
+    where it did with the old fist; the drawn wrist is printed beside it to check. The pale rim light is dropped
+    (rim_off). Writes art/redo/hand/cut/<name>_s<seed>.png (new names only) and prints the swaps.json entry."""
+    cfg = HAND_CUTS[kind]
+    spath, sbox = HAND_SRCS[cfg["src"]]
+    qkind = "closed" if kind == "closed" else "hammer"
+    tag = qkind if cfg["src"] == "strike" else f"{qkind}_{cfg['src']}"
+    src = Image.open(HAND / "qwen" / f"hand_{tag}_s{seed}.png").convert("RGBA")
+    src = src.resize((src.width // HAND_UP, src.height // HAND_UP), Image.LANCZOS)
+    canvas = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    canvas.alpha_composite(src, sbox[:2])
+    arr = np.asarray(canvas).copy()
+    a = arr[..., 3] > 128
+    axis, width, mid = hand_axis(a, cfg["wrist"], cfg["axis"])
+    d = np.array([math.cos(math.radians(axis)), math.sin(math.radians(axis))])
+    (rx, ry), rang = cfg["rod"]
+    r = np.array([math.cos(math.radians(rang)), math.sin(math.radians(rang))])
+    t = 200.0
+    while t > -100 and not a[int(round(ry + r[1] * t)), int(round(rx + r[0] * t))]:
+        t -= 0.5
+    front = np.array([rx, ry]) + r * t
+    scale = RIG_WRIST_W / width
+    grip = front - r * (HAND_GUARD / scale)
+    drawn = mid + d * ((np.array(cfg["wrist"]) - mid) @ d)
+    if cfg["derive"]:
+        L, off = OLD_FIST_OFFSET
+        o = math.radians(rang + off)
+        w = grip - np.array([math.cos(o), math.sin(o)]) * (L / scale)  # the offset runs wrist -> grip
+    else:
+        w = drawn
+    yy, xx = np.mgrid[0:N, 0:N]
+    rel = np.stack([xx - w[0], yy - w[1]], -1)
+    keep = ((rel @ d) > 0) | (np.hypot(rel[..., 0], rel[..., 1]) < width / 2 * 1.08)
+    arr[..., 3] = np.where(keep, arr[..., 3], 0)
+    changed = rim_off(arr)
+    cut = Image.fromarray(arr)
+    box = cut.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
+    pic = cut.crop(box)
+    pic = pic.resize((max(1, round(pic.width * scale)), max(1, round(pic.height * scale))), Image.LANCZOS)
+    rig_w = np.array(json.loads((BONES / "rig.json").read_text())["joints"]["n_wrist"])
+    wpic = (w - np.array(box[:2])) * scale
+    corner = rig_w - wpic
+    gpic = (grip - np.array(box[:2])) * scale
+    out = HAND / "cut"
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / f"{name}_s{seed}.png"
+    if path.exists():
+        raise SystemExit(f"{path} exists: new names only")
+    pic.save(path)
+    rel_angle = (axis - rang + 180) % 360 - 180
+    entry = {"part": "n_hand", "file": f"bare/{name}.png", "x": round(float(corner[0]), 1), "y": round(float(corner[1]), 1),
+             "joints": {"n_wrist": [round(float(rig_w[0]), 1), round(float(rig_w[1]), 1)]},
+             "grip": {"at": [round(float(corner[0] + gpic[0]), 1), round(float(corner[1] + gpic[1]), 1)], "angle": round(rang, 1)},
+             "relation": round(rel_angle, 1), "weaponZ": 69, "note": ""}
+    print(path, pic.size, "forearm axis", round(axis, 1), "width", round(width, 1), "scale", round(scale, 3),
+          "wrist", w.round(1), "drawn wrist", drawn.round(1), "off by", round(float(np.hypot(*(w - drawn))) * scale, 1),
+          "rig px; front", front.round(1), "grip", grip.round(1), "wrist->grip rig px",
+          round(float(np.hypot(*(gpic - wpic))), 1), "rim px dropped", changed)
+    print(json.dumps(entry))
+    return path, entry
+
+
 def main():
     args = sys.argv[1:]
     cmd = args.pop(0)
+    if cmd == "handcut2":  # handcut2 <seed> <kind: closed|hammer_wind> <name>: second-pass cut (HAND_CUTS)
+        hand_cut2(int(args[0]), args[1], args[2])
+        return
     if cmd == "handcut":  # handcut <seed> [kind]: cut the grip hand from an edit, print its swaps.json entry
         hand_cut(int(args[0]), *(args[1:2] or ["closed"]))
         return
-    if cmd == "handqwen":  # handqwen <kind> <seed>..: the sword hand edits (HAND_QWEN)
-        hand_qwen(args[0], [int(a) for a in args[1:]])
+    if cmd == "handqwen":  # handqwen <kind> [--src wind|ready|strike] <seed>..: the sword hand edits (HAND_QWEN)
+        srcname = "strike"
+        if "--src" in args:
+            i = args.index("--src")
+            srcname = args[i + 1]
+            del args[i:i + 2]
+        hand_qwen(args[0], [int(a) for a in args[1:]], srcname)
         return
     if cmd == "writeswaps":  # the kept torsos and grit face (new names only) and swaps.json swaps/faces/cost
         write_swaps(force="--force" in args)

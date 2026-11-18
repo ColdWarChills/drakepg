@@ -42,7 +42,20 @@ namespace Drakepg.Bones
             public float? Relation;
             /// <summary>The held weapon's draw order while this hand shows (null: rig.json weaponZ).</summary>
             public float? WeaponZ;
+            /// <summary>
+            /// swaps.json "zone": [from, to] (deg of the relation, going up, may wrap past 180): where this grip hand
+            /// shows. When any grip hand has a zone, only zoned hands are picked (the rig's fist never) and between two
+            /// zones the hand shown before stays (hysteresis; BoneHero builds the switches once per move).
+            /// </summary>
+            public Vector2? Zone;
+            /// <summary>swaps.json "weaponZBent": [deg, z]: when the wrist bends more than deg off this grip hand's
+            /// relation, the weapon draws at z instead (over the forearm: the handle runs on to the pommel, joined).</summary>
+            public Vector2? WeaponZBent;
         }
+
+        /// <summary>swaps.json "gripBlendMs": the arm blends between two grip hands' wrists this many ms each side
+        /// of a zone switch (BoneHero.NewHands with zones).</summary>
+        public float GripBlendMs = 20;
 
         /// <summary>
         /// swaps.json "gripBand": the width (deg) over which the arm blends between two grip hands' wrist-to-grip
@@ -138,6 +151,9 @@ namespace Drakepg.Bones
             if (Swaps["gripBand"] != null)
                 try { GripBand = (float)Swaps["gripBand"]; }
                 catch (Exception) { Debug.LogWarning("bones: swaps.json gripBand is not a number"); }
+            if (Swaps["gripBlendMs"] != null)
+                try { GripBlendMs = (float)Swaps["gripBlendMs"]; }
+                catch (Exception) { Debug.LogWarning("bones: swaps.json gripBlendMs is not a number"); }
             if (!(Swaps["swaps"] is JObject list)) return;
             foreach (var s in list)
             {
@@ -170,6 +186,8 @@ namespace Drakepg.Bones
                 }
                 if (o["relation"] != null) sw.Relation = (float)o["relation"];
                 if (o["weaponZ"] != null) sw.WeaponZ = (float)o["weaponZ"];
+                if (o["zone"] is JArray zn && zn.Count == 2) sw.Zone = new Vector2((float)zn[0], (float)zn[1]);
+                if (o["weaponZBent"] is JArray zb && zb.Count == 2) sw.WeaponZBent = new Vector2((float)zb[0], (float)zb[1]);
                 return sw;
             }
             catch (Exception e)

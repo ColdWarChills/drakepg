@@ -1,0 +1,22 @@
+sword_cut: tip diff max 0.00 px@1280, grip 0.00; elbow shift: held poses max 0.02, hammer rows max 7.21, grip rows max 16.9 (mean 12.8); wrist gap max 11.0 px@1280 (hammer rows 7.75); pics ['n_hand_grip2', 'n_hand_hammer']
+sword_leap: tip diff max 0.00 px@1280, grip 0.00; elbow shift: held poses max 0.00, hammer rows max 6.65, grip rows max 17.4 (mean 12.9); wrist gap max 13.0 px@1280 (hammer rows 7.75); pics ['n_hand_grip2', 'n_hand_hammer']
+sword_chain: tip diff max 0.00 px@1280, grip 0.00; elbow shift: held poses max 0.00, hammer rows max 13.19, grip rows max 17.5 (mean 12.9); wrist gap max 13.1 px@1280 (hammer rows 7.75); pics ['n_hand_grip2', 'n_hand_hammer']
+sword_cut wrist gap px@1280 max: {'grip2/blend': 11.0, 'grip2/steady': 8.7, 'hammer/blend': 7.8, 'hammer/steady': 4.1}
+sword_leap wrist gap px@1280 max: {'grip2/blend': 8.6, 'grip2/steady': 13.0, 'hammer/blend': 7.8, 'hammer/steady': 2.1}
+sword_chain wrist gap px@1280 max: {'grip2/blend': 13.1, 'grip2/steady': 12.8, 'hammer/blend': 7.8, 'hammer/steady': 4.4}
+
+# switches: how far the grip and elbow move between the frames around each hand-picture change (px at 1280)
+cut f16->f17: grip 190.1, elbow 173.5 (old elbow, same moment: 172.4)
+cut f29->f30: grip 40.6, elbow 37.9 (old elbow, same moment: 42.3)
+leap f0->f1: grip 34.3, elbow 21.6 (old elbow, same moment: 22.5)
+leap f38->f39: grip 80.6, elbow 70.3 (old elbow, same moment: 68.9)
+leap f59->f60: grip 101.8, elbow 86.1 (old elbow, same moment: 83.2)
+leap f102->f103: grip 59.5, elbow 56.2 (old elbow, same moment: 57.7)
+chain f15->f16: grip 76.2, elbow 67.1 (old elbow, same moment: 64.0)
+chain f25->f26: grip 151.1, elbow 73.7 (old elbow, same moment: 77.4)
+chain f26->f27: grip 92.0, elbow 40.3 (old elbow, same moment: 42.8)
+chain f41->f42: grip 11.8, elbow 10.6 (old elbow, same moment: 6.9)
+chain f44->f45: grip 60.4, elbow 27.1 (old elbow, same moment: 28.4)
+chain f45->f46: grip 88.6, elbow 56.6 (old elbow, same moment: 44.1)
+chain f55->f56: grip 53.8, elbow 38.1 (old elbow, same moment: 37.9)
+chain f84->f85: grip 48.2, elbow 44.1 (old elbow, same moment: 46.7)
