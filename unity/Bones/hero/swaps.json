@@ -1,0 +1,110 @@
+{
+ "version": 1,
+ "sets": {
+  "bare_v2": {
+   "f_thigh": {
+    "file": "bare_v2/f_thigh.png",
+    "x": 766,
+    "y": 708
+   },
+   "f_upper": {
+    "file": "bare_v2/f_upper.png",
+    "x": 803,
+    "y": 460
+   },
+   "hips": {
+    "file": "bare_v2/hips.png",
+    "x": 676,
+    "y": 640
+   },
+   "n_thigh": {
+    "file": "bare_v2/n_thigh.png",
+    "x": 623,
+    "y": 708
+   },
+   "n_upper": {
+    "file": "bare_v2/n_upper.png",
+    "x": 516,
+    "y": 433
+   },
+   "torso": {
+    "file": "bare_v2/torso.png",
+    "x": 626,
+    "y": 380
+   }
+  }
+ },
+ "swaps": {
+  "torso_toward": {
+   "part": "torso",
+   "file": "bare/torso_toward.png",
+   "x": 622,
+   "y": 349,
+   "joints": {
+    "waist": [
+     780,
+     690
+    ],
+    "neck": [
+     870,
+     400
+    ],
+    "n_shoulder": [
+     684,
+     478
+    ],
+    "f_shoulder": [
+     912,
+     468
+    ]
+   },
+   "note": "Chest open to the viewer, collar opening in the middle, shoulders wide (cut from an edit of the drawn strike stance, arms moved out). The base arms hang from its own shoulders; z as the torso."
+  },
+  "torso_away": {
+   "part": "torso",
+   "file": "bare/torso_away.png",
+   "x": 606,
+   "y": 350,
+   "joints": {
+    "waist": [
+     780,
+     690
+    ],
+    "neck": [
+     830,
+     374
+    ],
+    "n_shoulder": [
+     668,
+     458
+    ],
+    "f_shoulder": [
+     868,
+     446
+    ]
+   },
+   "note": "Chest turned away: the back of the shirt and the shoulder blades, no collar (cut from an edit of the drawn wind-up stance, arms moved out). The base head stays 3/4 front, so he looks over his shoulder; z as the torso."
+  }
+ },
+ "faces": {
+  "grit": {
+   "file": "fight/face_grit.png",
+   "x": 734,
+   "y": 278
+  }
+ },
+ "cost": {
+  "torso_toward": {
+   "gear": "body armor",
+   "pictures": 11
+  },
+  "torso_away": {
+   "gear": "body armor",
+   "pictures": 11
+  },
+  "grit": {
+   "gear": "helm",
+   "pictures": 9
+  }
+ }
+}
