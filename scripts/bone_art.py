@@ -36,7 +36,7 @@ Z = {p["name"]: p["z"] for p in RIG["parts"]}
 # the sleeve's round top (see `elbow`): with the sleeve, over the shirt, until the arm is raised; then under the
 # shirt's armhole, so its lit top doesn't lie on the chest (a draw-order swap, as cut-out rigs do)
 Z["n_cap"] = Z["n_upper"]
-CAP_UNDER = (Z["torso"] - 1, 40)              # z, from how far the upper arm is turned up from standing (deg)
+CAP_UNDER = (Z["torso"] - 1, 88)              # z, from how far the upper arm points away from straight down (deg)
 Z_SWORD = RIG["weaponZ"]["n"]                 # over the forearm, under the fist and sleeve, as in the game
 SWORD_PIC = RIG["weapons"]["iron_sword"]      # blade up in the picture, grip at (gx, gy), drawn 1:1 on the rig canvas
 STAND0 = sk.pose_points({})
@@ -142,8 +142,8 @@ def poses(out, new_set):
     made for the bones) and the new whole-body keys with new_set's arm."""
     wide()
     new = body_keys()
-    k, cell = 0.36, (470, 540)
-    rows = [("his drawn poses (the game)", None), ("before: only the sword arm moved", "old"),
+    k, cell = 0.36, (500, 540)
+    rows = [("his drawn poses (sword as in game)", None), ("before: only the sword arm moved", "old"),
             ("now: the whole body", "new")]
     sheet = Image.new("RGB", (cell[0] * 4 + 6 * 3, (cell[1] + 6) * len(rows)), (20, 20, 24))
     old_parts, new_parts = parts_of("bonearm_a"), parts_of(new_set)
@@ -185,6 +185,15 @@ def bends(out, sets):
     print(out, sheet.size)
 
 
+def blend(a, b, t):
+    """skeleton.blend, and the hips ("_root") carried along."""
+    out = sk.blend(a, b, t)
+    if "_root" in a or "_root" in b:
+        ra, rb = a.get("_root", STAND0["hips"][0]), b.get("_root", STAND0["hips"][0])
+        out["_root"] = (ra[0] + (rb[0] - ra[0]) * t, ra[1] + (rb[1] - ra[1]) * t)
+    return out
+
+
 def cut_frames():
     frames, prev = [], KEYS["ready"]
     for key, n in sk.CUT:
@@ -224,7 +233,7 @@ def render(local, parts, k=0.5, off=(0, 0), size=(768, 768), sword=True, bg=sk.G
     pts = sk.pose_points(local, local.get("_root"))     # "_root": where the hips are (whole-body poses move them)
     img = Image.new("RGBA", size, bg + (255,))
     z = dict(Z)
-    if sk.norm(pts["n_upper"][2] - STAND0["n_upper"][2]) > CAP_UNDER[1]:
+    if abs(sk.norm(pts["n_upper"][2] - 90)) > CAP_UNDER[1]:            # the arm raised above level, front or back
         z["n_cap"] = CAP_UNDER[0]
     items = sorted([(z[n], n) for n in parts] + ([(Z_SWORD, "sword")] if sword else []))
     for _, n in items:
