@@ -17,6 +17,7 @@ the blade's turn from the hand bone for that set's fist (skeleton.SWORD's -112 o
   python scripts/bone_art.py poses <out.png> <set>     the cut's four keys, whole body, beside his drawn poses
   python scripts/bone_art.py elbow <set> <new set>     that set's arm with the rolled cuff above the elbow, a round elbow
   python scripts/bone_art.py fist <set> <new set>      that set's arm with the fist turned over (thumb at the guard)
+  python scripts/bone_art.py fists <out.png> <set>...  the sword fist close up at the four keys, beside his drawn ones
 """
 import json
 import math
@@ -222,6 +223,7 @@ def parts_of(arm_set):
     if arm_set != "today":
         parts.update({k: tuple(v) for k, v in json.loads((BONES / arm_set / "parts.json").read_text()).items()
                       if not k.startswith("_")})
+    parts["_hold"] = hold_of(arm_set)                    # render() holds the sword at the set's own turn
     return parts
 
 
@@ -252,10 +254,13 @@ def render(local, parts, k=0.5, off=(0, 0), size=(768, 768), sword=True, bg=sk.G
     z = dict(Z)
     if abs(sk.norm(pts["n_upper"][2] - 90)) > CAP_UNDER[1]:            # the arm raised above level, front or back
         z["n_cap"] = CAP_UNDER[0]
-    items = sorted([(z[n], n) for n in parts] + ([(Z_SWORD, "sword")] if sword else []))
+    items = sorted([(z[n], n) for n in parts if not n.startswith("_")] + ([(Z_SWORD, "sword")] if sword else []))
     for _, n in items:
         if n == "sword":
+            was = sk.SWORD["angle"]
+            sk.SWORD["angle"] = parts.get("_hold", was)
             sw = sk.sword_points(pts)
+            sk.SWORD["angle"] = was
             layer = place(pic(SWORD_PIC["file"]), 0, 0, (SWORD_PIC["gx"], SWORD_PIC["gy"]), -90,
                           sw["grip"], sw["angle"], k, off, size)
         else:
@@ -598,6 +603,53 @@ def fist(src_set, new_set):
     print(new_set, table)
 
 
+def fists(out, sets):
+    """The sword fist close up (x4) at the cut's four keys: his drawn fists on top (sword as in game), then one row per
+    set, each with its own hold."""
+    wide()
+    art = sk.ROOT / "src" / "assets" / "art"
+    cell, zoom, kd = 560, 90, 1.18
+    label_of = {"bonearm_c": "before (thumb at the pommel)", "bonearm_d": "now (thumb at the guard)"}
+
+    def crop(img):
+        c = cell / 2
+        return img.crop((round(c - zoom), round(c - zoom), round(c + zoom), round(c + zoom))).resize(
+            (zoom * 4, zoom * 4), Image.LANCZOS)
+
+    rows = [[]]
+    for key in ("ready", "wind-up", "hit", "after"):
+        if key not in DRAWN:
+            rows[0].append((Image.new("RGBA", (zoom * 4, zoom * 4), (34, 32, 40, 255)), ""))
+            continue
+        pose, fx, fy, angle = DRAWN[key]
+        im = Image.open(art / f"char_hero_bare_{pose}@2x.webp").convert("RGBA")
+        im = im.resize((round(im.width * kd), round(im.height * kd)), Image.LANCZOS)
+        can = Image.new("RGBA", (cell, cell), sk.GROUND + (255,))
+        ox, oy = cell / 2 - fx * 2 * kd, cell / 2 - fy * 2 * kd
+        can.alpha_composite(im, (round(ox), round(oy)))
+        can.alpha_composite(place(pic(SWORD_PIC["file"]), 0, 0, (SWORD_PIC["gx"], SWORD_PIC["gy"]), -90,
+                                  (cell / 2, cell / 2), angle - 90, 1.0, (0, 0), (cell, cell)))
+        rows[0].append((crop(can), f"his {key}"))
+    for st in sets:
+        parts, r = parts_of(st), []
+        for key, local in body_keys(parts["_hold"]).items():
+            (hx, hy), (tx, ty), _ = sk.pose_points(local, local["_root"])["n_hand"]
+            cx, cy = (hx + tx) / 2, (hy + ty) / 2
+            r.append((crop(render(local, parts, 1.0, (cell / 2 - cx, cell / 2 - cy), (cell, cell))),
+                      f"{label_of.get(st, NAMES.get(st, st))}: {key}"))
+        rows.append(r)
+    w = zoom * 4
+    sheet = Image.new("RGB", ((w + 6) * 4, (w + 26) * len(rows)), (20, 20, 24))
+    d = ImageDraw.Draw(sheet)
+    for j, r in enumerate(rows):
+        for i, (c, t) in enumerate(r):
+            x, y = i * (w + 6), j * (w + 26)
+            sheet.paste(c.convert("RGB"), (x, y))
+            d.text((x + 6, y + w + 4), t, fill=(235, 235, 235), font=sk.font(15))
+    sheet.save(out)
+    print(out, sheet.size)
+
+
 def main():
     cmd = sys.argv[1:2]
     if cmd == ["bends"]:
@@ -605,6 +657,9 @@ def main():
         return
     if cmd == ["poses"]:
         poses(Path(sys.argv[2]), sys.argv[3])
+        return
+    if cmd == ["fists"]:
+        fists(Path(sys.argv[2]), sys.argv[3:])
         return
     if cmd == ["fist"]:
         fist(sys.argv[2], sys.argv[3])
