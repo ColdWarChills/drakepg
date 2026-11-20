@@ -107,7 +107,7 @@ def main():
     plan += [("hold", 0, -45, d) for d in turn]
 
     def render(kind):
-        out, keep, G = [], None, None
+        out, keep, G, track = [], None, None, []
         for step in plan:
             if step[0] == "hold":
                 if G is None:
@@ -121,6 +121,11 @@ def main():
                 r = (rel + 180) % 360 - 180
                 im, keep, at = frame(kind, sh, el, r, keep)
             out.append(im.convert("RGB"))
+            track.append((at["n_fore"], at["n_hand"], keep))
+        steps = [max(math.dist(a[0], b[0]), math.dist(a[1], b[1])) for a, b in zip(track, track[1:])]
+        k = int(np.argmax(steps))
+        print(kind, "largest move of elbow or wrist between frames:", round(steps[k], 1), "px at frame", k + 1,
+              "(median", round(float(np.median(steps)), 1), "px); fist pictures used:", sorted({t[2] for t in track}))
         return out
 
     old, new = render("old"), render("new")
@@ -172,7 +177,7 @@ def main():
     sheet = Image.new("RGB", (tw * 2 + 10, (th + 6) * 5 + 30), (24, 24, 28))
     for k, t in enumerate(tiles):
         sheet.paste(t, ((k // 5) * (tw + 10), (k % 5) * (th + 6)))
-    ImageDraw.Draw(sheet).text((10, sheet.height - 24), "left pair of columns: the elbow bending (straight to fully bent); right: the sword turning in the hand", fill=(200, 196, 186), font=f2)
+    ImageDraw.Draw(sheet).text((10, sheet.height - 24), "left pair of columns: the elbow bending (straight to 120 degrees); right: the sword turning in the fist (one fist picture)", fill=(200, 196, 186), font=f2)
     sheet = sheet.resize((sheet.width // 2 * 2 * 3 // 4, sheet.height * 3 // 4), Image.LANCZOS)
     sheet.save(os.path.join(OUTDIR, "arm_bend_stills.webp")); print("stills", sheet.size)
 

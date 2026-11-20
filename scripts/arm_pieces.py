@@ -3,19 +3,19 @@
 
 Today's near arm was cut out of one painting: the sleeve piece keeps a ball of forearm skin in its cuff (the recut's
 "keep" circle), and the forearm piece keeps the cuff on top and a stub of fist at the wrist. Bend the elbow and the
-ball stays put while the real forearm comes out beside it. The cuff also sits a forearm's width past the elbow pivot,
-so whatever its opening holds is wrong once the elbow bends. Here the pieces are rebuilt from their own pixels, for
-the same joints (rig.json is not touched), the way cut-out rigs do elbows: the cuff's opening is centred on the elbow
-pivot, and the forearm's top is a round end on that pivot, so the opening always shows the forearm's own skin:
+ball stays put while the real forearm comes out beside it. Here the pieces are rebuilt from their own pixels, for the
+same joints (rig.json and swaps.json are not touched), the way cut-out rigs do elbows: the forearm turns under a
+closed sleeve end, so nothing at the joint changes shape as it bends:
 
-- sleeve (n_upper): the rolled cuff moved up the arm until its opening is centred on the elbow pivot (the plain
-  sleeve above is joined where it matches its moved self in width and colour); the skin in the opening goes, so the
-  forearm shows through it.
-- forearm (n_fore): bare skin only, its top a round end on the elbow pivot as wide as the cuff's opening (joined to
-  the forearm by straight sides), its other end round on the wrist pivot (under the hand), both painted by carrying
-  the forearm's own cross-section along it.
+- sleeve (n_upper, from bare_v2): the cuff's opening (the forearm skin in it and the dark inside round it) filled with
+  the cuff's own lit cloth, carried down from just above the opening and a little darker towards the end; the end is a
+  gentle curve across the arm just past where the cuff's sides end, with a darker rolled edge.
+- forearm (n_fore, from bare): bare skin only; its top a round end on the elbow pivot (always under the closed cuff),
+  joined to the forearm by straight sides, its other end round on the wrist pivot (under the fist); both painted by
+  carrying the forearm's own cross-section along it.
 
-Writes unity/Bones/hero/bare_v3/<part>.png and bare_v3/parts.json ({part: [file, x, y]}), never over a kept picture.
+Writes unity/Bones/hero/bare_v3/<part>.png and bare_v3/parts.json ({part: [file, x, y]}), never over a kept picture
+(--force replaces this script's own output). The clip: scripts/arm_pieces_clip.py.
 
   python scripts/arm_pieces.py make
 """
@@ -66,32 +66,6 @@ def to_px(origin, p0, d, al, ac):
 def skin_of(a):
     r, g, b, al = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
     return (al > 40) & (r - g > 40) & (r - b > 90)
-
-
-def shifted(a, dx, dy):
-    """The picture moved by (dx, dy) px, bilinear, on premultiplied colour."""
-    pm = a.copy()
-    pm[..., :3] *= pm[..., 3:] / 255
-    h, w = a.shape[:2]
-    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
-    sx, sy = xx - dx, yy - dy
-    x0, y0 = np.floor(sx).astype(int), np.floor(sy).astype(int)
-    fx, fy = (sx - x0)[..., None], (sy - y0)[..., None]
-
-    def at(y, x):
-        ok = (x >= 0) & (x < w) & (y >= 0) & (y < h)
-        o = np.zeros(a.shape, np.float32)
-        o[ok] = pm[y[ok], x[ok]]
-        return o
-    return (at(y0, x0) * (1 - fx) * (1 - fy) + at(y0, x0 + 1) * fx * (1 - fy)
-            + at(y0 + 1, x0) * (1 - fx) * fy + at(y0 + 1, x0 + 1) * fx * fy)
-
-
-def unpremultiply(pm):
-    out = pm.copy()
-    al = np.maximum(out[..., 3:], 1e-3)
-    out[..., :3] = np.where(out[..., 3:] > 0, out[..., :3] * 255 / al, 0)
-    return out
 
 
 def profile(a, keep, al, ac, lo, hi):
@@ -209,10 +183,10 @@ def make_upper():
     out[..., :3][edge] *= 0.8
     soft = (al > L) & (past <= 0) & (past > -1.2)
     out[..., 3][soft] = np.minimum(out[..., 3][soft], np.clip(-past[soft] + 0.3, 0, 1) * 255)
-    return out, org, 0.0, None
+    return out, org
 
 
-def make_fore(radius):
+def make_fore():
     e = RIG["sets"]["bare"]["n_fore"]
     a, org = load(e)
     al, ac, L = frame(a, org, J["n_elbow"], J["n_wrist"])
@@ -223,7 +197,7 @@ def make_fore(radius):
     out = a.copy()
     out[..., 3][(al < 40) | (al > L - 42)] = 0          # the cuff on top and the fist stub at the wrist go
     out[..., 3][~skin & (al < 70)] = 0
-    radius = radius or max(-lo_t, hi_t, (hi_t - lo_t) / 2)
+    radius = max(-lo_t, hi_t, (hi_t - lo_t) / 2)         # wide enough for the forearm's top, centred on the pivot
     out[..., 3][al < 62] = 0
     round_end(out, org, J["n_elbow"], d, prof_top, lo_t, hi_t, al, ac, 0, 68, 0, radius)
     out[..., 3][al > L - 46] = 0
@@ -247,9 +221,9 @@ def save(part, arr, org, table):
 def main():
     if sys.argv[1:2] == ["make"]:
         table = {}
-        up, org, moved_by, radius = make_upper()
+        up, org = make_upper()
         save("n_upper", up, org, table)
-        fore, org = make_fore(radius)
+        fore, org = make_fore()
         save("n_fore", fore, org, table)
         (OUT / "parts.json").write_text(json.dumps(table, indent=1))
     else:
