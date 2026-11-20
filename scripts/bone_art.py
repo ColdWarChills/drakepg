@@ -6,7 +6,8 @@ turn since standing, around the bone's joint, and carried along with it. Nothing
 picture is picked by an angle; the sword is fixed in the hand bone (skeleton.SWORD).
 
 An arm set is a folder under unity/Bones/hero with parts.json ({part: [file, x, y]}, rig canvas px, standing): its
-pieces replace those parts of the game's bare hero (rig.json "bare" + swaps.json "bare_v2"). "today" is the game's.
+pieces replace those parts of the game's bare hero (rig.json "bare" + swaps.json "bare_v2"); an optional "_hold" is
+the blade's turn from the hand bone for that set's fist (skeleton.SWORD's -112 otherwise). "today" is the game's.
 
   python scripts/bone_art.py stand <out.png>          the standing hero without a sword, on white, rig canvas size
   python scripts/bone_art.py clip <out.mp4> <set>...  the sword cut, one panel per arm set, normal then half speed
@@ -15,6 +16,7 @@ pieces replace those parts of the game's bare hero (rig.json "bare" + swaps.json
   python scripts/bone_art.py bends <out.png> <set>...  the near elbow close up, bent both ways, one row per set
   python scripts/bone_art.py poses <out.png> <set>     the cut's four keys, whole body, beside his drawn poses
   python scripts/bone_art.py elbow <set> <new set>     that set's arm with the rolled cuff above the elbow, a round elbow
+  python scripts/bone_art.py fist <set> <new set>      that set's arm with the fist turned over (thumb at the guard)
 """
 import json
 import math
@@ -93,15 +95,16 @@ def body(arm, far=(48.4, 48.4, 0), spine=0, head=0, legs=None, hips=0):
     return local
 
 
-def body_keys():
-    """The cut's four keys for the whole body. The blade never points down while the fist is up (the rejected wind-up
-    held it point-down, pommel up: "the hand is upside down"); the wind-up is his drawn one, the arm raised out to the
-    side with the sword back over his head (needs `wide()`)."""
+def body_keys(hold=-112):
+    """The cut's four keys for the whole body; the wind-up is his drawn one, the arm raised out to the side with the
+    sword back over his head (needs `wide()`). hold: the set's blade turn from the hand (`hold_of`); the wrist turns
+    with it so every blade keeps its direction (the flipped fist, -68: wrists 44 lower, ready's kept at -30)."""
+    d = -112 - hold
     return {
-        "ready": body((105, 30, 10), far=(60, -20, 10), spine=4, legs=(100, 118, 70, 92)),
-        "wind-up": body((-130, -80, 27), far=(66, -10, 10), spine=-12, head=-4, legs=(95, 125, 58, 74), hips=-6),
-        "hit": body((70, 67, 50), far=(-137, -137, 10), spine=24, head=10, legs=(128, 130, 25, 100), hips=8),
-        "after": body((90, 88, 50), far=(150, 125, 10), spine=20, head=8, legs=(124, 127, 32, 98), hips=6),
+        "ready": body((105, 30, max(10 + d, -30)), far=(60, -20, 10), spine=4, legs=(100, 118, 70, 92)),
+        "wind-up": body((-130, -80, 27 + d), far=(66, -10, 10), spine=-12, head=-4, legs=(95, 125, 58, 74), hips=-6),
+        "hit": body((70, 67, 50 + d), far=(-137, -137, 10), spine=24, head=10, legs=(128, 130, 25, 100), hips=8),
+        "after": body((90, 88, 50 + d), far=(150, 125, 10), spine=20, head=8, legs=(124, 127, 32, 98), hips=6),
     }
 
 
@@ -141,7 +144,7 @@ def poses(out, new_set):
     """The cut's four keys: his drawn poses in the game, the rejected cut (sword arm only, today's keys, the first arm
     made for the bones) and the new whole-body keys with new_set's arm."""
     wide()
-    new = body_keys()
+    new = body_keys(hold_of(new_set))
     k, cell = 0.36, (500, 540)
     rows = [("his drawn poses (sword as in game)", None), ("before: only the sword arm moved", "old"),
             ("now: the whole body", "new")]
@@ -152,12 +155,15 @@ def poses(out, new_set):
             if which is None:
                 img = drawn_pose(key, k, cell) if key in DRAWN else Image.new("RGBA", cell, (34, 32, 40, 255))
             elif which == "old":
+                use_hold("bonearm_a")
                 img = body_cell(KEYS[key], old_parts, k, cell)
             else:
+                use_hold(new_set)
                 img = body_cell(new[key], new_parts, k, cell)
             label(img, f"{key}  |  {title}" if c == 0 else key)
             sheet.paste(img.convert("RGB"), (c * (cell[0] + 6), r * (cell[1] + 6)))
     sheet.save(out)
+    use_hold(new_set)
     for key, local in new.items():
         sw = sk.sword_points(sk.pose_points(local, local["_root"]))
         print(key, f"blade {sk.norm(sw['angle']):.0f}", "; ".join(excursions(local)) or "inside skeleton.py's limits")
@@ -214,8 +220,19 @@ def parts_of(arm_set):
     parts = {k: (v["file"], v["x"], v["y"]) for k, v in RIG["sets"]["bare"].items()}
     parts.update({k: (v["file"], v["x"], v["y"]) for k, v in SWAPS["sets"]["bare_v2"].items()})
     if arm_set != "today":
-        parts.update({k: tuple(v) for k, v in json.loads((BONES / arm_set / "parts.json").read_text()).items()})
+        parts.update({k: tuple(v) for k, v in json.loads((BONES / arm_set / "parts.json").read_text()).items()
+                      if not k.startswith("_")})
     return parts
+
+
+def hold_of(arm_set):
+    """The blade's turn from the hand bone for a set ("_hold" in its parts.json; skeleton.py's -112 otherwise)."""
+    f = BONES / arm_set / "parts.json"
+    return json.loads(f.read_text()).get("_hold", -112) if arm_set != "today" and f.exists() else -112
+
+
+def use_hold(arm_set):
+    sk.SWORD["angle"] = hold_of(arm_set)
 
 
 def place(src, sx, sy, h0, w0, h, w, k, off, size):
@@ -271,7 +288,7 @@ def label(img, text):
 
 
 NAMES = {"today": "today's pieces, new skeleton", "bare_v3": "the redrawn elbow (bare_v3)", "bonearm_a": "arm made for the bones",
-         "bonearm_c": "bare elbow, cuff higher"}
+         "bonearm_c": "bare elbow, cuff higher", "bonearm_d": "bare elbow, fist turned over"}
 
 
 def clip(out, sets):
@@ -550,6 +567,37 @@ def elbow(src_set, new_set, lift=40, roll=25, shoulder=62):
     print(new_set, table, f"elbow radius {r:.0f}, cuff lifted {lift}")
 
 
+def fist(src_set, new_set):
+    """The fist turned over (the designer, 2026-11-21, twice: "the hand is upside down", "still inverted"). Today's fist
+    shows the curled fingers with the thumb lying across them, and the sword left its thumb at the pommel end. Here the
+    fist is mirrored across its own bone (the wrist stays on the forearm), so the thumb sits at the guard; the blade
+    comes out of that side: "_hold" = -(180 + the old hold). Writes <new_set>/n_hand.png and a parts.json that keeps
+    src_set's arm pieces."""
+    import numpy as np
+    out = BONES / new_set
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / "n_hand.png"
+    if path.exists():
+        raise SystemExit(f"{path} exists (a kept picture is never overwritten; use a new set name)")
+    f, x, y = parts_of(src_set)["n_hand"]
+    W = 1400
+    can = Image.new("RGBA", (W, W), (0, 0, 0, 0))
+    can.alpha_composite(Image.open(BONES / f).convert("RGBA"), (x, y))
+    (wx, wy), _, th = STAND0["n_hand"]
+    c2, s2 = math.cos(math.radians(2 * th)), math.sin(math.radians(2 * th))
+    m = can.convert("RGBa").transform((W, W), Image.AFFINE, (c2, s2, wx - c2 * wx - s2 * wy, s2, -c2, wy - s2 * wx + c2 * wy),
+                                      resample=Image.BILINEAR).convert("RGBA")   # premultiplied, bilinear: no light seams
+    arr = clean_edges(np.asarray(m).astype(np.float32))
+    img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+    bb = img.getbbox()
+    img.crop(bb).save(path)
+    table = {k: v for k, v in json.loads((BONES / src_set / "parts.json").read_text()).items() if not k.startswith("_")}
+    table["n_hand"] = [f"{new_set}/n_hand.png", bb[0], bb[1]]
+    table["_hold"] = -(180 + hold_of(src_set))
+    (out / "parts.json").write_text(json.dumps(table, indent=1))
+    print(new_set, table)
+
+
 def main():
     cmd = sys.argv[1:2]
     if cmd == ["bends"]:
@@ -557,6 +605,9 @@ def main():
         return
     if cmd == ["poses"]:
         poses(Path(sys.argv[2]), sys.argv[3])
+        return
+    if cmd == ["fist"]:
+        fist(sys.argv[2], sys.argv[3])
         return
     if cmd == ["elbow"]:
         elbow(sys.argv[2], sys.argv[3], *[int(v) for v in sys.argv[4:6]])

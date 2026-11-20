@@ -1,0 +1,23 @@
+{
+ "n_upper": [
+  "bonearm_c/n_upper.png",
+  534,
+  433
+ ],
+ "n_cap": [
+  "bonearm_c/n_cap.png",
+  626,
+  433
+ ],
+ "n_fore": [
+  "bonearm_c/n_fore.png",
+  420,
+  569
+ ],
+ "n_hand": [
+  "bonearm_d/n_hand.png",
+  386,
+  711
+ ],
+ "_hold": -68
+}
