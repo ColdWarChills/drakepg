@@ -359,11 +359,13 @@ def clip():
     guard(path)
     rng, cut = range_frames(), cut_frames()
     slow = [(p, k) for p, k in cut for _ in (0, 1)]
-    plan = [(p, "the joints: " + k) for p, k in rng] + [(p, f"sword cut: {k}") for p, k in cut] + \
-           [(p, f"sword cut, half speed: {k}") for p, k in slow]
+    plan = [(p, "the joints: " + k) for p, k in rng] + [(p, f"sword cut: to {k}") for p, k in cut] + \
+           [(p, f"sword cut, half speed: to {k}") for p, k in slow]
     worst, steady = check(rng + cut)
-    print("checks over every frame:", {k: round(v, 3) for k, v in worst.items()},
-          "| blade always leaves the same side of the fist:", steady)
+    # only the limits test the poses; lengths, the sword in the fist and the side of the fist hold by construction
+    # (rotations only, the sword fixed to the hand bone) and are printed as a guard against code mistakes
+    print("joints past their limits (deg):", round(worst["limit"], 3), "| by construction:",
+          {k: round(v, 3) for k, v in worst.items() if k != "limit"}, "blade same side of the fist:", steady)
     box = (230, 0, 1330, 1400)
     sc = 0.5
     tmp = tempfile.mkdtemp(prefix="skel_")
