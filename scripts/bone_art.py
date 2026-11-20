@@ -70,7 +70,7 @@ def place(src, sx, sy, h0, w0, h, w, k, off, size):
     ox, oy = -off[0] - h[0], -off[1] - h[1]
     data = (c / k, s / k, c * ox + s * oy + h0[0] - sx,
             -s / k, c / k, -s * ox + c * oy + h0[1] - sy)
-    return src.transform(size, Image.AFFINE, data, resample=Image.BICUBIC).convert("RGBA")
+    return src.transform(size, Image.AFFINE, data, resample=Image.BILINEAR).convert("RGBA")   # bicubic overshoots: light seams
 
 
 def render(local, parts, k=0.5, off=(0, 0), size=(768, 768), sword=True, bg=sk.GROUND):
@@ -111,7 +111,7 @@ def label(img, text):
     return img
 
 
-NAMES = {"today": "today's arm pieces", "bare_v3": "the redrawn elbow (bare_v3)", "bonearm_a": "arm made for the bones"}
+NAMES = {"today": "today's pieces, new skeleton", "bare_v3": "the redrawn elbow (bare_v3)", "bonearm_a": "arm made for the bones"}
 
 
 def clip(out, sets):
