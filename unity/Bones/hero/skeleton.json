@@ -1,0 +1,390 @@
+{
+ "note": "The hero's skeleton (scripts/skeleton.py). Rig canvas px; screen degrees (0 right, 90 down, clockwise). A bone's angle is relative to its parent (0 = straight on); 'standing' is today's standing pose. Limits are where the joint stops. The sword is fixed to the near hand bone.",
+ "points": {
+  "waist": [
+   780,
+   690
+  ],
+  "neck": [
+   800,
+   425
+  ],
+  "n_shoulder": [
+   688,
+   495
+  ],
+  "n_elbow": [
+   573.4,
+   600.0
+  ],
+  "n_wrist": [
+   456.4,
+   733.4
+  ],
+  "f_shoulder": [
+   843,
+   500
+  ],
+  "f_elbow": [
+   955.1,
+   625.6
+  ],
+  "f_wrist": [
+   1056.6,
+   740.2
+  ],
+  "n_hip": [
+   738,
+   770
+  ],
+  "n_knee": [
+   676.1,
+   984.0
+  ],
+  "n_ankle": [
+   596.4,
+   1268.5
+  ],
+  "f_hip": [
+   828,
+   770
+  ],
+  "f_knee": [
+   852.0,
+   984.6
+  ],
+  "f_ankle": [
+   887.5,
+   1260.9
+  ],
+  "head_top": [
+   796,
+   205
+  ],
+  "mid_hip": [
+   783,
+   770
+  ],
+  "n_knuckles": [
+   407,
+   789
+  ],
+  "f_knuckles": [
+   1100,
+   787
+  ],
+  "n_toe": [
+   652,
+   1334
+  ],
+  "f_toe": [
+   1006,
+   1306
+  ]
+ },
+ "bones": {
+  "hips": {
+   "parent": null,
+   "at": null,
+   "from": "waist",
+   "to": "mid_hip",
+   "length": 80.1,
+   "limits": null
+  },
+  "spine": {
+   "parent": "hips",
+   "at": "head",
+   "from": "waist",
+   "to": "neck",
+   "length": 265.8,
+   "limits": [
+    -215,
+    -135
+   ]
+  },
+  "head": {
+   "parent": "spine",
+   "at": "tail",
+   "from": "neck",
+   "to": "head_top",
+   "length": 220.0,
+   "limits": [
+    -35,
+    35
+   ]
+  },
+  "n_collar": {
+   "parent": "spine",
+   "at": "tail",
+   "from": "neck",
+   "to": "n_shoulder",
+   "length": 132.1,
+   "limits": null
+  },
+  "f_collar": {
+   "parent": "spine",
+   "at": "tail",
+   "from": "neck",
+   "to": "f_shoulder",
+   "length": 86.5,
+   "limits": null
+  },
+  "n_upper": {
+   "parent": "n_collar",
+   "at": "tail",
+   "from": "n_shoulder",
+   "to": "n_elbow",
+   "length": 155.4,
+   "limits": [
+    -250,
+    70
+   ]
+  },
+  "n_fore": {
+   "parent": "n_upper",
+   "at": "tail",
+   "from": "n_elbow",
+   "to": "n_wrist",
+   "length": 177.4,
+   "limits": [
+    -150,
+    0
+   ]
+  },
+  "n_hand": {
+   "parent": "n_fore",
+   "at": "tail",
+   "from": "n_wrist",
+   "to": "n_knuckles",
+   "length": 74.4,
+   "limits": [
+    -30,
+    50
+   ]
+  },
+  "f_upper": {
+   "parent": "f_collar",
+   "at": "tail",
+   "from": "f_shoulder",
+   "to": "f_elbow",
+   "length": 168.4,
+   "limits": [
+    -250,
+    70
+   ]
+  },
+  "f_fore": {
+   "parent": "f_upper",
+   "at": "tail",
+   "from": "f_elbow",
+   "to": "f_wrist",
+   "length": 153.1,
+   "limits": [
+    -150,
+    0
+   ]
+  },
+  "f_hand": {
+   "parent": "f_fore",
+   "at": "tail",
+   "from": "f_wrist",
+   "to": "f_knuckles",
+   "length": 63.8,
+   "limits": [
+    -30,
+    50
+   ]
+  },
+  "n_pelvis": {
+   "parent": "hips",
+   "at": "tail",
+   "from": "mid_hip",
+   "to": "n_hip",
+   "length": 45.0,
+   "limits": null
+  },
+  "f_pelvis": {
+   "parent": "hips",
+   "at": "tail",
+   "from": "mid_hip",
+   "to": "f_hip",
+   "length": 45.0,
+   "limits": null
+  },
+  "n_thigh": {
+   "parent": "n_pelvis",
+   "at": "tail",
+   "from": "n_hip",
+   "to": "n_knee",
+   "length": 222.8,
+   "limits": null
+  },
+  "n_shin": {
+   "parent": "n_thigh",
+   "at": "tail",
+   "from": "n_knee",
+   "to": "n_ankle",
+   "length": 295.5,
+   "limits": [
+    -5,
+    150
+   ]
+  },
+  "n_foot": {
+   "parent": "n_shin",
+   "at": "tail",
+   "from": "n_ankle",
+   "to": "n_toe",
+   "length": 85.9,
+   "limits": [
+    -90,
+    30
+   ]
+  },
+  "f_thigh": {
+   "parent": "f_pelvis",
+   "at": "tail",
+   "from": "f_hip",
+   "to": "f_knee",
+   "length": 215.9,
+   "limits": null
+  },
+  "f_shin": {
+   "parent": "f_thigh",
+   "at": "tail",
+   "from": "f_knee",
+   "to": "f_ankle",
+   "length": 278.6,
+   "limits": [
+    -5,
+    150
+   ]
+  },
+  "f_foot": {
+   "parent": "f_shin",
+   "at": "tail",
+   "from": "f_ankle",
+   "to": "f_toe",
+   "length": 126.8,
+   "limits": [
+    -90,
+    30
+   ]
+  }
+ },
+ "standing": {
+  "hips": 87.9,
+  "spine": -173.5,
+  "head": -5.4,
+  "n_collar": -126.3,
+  "f_collar": 145.9,
+  "n_upper": -10.5,
+  "n_fore": -6.3,
+  "n_hand": 0.4,
+  "f_upper": -11.9,
+  "f_fore": 0,
+  "f_hand": -1.3,
+  "n_pelvis": 92.1,
+  "f_pelvis": -87.9,
+  "n_thigh": -73.9,
+  "n_shin": -0.5,
+  "n_foot": -56.0,
+  "f_thigh": 83.6,
+  "f_shin": -0.9,
+  "f_foot": -61.8
+ },
+ "sword": {
+  "bone": "n_hand",
+  "grip_along": 0.55,
+  "angle": -112,
+  "tip": 500,
+  "guard": 44,
+  "pommel": 141
+ },
+ "keys": {
+  "ready": {
+   "hips": 87.9,
+   "spine": -173.5,
+   "head": -5.4,
+   "n_collar": -126.3,
+   "f_collar": 145.9,
+   "n_upper": -43.1,
+   "n_fore": -75.0,
+   "n_hand": 10.0,
+   "f_upper": -11.9,
+   "f_fore": 0.0,
+   "f_hand": -1.3,
+   "n_pelvis": 92.1,
+   "f_pelvis": -87.9,
+   "n_thigh": -73.9,
+   "n_shin": -0.5,
+   "n_foot": -56.0,
+   "f_thigh": 83.6,
+   "f_shin": -0.9,
+   "f_foot": -61.8
+  },
+  "wind-up": {
+   "hips": 87.9,
+   "spine": -181.6,
+   "head": -5.4,
+   "n_collar": -126.3,
+   "f_collar": 145.9,
+   "n_upper": -210.0,
+   "n_fore": -80.0,
+   "n_hand": -20.0,
+   "f_upper": -11.9,
+   "f_fore": 0.0,
+   "f_hand": -1.3,
+   "n_pelvis": 92.1,
+   "f_pelvis": -87.9,
+   "n_thigh": -73.9,
+   "n_shin": -0.5,
+   "n_foot": -56.0,
+   "f_thigh": 83.6,
+   "f_shin": -0.9,
+   "f_foot": -61.8
+  },
+  "hit": {
+   "hips": 87.9,
+   "spine": -165.6,
+   "head": -5.4,
+   "n_collar": -126.3,
+   "f_collar": 145.9,
+   "n_upper": -106.0,
+   "n_fore": -5.0,
+   "n_hand": 50.0,
+   "f_upper": -11.9,
+   "f_fore": 0.0,
+   "f_hand": -1.3,
+   "n_pelvis": 92.1,
+   "f_pelvis": -87.9,
+   "n_thigh": -73.9,
+   "n_shin": -0.5,
+   "n_foot": -56.0,
+   "f_thigh": 83.6,
+   "f_shin": -0.9,
+   "f_foot": -61.8
+  },
+  "after": {
+   "hips": 87.9,
+   "spine": -169.6,
+   "head": -5.4,
+   "n_collar": -126.3,
+   "f_collar": 145.9,
+   "n_upper": -52.0,
+   "n_fore": -5.0,
+   "n_hand": 40.0,
+   "f_upper": -11.9,
+   "f_fore": 0.0,
+   "f_hand": -1.3,
+   "n_pelvis": 92.1,
+   "f_pelvis": -87.9,
+   "n_thigh": -73.9,
+   "n_shin": -0.5,
+   "n_foot": -56.0,
+   "f_thigh": 83.6,
+   "f_shin": -0.9,
+   "f_foot": -61.8
+  }
+ }
+}
