@@ -12,6 +12,9 @@ pieces replace those parts of the game's bare hero (rig.json "bare" + swaps.json
   python scripts/bone_art.py clip <out.mp4> <set>...  the sword cut, one panel per arm set, normal then half speed
   python scripts/bone_art.py hard <out.png> <set>...  the cut's keys, the near arm close up, one row per arm set
   python scripts/bone_art.py take <try.png> <part> <set>   a generated try (an edit of `stand`) as that set's part
+  python scripts/bone_art.py bends <out.png> <set>...  the near elbow close up, bent both ways, one row per set
+  python scripts/bone_art.py poses <out.png> <set>     the cut's four keys, whole body, beside his drawn poses
+  python scripts/bone_art.py elbow <set> <new set>     that set's arm with the rolled cuff above the elbow, a round elbow
 """
 import json
 import math
@@ -28,14 +31,158 @@ import skeleton as sk  # noqa: E402
 BONES = sk.BONES
 RIG = sk.RIG
 SWAPS = json.loads((BONES / "swaps.json").read_text())
-BONE_OF = {"torso": "spine"}                  # every other part rides the bone of its own name
+BONE_OF = {"torso": "spine", "n_cap": "n_upper"}   # every other part rides the bone of its own name
 Z = {p["name"]: p["z"] for p in RIG["parts"]}
+# the sleeve's round top (see `elbow`): with the sleeve, over the shirt, until the arm is raised; then under the
+# shirt's armhole, so its lit top doesn't lie on the chest (a draw-order swap, as cut-out rigs do)
+Z["n_cap"] = Z["n_upper"]
+CAP_UNDER = (Z["torso"] - 1, 40)              # z, from how far the upper arm is turned up from standing (deg)
 Z_SWORD = RIG["weaponZ"]["n"]                 # over the forearm, under the fist and sleeve, as in the game
 SWORD_PIC = RIG["weapons"]["iron_sword"]      # blade up in the picture, grip at (gx, gy), drawn 1:1 on the rig canvas
 STAND0 = sk.pose_points({})
 # the skeleton's cut, but the wind-up's upper arm goes straight up (-100, the shoulder's limit) instead of up across the face (-70): with art
 # on, the sleeve covered his face; the forearm, wrist and sword stay as in skeleton.py
 KEYS = dict(sk.KEYS, **{"wind-up": sk.near_arm(-100, -150, -20, spine=-8)})
+
+
+# Whole-body keys (the designer, 2026-11-20: "the hand is upside down. elbow looks weird, animation is bad"): every
+# bone has a say, not just the sword arm. Two limits are wider here than in skeleton.py (which stays as the designer
+# saw it): the arm raised out to the side, as in his drawn wind-up, points up-back past the shoulder's -250 and, seen
+# from the side, folds the forearm up behind the arm (elbow above 0). `wide()` turns them on; `excursions()` names
+# every place a pose goes past skeleton.py's own limits.
+WIDE = {"n_upper": [-290, 70], "n_fore": [-150, 100]}
+LIMITS = {n: (list(b["limits"]) if b["limits"] else None) for n, b in sk.BONES_DEF.items()}
+
+
+def wide(on=True):
+    for n, lim in WIDE.items():
+        sk.BONES_DEF[n]["limits"] = list(lim) if on else list(LIMITS[n])
+
+
+def excursions(local):
+    out = []
+    for n in sk.ORDER:
+        lim = LIMITS[n]
+        v = local.get(n, sk.STAND[n])
+        if lim and not lim[0] - 0.01 <= v <= lim[1] + 0.01:
+            out.append(f"{n} {v:.0f} (skeleton.py {lim[0]}..{lim[1]})")
+    return out
+
+
+def body(arm, far=(48.4, 48.4, 0), spine=0, head=0, legs=None, hips=0):
+    """A whole-body pose. arm, far: the near and far arm as (upper, fore, wrist): world directions of the upper arm
+    and forearm, and the wrist's bend from the forearm. spine, head, hips: turned from standing (deg; + leans forward).
+    legs: world directions (n_thigh, n_shin, f_thigh, f_shin). The feet keep their standing angles; the hips ("_root")
+    move so the lowest foot is on its own ground line (the near foot stands lower on screen) and the feet stay centred
+    where they stood."""
+    want = {"hips": STAND0["hips"][2] + hips, "spine": STAND0["spine"][2] + spine, "head": STAND0["head"][2] + head,
+            "n_upper": arm[0], "n_fore": arm[1], "n_hand": arm[1] + arm[2],
+            "f_upper": far[0], "f_fore": far[1], "f_hand": far[1] + far[2],
+            "n_foot": STAND0["n_foot"][2], "f_foot": STAND0["f_foot"][2]}
+    if legs:
+        want.update(dict(zip(["n_thigh", "n_shin", "f_thigh", "f_shin"], legs)))
+    local = sk.local_of(want)
+    local["hips"] = want["hips"]
+    pts = sk.pose_points(local)
+    nt, ft = pts["n_foot"][1], pts["f_foot"][1]
+    NT, FT = STAND0["n_foot"][1], STAND0["f_foot"][1]
+    dy = max(nt[1] - NT[1], ft[1] - FT[1])
+    dx = ((NT[0] + FT[0]) - (nt[0] + ft[0])) / 2
+    w = STAND0["hips"][0]
+    local["_root"] = (w[0] + dx, w[1] - dy)
+    return local
+
+
+def body_keys():
+    """The cut's four keys for the whole body. The blade never points down while the fist is up (the rejected wind-up
+    held it point-down, pommel up: "the hand is upside down"); the wind-up is his drawn one, the arm raised out to the
+    side with the sword back over his head (needs `wide()`)."""
+    return {
+        "ready": body((105, 30, 10), far=(60, -20, 10), spine=4, legs=(100, 118, 70, 92)),
+        "wind-up": body((-130, -80, 27), far=(66, -10, 10), spine=-12, head=-4, legs=(95, 125, 58, 74), hips=-6),
+        "hit": body((70, 67, 50), far=(-137, -137, 10), spine=24, head=10, legs=(128, 130, 25, 100), hips=8),
+        "after": body((90, 88, 50), far=(150, 125, 10), spine=20, head=8, legs=(124, 127, 32, 98), hips=6),
+    }
+
+
+# his drawn sword poses in the game (src/data/classes.ts HERO_POSES: the fist in 1x px, the weapon's turn)
+DRAWN = {"ready": ("sword_ready", 244, 262, 55), "wind-up": ("sword_wind", 133.7, 68, -75),
+         "hit": ("sword_strike", 331.7, 388, 115)}
+
+
+def drawn_pose(key, k, cell):
+    """His drawn pose for a key at the rig's size times k, feet on the cell's ground line, the sword in his fist."""
+    art = sk.ROOT / "src" / "assets" / "art"
+    pose, fx, fy, angle = DRAWN[key]
+    im = Image.open(art / f"char_hero_bare_{pose}@2x.webp").convert("RGBA")
+    base = Image.open(art / "char_hero_bare@2x.webp").convert("RGBA")
+    rig_h = sk.P["n_toe"][1] - sk.P["head_top"][1]
+    s = rig_h / (base.getbbox()[3] - base.getbbox()[1]) * k          # drawn 2x px -> sheet px
+    im = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
+    bb = im.getbbox()
+    out = Image.new("RGBA", cell, sk.GROUND + (255,))
+    ox, oy = round(cell[0] / 2 - (bb[0] + bb[2]) / 2), round(cell[1] - 30 - bb[3])
+    out.alpha_composite(im, (ox, oy))
+    sw = place(pic(SWORD_PIC["file"]), 0, 0, (SWORD_PIC["gx"], SWORD_PIC["gy"]), -90,
+               ((fx * 2 * s + ox) / k, (fy * 2 * s + oy) / k), angle - 90, k, (0, 0), cell)
+    out.alpha_composite(sw)
+    return out
+
+
+def body_cell(local, parts, k, cell):
+    """A whole-body pose at k, feet on the cell's ground line, centred on the hips."""
+    pts = sk.pose_points(local, local.get("_root"))
+    ground = max(STAND0["n_foot"][1][1], STAND0["f_foot"][1][1])
+    hx = pts["hips"][0][0]
+    return render(local, parts, k, (cell[0] / 2 / k - hx, (cell[1] - 30) / k - ground), cell)
+
+
+def poses(out, new_set):
+    """The cut's four keys: his drawn poses in the game, the rejected cut (sword arm only, today's keys, the first arm
+    made for the bones) and the new whole-body keys with new_set's arm."""
+    wide()
+    new = body_keys()
+    k, cell = 0.36, (470, 540)
+    rows = [("his drawn poses (the game)", None), ("before: only the sword arm moved", "old"),
+            ("now: the whole body", "new")]
+    sheet = Image.new("RGB", (cell[0] * 4 + 6 * 3, (cell[1] + 6) * len(rows)), (20, 20, 24))
+    old_parts, new_parts = parts_of("bonearm_a"), parts_of(new_set)
+    for r, (title, which) in enumerate(rows):
+        for c, key in enumerate(new):
+            if which is None:
+                img = drawn_pose(key, k, cell) if key in DRAWN else Image.new("RGBA", cell, (34, 32, 40, 255))
+            elif which == "old":
+                img = body_cell(KEYS[key], old_parts, k, cell)
+            else:
+                img = body_cell(new[key], new_parts, k, cell)
+            label(img, f"{key}  |  {title}" if c == 0 else key)
+            sheet.paste(img.convert("RGB"), (c * (cell[0] + 6), r * (cell[1] + 6)))
+    sheet.save(out)
+    for key, local in new.items():
+        sw = sk.sword_points(sk.pose_points(local, local["_root"]))
+        print(key, f"blade {sk.norm(sw['angle']):.0f}", "; ".join(excursions(local)) or "inside skeleton.py's limits")
+    print(out, sheet.size)
+
+
+def bends(out, sets):
+    """The near elbow close up (rig 1:1) at standing and bent -45, -90, -130 (forward) and +50, +90 (the arm turned
+    out to the side, as in the wind-up), one row per arm set."""
+    wide()
+    cell, bends_ = 360, [sk.STAND["n_fore"], -45, -90, -130, 50, 90]
+    sheet = Image.new("RGB", ((cell + 4) * len(bends_), (cell + 26) * len(sets)), (20, 20, 24))
+    d = ImageDraw.Draw(sheet)
+    for r, s in enumerate(sets):
+        parts = parts_of(s)
+        for c, b in enumerate(bends_):
+            loc = dict(sk.STAND)
+            loc["n_fore"] = b
+            e = sk.pose_points(loc)["n_fore"][0]
+            img = render(loc, parts, 1.0, (-(e[0] - cell / 2), -(e[1] - cell / 2)), (cell, cell), sword=False)
+            sheet.paste(img.convert("RGB"), (c * (cell + 4), r * (cell + 26)))
+            d.text((c * (cell + 4) + 6, r * (cell + 26) + cell + 4), f"{NAMES.get(s, s)}: elbow {b:.0f}",
+                   fill=(235, 235, 235), font=sk.font(14))
+    sheet.save(out)
+    print(out, sheet.size)
 
 
 def cut_frames():
@@ -74,9 +221,12 @@ def place(src, sx, sy, h0, w0, h, w, k, off, size):
 
 
 def render(local, parts, k=0.5, off=(0, 0), size=(768, 768), sword=True, bg=sk.GROUND):
-    pts = sk.pose_points(local)
+    pts = sk.pose_points(local, local.get("_root"))     # "_root": where the hips are (whole-body poses move them)
     img = Image.new("RGBA", size, bg + (255,))
-    items = sorted([(Z[n], n) for n in parts] + ([(Z_SWORD, "sword")] if sword else []))
+    z = dict(Z)
+    if sk.norm(pts["n_upper"][2] - STAND0["n_upper"][2]) > CAP_UNDER[1]:
+        z["n_cap"] = CAP_UNDER[0]
+    items = sorted([(z[n], n) for n in parts] + ([(Z_SWORD, "sword")] if sword else []))
     for _, n in items:
         if n == "sword":
             sw = sk.sword_points(pts)
@@ -111,7 +261,8 @@ def label(img, text):
     return img
 
 
-NAMES = {"today": "today's pieces, new skeleton", "bare_v3": "the redrawn elbow (bare_v3)", "bonearm_a": "arm made for the bones"}
+NAMES = {"today": "today's pieces, new skeleton", "bare_v3": "the redrawn elbow (bare_v3)", "bonearm_a": "arm made for the bones",
+         "bonearm_c": "bare elbow, cuff higher"}
 
 
 def clip(out, sets):
@@ -261,8 +412,146 @@ def take(try_png, part, arm_set):
           f" overlap with today's {iou:.2f}")
 
 
+def frame_of(part, arm_set, p0, p1, pad=80):
+    """A part picture padded, as float RGBA, its top-left on the rig canvas, and per pixel: along (from joint p0
+    towards p1), across, and the distance to p0 (rig px)."""
+    import numpy as np
+    f, x0, y0 = parts_of(arm_set)[part]
+    im = np.asarray(Image.open(BONES / f).convert("RGBA")).astype(np.float32)
+    a = np.zeros((im.shape[0] + 2 * pad, im.shape[1] + 2 * pad, 4), np.float32)
+    a[pad:-pad, pad:-pad] = im
+    ox, oy = x0 - pad, y0 - pad
+    u = np.array([p1[0] - p0[0], p1[1] - p0[1]], np.float32)
+    u /= np.hypot(*u)
+    yy, xx = np.mgrid[0:a.shape[0], 0:a.shape[1]].astype(np.float32)
+    dx, dy = xx + ox - p0[0], yy + oy - p0[1]
+    return a, (ox, oy), dx * u[0] + dy * u[1], -dx * u[1] + dy * u[0], np.hypot(dx, dy), u
+
+
+def carried(a, al, ac, lo_al, hi_al, smooth=7):
+    """The cross-section between along lo_al..hi_al (median colour per px across, smoothed): (lut, first across)."""
+    import numpy as np
+    band = (a[..., 3] > 200) & (al >= lo_al) & (al < hi_al)
+    cols = np.round(ac[band]).astype(int)
+    lo, hi = int(cols.min()), int(cols.max())
+    lut = np.zeros((hi - lo + 1, 3), np.float32)
+    have = np.zeros(hi - lo + 1, bool)
+    for c in range(lo, hi + 1):
+        sel = cols == c
+        if sel.sum() >= 2:
+            lut[c - lo], have[c - lo] = np.median(a[..., :3][band][sel], 0), True
+    idx = np.nonzero(have)[0]
+    for i in range(len(lut)):
+        if not have[i]:
+            lut[i] = lut[idx[np.argmin(np.abs(idx - i))]]
+    pd = np.pad(lut, ((smooth // 2, smooth // 2), (0, 0)), mode="edge")
+    lut = np.stack([np.convolve(pd[:, i], np.ones(smooth) / smooth, mode="valid") for i in range(3)], 1)
+    return lut, lo
+
+
+def clean_edges(arr, n=3):
+    """Soft edge pixels take the colour of the solid picture next to them (the pieces were cut from a render on white,
+    so their edges carry a light fringe that shows as a dotted light line over darker parts)."""
+    import numpy as np
+    rgb, al = arr[..., :3].copy(), arr[..., 3]
+    solid = al >= 250
+    for _ in range(n):
+        acc = np.zeros_like(rgb)
+        cnt = np.zeros(al.shape, np.float32)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
+            s_ = np.roll(np.roll(solid, dy, 0), dx, 1)
+            c_ = np.roll(np.roll(rgb, dy, 0), dx, 1)
+            acc += c_ * s_[..., None]
+            cnt += s_
+        grow = ~solid & (cnt > 0) & (al > 0)
+        rgb[grow] = acc[grow] / cnt[grow][:, None]
+        solid = solid | grow
+    out = arr.copy()
+    out[..., :3] = rgb
+    return out
+
+
+def elbow(src_set, new_set, lift=40, roll=25, shoulder=62):
+    """The arm of src_set with a bare elbow (the designer, 2026-11-20: "elbow looks weird": the elbow turned inside
+    the wide cuff, so the forearm came out of the cuff's side). The rolled cuff (the sleeve's last `roll` px before the
+    elbow line and everything past it) moves `lift` px up the arm, over the sleeve cut short under it; the forearm
+    gets a round top on the elbow (a disc as wide as the forearm, painted by carrying its own cross-section), always
+    under the cuff, so the elbow is skin that looks the same at every bend. The sleeve's top is cut to a disc on the
+    shoulder joint, so it stays put as the arm turns. Writes unity/Bones/hero/<new_set>/."""
+    import numpy as np
+    S, E, W = sk.P["n_shoulder"], sk.P["n_elbow"], sk.P["n_wrist"]
+    # the sleeve
+    a, org, al, ac, dist, u = frame_of("n_upper", src_set, E, (2 * E[0] - S[0], 2 * E[1] - S[1]))
+    cuffp = a.copy()
+    cuffp[..., 3] *= np.clip((al + roll) / 4, 0, 1)          # the roll: from `roll` px before the line on
+    sh = Image.fromarray(np.clip(cuffp, 0, 255).astype(np.uint8)).convert("RGBa")
+    sh = sh.transform(sh.size, Image.AFFINE, (1, 0, lift * u[0], 0, 1, lift * u[1]), resample=Image.BILINEAR)
+    sh = np.asarray(sh.convert("RGBA")).astype(np.float32)
+    # the roll is wider than the sleeve higher up: its top 20 px keep inside the sleeve's own outline (no corner
+    # poking onto the shirt)
+    top = al < -(lift + roll) + 20
+    sh[..., 3][top] *= a[..., 3][top] / 255
+    up = a.copy()
+    up[..., 3] *= np.clip((-(al + lift) - roll + 8) / 4, 0, 1)   # the sleeve, cut 8 px under the moved roll's top
+    out_up = up.copy()
+    t = sh[..., 3:4] / 255
+    out_up[..., :3] = sh[..., :3] * t + up[..., :3] * (up[..., 3:4] / 255) * (1 - t)
+    out_up[..., 3] = sh[..., 3] + up[..., 3] * (1 - t[..., 0])
+    nz = out_up[..., 3] > 0
+    out_up[..., :3][nz] /= (out_up[..., 3][nz] / 255)[:, None]
+    # the shoulder: past the shoulder line, only a disc on the shoulder joint as big as the round cut in the shirt
+    # (the torso ends `shoulder` px from it), so the sleeve's top no longer swings onto the chest when the arm turns
+    als = (al + float(np.hypot(E[0] - S[0], E[1] - S[1])))       # along from the shoulder joint
+    ds = np.hypot(al + float(np.hypot(E[0] - S[0], E[1] - S[1])), ac)
+    out_up[..., 3] *= np.where(als >= 0, 1.0, np.clip(shoulder + 0.5 - ds, 0, 1))
+    # that disc goes under the shirt (n_cap), so the shirt's armhole edge lies over it like a seam and the sleeve's
+    # lit top never lies on the chest when the arm is raised; the rest of the sleeve stays over the shirt
+    inside = np.clip(shoulder + 0.5 - ds, 0, 1)
+    cap = out_up.copy()
+    cap[..., 3] *= inside
+    out_up[..., 3] *= 1 - np.clip(shoulder - 2 + 0.5 - ds, 0, 1)    # 2 px over the cap: no seam when both are on top
+    up_org = org
+    # the forearm: a round top on the elbow
+    f, org2, al2, ac2, dist2, u2 = frame_of("n_fore", src_set, E, W)
+    lut, lo = carried(f, al2, ac2, 12, 30)
+    r = (len(lut) - 1) / 2 + 0.5
+    centre = lo + (len(lut) - 1) / 2                # the forearm's middle across (the disc sits on it, at the elbow)
+    cov = np.clip(r + 0.5 - np.hypot(al2, ac2 - centre), 0, 1)
+    band = np.clip(r + 0.5 - np.abs(ac2 - centre), 0, 1) * (al2 >= 0) * (al2 < 14)
+    top = np.maximum(cov * (al2 < 14), band)
+    acr = np.clip(np.round(ac2), lo, lo + len(lut) - 1).astype(int) - lo
+    paint = (top > 0) & (al2 < 14)
+    fore = f.copy()
+    fore[..., 3][al2 < 14] = 0
+    fore[..., :3][paint] = lut[acr][paint]
+    fore[..., 3][paint] = top[paint] * 255
+    out = BONES / new_set
+    out.mkdir(exist_ok=True)
+    table = {}
+    for part, arr, o in (("n_upper", out_up, up_org), ("n_cap", cap, up_org), ("n_fore", fore, org2)):
+        arr = clean_edges(arr)
+        path = out / f"{part}.png"
+        if path.exists():
+            raise SystemExit(f"{path} exists (a kept picture is never overwritten; use a new set name)")
+        img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+        bb = img.getbbox()
+        img.crop(bb).save(path)
+        table[part] = [f"{new_set}/{part}.png", o[0] + bb[0], o[1] + bb[1]]
+    (out / "parts.json").write_text(json.dumps(table, indent=1))
+    print(new_set, table, f"elbow radius {r:.0f}, cuff lifted {lift}")
+
+
 def main():
     cmd = sys.argv[1:2]
+    if cmd == ["bends"]:
+        bends(Path(sys.argv[2]), sys.argv[3:])
+        return
+    if cmd == ["poses"]:
+        poses(Path(sys.argv[2]), sys.argv[3])
+        return
+    if cmd == ["elbow"]:
+        elbow(sys.argv[2], sys.argv[3], *[int(v) for v in sys.argv[4:6]])
+        return
     if cmd == ["take"]:
         take(sys.argv[2], sys.argv[3], sys.argv[4])
         return
