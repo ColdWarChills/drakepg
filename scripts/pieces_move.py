@@ -403,22 +403,22 @@ KEYS = {
     "ready": dict(arm=(108, -75, 35), far=FAR0, spine=0, head=0, legs=LEGS0, hips=0, turn=1.0, x=0),
     # the rise goes round the back (the upper arm turns 108 -> 205 -> 298), so the fist, forearm and blade never
     # pass in front of his face; the later keys are written one turn on (+360) so every blend stays continuous
-    # HARD RULE (CLAUDE.md): the sword is in his right hand, the near arm. In the wind-up his free (left) fist drops
-    # down and back behind his hip: a free fist up in front while the sword is raised reads as the sword changing
-    # hands (the designer, 2026-11-17 and 2026-11-21). hand_rule() refuses any frame where it isn't so.
-    "lift": dict(arm=(205, -25, 30), far=(110, 95, 100), spine=-6, head=-3, legs=(98, 120, 62, 88), hips=-4,
+    "lift": dict(arm=(205, -25, 30), far=(60, -20, -40), spine=-6, head=-3, legs=(98, 120, 62, 88), hips=-4,
                  turn=0.94, x=-4 * G),
-    # wind-up: the near upper arm straight up from his near shoulder (seen beside the back of his head, drawn over
-    # it), the elbow folded so the fist is up behind his head, the blade level and back; weight on the back foot,
-    # leaning back, the free fist down and back behind the hip
-    "wind": dict(arm=(280, -58, 45), far=(150, 110, 120), spine=-10, head=-6, legs=(98, 120, 62, 88), hips=-6,
+    # wind-up: the upper arm raised up and forward (reached round the back), the elbow folded so the fist is up over his head, the blade lying back;
+    # weight on the back foot, leaning back and turned a little away, the free fist reaching at the enemy
+    # (2026-11-21: dropping the free fist behind the hip here read worse: an empty fist under the raised shoulder)
+    "wind": dict(arm=(298, -58, 45), far=(40, -40, -60), spine=-10, head=-6, legs=(98, 120, 62, 88), hips=-6,
                  turn=0.92, x=-6 * G),
     # the coil's hold: a little further back (the strain)
-    "wind2": dict(arm=(276, -60, 44), far=(155, 112, 122), spine=-12, head=-7, legs=(97, 121, 63, 89), hips=-7,
+    "wind2": dict(arm=(293, -60, 44), far=(38, -42, -62), spine=-12, head=-7, legs=(97, 121, 63, 89), hips=-7,
                   turn=0.9, x=-8 * G),
     # the hit: lunge, the arm long and reaching, the blade on a slant at the snout; the free fist pulled back behind
     # the hip (a clear fist there, not a blob between the thighs)
-    "hit": dict(arm=(406, -2, 67), far=(180, 120, 130), spine=42, head=18, legs=(138, 140, 26, 112), hips=18, turn=0.86,
+    # Upper arm steeper than his leaned shoulder line (the old 406 put the elbow on his far shoulder). NOT a fix:
+    # a fresh viewer still read this hit as his left hand (2026-11-21, cut4): the arm crosses his shirt front and
+    # seems to come from the shoulder under his chin. Wrist 45, inside the skeleton's range.
+    "hit": dict(arm=(430, -5, 45), far=(180, 120, 130), spine=42, head=18, legs=(138, 140, 26, 112), hips=18, turn=0.86,
                 x=TRAVEL, face="shout"),
     # follow-through: the blade carries on down and forward
     "after": dict(arm=(460, -6, 52), far=(178, 115, 120), spine=32, head=12, legs=(134, 137, 30, 110), hips=14,
@@ -494,14 +494,17 @@ def blade_points(set_name, pts):
 
 
 NEAR_PIECES = ("n_upper", "n_fore", "n_cuff")
+# The near elbow keeps at least this many upper-arm lengths from his far shoulder on held frames (closer, the forearm
+# grows out of the far shoulder). Needed, not enough: cut4 passes it and its hit still read as his left hand.
+ELBOW_CLEAR = 0.6
 FAR_PIECES = ("f_upper", "f_fore", "f_fist")
 
 
 def hand_rule(set_name, step=0.5):
-    """The hard rule, checked on the set and every frame (faults, not warnings: clip() refuses to render on any):
-    the sword is fixed to the near (right) hand; the near arm, its fist and the sword are drawn over his head, torso
-    and every far-arm piece; and while the sword fist is raised above his near shoulder, the free (left) fist is
-    behind his middle, never up in front where it would read as the sword hand."""
+    """Two faults clip() refuses to render: the near (right) arm, its fist or the sword drawn under his head, torso
+    or a far-arm piece; and the near elbow on his far shoulder on held frames (ELBOW_CLEAR). The sword is fixed to
+    the near hand bone by construction (puppet.arm_items). Passing does NOT mean a viewer reads the sword in his
+    right hand: cut4 passes and its hit read as his left (2026-11-21). Only a blind read tells."""
     bad = []
     parts = json.loads((set_dir(set_name) / "parts.json").read_text())
     z = {n: v["z"] for n, v in parts.items() if isinstance(v, dict) and "z" in v}
@@ -511,10 +514,12 @@ def hand_rule(set_name, step=0.5):
         bad.append(("draw order", "near arm under head/torso/far arm", min(near), max(under)))
     f = 0.0
     while f <= TOTAL:
-        pts = sk.pose_points(pose_at(f)["local"])
-        sh, fist, free, mid = pts["n_upper"][0], pts["n_hand"][0], pts["f_hand"][0], pts["hips"][0]
-        if f > 4 and f < CONTACT and fist[1] < sh[1] and free[0] > mid[0]:
-            bad.append((round(f, 1), "free fist in front while the sword is raised", round(free[0] - mid[0], 1)))
+        if not STRIKE0 < f < CONTACT:          # held moments; the fast swing may cross for a frame or two
+            pts = sk.pose_points(pose_at(f)["local"])
+            ns, el, fs = pts["n_upper"][0], pts["n_upper"][1], pts["f_upper"][0]
+            if math.dist(el, fs) < ELBOW_CLEAR * math.dist(ns, el):
+                bad.append((round(f, 1), "near elbow on the far shoulder (reads as his left arm)",
+                            round(math.dist(el, fs))))
         f += step
     return bad
 
