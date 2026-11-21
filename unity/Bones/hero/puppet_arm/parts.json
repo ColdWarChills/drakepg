@@ -1,0 +1,88 @@
+{
+ "_note": "puppet.py make: the sword arm drawn for bending (paper cut-out pieces, local Qwen). a/b: the piece's joints at its bone's head/tail (piece px). A fist's rod: its grip point; hold: the blade's turn from the hand bone (deg).",
+ "fist_z": 4,
+ "sword_z": 3,
+ "fists": {
+  "back": {
+   "file": "fist_back.png",
+   "bone": "n_hand",
+   "a": [
+    245,
+    320
+   ],
+   "b": [
+    238,
+    30
+   ],
+   "rod": [
+    206.5,
+    93.7
+   ],
+   "hold": -90.7,
+   "edge": 148.5,
+   "rod_px": 8278,
+   "scale": 0.37
+  },
+  "palm": {
+   "file": "fist_palm.png",
+   "bone": "n_hand",
+   "a": [
+    207,
+    320
+   ],
+   "b": [
+    213,
+    30
+   ],
+   "rod": [
+    227.1,
+    112.1
+   ],
+   "hold": 83.9,
+   "edge": 139.2,
+   "rod_px": 7232,
+   "scale": 0.37
+  },
+  "open": {
+   "file": "fist_open.png",
+   "bone": "n_hand",
+   "a": [
+    195,
+    440
+   ],
+   "b": [
+    175,
+    30
+   ],
+   "scale": 0.37
+  }
+ },
+ "n_upper": {
+  "a": [
+   86,
+   75
+  ],
+  "b": [
+   86,
+   530
+  ],
+  "wide": 1.5,
+  "z": 2,
+  "file": "n_upper.png",
+  "bone": "n_upper"
+ },
+ "n_fore": {
+  "a": [
+   52,
+   52
+  ],
+  "b": [
+   52,
+   455
+  ],
+  "wide": 1.25,
+  "z": 1,
+  "file": "n_fore.png",
+  "bone": "n_fore"
+ }
+}

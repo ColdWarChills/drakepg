@@ -1,0 +1,214 @@
+{
+ "_note": "puppet.py body: the whole bare hero as paper cut-out pieces. Near arm = his right (the sword arm), from puppet_arm. a/b: the piece's joints at its bone's head/tail.",
+ "fist_z": 14,
+ "sword_z": 13,
+ "fists": {
+  "back": {
+   "file": "fist_back.png",
+   "bone": "n_hand",
+   "a": [
+    245,
+    320
+   ],
+   "b": [
+    238,
+    30
+   ],
+   "rod": [
+    206.5,
+    93.7
+   ],
+   "hold": -90.7,
+   "edge": 148.5,
+   "rod_px": 8278,
+   "scale": 0.37
+  },
+  "palm": {
+   "file": "fist_palm.png",
+   "bone": "n_hand",
+   "a": [
+    207,
+    320
+   ],
+   "b": [
+    213,
+    30
+   ],
+   "rod": [
+    227.1,
+    112.1
+   ],
+   "hold": 83.9,
+   "edge": 139.2,
+   "rod_px": 7232,
+   "scale": 0.37
+  },
+  "open": {
+   "file": "fist_open.png",
+   "bone": "n_hand",
+   "a": [
+    195,
+    440
+   ],
+   "b": [
+    175,
+    30
+   ],
+   "scale": 0.37
+  }
+ },
+ "n_upper": {
+  "a": [
+   86,
+   75
+  ],
+  "b": [
+   86,
+   530
+  ],
+  "wide": 1.5,
+  "z": 12,
+  "file": "n_upper.png",
+  "bone": "n_upper"
+ },
+ "f_upper": {
+  "a": [
+   86,
+   75
+  ],
+  "b": [
+   86,
+   530
+  ],
+  "wide": 1.5,
+  "z": 2,
+  "file": "f_upper.png",
+  "bone": "f_upper"
+ },
+ "n_fore": {
+  "a": [
+   52,
+   52
+  ],
+  "b": [
+   52,
+   455
+  ],
+  "wide": 1.25,
+  "z": 11,
+  "file": "n_fore.png",
+  "bone": "n_fore"
+ },
+ "f_fore": {
+  "a": [
+   52,
+   52
+  ],
+  "b": [
+   52,
+   455
+  ],
+  "wide": 1.25,
+  "z": 1,
+  "file": "f_fore.png",
+  "bone": "f_fore"
+ },
+ "f_fist": {
+  "file": "f_fist.png",
+  "bone": "f_hand",
+  "a": [
+   232,
+   320
+  ],
+  "b": [
+   226,
+   30
+  ],
+  "scale": 0.37,
+  "z": 3
+ },
+ "head": {
+  "file": "head.png",
+  "bone": "head",
+  "a": [
+   178,
+   250
+  ],
+  "b": [
+   172,
+   -12
+  ],
+  "wide": 1.0,
+  "z": 9
+ },
+ "torso": {
+  "file": "torso.png",
+  "bone": "spine",
+  "a": [
+   108,
+   200
+  ],
+  "b": [
+   108,
+   0
+  ],
+  "wide": 0.68,
+  "z": 10
+ },
+ "n_thigh": {
+  "file": "n_thigh.png",
+  "bone": "n_thigh",
+  "a": [
+   57,
+   57
+  ],
+  "b": [
+   57,
+   294
+  ],
+  "wide": 1.0,
+  "z": 8
+ },
+ "n_shin": {
+  "file": "n_shin.png",
+  "bone": "n_shin",
+  "a": [
+   45,
+   32
+  ],
+  "b": [
+   48,
+   292
+  ],
+  "wide": 1.0,
+  "z": 7
+ },
+ "f_thigh": {
+  "file": "f_thigh.png",
+  "bone": "f_thigh",
+  "a": [
+   57,
+   57
+  ],
+  "b": [
+   57,
+   286
+  ],
+  "wide": 1.0,
+  "z": 6
+ },
+ "f_shin": {
+  "file": "f_shin.png",
+  "bone": "f_shin",
+  "a": [
+   45,
+   32
+  ],
+  "b": [
+   48,
+   292
+  ],
+  "wide": 1.0,
+  "z": 5
+ }
+}
