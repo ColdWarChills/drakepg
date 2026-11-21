@@ -173,12 +173,12 @@ namespace Drakepg
             var figLook = f.Look;
             if (figLook == null || figLook.Bare == null || Art.Pick(figLook.Art) == null) return false;
             var bare = figLook.Bare.Find(b => b != null && Art.Has(b.Art));
-            if (bare == null || bare.Hands == null || bare.Hands.Count == 0) return false;
+            if (bare == null || bare.Hands?.Right == null) return false;
             // The bare art's size as drawn: the hand anchors are in its pixels.
             var size = Art.Size(Art.Get(bare.Art));
             if (size.x <= 0 || size.y <= 0) return false;
             float s = Mathf.Min(Figure.ArtHeight / size.y, Figure.ArtMaxWidth / size.x);
-            var hand = bare.Hands[0];
+            var hand = bare.Hands.Right;
             var root = Holder(holder, ((float)hand.X - size.x / 2) * s, ((float)hand.Y - size.y) * s, "sigil fx");
 
             var glow = Img(root, Get(Tex.Soft), 0, 0, look.Tint[0], 0.35f, OrderSigilSparkle, true);

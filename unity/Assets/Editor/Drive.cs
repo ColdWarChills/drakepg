@@ -44,8 +44,8 @@ namespace Drakepg.EditorTools
 
         /// <summary>
         /// Line up the hero (`classId`'s look) holding `weaponId` in each of `poses` ("sword_wind,sword_step", "" for
-        /// standing) across the current screen, to check a pose's hands. `hands` overrides a pose's first hand for the
-        /// test: "pose=x,y,angle;pose2=..." (1x px). Call again to redo; Close it with an empty pose list.
+        /// standing) across the current screen, to check a pose's hands. `hands` overrides a pose's right fist for the
+        /// test (a fourth number 1: the left): "pose=x,y,angle;pose2=..." (1x px). Call again to redo; Close it with an empty pose list.
         /// </summary>
         public static string PoseSheet(string classId, string weaponId, string poses, string hands = "", string outfit = null)
         {
@@ -63,9 +63,11 @@ namespace Drakepg.EditorTools
             foreach (var part in hands.Split(';'))
             {
                 var kv = part.Split('=');
-                if (kv.Length != 2 || !bare.Poses.TryGetValue(kv[0], out var list)) continue;
+                if (kv.Length != 2 || !bare.Poses.TryGetValue(kv[0], out var fists)) continue;
                 var n = kv[1].Split(',');
                 var c = System.Globalization.CultureInfo.InvariantCulture;
+                // A fourth number picks the fist: 0 his right (the default), 1 his left.
+                var list = fists.Fists();
                 int i = n.Length > 3 ? int.Parse(n[3]) : 0;
                 list[i].X = double.Parse(n[0], c);
                 list[i].Y = double.Parse(n[1], c);

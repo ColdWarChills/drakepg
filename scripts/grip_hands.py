@@ -77,7 +77,7 @@ def use_pose(pose: str) -> None:
     import json
     global POSE, HAND, BODY, BOX, OUT, ROD, FINGERS
     game = json.loads((ROOT / "unity" / "Assets" / "Resources" / "Data" / "game.json").read_text(encoding="utf-8"))
-    hand = next(c["look"]["bare"]["poses"][pose][0] for c in game["classes"] if pose in (c["look"]["bare"].get("poses") or {}))
+    hand = next(c["look"]["bare"]["poses"][pose]["right"] for c in game["classes"] if pose in (c["look"]["bare"].get("poses") or {}))
     POSE, HAND = pose, (hand["x"], hand["y"], hand["angle"])
     BODY = ROOT / "src" / "assets" / "art" / f"char_hero_bare_{pose}@2x.webp"
     cx, cy = round(hand["x"] * 2), round(hand["y"] * 2)

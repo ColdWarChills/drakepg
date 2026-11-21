@@ -179,9 +179,9 @@ namespace Drakepg.Rules
                 var baseArt = classBare.Count > 0 && classBare[0].Art.EndsWith("_bare") ? classBare[0].Art.Substring(0, classBare[0].Art.Length - 5)
                     : classBare.Count > 0 ? classBare[0].Art : "char_" + Data.ClassId;
                 var art = baseArt + "_" + armor.Id;
-                List<Hand> hands = null;
+                Hands hands = null;
                 if (armor.Hands != null) armor.Hands.TryGetValue(Data.ClassId, out hands);
-                hands ??= classBare.Count > 0 ? classBare[0].Hands : new List<Hand>();
+                hands ??= classBare.Count > 0 ? classBare[0].Hands : new Hands();
                 var look = cls.Clone();
                 look.Art = new List<string> { art };
                 if (cls.Art != null) look.Art.AddRange(cls.Art);

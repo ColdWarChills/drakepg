@@ -88,13 +88,29 @@ export interface Blood {
 
 export interface BareLook {
   art: string;
-  hands: Hand[];
+  hands: Hands;
   /**
    * Key poses for the big skills (`SkillDef.epic`; Unity battle): pose name (`charge`, `leap`, `land`) -> the weapon
    * hands on `<art>_<pose>`. The pose art (scripts/hero_poses.py) is drawn at this art's scale with the feet on its
    * baseline; an outfit uses `<outfit art>_<pose>` when that exists and otherwise keeps its one picture.
    */
-  poses?: Record<string, Hand[]>;
+  poses?: Record<string, Hands>;
+}
+
+/**
+ * A hero picture's two fists, named by HIS sides (CLAUDE.md "Hard rules"). Hero pictures face right: his right arm is the
+ * near one (its shoulder nearer to us; where an arm crosses his body the near one is drawn over it), his left the far
+ * one. The weapon is only ever drawn in `right`. `left` is given when it holds something: the off-hand piece (the
+ * rogue's second dagger) or, with `cover`, the second fist closed over a two-handed shaft.
+ */
+export interface Hands {
+  right: Hand;
+  left?: Hand;
+}
+
+/** His fists in drawing order: `right` (the weapon) first, then `left` when given. */
+export function fists(h: Hands): Hand[] {
+  return h.left ? [h.right, h.left] : [h.right];
 }
 
 /**
@@ -119,7 +135,7 @@ export interface Hand {
    * the rest goes behind the body. A two-handed hold across the chest gives the whole shaft.
    */
   front?: number;
-  /** A second fist on the same weapon (a pose's two-handed grip): it holds nothing itself, it is only drawn over the shaft. */
+  /** `left` only: the second fist on a two-handed weapon; it holds nothing itself, it is only drawn over the shaft. */
   cover?: boolean;
 }
 
@@ -261,7 +277,7 @@ export interface ArmorDef extends ItemBase {
    * Body armor only: wearing it, a hero is drawn from `char_<class>_<armor id>` (empty-handed, like `char_<class>_bare`)
    * when that art exists. Its fist anchors default to the class's bare art; set them here per class once measured.
    */
-  hands?: Partial<Record<ClassId, Hand[]>>;
+  hands?: Partial<Record<ClassId, Hands>>;
 }
 
 export type AccessorySlot = 'ring' | 'necklace';

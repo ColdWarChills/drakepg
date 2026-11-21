@@ -66,7 +66,7 @@ namespace Drakepg
                 var wSprite = Art.Get(weaponArt);
                 var wSize = Art.Size(wSprite);
                 var grip = (float)(weapon.Grip ?? 0.85);
-                foreach (var hand in bare.Hands)
+                foreach (var hand in bare.Hands.Fists())
                 {
                     var pivot = new GameObject("hand").transform;
                     pivot.SetParent(art, false);
@@ -100,7 +100,7 @@ namespace Drakepg
                         var pose = Art.Get(key);
                         var poseSize = Art.Size(pose);
                         var pic = new Picture { Body = AddSprite(pose, art, 10, s) };
-                        foreach (var hand in kv.Value)
+                        foreach (var hand in kv.Value.Fists())
                         {
                             // A cover hand is the second fist on a two-handed grip: drawn over the shaft, holding nothing.
                             if (!hand.Cover) pic.Hands.Add((HandAt(hand, poseSize, s), Quaternion.Euler(0, 0, -(float)hand.Angle), FrontOf(hand, s)));
@@ -166,8 +166,8 @@ namespace Drakepg
         {
             var pose = Db.ReadyPose(weapon);
             if (pose != null && bare.Poses != null && bare.Poses.TryGetValue(pose, out var hands) && hands != null && Art.Has(bare.Art + "_" + pose))
-                return (bare.Art + "_" + pose, hands);
-            return (bare.Art, bare.Hands);
+                return (bare.Art + "_" + pose, hands.Fists());
+            return (bare.Art, bare.Hands?.Fists() ?? new List<Hand>());
         }
 
         /// <summary>Has a drawn key pose by this name (BareLook.Poses with art).</summary>

@@ -2096,15 +2096,16 @@ namespace Drakepg
             var b = BlowOf(kind);
             var reach = target.x - (170 * StageScale - b.Closer) * dir;
             // Drawn key poses for this weapon kind (wind-up, lunge step, strike), when the hero has them: the arms and
-            // legs move between them, the bend and the weapon's turn add the in-between motion.
-            var posed = PoseOf(f, kind, "wind") != null && PoseOf(f, kind, "strike") != null;
+            // legs move between them, the bend and the weapon's turn add the in-between motion. A kind without a usable
+            // wind-up picture winds up in its ready stance.
+            var posed = PoseOf(f, kind, "strike") != null;
             if (chain.Grand)
             {
                 // The last blow: the scene darkens and the camera leans in as it winds up, a glint, then it strikes.
                 Dim(0.35f, 0.18f);
                 ViewIn((home + target.x) / 2, GroundY - 150, 1.08f, 0.2f);
             }
-            if (posed) SwapPose(f, source, PoseOf(f, kind, "wind"));
+            if (posed && PoseOf(f, kind, "wind") is string wind) SwapPose(f, source, wind);
             await Anticipate(f, dir, b.Antic + (chain.Grand ? 0.06f : 0), b.Hold + (chain.Grand ? 0.06f : 0), chain.Grand ? 1 : b.Power, posed,
                 posed ? 14 : b.Back);
             if (chain.Grand)

@@ -413,7 +413,7 @@ namespace Drakepg
                     var wh = (float)(weapon.Size ?? 0.6) * h;
                     var ww = wSize.x * wh / wSize.y;
                     var grip = (float)(weapon.Grip ?? 0.85);
-                    var fists = bare.Hands?.Count ?? 0;
+                    var fists = bare.Hands?.Fists().Count ?? 0;
                     foreach (var hand in hands ?? new List<Hand>())
                     {
                         // As many weapons as the class has fists for; a cover hand holds none.

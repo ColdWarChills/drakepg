@@ -74,6 +74,26 @@ namespace Drakepg.Rules
         };
     }
 
+    /// <summary>
+    /// A hero picture's two fists, named by HIS sides (CLAUDE.md "Hard rules"). Hero pictures face right: his right arm is
+    /// the near one. The weapon is only ever drawn in Right; Left holds the off-hand piece (the rogue's second dagger) or,
+    /// with Cover, closes over a two-handed shaft.
+    /// </summary>
+    public class Hands
+    {
+        public Hand Right;
+        public Hand Left;
+
+        /// <summary>His fists in drawing order: Right (the weapon) first, then Left when given.</summary>
+        public List<Hand> Fists()
+        {
+            var list = new List<Hand>();
+            if (Right != null) list.Add(Right);
+            if (Left != null) list.Add(Left);
+            return list;
+        }
+    }
+
     public class Hand
     {
         public double X, Y, Angle;
@@ -95,9 +115,9 @@ namespace Drakepg.Rules
     public class BareLook
     {
         public string Art;
-        public List<Hand> Hands = new List<Hand>();
-        /// <summary>Key poses for the big skills: pose name -> the weapon hands on `{Art}_{pose}` (drawn at Art's scale, feet on its baseline).</summary>
-        public Dictionary<string, List<Hand>> Poses;
+        public Hands Hands = new Hands();
+        /// <summary>Key poses for the big skills: pose name -> his fists on `{Art}_{pose}` (drawn at Art's scale, feet on its baseline).</summary>
+        public Dictionary<string, Hands> Poses;
     }
 
     public class Look
@@ -213,7 +233,7 @@ namespace Drakepg.Rules
         public Dictionary<string, double> Defense;
         public Dictionary<string, double> Resists;
         public string Set;
-        public Dictionary<string, List<Hand>> Hands;
+        public Dictionary<string, Hands> Hands;
         // accessory
         public double? Hp, Mp, Crit;
         // consumable

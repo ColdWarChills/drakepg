@@ -296,10 +296,11 @@ export class Player {
     const classBare = cls.bare === undefined ? [] : Array.isArray(cls.bare) ? cls.bare : [cls.bare];
     const base = classBare[0]?.art.replace(/_bare$/, '') ?? `char_${this.data.classId}`;
     const art = `${base}_${armor.id}`;
-    const hands = armor.hands?.[this.data.classId] ?? classBare[0]?.hands ?? [];
+    const hands = armor.hands?.[this.data.classId] ?? classBare[0]?.hands;
     const classArt = cls.art === undefined ? [] : Array.isArray(cls.art) ? cls.art : [cls.art];
     const poses = classBare[0]?.poses;
-    return { ...cls, art: [art, ...classArt], bare: [{ art, hands, ...(poses ? { poses } : {}) }, ...classBare] };
+    const outfit = hands ? [{ art, hands, ...(poses ? { poses } : {}) }] : [];
+    return { ...cls, art: [art, ...classArt], bare: [...outfit, ...classBare] };
   }
 
   private traitsOf(slot: EquipSlot): GearTraits {

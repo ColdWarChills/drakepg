@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { Look, WeaponDef } from '../data/types';
+import { fists } from '../data/types';
 import type { SigilTier } from '../game/Items';
 import { hasArt, pickArt } from './art';
 import { addSigilGlow, SIGIL_FX } from './itemUi';
@@ -31,7 +32,7 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
     const img = scene.add.image(0, 0, bare.art).setOrigin(0.5, 1);
     const s = Math.min(ART_HEIGHT / img.height, ART_MAX_WIDTH / img.width);
     img.setScale(s);
-    const weapons = bare.hands.map((hand) => {
+    const weapons = fists(bare.hands).map((hand) => {
       const w = scene.add.image((hand.x - img.width / 2) * s, (hand.y - img.height) * s, weapon.art!);
       w.setOrigin(0.5, weapon.grip ?? 0.85).setAngle(hand.angle);
       w.setScale(((weapon.size ?? 0.6) * img.displayHeight) / w.height);
@@ -54,8 +55,8 @@ export function drawFigure(scene: Phaser.Scene, x: number, y: number, look: Look
     const img = scene.add.image(0, 0, art).setOrigin(0.5, 1).setFlipX(facing === -1);
     img.setScale(Math.min(ART_HEIGHT / img.height, ART_MAX_WIDTH / img.width));
     c.add([scene.add.ellipse(0, 0, img.displayWidth * 0.7, 22, 0x000000, 0.35), img]);
-    // The art shows its own weapon: a Sigil sparkles around the weapon hand (the bare art's first fist).
-    const hand = bare?.hands[0];
+    // The art shows its own weapon: a Sigil sparkles around the weapon hand (his right fist on the bare art).
+    const hand = bare?.hands.right;
     if (sigil && bare && hand) {
       // The bare art's size as drawn (a 2x file reports its 1x size, like the hand anchors).
       const src = scene.textures.getFrame(bare.art);

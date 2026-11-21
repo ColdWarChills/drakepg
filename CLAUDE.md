@@ -2,6 +2,10 @@
 
 Browser turn-based RPG. Phaser 4 + TypeScript + Vite. See README.md for layout and content guides.
 
+## Hard rules (the designer, 2026-11-21: "We need a HARD HARD RULESET ... You should not have an option to put weapons elsewhere")
+- **Left and right are the hero's own.** Hero pictures face right. His right arm is the near one: its shoulder is nearer to us (with his chest toward us it is on the left of the picture, with his back toward us on the right), and where an arm crosses his body the near one is drawn over it. His left arm is the far one. "The arm on the right side of the picture" is his left arm: never name his arms by picture sides. Facing left, the game mirrors the same picture.
+- **The weapon is in his right hand.** Every picture, pose, frame, clip, class and weapon kind. Shields and other off-hand pieces (the rogue's second dagger) go in his left hand; they get their own slot and moves later. The data names a picture's fists `right` and `left` (`Hands` in `src/data/types.ts`) and the code draws the weapon only in `right`: there is no other place for it. A drawing prompt names his arm ("his right arm, the one nearer to us"); a picture whose right arm doesn't hold the weapon is redrawn, not used.
+
 ## Commands
 - `npm run dev` / `npm run build` (build runs `tsc --noEmit` first) / `npm run typecheck`
 - `npm run sim`: headless balance check (scripts/sim.ts). Run it after tuning monsters, skills, items or `BALANCE`.

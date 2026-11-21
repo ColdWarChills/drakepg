@@ -76,7 +76,8 @@ namespace Drakepg
                 top = y - size.y * s * k;
                 // The hands that hold a weapon: as many as the class has fists for (a cover hand only hides the shaft).
                 var holding = hands.FindAll(fist => !fist.Cover);
-                if (holding.Count > (bare.Hands?.Count ?? 0)) holding.RemoveRange(bare.Hands?.Count ?? 0, holding.Count - (bare.Hands?.Count ?? 0));
+                var fists = bare.Hands?.Fists().Count ?? 0;
+                if (holding.Count > fists) holding.RemoveRange(fists, holding.Count - fists);
                 foreach (var hand in holding)
                 {
                     var hx = x + ((float)hand.X - size.x / 2) * s * k;

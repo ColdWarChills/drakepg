@@ -1,8 +1,9 @@
-import type { ClassDef, Hand, WeaponDef, WeaponKind } from './types';
+import type { ClassDef, Hand, Hands, WeaponDef, WeaponKind } from './types';
 
 /**
- * One base hero for every class (docs/PLANS.md, Art): classes differ by gear, not by the picture. Each class holds its
- * weapon in its own fists (`bare.hands`); body armor swaps in `char_hero_<armor id>` (see `Player.look`).
+ * One base hero for every class (docs/PLANS.md, Art): classes differ by gear, not by the picture. Each picture names his
+ * right and left fist (`Hands`, CLAUDE.md "Hard rules"): the weapon is always in his right hand, the near arm; body armor
+ * swaps in `char_hero_<armor id>` (see `Player.look`).
  */
 const HERO_ART = 'char_hero_bare';
 /**
@@ -12,6 +13,14 @@ const HERO_ART = 'char_hero_bare';
  * the top, where the guard rests, and comes out under the curled fingertips at the bottom.
  */
 const RAISED_FIST: Hand = { x: 235.1, y: 133.5, angle: -10, fingers: { art: 'part_hero_fingers', x: 190, y: 95 } };
+/**
+ * The base hero's raised fist is his LEFT (the far arm). His right fist hangs by his hip (the near arm), so that one
+ * carries the weapon, pointing up and forward with the whole weapon in front of his leg (a staff leans on its foot behind
+ * him). Seen when a weapon kind has no ready stance (the staff, until staff_ready is redrawn). The rogue's second dagger
+ * goes in the raised left fist.
+ */
+const RIGHT_LOW = { x: 50, y: 268 };
+const BASE_HANDS: Hands = { right: { ...RIGHT_LOW, angle: 35, front: 400 } };
 /**
  * The ready stance the standing hero is drawn in for each kind of weapon (Unity; docs/PLANS.md "Weapon holds: ready
  * stances"): a key pose in `HERO_POSES` whose arms are drawn for that grip. Without the pose's art (an outfit that has
@@ -53,44 +62,43 @@ export const PLANTED_REACH: [number, number] = [0.53, 0.57];
  * (`char_hero_bare_<pose>`, 1x px). A circle of the fist covers the grip. charge: the power stance, the sword raised
  * beside his head; leap: both fists together overhead, the weapon swung back behind his head; land: the deep lunge after the blow, both fists low in front.
  */
-const HERO_POSES: Record<string, Hand[]> = {
-  charge: [{ x: 186.7, y: 48, angle: -30 }],
-  leap: [{ x: 139.7, y: 28, angle: -120 }],
-  land: [{ x: 417.7, y: 305, angle: 128 }],
-  // A blow per weapon kind (Unity BattleScreen.WeaponBlow): <kind>_wind, _step, _strike. The first hand holds the weapon;
-  // dagger poses also give the rogue's second dagger hand. The hammer steps in with the epic leap.
-  // The wind-up's fist is drawn holding the handle upright, thumb on top (like RAISED_FIST): the sword stands up behind
-  // the head (it was -75, across the fist), and its fingers wrap the handle (scripts/grip_hands.py --pose sword_wind,
-  // rod try 2124597813).
-  sword_wind: [{ x: 137.5, y: 74.3, angle: 0, fingers: { art: 'part_hero_fingers_sword_wind', x: 93.5, y: 28 } }],
-  sword_step: [{ x: 128.7, y: 21, angle: -45 }],
-  sword_strike: [{ x: 331.7, y: 388, angle: 115 }],
-  axe_wind: [{ x: 145.7, y: 23, angle: -110 }],
-  axe_step: [{ x: 158.7, y: 21, angle: -90 }],
-  axe_strike: [{ x: 350.7, y: 292, angle: 115 }],
-  hammer_wind: [{ x: 56.7, y: 267, angle: -150 }],
-  hammer_strike: [{ x: 296.7, y: 383, angle: 112 }],
-  dagger_wind: [{ x: 329.7, y: 240, angle: 70 }, { x: 89.7, y: 233, angle: -130 }],
-  dagger_step: [{ x: 387.7, y: 238, angle: 60 }, { x: 135.7, y: 238, angle: -120 }],
-  dagger_strike: [{ x: 473.7, y: 125, angle: 90 }, { x: 173.7, y: 238, angle: -140 }],
-  staff_wind: [{ x: 104.7, y: 21, angle: 0 }],
-  staff_step: [{ x: 215.7, y: 35, angle: 30 }],
-  staff_strike: [{ x: 408.7, y: 123, angle: 80 }],
-  wand_wind: [{ x: 125.7, y: 79, angle: -12 }],
-  wand_step: [{ x: 246.7, y: 133, angle: 40 }],
-  wand_strike: [{ x: 386.7, y: 100, angle: 75 }],
+const HERO_POSES: Record<string, Hands> = {
+  charge: { right: { x: 186.7, y: 48, angle: -30 } },
+  leap: { right: { x: 139.7, y: 28, angle: -120 } },
+  land: { right: { x: 417.7, y: 305, angle: 128 } },
+  // A blow per weapon kind (Unity BattleScreen.WeaponBlow): <kind>_wind, _step, _strike; the weapon in `right`. Dagger
+  // poses also give the rogue's second dagger (`left`). The hammer steps in with the epic leap.
+  // sword_wind is not used: it is drawn with his back to us, the raised arm his LEFT (a left-handed coil), his right fist
+  // reaching forward empty. Without it the blow winds up in the ready stance. Redraw it right-handed.
+  sword_step: { right: { x: 128.7, y: 21, angle: -45 } },
+  sword_strike: { right: { x: 331.7, y: 388, angle: 115 } },
+  axe_wind: { right: { x: 145.7, y: 23, angle: -110 } },
+  axe_step: { right: { x: 158.7, y: 21, angle: -90 } },
+  axe_strike: { right: { x: 350.7, y: 292, angle: 115 } },
+  hammer_wind: { right: { x: 56.7, y: 267, angle: -150 } },
+  hammer_strike: { right: { x: 296.7, y: 383, angle: 112 } },
+  // Daggers: his right fist (the near one, by the hip) holds the dagger reverse-grip; the left (far, forward) holds the
+  // rogue's second dagger.
+  dagger_wind: { right: { x: 89.7, y: 233, angle: -130 }, left: { x: 329.7, y: 240, angle: 70 } },
+  dagger_step: { right: { x: 135.7, y: 238, angle: -120 }, left: { x: 387.7, y: 238, angle: 60 } },
+  dagger_strike: { right: { x: 173.7, y: 238, angle: -140 }, left: { x: 473.7, y: 125, angle: 90 } },
+  staff_wind: { right: { x: 104.7, y: 21, angle: 0 } },
+  staff_step: { right: { x: 215.7, y: 35, angle: 30 } },
+  // staff_strike and wand_strike are not used: the arm thrust forward is his LEFT, his right hand is open. Redraw them.
+  wand_wind: { right: { x: 125.7, y: 79, angle: -12 } },
+  wand_step: { right: { x: 246.7, y: 133, angle: 40 } },
   // The ready stances (READY_POSE): how the standing hero holds each kind of weapon. A closed fist holds a handle square
   // to the forearm, so each angle follows the drawn forearm; only the wand continues the arm.
-  sword_ready: [{ x: 244, y: 262, angle: 55 }],
+  // Sword (and axe): his right fist at the belt (the near arm), the blade up and forward in front of him.
+  sword_ready: { right: { x: 156, y: 244, angle: 45, front: 400 } },
   // A knife fighter's guard, both fists clear of the body: the lead dagger forward and up from a low fist, the near
   // one in a reverse grip beside the hip (the arm nearest the viewer, so its whole blade is drawn in front of the leg).
-  dagger_ready: [{ x: 274, y: 214, angle: 30 }, { x: 127, y: 241, angle: -140, front: 150 }],
-  wand_ready: [{ x: 213, y: 138, angle: 48 }],
-  // Two hands on the maul: the rear fist at the belt holds it (the whole shaft in front of the body), the lead fist
-  // only closes over the shaft.
-  hammer_ready: [{ x: 148, y: 222, angle: 59, front: 270 }, { x: 272, y: 147, angle: 59, cover: true }],
-  // The staff planted by the front foot, leaning a little back to him.
-  staff_ready: [{ x: 278, y: 213, angle: -4 }],
+  dagger_ready: { right: { x: 127, y: 241, angle: -140, front: 150 }, left: { x: 274, y: 214, angle: 30 } },
+  wand_ready: { right: { x: 213, y: 138, angle: 48 } },
+  // Two hands on the maul: his right fist at the belt holds it (the whole shaft in front of the body), the left only
+  // closes over the shaft.
+  hammer_ready: { right: { x: 148, y: 222, angle: 59, front: 270 }, left: { x: 272, y: 147, angle: 59, cover: true } },
+  // staff_ready is not used: the staff is planted in his LEFT fist, his right hangs empty. Redraw it.
 };
 
 export const CLASSES: ClassDef[] = [
@@ -119,7 +127,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x5b3a1e,
       scale: 1,
       art: HERO_ART,
-      bare: { art: HERO_ART, hands: [RAISED_FIST], poses: HERO_POSES },
+      bare: { art: HERO_ART, hands: BASE_HANDS, poses: HERO_POSES },
     },
   },
   {
@@ -147,7 +155,7 @@ export const CLASSES: ClassDef[] = [
       accent: 0x2c1a3a,
       scale: 1,
       art: HERO_ART,
-      bare: { art: HERO_ART, hands: [RAISED_FIST], poses: HERO_POSES },
+      bare: { art: HERO_ART, hands: BASE_HANDS, poses: HERO_POSES },
     },
   },
   {
@@ -178,11 +186,9 @@ export const CLASSES: ClassDef[] = [
       bare: {
         art: HERO_ART,
         poses: HERO_POSES,
-        hands: [
-          RAISED_FIST,
-          // Reverse grip: the blade out of the back of the lowered fist, down and behind.
-          { x: 50, y: 268, angle: -130 },
-        ],
+        // His right fist (lowered, the near arm) holds the dagger reverse-grip: the blade out of the back of the fist,
+        // down and behind. The second dagger is in his raised left fist.
+        hands: { right: { ...RIGHT_LOW, angle: -130 }, left: RAISED_FIST },
       },
     },
   },
