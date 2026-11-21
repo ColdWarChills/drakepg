@@ -11,7 +11,14 @@ grips a handle, with the local Qwen (ComfyUI), as edits of the hero's own art so
   python scripts/grip_hands.py open <rod seed> --seeds 2
   python scripts/grip_hands.py layers <rod seed>
 
-Tries go to art/redo/grip/ (git-ignored) with a sheet per step.
+A key pose's fist (`--pose sword_wind`): the same edit on that pose's picture, the rod at the angle the pose holds the
+weapon (from game.json), thumb on the blade side; `layers` then keeps the whole redrawn hand over the handle (the pose's
+own fist may face another way) as `part_hero_fingers_<pose>`:
+
+  python scripts/grip_hands.py rod --pose sword_wind --seeds 3
+  python scripts/grip_hands.py layers <rod seed> --pose sword_wind
+
+Tries go to art/redo/grip/ (a key pose's: art/redo/grip/<pose>/; git-ignored) with a sheet per step.
 """
 import io
 import random
@@ -48,9 +55,47 @@ OPEN = (
 )
 
 
+# Key poses: how the rod runs through each fist, in words (the blade leaves by the thumb, the pommel under the little
+# finger; which side of the hand faces the viewer follows from that, for a right hand).
+POSE_ROD = {
+    # The wind-up's fist is drawn like the standing raised fist (back of the hand, knuckles down its right side): it
+    # holds the handle upright, thumb on top. A level rod only slid behind it (art/redo/grip/sword_wind/_rod_level_try.png).
+    "sword_wind": (
+        "The rod is held upright and runs straight through the fist, square to the curled fingers: it comes out above the "
+        "fist between the thumb and the index finger and below the fist right under the little finger, and it reaches "
+        "past the top and the bottom of the picture. The four fingers curl around the rod and cover it."
+    ),
+}
+POSE = None          # set by --pose: the key pose whose fist is redrawn
+HAND = None          # that pose's hand (1x px) and weapon angle (degrees clockwise from blade-up)
+
+
+def use_pose(pose: str) -> None:
+    """Point BODY, BOX, OUT and ROD at a key pose's fist."""
+    import json
+    global POSE, HAND, BODY, BOX, OUT, ROD, FINGERS
+    game = json.loads((ROOT / "unity" / "Assets" / "Resources" / "Data" / "game.json").read_text(encoding="utf-8"))
+    hand = next(c["look"]["bare"]["poses"][pose][0] for c in game["classes"] if pose in (c["look"]["bare"].get("poses") or {}))
+    POSE, HAND = pose, (hand["x"], hand["y"], hand["angle"])
+    BODY = ROOT / "src" / "assets" / "art" / f"char_hero_bare_{pose}@2x.webp"
+    cx, cy = round(hand["x"] * 2), round(hand["y"] * 2)
+    BOX = (cx - 80, cy - 80, cx + 80, cy + 80)
+    OUT = ROOT / "art" / "redo" / "grip" / pose
+    FINGERS = ROOT / "src" / "assets" / "art" / f"part_hero_fingers_{pose}@2x.webp"
+    ROD = (
+        "Edit <image1>. It shows a cartoon hero's right fist and forearm on a transparent background. Change only the "
+        "hand: make the fist tightly grip a straight, round rod of flat, solid bright magenta color (pure #FF00FF, no "
+        f"shading). {POSE_ROD[pose]} The thumb closes over the index finger. The rod is very thick, half as wide as the "
+        "whole fist, like a thick wooden staff. Keep the hand the same size and at the same place, with the same skin "
+        "color, the same dark outlines and the same flat cartoon painting style. Keep the forearm and everything else "
+        "exactly the same."
+    )
+
+
 def crop() -> Image.Image:
     body = Image.open(BODY).convert("RGBA")
-    c = body.crop(BOX)
+    c = Image.new("RGBA", (BOX[2] - BOX[0], BOX[3] - BOX[1]), (0, 0, 0, 0))
+    c.alpha_composite(body.crop((max(0, BOX[0]), max(0, BOX[1]), BOX[2], BOX[3])), (max(0, -BOX[0]), max(0, -BOX[1])))
     return c.resize((c.width * UP, c.height * UP), Image.LANCZOS)
 
 
@@ -90,6 +135,8 @@ def run(step: str, source: Image.Image, prompt: str, seeds: list[int]) -> None:
 FINGERS = ROOT / "src" / "assets" / "art" / "part_hero_fingers@2x.webp"
 # Half the widest common handle (staffs, about 19 px) plus room, in 1x px from the grip line.
 BAND = 12
+# A key pose's redrawn hand: the disc kept around the grip, in 1x px (a fist is about 36 px across).
+FIST_DISC = 21
 
 
 def layers(seed: str) -> None:
@@ -106,8 +153,14 @@ def layers(seed: str) -> None:
     c = pts.mean(0)
     ev, evec = np.linalg.eigh(np.cov((pts - c).T))
     d = evec[:, np.argmax(ev)]
-    if d[1] < 0:
-        d = -d
+    if HAND is None:
+        if d[1] < 0:
+            d = -d
+    else:
+        # From the blade end to the pommel end: against the pose's blade direction.
+        r = np.radians(HAND[2])
+        if d @ np.array([-np.sin(r), np.cos(r)]) < 0:
+            d = -d
     n = np.array([-d[1], d[0]])
     t, w = (pts - c) @ d, (pts - c) @ n
     half = (np.percentile(w, 99) - np.percentile(w, 1)) / 2
@@ -126,13 +179,20 @@ def layers(seed: str) -> None:
     pt = (xx - c[0]) * d[0] + (yy - c[1]) * d[1]
     pw = (xx - c[0]) * n[0] + (yy - c[1]) * n[1]
     px = UP * 2  # 6x px per 1x px
-    keep = np.clip((BAND * px - np.abs(pw)) / (2 * px), 0, 1)  # the band around the grip line, soft sides
-    # Across the rod the edge is where the rod shows (the drawn fingertip curve); beside it, the edge carries on flat
-    # from the rod's sides, softly (it lies over the same skin in the hero's art).
-    beside = np.abs(pw) > half
-    flat = np.where(pw < 0, edge_l, edge_r)
-    keep *= np.where(beside, np.clip((flat - pt) / (2 * px), 0, 1), 1)
-    keep *= np.clip((t_out + 8 * px - pt) / px, 0, 1)  # nothing below the rod's way out
+    if HAND is None:
+        keep = np.clip((BAND * px - np.abs(pw)) / (2 * px), 0, 1)  # the band around the grip line, soft sides
+        # Across the rod the edge is where the rod shows (the drawn fingertip curve); beside it, the edge carries on flat
+        # from the rod's sides, softly (it lies over the same skin in the hero's art).
+        beside = np.abs(pw) > half
+        flat = np.where(pw < 0, edge_l, edge_r)
+        keep *= np.where(beside, np.clip((flat - pt) / (2 * px), 0, 1), 1)
+        keep *= np.clip((t_out + 8 * px - pt) / px, 0, 1)  # nothing below the rod's way out
+    else:
+        # A key pose's fist may face another way than the redrawn one: keep the whole redrawn hand, a soft disc around
+        # where the rod goes under it (the forearm past it stays the pose's own, with its sleeve or bracer).
+        mid = c + d * (t_in + t_out) / 2
+        rad = FIST_DISC * px
+        keep = np.clip((rad - np.hypot(xx - mid[0], yy - mid[1])) / (2 * px), 0, 1)
     # No rod, and none of its fringe: magenta-ish pixels go, and the rest lose the magenta spill (skin and outlines
     # have less blue than green).
     pink = np.clip(((r - g) + (b - g) - 120) / 120, 0, 1)
@@ -167,12 +227,16 @@ def layers(seed: str) -> None:
     enter = np.array(to1x(c + d * t_in))
     hand = enter + d * 20  # the guard rests on the fist: 20 px up the line from the hand point
     print(f"hand: x {hand[0]:.1f}, y {hand[1]:.1f}, angle {angle:.1f}; fingers sprite top-left {BOX[0] / 2:.0f}, {BOX[1] / 2:.0f} (1x px)")
+    if HAND is not None:
+        print(f"pose data was x {HAND[0]}, y {HAND[1]}, angle {HAND[2]}; the rod is {angle - HAND[2]:+.1f} deg off it")
 
 
 def main() -> None:
     args = sys.argv[1:]
     n = int(args[args.index("--seeds") + 1]) if "--seeds" in args else 2
     seeds = [random.randrange(1, 2**31) for _ in range(n)]
+    if "--pose" in args:
+        use_pose(args[args.index("--pose") + 1])
     if args and args[0] == "rod":
         run("rod", crop(), ROD, seeds)
     elif args and args[0] == "open":

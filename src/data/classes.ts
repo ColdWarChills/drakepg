@@ -59,7 +59,10 @@ const HERO_POSES: Record<string, Hand[]> = {
   land: [{ x: 417.7, y: 305, angle: 128 }],
   // A blow per weapon kind (Unity BattleScreen.WeaponBlow): <kind>_wind, _step, _strike. The first hand holds the weapon;
   // dagger poses also give the rogue's second dagger hand. The hammer steps in with the epic leap.
-  sword_wind: [{ x: 133.7, y: 68, angle: -75 }],
+  // The wind-up's fist is drawn holding the handle upright, thumb on top (like RAISED_FIST): the sword stands up behind
+  // the head (it was -75, across the fist), and its fingers wrap the handle (scripts/grip_hands.py --pose sword_wind,
+  // rod try 2124597813).
+  sword_wind: [{ x: 137.5, y: 74.3, angle: 0, fingers: { art: 'part_hero_fingers_sword_wind', x: 94, y: 28 } }],
   sword_step: [{ x: 128.7, y: 21, angle: -45 }],
   sword_strike: [{ x: 331.7, y: 388, angle: 115 }],
   axe_wind: [{ x: 145.7, y: 23, angle: -110 }],
