@@ -2,6 +2,7 @@
 python scripts/hero3d/compare.py <out.mp4> [--speed 0.5] [--still t1,t2,...] [--root art/redo/animway]
 (frame folders are listed in PANELS below, under the root)
 Each panel plays its take once from the start and then holds its last frame."""
+import json
 import subprocess
 import sys
 import tempfile
@@ -18,7 +19,9 @@ SPEED = float(a[a.index("--speed") + 1]) if "--speed" in a else 1.0
 STILLS = [float(x) for x in a[a.index("--still") + 1].split(",")] if "--still" in a else []
 PANELS = [  # label, cost line, frames dir, fps, source hero height px, source feet (x, y), backdrop
     ("Today: drawn poses (game)", "pictures per armor and per move", SP / "frames/old", 60, 406, (290, 578), None),
-    ("2D bones (last try)", "gear pieces cut per armor; moves reuse them", SP / "frames/bones", 60, 187, (330, 287), 0.5),
+    # the bones take runs to the monster: its panel follows his waist (track.json from BonesCapture)
+    ("2D bones (Nov 18 cut, camera follows)", "gear pieces cut per armor; moves reuse them", SP / "frames/bones", 60, 225,
+     (330, 498), 0.40),
     ("A: AI video (LTX)", "a video per gear mix and move", SP / "ltx/n3", 24, 616, (470, 670), None),
     ("B: 3D hero in Blender", "gear made once; moves reuse it", SP / "frames/clip3_bg", 24, 377, (300, 427), None),
     ("C: 3D moves + drawn look", "a video per gear mix and move", SP / "hybrid/frames_s1", 24, 377, (300, 427), None),
@@ -28,17 +31,28 @@ small = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 15)
 
 
 def frames(d):
-    return sorted(Path(d).glob("*.png"))
+    return sorted(p for p in Path(d).glob("*") if p.suffix in (".png", ".jpg"))
 
 
-srcs = [(lab, cost, frames(d), fps, h, feet, ax or 0.30) for lab, cost, d, fps, h, feet, ax in PANELS if frames(d)]
-dur = max(len(f) / fps for _, _, f, fps, _, _, _ in srcs) + 0.6
+def follow(d):
+    """Per-frame waist x from a BonesCapture track.json next to the frames (smoothed), or None."""
+    t = Path(d) / "track.json"
+    if not t.exists():
+        return None
+    xs = [f["points"]["j_waist"][0] for f in json.load(open(t))["frames"]]
+    return [sum(xs[max(0, i - 4):i + 5]) / len(xs[max(0, i - 4):i + 5]) for i in range(len(xs))]
+
+
+srcs = [(lab, cost, frames(d), fps, h, feet, ax or 0.30, follow(d)) for lab, cost, d, fps, h, feet, ax in PANELS if frames(d)]
+dur = max(len(f) / fps for _, _, f, fps, _, _, _, _ in srcs) + 0.6
 cache = {}
 
 
 def panel(i, t):
-    lab, cost, fl, fps, h, (fx, fy), ax = srcs[i]
+    lab, cost, fl, fps, h, (fx, fy), ax, fol = srcs[i]
     k = min(int(t * fps), len(fl) - 1)
+    if fol:
+        fx = fol[min(k, len(fol) - 1)]
     key = (i, k)
     if key not in cache:
         im = Image.open(fl[k]).convert("RGB")

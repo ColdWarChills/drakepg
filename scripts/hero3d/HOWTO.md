@@ -1,7 +1,7 @@
 # Hero moves: 3D swing + drawn look (test, 2026-11-21)
 
-A move is keyed once on a 3D copy of the hero in Blender (hands go where the keys say, the sword never leaves the
-fist). That render drives Wan-Animate-2 with a drawn picture of the hero as the reference, which gives a drawn
+A move is keyed once on a 3D copy of the hero in Blender (the hands reach for their keys, within a few cm; the render
+log prints each miss, up to 10 cm in this take's wind-up; the sword never leaves the fist). That render drives Wan-Animate-2 with a drawn picture of the hero as the reference, which gives a drawn
 clip. A new armor is a new reference picture and one more run (~2 min); the 3D move is reused.
 Proofs: `art/tests/sheets/animway/` (README there). Local data: `art/redo/animway/` (not in git).
 
@@ -32,4 +32,5 @@ The Blender MCP is set up only in the Animation Workflow project, so these scrip
 6. From the Animation Workflow folder: `.venv/Scripts/python.exe -I <repo>/scripts/hero3d/hyb_animate.py driver.mp4
    reference.png out.mp4 --seed 1 --length 41 --size 832x480 [--outfit "a steel scale-mail vest ..."]`.
 
-`compare.py` builds the side-by-side clip of all ways (`--speed 0.5` for half speed, `--still t1,t2` for a sheet).
+`key_flat.py` cuts a take off its grey backdrop (`<venv python> -I key_flat.py <frames> <out>`);
+`gamesize_clip.py` puts it on a fight backdrop at game size beside today's blow. `compare.py` builds the side-by-side clip of all ways (`--speed 0.5` for half speed, `--still t1,t2` for a sheet).

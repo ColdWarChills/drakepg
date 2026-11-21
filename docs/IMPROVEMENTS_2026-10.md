@@ -501,3 +501,4 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - Old | 2D bones | AI video (LTX) | 3D hero in Blender | 3D swing turned drawn by Wan-Animate-2: `art/tests/sheets/animway/` (`compare_x1.mp4`, `compare_half.mp4`, README).
 - The 3D hero: Qwen views, Pixal3D model, own distance-based skin weights (Blender's heat weighting failed on the generated mesh), reaching arms and legs, sword fixed in the fist, repainted from the drawn views (`scripts/hero3d/`, how-to `HOWTO.md`).
 - Gear proof: the same swing with a scale-mail reference keeps the armor on in every frame (`gear_x1.mp4`).
+- Way C cut off its backdrop (`key_flat.py`) and set on the Fen Road backdrop at game size beside today's blow (`gamesize_x1.mp4`): clean edges; today's hit is still stronger (lunge, face, smear). Cost against the every-item rule counted in PLANS.
