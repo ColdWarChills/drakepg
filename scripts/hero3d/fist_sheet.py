@@ -33,13 +33,15 @@ def way_c(folder, trk, n):       # Wan file n+1 shows 3D frame n
 
 
 ROWS = [
-    ("In the game today", [game(15, (300, 254)), game(29, (420, 527)), game(37, (410, 523)), game(1, (370, 393))]),
-    ("Bones cut (Nov 18)", [bones(10), bones(22), bones(28), bones(0)]),
+    ("Today in the game", [game(15, (300, 254)), game(29, (420, 527)), game(37, (410, 523)), game(1, (370, 393))]),
+    ("Bones cut, Nov 18", [bones(10), bones(22), bones(28), bones(0)]),
     ("New way, first try", [way_c("frames_s1", t_old, n) for n in (8, 15, 20, 35)]),
     ("New way, fixed", [way_c("frames_s4", t_new, n) for n in (8, 15, 20, 35)]),
 ]
 COLS = ["wind-up", "hit", "after the hit", "ready"]
-S, LW, TH = 300, 230, 34
+WRONG = {(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1), (1, 2), (2, 2)}   # (col, row): the two wind-ups the designer
+# marked, and every old hit and after-the-hit (the handle along the forearm, read so in a blind check)
+S, LW, TH = 300, 285, 34
 font = ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", 22)
 W = Image.new("RGB", (LW + len(COLS) * (S + 6), TH + len(ROWS) * (S + 6)), (24, 22, 20))
 d = ImageDraw.Draw(W)
@@ -51,7 +53,11 @@ for r, (lab, cells) in enumerate(ROWS):
     for c, (p, (gx, gy), h) in enumerate(cells):
         B = 0.20 * h
         im = Image.open(p).convert("RGB")
-        W.paste(im.crop((int(gx - B), int(gy - B), int(gx + B), int(gy + B))).resize((S, S), Image.LANCZOS),
-                (LW + c * (S + 6), y))
+        x = LW + c * (S + 6)
+        W.paste(im.crop((int(gx - B), int(gy - B), int(gx + B), int(gy + B))).resize((S, S), Image.LANCZOS), (x, y))
+        if (c, r) in WRONG:
+            d.rectangle((x, y, x + S - 1, y + S - 1), outline=(220, 60, 50), width=4)
+            d.rectangle((x + 4, y + S - 34, x + 96, y + S - 4), fill=(220, 60, 50))
+            d.text((x + 12, y + S - 33), "wrong", font=font, fill=(255, 255, 255))
 W.save(a[0])
 print(W.size)

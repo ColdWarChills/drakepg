@@ -1,5 +1,5 @@
 """Close-up of the sword hand in every frame: one row per take, the crop centred on the grip that Blender tracked.
-python hand_strip.py <track.json> <out.jpg> <label>=<frames dir>[:offset] ...  (offset: frame shift, e.g. 1 for f001 = frame 0)"""
+python hand_strip.py <track.json> <out.jpg> <label>=<frames dir>[:offset] ...  (offset: the picture used for frame f is the (f+offset)th file by name; a Wan take runs one frame behind its driver, so its f001 already matches driver frame 0: use 0)"""
 import json
 import sys
 from pathlib import Path

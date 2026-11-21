@@ -3,8 +3,11 @@
 Sword grip fixed (later on 2026-11-21, after "Still the same problem with inverted fists"):
 - `fists_old_new.webp`: the sword hand at the wind-up, the hit, after the hit and ready, for today's blow, the
   Nov 18 bones cut, way C's first try and way C fixed. Fixed: the blade leaves the fist by the thumb and first
-  finger in every moment; the others show a reverse grip at the wind-up or the handle along the forearm at the hit.
+  finger in every moment shown. Red marks: the wind-ups the designer marked, and every old hit and after-the-hit.
 - `fists_half.mp4`, `fists_x1.mp4`, `fists_stills.webp`: the same four as clips.
+- Blind check (fresh viewer, shuffled crops): fixed hit, after and ready read as a normal grip; every old hit and
+  after read as the sword lying along the forearm. The wind-ups all read "normal", the marked ones too; the fixed
+  one shows the back of the hand, and its thumb can't be seen at this size.
 - `fists_3d_frames_0_19.webp`, `fists_3d_frames_19_38.webp`: the 3D swing's hand in every frame, take 2 over take 3.
   `fists_3d_closeup.webp`: take 3 at 2x (the sword is one piece through the fist).
 - `fists_drawn_frames_0_19.webp`, `fists_drawn_frames_19_38.webp`: way C's hand in every frame: first try, fixed,

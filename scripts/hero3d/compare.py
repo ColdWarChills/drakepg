@@ -27,10 +27,10 @@ PANELS = [  # label, cost line, frames dir, fps, source hero height px, source f
     ("C: 3D moves + drawn look", "a video per gear mix and move", SP / "hybrid/frames_s1", 24, 377, (300, 427), None),
 ]
 if "--fists" in a:   # the sword-grip fix (2026-11-21): today's blow, the bones cut, way C before and after
-    PANELS = [PANELS[0], PANELS[1],
-              ("C, first try", "3D keys put the blade in line with the arm", SP / "hybrid/frames_s1", 24, 377,
+    PANELS = [("Today in the game (wrong grip)",) + PANELS[0][1:], ("2D bones, Nov 18 (wrong grip)",) + PANELS[1][1:],
+              ("C, first try (wrong grip)", "3D keys put the blade in line with the arm", SP / "hybrid/frames_s1", 24, 377,
                (300, 427), None),
-              ("C, grip fixed", "blade leaves the fist by the thumb, every frame", SP / "hybrid/frames_s4", 24, 377,
+              ("C, grip fixed", "blade leaves the fist by the thumb wherever it shows", SP / "hybrid/frames_s4", 24, 377,
                (300, 427), None)]
 font = ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", 19)
 small = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 15)

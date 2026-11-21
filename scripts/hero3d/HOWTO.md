@@ -38,7 +38,7 @@ The Blender MCP is set up only in the Animation Workflow project, so these scrip
    reference.png out.mp4 --seed 1 --length 41 --size 832x480 [--outfit "a steel scale-mail vest ..."]`.
 
 Check the hand before anything else: add `--track track.json` to step 2 (grip, tip, wrist and elbow pixels per frame), then
-`python scripts/hero3d/hand_strip.py track.json strip.jpg "3D=<frames dir>" "drawn=<drawn frames>:1"` shows the hand in every frame;
+`python scripts/hero3d/hand_strip.py track.json strip.jpg "3D=<frames dir>" "drawn=<drawn frames>:0"` shows the hand in every frame;
 `fist_sheet.py` puts four moments of four versions side by side; `compare.py --fists` is the same as a clip.
 
 `key_flat.py` cuts a take off its grey backdrop (`<venv python> -I key_flat.py <frames> <out>`);
