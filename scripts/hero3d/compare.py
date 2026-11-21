@@ -1,5 +1,5 @@
 """Side-by-side clip of the same sword blow made four ways, every hero scaled to the same height, feet on one line.
-python scripts/hero3d/compare.py <out.mp4> [--speed 0.5] [--still t1,t2,...] [--root art/redo/animway]
+python scripts/hero3d/compare.py <out.mp4> [--speed 0.5] [--still t1,t2,...] [--root art/redo/animway] [--fists]
 (frame folders are listed in PANELS below, under the root)
 Each panel plays its take once from the start and then holds its last frame."""
 import json
@@ -26,6 +26,12 @@ PANELS = [  # label, cost line, frames dir, fps, source hero height px, source f
     ("B: 3D hero in Blender", "gear made once; moves reuse it", SP / "frames/clip3_bg", 24, 377, (300, 427), None),
     ("C: 3D moves + drawn look", "a video per gear mix and move", SP / "hybrid/frames_s1", 24, 377, (300, 427), None),
 ]
+if "--fists" in a:   # the sword-grip fix (2026-11-21): today's blow, the bones cut, way C before and after
+    PANELS = [PANELS[0], PANELS[1],
+              ("C, first try", "3D keys put the blade in line with the arm", SP / "hybrid/frames_s1", 24, 377,
+               (300, 427), None),
+              ("C, grip fixed", "blade leaves the fist by the thumb, every frame", SP / "hybrid/frames_s4", 24, 377,
+               (300, 427), None)]
 font = ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", 19)
 small = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 15)
 

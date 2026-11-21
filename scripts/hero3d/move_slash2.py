@@ -24,10 +24,11 @@ follow = dict(impact, root=(0.32, 0, -0.39), hand_r=(0.88, -0.10, 0.52), blade=(
 settle = dict(follow, root=(0.31, 0, -0.38), hand_r=(0.87, -0.10, 0.54))
 back = dict(ready, root=(0.10, 0, -0.12), fr=(0.36, -0.12, 0.20), pitch_r=-10)
 
-keys = [key(0, **ready), key(5, **coil), key(9, **coil2), key(11, **over), key(13, **impact), key(16, **follow),
-        key(24, **settle), key(30, **back), key(35, **ready), key(38, **ready)]
-mv = {"name": "overhead_slash_2", "keys": keys, "cam_target": [0.25, 0, 0.78], "cam_ortho": 3.0}
-if "--stepped" in sys.argv:
-    mv["interp"] = "CONSTANT"
-json.dump(mv, open(sys.argv[1], "w"), indent=1)
-print("keys", [k["f"] for k in keys])
+if __name__ == "__main__":
+    keys = [key(0, **ready), key(5, **coil), key(9, **coil2), key(11, **over), key(13, **impact), key(16, **follow),
+            key(24, **settle), key(30, **back), key(35, **ready), key(38, **ready)]
+    mv = {"name": "overhead_slash_2", "keys": keys, "cam_target": [0.25, 0, 0.78], "cam_ortho": 3.0}
+    if "--stepped" in sys.argv:
+        mv["interp"] = "CONSTANT"
+    json.dump(mv, open(sys.argv[1], "w"), indent=1)
+    print("keys", [k["f"] for k in keys])

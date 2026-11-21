@@ -502,3 +502,9 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - The 3D hero: Qwen views, Pixal3D model, own distance-based skin weights (Blender's heat weighting failed on the generated mesh), reaching arms and legs, sword fixed in the fist, repainted from the drawn views (`scripts/hero3d/`, how-to `HOWTO.md`).
 - Gear proof: the same swing with a scale-mail reference keeps the armor on in every frame (`gear_x1.mp4`).
 - Way C cut off its backdrop (`key_flat.py`) and set on the Fen Road backdrop at game size beside today's blow (`gamesize_x1.mp4`): clean edges; today's hit is still stronger (lunge, face, smear). Cost against the every-item rule counted in PLANS.
+
+## Way C's sword grip fixed (2026-11-21, shown, waiting for the designer; not in the game)
+
+- The designer: "Still the same problem with inverted fists ... FIX IT". Way C's 3D swing had the blade in line with the forearm at the hit (hand thumb-down, wrist folded back) and a sword whose handle floated under the fist.
+- `rig_hero.py`: grip bone, wrist-limited hand solver (blade by the thumb, wrist 30 + grip 30 deg toward the forearm at most), per-key `th`, angle log, poles keyed before hands, `--track` (screen pixels of grip, tip, wrist, elbow per frame). `h3d_lib.make_sword`: one handle from guard to pommel. Keys `move_slash3.py`.
+- Checks: `hand_strip.py` (the hand in every frame), `fist_sheet.py` (four moments, four versions), `compare.py --fists`. Proofs `art/tests/sheets/animway/fists_*`.

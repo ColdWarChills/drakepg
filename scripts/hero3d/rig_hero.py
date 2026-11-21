@@ -87,6 +87,13 @@ for s, sg in (("R", -1), ("L", 1)):
     c.roll = fb.roll
     bone(f"pole_arm.{s}", el + Vector((0, 0.5, 0)), el + Vector((0, 0.6, 0)), "root", deform=False)
     bone(f"pole_leg.{s}", kn + Vector((0, -0.5, 0)), kn + Vector((0, -0.6, 0)), "root", deform=False)
+# the sword's own bone in the right fist: it turns about the palm's normal, so the handle can tilt in the fist the way
+# a real grip lets it (the blade always leaves the fist by the thumb and first finger, never by the little finger)
+_fi, _fa = J["fist.R"], (J["wrist.R"] - J["elbow.R"]).normalized()
+_b0 = Vector((0, -1, 0))
+_b0 = (_b0 - _fa * _b0.dot(_fa)).normalized()
+_g = _fi + _fa * mv.get("grip_down", 0.0)
+bone("grip.R", _g, _g + _fa.cross(_b0).normalized() * 0.05, "hand.R", deform=False)
 bpy.ops.object.mode_set(mode='OBJECT')
 
 # bind: our own weights. Each vertex takes the nearest bone segments (inverse distance^4, the 3 nearest within 1.6x
@@ -186,10 +193,9 @@ R0 = Matrix((n0, b0.cross(n0), b0)).transposed()  # sword local X = width, Z = b
 sword.matrix_world = Matrix.Translation(fi + fa * mv.get("grip_down", 0.0)) @ R0.to_4x4()
 sword.parent = rig
 sword.parent_type = 'BONE'
-sword.parent_bone = "hand.R"
-sword.matrix_parent_inverse = (rig.matrix_world @ Matrix.Translation(pb["hand.R"].tail) @
-                               pb["hand.R"].matrix.to_3x3().normalized().to_4x4()).inverted() if False else \
-    (rig.matrix_world @ rig.data.bones["hand.R"].matrix_local @ Matrix.Translation((0, rig.data.bones["hand.R"].length, 0))).inverted()
+sword.parent_bone = "grip.R"
+sword.matrix_parent_inverse = (rig.matrix_world @ rig.data.bones["grip.R"].matrix_local @
+                               Matrix.Translation((0, rig.data.bones["grip.R"].length, 0))).inverted()
 
 # ---------------------------------------------------------------- the move
 FACE = Matrix.Rotation(math.radians(90), 4, 'Z')   # rest faces -Y; battle faces +X
@@ -211,6 +217,56 @@ def frame_from(blade, up):
     Rnew = Matrix((n, b.cross(n), b)).transposed()
     Rold = Matrix((n0, b0.cross(n0), b0)).transposed()
     return Rnew @ Rold.inverted()
+
+
+# rest frame of the right hand (rig space): forearm axis, thumb side (= the blade at rest), palm normal
+FA0 = (J["wrist.R"] - J["elbow.R"]).normalized()
+TH0 = (b0 - FA0 * b0.dot(FA0)).normalized()
+REST_FRAME = Matrix((FA0, TH0, FA0.cross(TH0))).transposed()
+WRIST_DEV = (-15.0, 30.0)     # the wrist bends toward the thumb at most 15 deg, toward the little finger 30
+GRIP_TILT = (-10.0, 30.0)     # the handle tilts in the fist by up to this much more
+hand_log = []
+
+
+def solve_hand(f, hk):
+    """Grip point + asked blade direction -> the hand's target matrix. The blade can only leave the fist on the thumb
+    side, at an angle to the forearm the wrist and the grip can make: theta (from square to the forearm, toward the
+    forearm's own direction) within WRIST_DEV + GRIP_TILT. The forearm direction comes from the IK, so it is solved in
+    a few rounds. Logs the asked and the given blade."""
+    G = W2R @ Vector(hk["p"])
+    want = (W2R.to_3x3() @ Vector(hk["blade"])).normalized()
+    fdir = (G - pb["upper_arm.R"].head).normalized()
+    lo, hi = WRIST_DEV[0] + GRIP_TILT[0], WRIST_DEV[1] + GRIP_TILT[1]
+    r_prev = None
+    for _ in range(5):
+        r = want - fdir * want.dot(fdir)
+        if r.length < 1e-3:
+            r = r_prev if r_prev is not None else fdir.orthogonal()
+        r = r.normalized()
+        r_prev = r
+        th = math.degrees(math.atan2(want.dot(fdir), want.dot(r)))
+        thc = max(lo, min(hi, hk.get("th", th)))       # a key may ask for the angle itself ("th"); "blade" then only
+                                                        # gives the side and the swing plane
+        dev = max(WRIST_DEV[0], min(WRIST_DEV[1], thc))
+        tilt = thc - dev
+        dr, tr = math.radians(dev), math.radians(tilt)
+        d = fdir * math.cos(dr) - r * math.sin(dr)            # the hand's own axis (wrist to knuckles)
+        t = fdir * math.sin(dr) + r * math.cos(dr)            # its thumb side, square to it
+        Rm = Matrix((d, t, d.cross(t))).transposed() @ REST_FRAME.inverted()
+        wrist = G - Rm @ grip_off_rest
+        m = Matrix.Translation(wrist) @ (Rm @ hand_rest.to_3x3()).to_4x4()
+        key_bone("ik_hand.R", f, mat=m)
+        gp = pb["grip.R"]
+        gp.rotation_mode = 'QUATERNION'
+        gp.rotation_quaternion = Quaternion((0, 1, 0), -tr)
+        gp.keyframe_insert("rotation_quaternion", frame=f)
+        bpy.context.view_layer.update()
+        fdir = (pb["hand.R"].head - pb["forearm.R"].head).normalized()
+    got = (rig.matrix_world.inverted().to_3x3() @ sword.matrix_world.to_3x3().col[2]).normalized()
+    fw, gw = FACE.to_3x3() @ fdir, FACE.to_3x3() @ got        # back to battle world: x forward, z up
+    hand_log.append((f, round(th), round(thc), round(dev), round(tilt), round(math.degrees(got.angle(want))),
+                     "arm", round(math.degrees(math.atan2(fw.z, fw.x))), "blade", round(math.degrees(math.atan2(gw.z, gw.x)))))
+    return m
 
 
 def key_bone(name, f, loc=None, rot=None, mat=None):
@@ -253,18 +309,21 @@ for k in mv["keys"]:
         R = Matrix.Rotation(math.radians(pitch), 4, 'X')
         m = Matrix.Translation(p) @ R @ rest[f"ik_foot.{s}"].to_3x3().to_4x4()
         key_bone(f"ik_foot.{s}", f, mat=m)
+    # poles before the hands: the sword hand is solved against this frame's elbow
+    for s in ("R", "L"):
+        for pole in (f"pole_arm.{s}", f"pole_leg.{s}"):
+            if pole in k:
+                p = W2R @ Vector(k[pole])
+                m = Matrix.Translation(p) @ rest[pole].to_3x3().to_4x4()
+                key_bone(pole, f, mat=m)
+    bpy.context.view_layer.update()
     # hands: grip point + blade direction (+ thumb direction) in world
     for s in ("R", "L"):
         hk = k.get(f"hand.{s}")
         if hk is None:
             continue
         if s == "R":
-            shw = rig.matrix_world @ pb["upper_arm.R"].head
-            up = hk.get("up") or tuple(shw - Vector(hk["p"]))
-            Rr = frame_from(hk["blade"], up)
-            grip = W2R @ Vector(hk["p"])
-            wrist = grip - Rr @ grip_off_rest
-            m = Matrix.Translation(wrist) @ (Rr @ hand_rest.to_3x3()).to_4x4()
+            m = solve_hand(f, hk)
         else:
             rot = Matrix.Rotation(math.radians(hk.get("twist", 0)), 3, 'Z')
             p = W2R @ Vector(hk["p"])
@@ -274,13 +333,8 @@ for k in mv["keys"]:
         got = rig.matrix_world @ pb[f"hand.{s}"].head
         want = rig.matrix_world @ m.translation
         reach_log.append((f, s, round((got - want).length, 3)))
-    for s in ("R", "L"):
-        for pole in (f"pole_arm.{s}", f"pole_leg.{s}"):
-            if pole in k:
-                p = W2R @ Vector(k[pole])
-                m = Matrix.Translation(p) @ rest[pole].to_3x3().to_4x4()
-                key_bone(pole, f, mat=m)
 print("REACH (frame, hand, metres off)", [r for r in reach_log if r[2] > 0.01])
+print("HAND (frame, blade asked deg from square, given, wrist, grip tilt, off by deg, forearm and blade angle on screen)", hand_log)
 
 sc = bpy.context.scene
 frames = [k["f"] for k in mv["keys"]]
@@ -321,6 +375,23 @@ L.camera(target=tuple(float(x) for x in opt("--target", ",".join(map(str, mv.get
 if "--save" in a:
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, "hero_rigged.blend"))
 todo = STILLS or list(range(sc.frame_start, sc.frame_end + 1, STEP))
+if "--track" in a:
+    # where the grip, the blade tip, the wrist and the elbow land on screen in every frame (pixels), for hand close-ups
+    from bpy_extras.object_utils import world_to_camera_view
+    tip_z = max(v.co.z for v in sword.data.vertices)
+    trk = {}
+    for f in range(sc.frame_start, sc.frame_end + 1):
+        sc.frame_set(f)
+        pts = {"grip": sword.matrix_world @ Vector((0, 0, 0)), "tip": sword.matrix_world @ Vector((0, 0, tip_z)),
+               "wrist": rig.matrix_world @ pb["hand.R"].head, "elbow": rig.matrix_world @ pb["forearm.R"].head}
+        out = {}
+        for k, co in pts.items():
+            v = world_to_camera_view(sc, sc.camera, co)
+            out[k] = [round(v.x * SIZE[0], 1), round((1 - v.y) * SIZE[1], 1)]
+        trk[f] = out
+    json.dump(trk, open(opt("--track", "track.json"), "w"), indent=0)
+    if "--no-render" in a:
+        todo = []
 for f in todo:
     sc.frame_set(f)
     sc.render.filepath = os.path.join(OUT, f"f{f:03d}.png")

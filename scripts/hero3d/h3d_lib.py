@@ -111,13 +111,17 @@ def make_sword(length=0.95):
     edge = toon_material("SteelEdge", color=(0.86, 0.87, 0.88, 1), shadow=0.75)
     iron = toon_material("Iron", color=(0.30, 0.30, 0.32, 1), shadow=0.6)
     leather = toon_material("Leather", color=(0.33, 0.18, 0.10, 1), shadow=0.6)
+    # box() sizes are full lengths. One handle from the guard through the fist (centre = origin, about 9 cm wide) to
+    # the pommel, so nothing floats: guard just above the first finger, a short handle end and the pommel under the
+    # little finger.
     grip_len = 0.16
     blade_len = length - grip_len - 0.06
+    g_top, g_bot = 0.045, -0.100          # handle ends (the fist covers about -0.045..0.045)
     parts = []
     # blade: a flat diamond section made from a thin box, tapering to a point
     bm = bmesh.new()
     w, t = 0.034, 0.010
-    z0, z1, tip = 0.04, 0.04 + blade_len * 0.86, 0.04 + blade_len
+    z0, z1, tip = 0.06, 0.06 + blade_len * 0.86, 0.06 + blade_len
     ring = lambda z, s: [bm.verts.new((x * s, y * s, z)) for x, y in ((w, 0), (0, t), (-w, 0), (0, -t))]
     a, b = ring(z0, 1.0), ring(z1, 0.92)
     p = bm.verts.new((0, 0, tip))
@@ -136,13 +140,13 @@ def make_sword(length=0.95):
     fuller = box("Fuller", (0.005, 0.0115, blade_len * 0.38), (0, 0, z0 + blade_len * 0.42))
     fuller.data.materials.append(edge)
     parts.append(fuller)
-    guard = box("Guard", (0.085, 0.020, 0.020), (0, 0, 0.025))
+    guard = box("Guard", (0.085, 0.020, 0.020), (0, 0, g_top + 0.010))
     guard.data.materials.append(iron)
     parts.append(guard)
-    grip = box("Grip", (0.017, 0.017, grip_len / 2), (0, 0, -grip_len / 2 + 0.012))
+    grip = box("Grip", (0.024, 0.024, g_top - g_bot), (0, 0, (g_top + g_bot) / 2))
     grip.data.materials.append(leather)
     parts.append(grip)
-    pommel = box("Pommel", (0.026, 0.026, 0.024), (0, 0, -grip_len - 0.005))
+    pommel = box("Pommel", (0.034, 0.034, 0.030), (0, 0, g_bot - 0.012))
     pommel.data.materials.append(iron)
     parts.append(pommel)
     for o in bpy.context.scene.objects:

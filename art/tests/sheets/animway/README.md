@@ -1,5 +1,15 @@
 # Ways to animate the hero: one sword blow, five ways (2026-11-21)
 
+Sword grip fixed (later on 2026-11-21, after "Still the same problem with inverted fists"):
+- `fists_old_new.webp`: the sword hand at the wind-up, the hit, after the hit and ready, for today's blow, the
+  Nov 18 bones cut, way C's first try and way C fixed. Fixed: the blade leaves the fist by the thumb and first
+  finger in every moment; the others show a reverse grip at the wind-up or the handle along the forearm at the hit.
+- `fists_half.mp4`, `fists_x1.mp4`, `fists_stills.webp`: the same four as clips.
+- `fists_3d_frames_0_19.webp`, `fists_3d_frames_19_38.webp`: the 3D swing's hand in every frame, take 2 over take 3.
+  `fists_3d_closeup.webp`: take 3 at 2x (the sword is one piece through the fist).
+- `fists_drawn_frames_0_19.webp`, `fists_drawn_frames_19_38.webp`: way C's hand in every frame: first try, fixed,
+  and the fixed 3D driver under it. The drawn take holds the wind-up and jumps to the hit in one frame.
+
 Look at these first:
 - `gamesize_x1.mp4`, `gamesize_half.mp4`, `gamesize_stills.webp`: way C cut off its backdrop and put on the Fen Road
   fight backdrop at game size (hero 240 px in the 1280 frame), beside today's blow from a real fight; also with the
