@@ -12,6 +12,5 @@ behind the head and drawn fingers wrap its handle. Before, the sword went straig
 
 Weapon in his right hand (2026-11-21, after the designer's hard rule):
 - `right_hand_half.webp`, `right_hand_half.mp4`, `right_hand_x1.mp4`: before (the wind-up step above) | now, the same fight.
-  Now the sword stays in his right hand (the near arm) from ready to the hit and back. The wind-up above was drawn
-  with his back to us and the sword in his LEFT arm, so it is switched off until redrawn; the blow winds up in the ready
-  stance meanwhile.
+  Now the sword stays in his right hand (the near arm) from ready to the hit and back: the ready stance held it in
+  the left fist before.

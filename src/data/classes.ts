@@ -68,8 +68,10 @@ const HERO_POSES: Record<string, Hands> = {
   land: { right: { x: 417.7, y: 305, angle: 128 } },
   // A blow per weapon kind (Unity BattleScreen.WeaponBlow): <kind>_wind, _step, _strike; the weapon in `right`. Dagger
   // poses also give the rogue's second dagger (`left`). The hammer steps in with the epic leap.
-  // sword_wind is not used: it is drawn with his back to us, the raised arm his LEFT (a left-handed coil), his right fist
-  // reaching forward empty. Without it the blow winds up in the ready stance. Redraw it right-handed.
+  // The wind-up: the raised fist is drawn as a right fist (back of the hand to us, wrist below it, thumb on top), the
+  // same near arm that holds the sword in sword_ready, holding the handle upright behind his head (grip_hands.py --pose
+  // sword_wind, rod try 2124597813). The shirt reads like his back, which alone would make it the left arm.
+  sword_wind: { right: { x: 137.5, y: 74.3, angle: 0, fingers: { art: 'part_hero_fingers_sword_wind', x: 93.5, y: 28 } } },
   sword_step: { right: { x: 128.7, y: 21, angle: -45 } },
   sword_strike: { right: { x: 331.7, y: 388, angle: 115 } },
   axe_wind: { right: { x: 145.7, y: 23, angle: -110 } },

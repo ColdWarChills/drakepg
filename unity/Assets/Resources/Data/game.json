@@ -647,6 +647,18 @@
         "angle": 128
        }
       },
+      "sword_wind": {
+       "right": {
+        "x": 137.5,
+        "y": 74.3,
+        "angle": 0,
+        "fingers": {
+         "art": "part_hero_fingers_sword_wind",
+         "x": 93.5,
+         "y": 28
+        }
+       }
+      },
       "sword_step": {
        "right": {
         "x": 128.7,
@@ -897,6 +909,18 @@
         "angle": 128
        }
       },
+      "sword_wind": {
+       "right": {
+        "x": 137.5,
+        "y": 74.3,
+        "angle": 0,
+        "fingers": {
+         "art": "part_hero_fingers_sword_wind",
+         "x": 93.5,
+         "y": 28
+        }
+       }
+      },
       "sword_step": {
        "right": {
         "x": 128.7,
@@ -1137,6 +1161,18 @@
         "x": 417.7,
         "y": 305,
         "angle": 128
+       }
+      },
+      "sword_wind": {
+       "right": {
+        "x": 137.5,
+        "y": 74.3,
+        "angle": 0,
+        "fingers": {
+         "art": "part_hero_fingers_sword_wind",
+         "x": 93.5,
+         "y": 28
+        }
        }
       },
       "sword_step": {
