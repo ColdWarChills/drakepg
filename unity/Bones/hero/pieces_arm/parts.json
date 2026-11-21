@@ -1,0 +1,103 @@
+{
+ "_note": "pieces.py cut base: today's look cut into pieces for bending; a/b = the piece's joints at its bone's head/tail (piece px, scale 1 on the picture's own skeleton).",
+ "source": "base",
+ "fist_z": 4,
+ "sword_z": 3,
+ "fists": {
+  "back": {
+   "bone": "n_hand",
+   "rod": [
+    77.3,
+    118.9
+   ],
+   "hold": -86.9,
+   "edge": 28.1,
+   "rod_px": 169742,
+   "a": [
+    73.6,
+    69.5
+   ],
+   "b": [
+    77.8,
+    142.3
+   ],
+   "from": "fist_back_r1_s101",
+   "scale": 1.0,
+   "file": "fist_back.png"
+  },
+  "palm": {
+   "bone": "n_hand",
+   "rod": [
+    67.8,
+    68.5
+   ],
+   "hold": 49.4,
+   "edge": 33.6,
+   "rod_px": 65936,
+   "a": [
+    116.7,
+    115.0
+   ],
+   "b": [
+    60.0,
+    40.0
+   ],
+   "from": "fist_palm_r1_s101",
+   "scale": 1.0,
+   "file": "fist_palm.png"
+  },
+  "open": {
+   "bone": "n_hand",
+   "a": [
+    74.4,
+    69.5
+   ],
+   "b": [
+    74.4,
+    142.3
+   ],
+   "from": "fist_open_r1_s101",
+   "scale": 1.0,
+   "file": "fist_open.png"
+  }
+ },
+ "n_cuff": {
+  "file": "n_cuff.png",
+  "bone": "n_upper",
+  "a": [
+   95.0,
+   -110.0
+  ],
+  "b": [
+   42.0,
+   -8.0
+  ],
+  "z": 0
+ },
+ "n_upper": {
+  "file": "n_upper.png",
+  "bone": "n_upper",
+  "a": [
+   101.0,
+   53.0
+  ],
+  "b": [
+   48.0,
+   155.0
+  ],
+  "z": 2
+ },
+ "n_fore": {
+  "file": "n_fore.png",
+  "bone": "n_fore",
+  "a": [
+   82.0,
+   72.0
+  ],
+  "b": [
+   71.0,
+   207.0
+  ],
+  "z": 1
+ }
+}
