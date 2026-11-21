@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Two recorded takes of the same fight (Drive.Record frames f000.jpg ...), old beside new, cropped around the hero:
 a clip and a sheet of picked frames. python scripts/grip_fight_clip.py <old dir> <new dir> <out stem>
-[--box x0,y0,x1,y1] [--frames 0,12,20] [--labels "old,new"] [--speed 0.5] [--scale 0.6]"""
+[--box x0,y0,x1,y1] [--frames 0,12,20] [--labels "old,new"] [--speed 0.5] [--scale 0.6] [--last 9 --hold 1.5]"""
 import subprocess
 import sys
 import tempfile
@@ -18,9 +18,13 @@ labels = opt("--labels", "now,new").split(",")
 speed = float(opt("--speed", "1"))
 scale = float(opt("--scale", "1"))
 fps = int(opt("--fps", "60"))
+last = int(opt("--last", "-1"))
+hold = float(opt("--hold", "0"))
 font = ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", 26)
 of, nf = sorted(old.glob("f*.jpg")), sorted(new.glob("f*.jpg"))
 n = min(len(of), len(nf))
+if last >= 0:
+    n = min(n, last + 1)
 
 
 def pair(i):
@@ -47,6 +51,9 @@ with tempfile.TemporaryDirectory() as t:
         if im.width % 2 or im.height % 2:
             im = im.crop((0, 0, im.width // 2 * 2, im.height // 2 * 2))
         im.save(f"{t}/p{i:03d}.png")
+    # hold the last frame (in clip seconds)
+    for k in range(round(hold * fps * speed)):
+        im.save(f"{t}/p{n + k:03d}.png")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps * speed), "-i", f"{t}/p%03d.png",
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-r", "30", str(stem) + ".mp4"], check=True)
 if picks:

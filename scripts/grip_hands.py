@@ -66,6 +66,8 @@ POSE_ROD = {
         "past the top and the bottom of the picture. The four fingers curl around the rod and cover it."
     ),
 }
+# The box each key pose's tries were made in (@2x px), pinned: the pose's hand data moves once a try is used.
+POSE_BOX = {"sword_wind": (187, 56, 347, 216)}
 POSE = None          # set by --pose: the key pose whose fist is redrawn
 HAND = None          # that pose's hand (1x px) and weapon angle (degrees clockwise from blade-up)
 
@@ -79,7 +81,7 @@ def use_pose(pose: str) -> None:
     POSE, HAND = pose, (hand["x"], hand["y"], hand["angle"])
     BODY = ROOT / "src" / "assets" / "art" / f"char_hero_bare_{pose}@2x.webp"
     cx, cy = round(hand["x"] * 2), round(hand["y"] * 2)
-    BOX = (cx - 80, cy - 80, cx + 80, cy + 80)
+    BOX = POSE_BOX.get(pose, (cx - 80, cy - 80, cx + 80, cy + 80))
     OUT = ROOT / "art" / "redo" / "grip" / pose
     FINGERS = ROOT / "src" / "assets" / "art" / f"part_hero_fingers_{pose}@2x.webp"
     ROD = (
@@ -226,7 +228,7 @@ def layers(seed: str) -> None:
     angle = -np.degrees(np.arctan2(d[0], d[1]))
     enter = np.array(to1x(c + d * t_in))
     hand = enter + d * 20  # the guard rests on the fist: 20 px up the line from the hand point
-    print(f"hand: x {hand[0]:.1f}, y {hand[1]:.1f}, angle {angle:.1f}; fingers sprite top-left {BOX[0] / 2:.0f}, {BOX[1] / 2:.0f} (1x px)")
+    print(f"hand: x {hand[0]:.1f}, y {hand[1]:.1f}, angle {angle:.1f}; fingers sprite top-left {BOX[0] / 2:g}, {BOX[1] / 2:g} (1x px)")
     if HAND is not None:
         print(f"pose data was x {HAND[0]}, y {HAND[1]}, angle {HAND[2]}; the rod is {angle - HAND[2]:+.1f} deg off it")
 

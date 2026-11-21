@@ -62,7 +62,7 @@ const HERO_POSES: Record<string, Hand[]> = {
   // The wind-up's fist is drawn holding the handle upright, thumb on top (like RAISED_FIST): the sword stands up behind
   // the head (it was -75, across the fist), and its fingers wrap the handle (scripts/grip_hands.py --pose sword_wind,
   // rod try 2124597813).
-  sword_wind: [{ x: 137.5, y: 74.3, angle: 0, fingers: { art: 'part_hero_fingers_sword_wind', x: 94, y: 28 } }],
+  sword_wind: [{ x: 137.5, y: 74.3, angle: 0, fingers: { art: 'part_hero_fingers_sword_wind', x: 93.5, y: 28 } }],
   sword_step: [{ x: 128.7, y: 21, angle: -45 }],
   sword_strike: [{ x: 331.7, y: 388, angle: 115 }],
   axe_wind: [{ x: 145.7, y: 23, angle: -110 }],

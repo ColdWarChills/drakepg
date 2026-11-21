@@ -658,7 +658,7 @@
         "angle": 0,
         "fingers": {
          "art": "part_hero_fingers_sword_wind",
-         "x": 94,
+         "x": 93.5,
          "y": 28
         }
        }
@@ -944,7 +944,7 @@
         "angle": 0,
         "fingers": {
          "art": "part_hero_fingers_sword_wind",
-         "x": 94,
+         "x": 93.5,
          "y": 28
         }
        }
@@ -1218,7 +1218,7 @@
         "angle": 0,
         "fingers": {
          "art": "part_hero_fingers_sword_wind",
-         "x": 94,
+         "x": 93.5,
          "y": 28
         }
        }
