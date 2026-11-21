@@ -1,0 +1,252 @@
+{
+ "_note": "pieces_move.py make blow: try 2's pieces (pieces_arm + today's art) with an armless torso, a seat on the hips, round hips and knees; a/b = the piece's joints at its bone's head/tail (picture px, scale 1).",
+ "source": "base",
+ "fist_z": 14,
+ "sword_z": 13,
+ "fists": {
+  "back": {
+   "bone": "n_hand",
+   "rod": [
+    77.3,
+    118.9
+   ],
+   "hold": -86.9,
+   "edge": 28.1,
+   "rod_px": 169742,
+   "a": [
+    73.6,
+    69.5
+   ],
+   "b": [
+    77.8,
+    142.3
+   ],
+   "from": "fist_back_r1_s101",
+   "scale": 1.0,
+   "file": "fist_back.png"
+  },
+  "open": {
+   "bone": "n_hand",
+   "a": [
+    74.4,
+    69.5
+   ],
+   "b": [
+    74.4,
+    142.3
+   ],
+   "from": "fist_open_r1_s101",
+   "scale": 1.0,
+   "file": "fist_open.png"
+  }
+ },
+ "f_upper": {
+  "file": "f_upper.png",
+  "bone": "f_upper",
+  "a": [
+   48.0,
+   42.0
+  ],
+  "b": [
+   110.0,
+   175.0
+  ],
+  "z": 1
+ },
+ "f_fore": {
+  "file": "f_fore.png",
+  "bone": "f_fore",
+  "a": [
+   34.0,
+   107.0
+  ],
+  "b": [
+   90.0,
+   30.0
+  ],
+  "z": 2
+ },
+ "f_fist": {
+  "file": "f_fist.png",
+  "bone": "f_hand",
+  "a": [
+   29.0,
+   96.0
+  ],
+  "b": [
+   55.0,
+   23.0
+  ],
+  "z": 3
+ },
+ "f_thigh": {
+  "file": "f_thigh.png",
+  "bone": "f_thigh",
+  "a": [
+   53.0,
+   30.0
+  ],
+  "b": [
+   139.0,
+   238.0
+  ],
+  "z": 4
+ },
+ "f_shin": {
+  "file": "f_shin.png",
+  "bone": "f_shin",
+  "a": [
+   74.0,
+   76.0
+  ],
+  "b": [
+   68.0,
+   266.0
+  ],
+  "z": 3
+ },
+ "f_foot": {
+  "file": "f_foot.png",
+  "bone": "f_foot",
+  "a": [
+   29.0,
+   62.0
+  ],
+  "b": [
+   149.0,
+   104.0
+  ],
+  "z": 2.5
+ },
+ "n_thigh": {
+  "file": "n_thigh.png",
+  "bone": "n_thigh",
+  "a": [
+   145.0,
+   30.0
+  ],
+  "b": [
+   105.0,
+   248.0
+  ],
+  "z": 6
+ },
+ "n_shin": {
+  "file": "n_shin.png",
+  "bone": "n_shin",
+  "a": [
+   142.0,
+   88.0
+  ],
+  "b": [
+   80.0,
+   260.0
+  ],
+  "z": 5
+ },
+ "n_foot": {
+  "file": "n_foot.png",
+  "bone": "n_foot",
+  "a": [
+   108.0,
+   66.0
+  ],
+  "b": [
+   38.0,
+   119.0
+  ],
+  "z": 4.5
+ },
+ "head": {
+  "file": "head.png",
+  "bone": "head",
+  "a": [
+   165.0,
+   197.0
+  ],
+  "b": [
+   173.0,
+   17.0
+  ],
+  "z": 7
+ },
+ "torso": {
+  "file": "torso.png",
+  "bone": "spine",
+  "a": [
+   112.0,
+   233.0
+  ],
+  "b": [
+   112.0,
+   3.0
+  ],
+  "z": 8
+ },
+ "seat": {
+  "file": "seat.png",
+  "bone": "hips",
+  "a": [
+   72.0,
+   -23.0
+  ],
+  "b": [
+   75.0,
+   17.0
+  ],
+  "z": 7
+ },
+ "n_upper": {
+  "file": "n_upper.png",
+  "bone": "n_upper",
+  "a": [
+   101.0,
+   53.0
+  ],
+  "b": [
+   48.0,
+   155.0
+  ],
+  "z": 12
+ },
+ "n_fore": {
+  "file": "n_fore.png",
+  "bone": "n_fore",
+  "a": [
+   82.0,
+   72.0
+  ],
+  "b": [
+   71.0,
+   207.0
+  ],
+  "z": 11
+ },
+ "n_cuff": {
+  "file": "n_cuff.png",
+  "bone": "n_upper",
+  "a": [
+   95.0,
+   -110.0
+  ],
+  "b": [
+   42.0,
+   -8.0
+  ],
+  "z": 10
+ },
+ "face_shout": {
+  "file": "face_shout.png",
+  "bone": "head",
+  "z": 7.5,
+  "face": "shout",
+  "a": [
+   19.842000000000013,
+   104.818
+  ],
+  "b": [
+   27.842000000000013,
+   -75.182
+  ]
+ }
+}
