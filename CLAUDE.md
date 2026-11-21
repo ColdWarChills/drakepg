@@ -23,7 +23,8 @@ Several chats (in the browser and on the PC) work on this repo and can't see eac
 ## Working with the designer
 The designer asked for this on 2026-11-15 ("A lot is unclear, just random fixes ... Need better clarity in our workflow").
 - **One job at a time.** Before starting, say in one plain line what is being made and what the designer will see when it is done. No side fixes mixed in; note them in `docs/PLANS.md` and move on.
-- **Every step ends in something to look at:** a picture, a clip or the running game, of the finished thing beside the old one. Not a plan, not a list of what changed.
+- **Every step ends in something to look at:** a picture, a clip or the running game, of the new result alone (the designer, 2026-11-21: "when you show me videos, no need to show old. it just confuses. give me fresh results only to judge"). Not a plan, not a list of what changed. Claude still compares with the old to judge it, but doesn't show that.
+- **Replies are a few sentences** (the designer, 2026-11-21: "Give me a few sentences and if I want you to expand I'll ask"). No lists or report blocks in chat; details go in `docs/PLANS.md`.
 - **Judge it first.** Show it only if it clearly beats what is in the game; if it doesn't, say so and change the approach.
 - **Questions:** only about something the designer has seen, with the picture next to it, in everyday words (no names made up in a chat, like "keepers"), with Claude's pick. At most one or two at a time. Small fixes and technical choices are never asked: decide, and say it in one line.
 - **Big work goes in steps** written in `docs/PLANS.md`; the next step starts after the designer's yes to the one before.
