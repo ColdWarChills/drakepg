@@ -495,3 +495,9 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - **Morning reel:** `art/tests/sheets/bones/morning/reel.mp4` and `reel_half.mp4`: the everyday cut and the leap under today's drawn hero at the same framing, both starting together; the chain alone.
 - **Weak point so far:** the twist. The body is three stiff pieces (hips, torso, head); a bent or arched body has to be posed on purpose, and the first tries were too upright.
 - **Not done:** the armor set on the bones, the other weapon kinds, a spin.
+
+## Five ways to animate the hero, one sword blow (2026-11-21, shown, waiting for the designer; not in the game)
+
+- Old | 2D bones | AI video (LTX) | 3D hero in Blender | 3D swing turned drawn by Wan-Animate-2: `art/tests/sheets/animway/` (`compare_x1.mp4`, `compare_half.mp4`, README).
+- The 3D hero: Qwen views, Pixal3D model, own distance-based skin weights (Blender's heat weighting failed on the generated mesh), reaching arms and legs, sword fixed in the fist, repainted from the drawn views (`scripts/hero3d/`, how-to `HOWTO.md`).
+- Gear proof: the same swing with a scale-mail reference keeps the armor on in every frame (`gear_x1.mp4`).
