@@ -22,7 +22,8 @@ OUT = ROOT / "unity" / "Assets" / "Test2D" / "Art"
 OUT.mkdir(parents=True, exist_ok=True)
 G2 = json.loads((REDO / "parts_r2.json").read_text())
 G4 = json.loads((REDO / "parts_r4.json").read_text())
-M = 10                       # crop margin (rim width 4.5 + room)
+G5 = json.loads((REDO / "parts_r5.json").read_text())
+M = 10                      # crop margin (rim width 4.5 + room)
 ARM_RIM_G = 0.75             # the arm pieces turn, so their rim is even all round (0.75 x 4.5 px)
 
 
@@ -99,6 +100,16 @@ def main():
         ("far_arm_front", "parts_r2", "far_arm", G2["far_shoulder"]),
         ("far_arm_windup", "parts_r4", "far_arm", G4["far_shoulder"]),
         ("armhole_windup", "parts_r4", "armhole", waist),
+        # attempt 2: the strike drawings (parts_r5), each pivoted on its own joint as drawn in the lunge
+        ("hips_lunge", "parts_r5", "hips_lunge", G5["waist"]),
+        ("torso_strike", "parts_r5", "torso_strike", G5["waist"]),
+        ("armhole_strike", "parts_r5", "armhole_strike", G5["waist"]),
+        ("head_shout", "parts_r5", "head_shout", G5["neck"]),
+        ("tails_strike", "parts_r5", "tails_strike", G5["knot"]),
+        ("far_arm_back", "parts_r5", "far_arm_back", G5["far_shoulder"]),
+        # the wind-up's legs (wide stance, knees bent), pivoted on their own waist as drawn; the upper body of the wind
+        # set is round 4's torso/armhole/far arm and round 2's head/tails on the standing frame
+        ("hips_wind", "parts_r5", "hips_wind", G5["wind"]["waist"]),
     ]:
         crop, pv, org = canvas_part(d, key, piv)
         sprites[name] = save(name, crop, pv)
@@ -129,6 +140,10 @@ def main():
         "waist": waist, "neck": neck, "knot": knot,
         "S_front": G2["S"], "S_windup": G4["S"], "a1_drawn_windup": G4["a1_drawn"],
         "far_shoulder_front": G2["far_shoulder"], "far_shoulder_windup": G4["far_shoulder"],
+        # the strike drawings' own joints (canvas as drawn; the keys move the whole lunge by a waist offset)
+        "waist_strike": G5["waist"], "neck_strike": G5["neck"], "knot_strike": G5["knot"],
+        "far_shoulder_strike": G5["far_shoulder"], "S_strike": G5["S"], "a1_drawn_strike": G5["a1_drawn"],
+        "waist_wind_hips": G5["wind"]["waist"],
         "L": rig.L, "UE": rig.UE, "HW0": rig.HW0, "HALF": rig.HALF, "R_B": rig.R_B, "UC1": rig.UC1,
         "fist_wrist": list(f["wrist"]), "fist_F": f["F"], "fist_blade": f["blade"], "fist_grip": list(f["grip"]),
         "fist_turn_ccw": f["turn_ccw"], "sword_tip_len": float(0.79 * sw.height - 50 * k),

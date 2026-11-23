@@ -79,3 +79,25 @@ Outputs in `art/tests/hero_joints/r3/`; the cap part in `art/redo/hero_joints/pa
 ## Hand-set numbers
 See `parts.json` (points read on grid crops: `gridlook.py`), `keys.py` (key poses), `swing.py` `K` (timeline keys),
 `rig.py` constants (radius, band, rim, shadow, fist and sword scale).
+
+## Round 5: hero 4 on Unity's bones (2026-11-23; failed twice, joints closed; kept as a record)
+Verdict and record: `docs/IMPROVEMENTS_2026-10.md`, "Jointed hero on Unity's bones". Not in the game. Do not start it
+again without the designer asking.
+
+- Python: `r4_export.py` (parts with pivots for Unity, also the r5 parts and `hips_wind`), `r5_keys.py back` (the clip
+  `sword_cut` as keys.json, with its checks; `r4_keys.py` overwrites keys.json with attempt 1's clip, so never run it
+  after), `r5_compare.py OLD NEW` (clips and sheets from two raw takes at one framing), `r5w_*.py` (the drawn wind-up
+  stance: prep, Qwen, gate, cut, sheet, studio check).
+- Unity: `unity_test2d/Test2DBuild.cs` and `Test2DRun.cs` are copies kept outside the Unity project. To run them, copy
+  both into `unity/Assets/Editor/` and add `"com.unity.2d.animation": "10.2.4"` to `unity/Packages/manifest.json`
+  (editor 6000.0.57f1). `Test2DBuild.BuildAll()` writes the rig, the Sprite Library (body sets front, windup, strike,
+  wind) and the clip into `unity/Assets/Test2D/` (generated, not in git).
+- Clip (17 frames at 30 fps, stepped; take frame = clip frame + 5): f0 ready; f1 wind-up swap; f2-4 wind-up held; f5 cut
+  swap with smear; f6 contact; f7-10 strike held; f11 swap back; f12-13 recover; f14-16 ready. The back heel is the
+  planted foot (rear edge canvas x 484, sole y 1283-1284).
+- To record (editor open on `C:/Users/Epic/dk`, play mode, each call through the Unity MCP's `execute_code`, all in
+  `Drakepg.EditorTools`):
+  1. `Drive.NewGame("warrior");` then `Drive.Fight("burrow_rat", "road", "road_cart");` then wait about 5 s.
+  2. Today's hero: `BonesCapture.Reset(); BonesCapture.Battle(); BonesCapture.Take(OLD, 45, 30, 2560, "0@0.2"); Test2DRun.Png(OLD, 4, 24);`
+  3. A new fight as in 1 (`Test2DRun.Remove();` first), then hero 4: `BonesCapture.Reset(); Test2DRun.Battle(); Test2DRun.Track(); BonesCapture.Take(NEW, 45, 30, 2560, "0@0.2"); Test2DRun.Png(NEW, 4, 24);` Check `Drive.State()`; retake on a crit.
+  4. `r5_compare.py OLD NEW`, then `Test2DRun.Remove(); Test2DRun.Clear();` and stop play mode.
