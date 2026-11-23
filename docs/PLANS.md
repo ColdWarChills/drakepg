@@ -6,6 +6,12 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
+- **For the morning (written 2026-11-23, 20:40 UTC; the designer: "push the info to git or wherever so I can check it in the morning").** The try of the hero on joints ("Yes, try it"), in short:
+  - **Attempt 1 failed Claude's check and was not shown.** The hero on Unity's bones worked (no gaps, no jumps, steady size), but his strike was a standing figure tipped forward, weaker than today's lunge.
+  - **Attempt 2 is the last one.** The strike got its own drawings (lunging legs, the torso bent into the cut, a shouting head) that swap in on the cut frame; the sword arm stays on bones. Put together on a still, the strike reads as strongly as today's hero's.
+  - **Verdict: none yet.** The clip beside today's hero was still being built in Unity when this was written. This entry is rewritten with the verdict once the clip is judged. The designer sees the clip only if it clearly beats today's hero; if it does not, joints are closed as agreed and the hero stays drawn poses for a few signature moves.
+  - **Where to look on the PC** (art folders are not in git), under `.claude/worktrees/unity-port/art/tests/hero_joints/`: `r5/strike.png` (the strike still: the pieces, the assembled hero, today's hero), `r5/attack_old_new.mp4` (the clip, once built), `r4/attack_old_new.mp4` (attempt 1, the failed one).
+  - **Nothing from the try is in the game or on the live branch** except these notes; the scripts are on `claude/unity-port`. The full record is the entry "one try of the jointed hero on Unity's own tools" below.
 - **Where the hero stands (2026-11-23; the short version, written when the designer asked "can you push everything and write what is happening?"; the detail is in the entries below).**
   - **Wanted (the designer, 2026-11-21):** one hero redone so that armor pieces follow him through a couple of cool attacks, in the game's drawn look, without a new picture for every piece in every frame.
   - **Tried since then, in order. None is approved and nothing from them is in the game:**
@@ -30,7 +36,7 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
   - **Usage after attempt 1 (19:15 UTC):** 5-hour window 47%, week 63%, Fable week 88%.
   - **Attempt 2, drawings (2026-11-23, worker 19:13-20:15 UTC, 3 Qwen runs): passed Claude's look, not shown (parts, not the clip).** Seed `art/redo/hero_joints/r5_strike_s501.png`, cut into `parts_r5/` + `parts_r5.json` (lunging legs with the belt, the torso bent into the cut, a shouting head, the tails, the far arm thrown back, the armhole); scripts `r5_prep.py`, `qwen_r5.py`, `r5_gate.py`, `cut_r5.py`, `r5_sheets.py`; sheets `art/tests/hero_joints/r5/strike.png`, `flip.png`, `strike_arm_options.png`. Put together with the painted arm, the strike reads as strongly as today's hero's and far stronger than attempt 1's. Weak points to watch in the clip: the sword arm is a long straight tube (it only reaches the ground stretched by 1.23; at bone length the fist sits about 57 px higher), and the torso must not turn against the hips in this pose.
   - **Usage after the drawings (20:17 UTC):** 5-hour window 56%, week 64%, Fable week 89%.
-  - **Status:** attempt 2, the clip in Unity running (2026-11-23 about 20:20 UTC).
+  - **Status:** attempt 2, the clip in Unity running (2026-11-23 about 20:20 UTC); the short version for the designer is the "For the morning" entry at the top of "Next up".
 - **From the browser chat (2026-11-23): what the design advisor decided, proposed and left open.** A browser chat (the design advisor) reads this repo but cannot push to it; the designer handed it the long-game design and the hero's technical choices. It sent four files, filed on the PC on 2026-11-23. This entry is the short version; the files have the detail. Section numbers below are the handoff's.
   - **The files:**
     - `docs/HANDOFF_2026-11-23.md`: the handoff: the designer's words, the advisor's decisions, proposals, questions, a default roadmap with week estimates, Steam dates and rules for this work.
