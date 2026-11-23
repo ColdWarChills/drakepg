@@ -1,0 +1,59 @@
+{
+ "shader": "colour = albedo * (dot(N, light) > cut ? 1 : shade/base); unlit; albedo = base colour or the face texture",
+ "light_dir_blender_world": [
+  0.5513,
+  -0.5212,
+  0.6515
+ ],
+ "light_note": "fixed relative to the screen: from the upper right front (camera space x right, y up, z to viewer: (0.550000011920929, 0.6499999761581421, 0.5199999809265137))",
+ "cut": 0.0,
+ "materials": {
+  "Skin": {
+   "base": "#df9d4f",
+   "shade": "#b06f2b"
+  },
+  "Hair": {
+   "base": "#2e1e0d",
+   "shade": "#1a1107"
+  },
+  "Headband": {
+   "base": "#861a0f",
+   "shade": "#4d0e05"
+  },
+  "Shirt": {
+   "base": "#debe85",
+   "shade": "#b79764"
+  },
+  "Belt": {
+   "base": "#3a2209",
+   "shade": "#201302"
+  },
+  "Buckle": {
+   "base": "#a08048",
+   "shade": "#6a5030"
+  },
+  "Trousers": {
+   "base": "#1b312d",
+   "shade": "#0e2320"
+  },
+  "Boots": {
+   "base": "#45290d",
+   "shade": "#2b1a06"
+  }
+ },
+ "face": {
+  "material": "Face",
+  "texture": "face.png",
+  "colours_as": "Skin"
+ },
+ "outline": {
+  "colour": "#2a1a12",
+  "width_m": 0.007,
+  "how": "inverted hull: push vertices out along the normal, draw front faces culled"
+ },
+ "proportions": {
+  "head": 1.15,
+  "fist": 1.2
+ },
+ "units": "1 unit = 1 m"
+}
