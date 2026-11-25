@@ -224,6 +224,8 @@ namespace Drakepg
         /// <summary>The crumple's facets shaded by how they face the light: x the darkest share, y the lightest, z how
         /// many steps each way (0: smooth), w the fold lines' width in px (the shader's default otherwise).</summary>
         public static Vector4 CrumpleTone = new Vector4(0.55f, 1.12f, 3, 1.1f);
+        /// <summary>The crumple's crease lines: drawn from this bend (degrees) and full at this one.</summary>
+        public static Vector2 CrumpleLineDeg = new Vector2(14, 40);
 
         /// <summary>
         /// The paper folds on the solver: every crease at once toward its target (seeded mountain or valley, so no two
@@ -2786,7 +2788,7 @@ namespace Drakepg
                     var h = hinges[hi];
                     var deg = Mathf.Abs(h.Theta) * Mathf.Rad2Deg;
                     w[j] = h.Line >= 0 ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(8, 35, deg))
-                        : Crumple ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(14, 40, deg))
+                        : Crumple ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(CrumpleLineDeg.x, CrumpleLineDeg.y, deg))
                         : Mathf.SmoothStep(0, 1, Mathf.InverseLerp(35, 70, deg)) * 0.6f;
                 }
                 rLines[t * 3] = rLines[t * 3 + 1] = rLines[t * 3 + 2] = w;
