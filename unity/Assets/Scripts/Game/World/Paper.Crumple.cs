@@ -30,11 +30,16 @@ namespace Drakepg
         /// <summary>It goes to sleep once slower than `SleepSpeed` (sheets a second) for `SleepFor` seconds, on the
         /// ground, folds and squeeze done; at `MotionCap` seconds it stops anyway (logged as capped).</summary>
         public static float SleepSpeed = 0.04f, SleepFor = 0.12f, MotionCap = 3f;
+        /// <summary>How often a death's wad may be tipped off a tip it came to rest on (then the tip counts as held).</summary>
+        public static int MaxKicks = 3;
         /// <summary>Rolling resistance: a lumpy wad loses its roll against the ground (a share of what presses it down,
         /// at the wad's mean radius); without it a round one rolls on and on.</summary>
         public static float RollResist = 0.08f;
         /// <summary>The landing (the thud, dust and scraps): the first touch as hard as a fall of this share of the sheet.</summary>
         public static float LandFall = 0.2f;
+        /// <summary>Test: log the body and the squeeze each tick (a sixtieth of a second) of the next deaths.</summary>
+        public static bool TraceMotion;
+        readonly System.Text.StringBuilder mTrace = new System.Text.StringBuilder();
         /// <summary>The outline's closing, the ink along cut edges and the dark outline fade in over these seconds (the
         /// living picture has none of them).</summary>
         public static float CloseFade = 0.12f, InkFade = 0.2f, ShadowFade = 0.15f;
@@ -71,7 +76,12 @@ namespace Drakepg
         }
         readonly List<Contact> mContacts = new List<Contact>();
         float mTime, mStillFor, mTouchAt, mLandAt, mSleepAt, mStretch;
-        bool mDone, mCapped, mInContact, mWasTouching, mLandNow, mChainDone, mShapeDone;
+        bool mDone, mCapped, mInContact, mWasTouching, mLandNow, mChainDone, mShapeDone, mHeld, mOnTip, mOverTip;
+        // The support of the last step (along the ground from the centre of mass, its end points, the centre's height
+        // over it) and how often the sleep check tipped the wad off a tip.
+        float mSupLo, mSupHi, mRise;
+        Vector2 mPivotLo, mPivotHi;
+        int mKicks;
         /// <summary>The inked points (as `mHull`) that may touch the ground this frame (the lowest, and some above).</summary>
         readonly List<int> mCand = new List<int>();
         Vector3[] mProj, mSProj;
@@ -96,6 +106,7 @@ namespace Drakepg
         string mImpacts = "", mTail = "";
         float mTailAt;
         int mRestContacts;
+        string mRestNote = "";
 
         /// <summary>
         /// The crumple: the sheet built and folded flat as a program (the fold check), then played: each fold turns on
@@ -211,10 +222,11 @@ namespace Drakepg
             for (int k = 0; k < chainK; k++) turns += $"{(k > 0 ? " " : "")}{k}:{mOnAt[k]:0.00}-{mDownAt[k]:0.00}";
             LastSolid = $"seed {seed}, {vCount} points, {tCount} triangles, build {buildMs:0} ms {built} (closing {closeMs:0}, shape {crumpleMs:0}), waited {waitMs:0} ms, start {startMs:0.0} ms ({marks}), "
                 + $"folds {turns}, squeeze from {mSqueezeAt:0.00}, first touch {mTouchAt:0.00}, landed {mLandAt:0.00}, "
-                + $"touches (s:fall){mImpacts}, speed (s:along/spin){mTail}, " + (mCapped ? $"CAPPED at {mTime:0.00} s" : $"asleep at {mSleepAt:0.00} s on {mRestContacts} points") + $", CPU a frame: worst {worstMs:0.00} ms, mean {sumMs / Mathf.Max(1, frames):0.00} ms over {frames} frames, the first{firstFrames}, {allocated / 1024f:0.0} KB allocated over them; parts worst/mean ms: {PartsNote(frames)}"
+                + $"touches (s:fall){mImpacts}, speed (s:along/spin){mTail}, " + (mCapped ? $"CAPPED at {mTime:0.00} s" : $"asleep at {mSleepAt:0.00} s on {mRestContacts} points{mRestNote}") + $", CPU a frame: worst {worstMs:0.00} ms, mean {sumMs / Mathf.Max(1, frames):0.00} ms over {frames} frames, the first{firstFrames}, {allocated / 1024f:0.0} KB allocated over them; parts worst/mean ms: {PartsNote(frames)}"
                 + (CheckChain ? $", chain stretch over the frames played {mStretch / Mathf.Max(1, sheetSize / CrumpleGrid):0.0000} cells" : "")
                 + $", crumple: {crumpleNote}";
             Debug.Log($"drakepg: paper crumple, {LastSolid}");
+            if (TraceMotion) Debug.Log($"drakepg: paper crumple seed {seed} trace (s:squeeze turn spin place speed width contacts):{mTrace}");
         }
 
         /// <summary>The canvas's pixels (y up).</summary>
@@ -343,12 +355,15 @@ namespace Drakepg
             mSqueezeOn = mSqueezed = false;
             mSqueezeAt = mTouchAt = mLandAt = mSleepAt = -1;
             mTime = mStillFor = mStretch = 0;
-            mDone = mCapped = mInContact = mWasTouching = mLandNow = mChainDone = mShapeDone = false;
+            mDone = mCapped = mInContact = mWasTouching = mLandNow = mChainDone = mShapeDone = mHeld = mOnTip = mOverTip = false;
+            mKicks = 0;
             mImpacts = "";
+            mTrace.Clear();
             mStep = 0;
             mTail = "";
             mTailAt = 0.75f;
             mRestContacts = 0;
+            mRestNote = "";
             mContacts.Clear();
             mI = 0;
             mW = 0;
@@ -471,7 +486,18 @@ namespace Drakepg
                 var (mid, width, _) = Packet();
                 landed?.Invoke(mid.x, width);
             }
-            // Asleep: on the ground, slow, every fold down and the squeeze done, for a moment.
+            if (TraceMotion)
+            {
+                float c = Mathf.Cos(mPhi), sn = Mathf.Sin(mPhi), lo = float.MaxValue, hi = float.MinValue;
+                foreach (var h in mHull)
+                {
+                    var x = c * h.x - sn * h.y;
+                    lo = Mathf.Min(lo, x);
+                    hi = Mathf.Max(hi, x);
+                }
+                mTrace.Append($" {mTime:0.000}:s{mS:0.00} phi{mPhi * Mathf.Rad2Deg:0} w{mW:0.0} x{mX.x / sheetSize:0.000},{mX.y / sheetSize:0.000} v{mV.x / sheetSize:0.00},{mV.y / sheetSize:0.00} wid{(hi - lo) / sheetSize:0.00} c{mContacts.Count}{(landedOnce && mLandAt > mTime - TickSteps * MotionStep - 1e-4f ? " LAND" : "")}");
+            }
+            // Asleep: on the ground and held there (not on a tip), slow, every fold down and the squeeze done, for a moment.
             var allDown = mSqueezed;
             for (int k = 0; k < chainK && allDown; k++) allDown = mLatch[k];
             var speed = mV.magnitude + Mathf.Abs(mW) * Mathf.Sqrt(mI);
@@ -481,19 +507,58 @@ namespace Drakepg
                 mTail += $" {mTime:0.00}:{mV.magnitude / sheetSize:0.000}/{Mathf.Abs(mW) * Mathf.Sqrt(mI) / sheetSize:0.000}{(mInContact ? "" : "air")}";
                 mTailAt += 0.25f;
             }
-            if (allDown && mInContact && speed < SleepSpeed * sheetSize) mStillFor += TickSteps * MotionStep;
+            // Slow on a tip with its centre over it, paper is never left balanced: it is tipped off at once (at most
+            // `MaxKicks` times a death; after that the tip counts as held, so it always sleeps).
+            var slow = allDown && mInContact && speed < SleepSpeed * sheetSize;
+            if (slow && mOverTip && mKicks < MaxKicks)
+            {
+                Kick();
+                mStillFor = 0;
+            }
+            else if (slow && (mHeld || mOverTip)) mStillFor += TickSteps * MotionStep;
             else mStillFor = 0;
             if (mStillFor >= SleepFor - 1e-4f)
             {
                 mDone = true;
                 mSleepAt = mTime;
                 mRestContacts = mContacts.Count;
+                // Where it rests, along the ground from its centre of mass (sheets).
+                var tan = new Vector2(upC.y, -upC.x);
+                float lo = float.MaxValue, hi = float.MinValue;
+                foreach (var ct in mContacts)
+                {
+                    var o = Vector2.Dot(ct.R, tan) / sheetSize;
+                    lo = Mathf.Min(lo, o);
+                    hi = Mathf.Max(hi, o);
+                }
+                mRestNote = mContacts.Count > 0 ? $" (along the ground {lo:+0.000;-0.000} to {hi:+0.000;-0.000} of the sheet from its centre, radius {Mathf.Sqrt(mI) / sheetSize:0.000}, tipped off a tip {mKicks} times{(mOverTip ? ", resting on one" : "")})" : "";
             }
             else if (mTime >= MotionCap)
             {
                 mDone = mCapped = true;
-                Debug.LogWarning($"drakepg: paper crumple seed {seed} still moving at {mTime:0.00} s (speed {speed / sheetSize:0.000} sheets/s, folds down {allDown}, on the ground {mInContact}): capped");
+                Debug.LogWarning($"drakepg: paper crumple seed {seed} still moving at {mTime:0.00} s (speed {speed / sheetSize:0.000} sheets/s, folds down {allDown}, on the ground {mInContact}, held {mHeld}): capped");
             }
+        }
+
+        /// <summary>Tips the wad off the tip it came to rest on: one turn about the tip's end on the side its centre leans
+        /// to (else the way it was sliding, else a seeded side), fast enough to carry the centre a `reach` past that end
+        /// against the rolling resistance, from there gravity takes it down. The size is seeded (x1.2-1.6).</summary>
+        void Kick()
+        {
+            var tan = new Vector2(upC.y, -upC.x);
+            var mid = 0.5f * (mSupLo + mSupHi);
+            var vt = Vector2.Dot(mV, tan);
+            var krng = new System.Random(seed * 31 + mKicks);
+            var side = Mathf.Abs(mid) > 1e-3f * sheetSize ? Mathf.Sign(mid) : Mathf.Abs(vt) > 1e-3f * sheetSize ? -Mathf.Sign(vt) : krng.Next(2) == 0 ? 1f : -1f;
+            // The + way it turns about its leftmost point, the - way about its rightmost.
+            var pivot = side > 0 ? mPivotLo : mPivotHi;
+            var inside = side > 0 ? Mathf.Max(0, -mSupLo) : Mathf.Max(0, mSupHi);
+            var reach = RollResist * Mathf.Sqrt(mI);
+            var turn = (inside + 2 * reach) / Mathf.Max(mRise, 0.05f * sheetSize);
+            var slowing = reach * gravityC.magnitude / mI;
+            mW = side * (1.2f + 0.4f * (float)krng.NextDouble()) * Mathf.Sqrt(2 * slowing * turn);
+            mV = -mW * new Vector2(-pivot.y, pivot.x);
+            mKicks++;
         }
 
         /// <summary>One step of the folds' springs and the squeeze's.</summary>
@@ -689,6 +754,7 @@ namespace Drakepg
             if (mContacts.Count == 0)
             {
                 mWasTouching = false;
+                mHeld = mOnTip = mOverTip = false;
                 return;
             }
             mInContact = true;
@@ -723,11 +789,33 @@ namespace Drakepg
                     mW += rt * dPt / mI;
                     mContacts[i] = ct;
                 }
-            // Rolling resistance: the spin loses as much as the ground's push this step allows (never turned back).
-            var press = 0f;
-            for (int i = 0; i < mContacts.Count; i++) press += mContacts[i].Pn;
-            var dw = RollResist * press / Mathf.Sqrt(mI);
+            // Where the ground holds it, along the ground from its centre of mass, how high that centre stands over it,
+            // and the ground's push this step.
+            float lo = float.MaxValue, hi = float.MinValue, press = 0, rise = 0;
+            for (int i = 0; i < mContacts.Count; i++)
+            {
+                var o = Vector2.Dot(mContacts[i].R, tan);
+                if (o < lo) mPivotLo = mContacts[i].R;
+                if (o > hi) mPivotHi = mContacts[i].R;
+                lo = Mathf.Min(lo, o);
+                hi = Mathf.Max(hi, o);
+                rise -= Vector2.Dot(mContacts[i].R, nrm) / mContacts.Count;
+                press += mContacts[i].Pn;
+            }
+            // Rolling resistance: the lumpy wad's spin loses a lever of `reach` times the ground's push (the soft, lumpy
+            // patch it rolls on); it never turns the spin back.
+            var reach = RollResist * Mathf.Sqrt(mI);
+            var dw = reach * press / mI;
             mW = Mathf.Abs(mW) <= dw ? 0 : mW - Mathf.Sign(mW) * dw;
+            // Held: on a support wider than that lever each way, its centre of mass over it (or within the lever of it,
+            // what the rolling resistance holds). A narrower support with its centre over it is a tip: the sleep check
+            // tips it off (`Kick`), never this step's forces, so a rocking wad gets no push.
+            mOnTip = hi - lo < 2 * reach;
+            mOverTip = mOnTip && lo < reach && hi > -reach;
+            mHeld = !mOnTip && lo < reach && hi > -reach;
+            mSupLo = lo;
+            mSupHi = hi;
+            mRise = rise;
             const float slop = 0.5f;
             if (deepest > slop) mX += nrm * (deepest - slop);
             // The landing: the first touch as hard as a fall of `LandFall` of the sheet (the blow's hop is less).
