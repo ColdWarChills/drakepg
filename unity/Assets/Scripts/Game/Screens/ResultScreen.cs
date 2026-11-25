@@ -117,6 +117,14 @@ namespace Drakepg
             var low = rewards.Items.Count > 0 ? 0 : first != null ? -70 : -64;
             DropReveal(x, dropsY, rewards.Items, data.Lost, first != null ? 460 : 680);
             var y = (first != null ? 392f : 456f) + low;
+            var leveled = data.LevelsGained > 0;
+            if (first != null)
+            {
+                // Keep the XP bar and a LEVEL UP under it clear of the button: the lines may move up into the gap under the drops.
+                var others = data.Quests.Count(q => first.Quest == null || q.Quest != first.Quest);
+                var over = y + OpenedHeight(first) + others * 28 + 30 - (leveled ? 530 : 558);
+                y -= Mathf.Clamp(over, 0, 28);
+            }
             var lines = new List<VisualElement>();
             if (first != null) y = Opened(first, x, y, lines);
             foreach (var q in data.Quests)
@@ -139,7 +147,6 @@ namespace Drakepg
 
             // The XP bar fills from where it stood before the fight; a level-up fills it to the brim, then bursts.
             var before = data.Before ?? HeroBefore.Of(player);
-            var leveled = data.LevelsGained > 0;
             var barY = y + (first != null ? 30 : 28);
             var bar = new UiBar(Root, x - 190, barY, 380, 24, Palette.Xp, "XP ");
             bar.SetValue(before.Xp, before.XpNeeded, false);
@@ -168,7 +175,16 @@ namespace Drakepg
             else ContinueButton("Continue", ToRoom(data.Back), buttonY);
         }
 
-        /// <summary>What a first kill opened, as lines from `y` (returns the y under them): the quest done and who to see with what waits there, or the open road.</summary>
+        /// <summary>"Turning it in opens: ..." under a story boss's quest line, or null.</summary>
+        static string OpensText(FirstKill first) => first.Quest != null && first.Opens.Count > 0 ? $"Turning it in opens: {string.Join(", ", first.Opens)}." : null;
+
+        /// <summary>Lines of the "opens" text at 17 px in 460 px (~7 px a letter).</summary>
+        static int OpensLines(string text) => text == null ? 0 : Mathf.CeilToInt(text.Length * 7.4f / 460);
+
+        /// <summary>How tall `Opened` draws.</summary>
+        static float OpenedHeight(FirstKill first) => first.Quest == null ? 30 : 56 + 22 * OpensLines(OpensText(first));
+
+        /// <summary>What a first kill opened, as lines from `y` (returns the y under them): the quest done, who to see and what turning it in opens, or the open road.</summary>
         float Opened(FirstKill first, float x, float y, List<VisualElement> lines)
         {
             if (first.Quest == null)
@@ -181,14 +197,9 @@ namespace Drakepg
             Anim.After(1.1f, () => Sfx.Play("quest"));
             var where = first.GiverRoom != null ? $" in {first.GiverRoom}" : "";
             lines.Add(Ui.Text(Root, x, y + 30, $"Return to {first.Giver}{where}.", 19, Palette.Text, false, 0.5f, 0.5f));
-            y += 46;
-            if (first.Opens.Count > 0)
-            {
-                var opens = $"Waiting there: {string.Join(", ", first.Opens)}.";
-                lines.Add(Ui.Text(Root, x, y, opens, 17, Palette.TextDim, false, 0.5f, 0, wrap: 460, align: TextAnchor.UpperCenter));
-                y += 22 * Mathf.CeilToInt(opens.Length * 7.4f / 460);   // ~7 px a letter at 17 px
-            }
-            return y + 10;
+            var opens = OpensText(first);
+            if (opens != null) lines.Add(Ui.Text(Root, x, y + 46, opens, 17, Palette.TextDim, false, 0.5f, 0, wrap: 460, align: TextAnchor.UpperCenter));
+            return y + OpenedHeight(first);
         }
 
         /// <summary>The beaten boss on the card's left, centred on `midY` (feet no lower than `floorY`), a FIRST KILL stamp slamming down on its feet.</summary>

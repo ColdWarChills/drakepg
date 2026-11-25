@@ -49,10 +49,22 @@ namespace Drakepg.Rules
         public static string GiverName(QuestDef quest) =>
             GiverRoom(quest)?.Npcs.First(n => n.Id == quest.Giver).Name ?? "the quest giver";
 
-        /// <summary>What turning this quest in opens: the story quest that needs it, then the features it unlocks.</summary>
+        /// <summary>What turning this quest in opens: the story quest that needs it (who gives it when that is someone else, the Guild rank it needs), then the features it unlocks.</summary>
         public static List<string> Opens(QuestDef quest) =>
-            Db.Quests().Where(q => q.Requires == quest.Id).Select(q => $"{q.Name} (new quest)")
+            Db.Quests().Where(q => q.Requires == quest.Id).Select(q => NextQuest(q, quest))
                 .Concat(Db.Data.Features.Where(f => f.UnlockedBy == quest.Id && !f.Disabled).Select(f => f.Name)).ToList();
+
+        static string NextQuest(QuestDef next, QuestDef done)
+        {
+            var notes = new List<string> { "new quest" };
+            if (next.Giver != done.Giver)
+            {
+                var room = GiverRoom(next);
+                notes.Add($"from {GiverName(next)}{(room != null ? $" in {room.Name}" : "")}");
+            }
+            if (next.RequiresRank != null) notes.Add($"Guild rank {next.RequiresRank}");
+            return $"{next.Name} ({string.Join(", ", notes)})";
+        }
 
         /// <summary>The quest this NPC has something to say about: ready > available > active > rank.</summary>
         public static (QuestDef quest, string status)? ForNpc(Player player, string npcId)
