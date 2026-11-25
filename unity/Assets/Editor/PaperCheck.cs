@@ -19,11 +19,11 @@ namespace Drakepg.EditorTools
         public static bool Busy;
 
         public static void Run(string monsters, string dir, int hits = 4, int speed = 1, bool paper = true, string elite = null, bool heroic = false,
-            int floor = 0, bool oneHit = false, int frames = 80, bool escape = false)
+            int floor = 0, bool oneHit = false, int frames = 80, bool escape = false, bool solid = false, int seed = 0)
         {
             Busy = true;
             System.IO.Directory.CreateDirectory(dir);
-            GameRoot.I.StartCoroutine(Loop(monsters.Split(' '), dir, hits, speed, paper, elite, heroic, floor, oneHit, frames, escape));
+            GameRoot.I.StartCoroutine(Loop(monsters.Split(' '), dir, hits, speed, paper, elite, heroic, floor, oneHit, frames, escape, solid, seed));
         }
 
         static string ZoneOf(string monsterId)
@@ -34,14 +34,21 @@ namespace Drakepg.EditorTools
             return "thornwood";
         }
 
-        static IEnumerator Loop(string[] ids, string dir, int hits, int speed, bool paper, string elite, bool heroic, int floor, bool oneHit, int frames, bool escape)
+        static IEnumerator Loop(string[] ids, string dir, int hits, int speed, bool paper, string elite, bool heroic, int floor, bool oneHit, int frames, bool escape,
+            bool solid, int seed)
         {
             var keepSpeed = Saves.BattleSpeed;
             var keepPaper = Paper.On;
+            var keepSolid = Paper.Solid;
+            Paper.Solid = solid;
             Cheats.God = true;
+            int nth = 0;
             foreach (var id in ids)
             {
                 if (string.IsNullOrEmpty(id)) continue;
+                // A negative seed: that seed and the next ones, one per fight (the same monster several times over).
+                var fightSeed = seed < 0 ? -seed + nth : seed;
+                nth++;
                 yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) && Time.captureFramerate == 0);
                 Saves.BattleSpeed = speed;
                 Paper.On = paper;
@@ -58,7 +65,7 @@ namespace Drakepg.EditorTools
                     Debug.LogWarning("drakepg paper check: no battle for " + id);
                     continue;
                 }
-                var name = floor > 0 ? "floor" + floor : id + (elite != null ? "_" + elite : "") + (heroic ? "_heroic" : "") + (paper ? "" : "_off") + (speed > 1 ? "_x2" : "") + (escape ? "_escape" : "");
+                var name = floor > 0 ? "floor" + floor : id + (elite != null ? "_" + elite : "") + (heroic ? "_heroic" : "") + (paper ? "" : "_off") + (speed > 1 ? "_x2" : "") + (escape ? "_escape" : "") + (seed < 0 ? "_s" + fightSeed : "");
                 var shown = Drive.Field("hpShown") as Dictionary<string, double>;
                 // Big HP: real hits crease it without killing it.
                 battle.Enemy.MaxHp *= 20;
@@ -95,6 +102,7 @@ namespace Drakepg.EditorTools
                     // Any blow can miss (an evasive monster, the hit cap): again until it lands, the recording redone.
                     for (int tries = 0; tries < 6; tries++)
                     {
+                        Paper.NextSeed = fightSeed;
                         SetHp(battle, shown, 1);
                         if (tries == 0) Drive.Shot($"{dir}/{name}_before.png");
                         yield return new WaitForSeconds(0.3f);
@@ -106,16 +114,18 @@ namespace Drakepg.EditorTools
                         Debug.LogWarning($"drakepg paper check: {name} missed, again");
                         yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) || MenuReady());
                     }
-                    Debug.Log($"drakepg paper check: {name} recorded ({frames} frames)");
+                    Debug.Log($"drakepg paper check: {name} recorded ({frames} frames){(solid ? ", " + Paper.LastSolid : "")}");
                 }
                 // On to the result screen and away from the battle.
                 yield return new WaitForSeconds(1f);
                 if (GameRoot.I.Screen is BattleScreen) yield return new WaitForSeconds(3f);
-                Drive.Room("thornwood_path");
+                // Town: no monster wanders there to start a fight between checks.
+                Drive.Room("brindlemoor");
                 yield return new WaitForSeconds(0.5f);
             }
             Saves.BattleSpeed = keepSpeed;
             Paper.On = keepPaper;
+            Paper.Solid = keepSolid;
             Busy = false;
             Debug.Log("drakepg paper check: done");
         }

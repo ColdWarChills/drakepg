@@ -15,7 +15,7 @@ namespace Drakepg
     /// around it, one fold at a time). One set of rules for any picture, nothing drawn per monster. Switch: `On`.
     /// "Sheet space": the picture with its height 1, y up. Canvas px: the fold canvas, y up.
     /// </summary>
-    public class Paper : MonoBehaviour
+    public partial class Paper : MonoBehaviour
     {
         /// <summary>Every monster is paper (the designer, 2026-11-25: "Yes, every monster"). The cheat menu turns it off for
         /// this session, for testing: monsters made while it's off bleed and slump as before.</summary>
@@ -249,6 +249,12 @@ namespace Drakepg
         {
             public List<Vector2> Pts;
             public Vector2 Mid, Min, Max;
+            /// <summary>The read-back grid: opaque cells, its size, and canvas px per cell.</summary>
+            public bool[] Solid;
+            public int SW, SH;
+            public float FX, FY;
+            /// <summary>The picture's average colour (its opaque cells).</summary>
+            public Color Mean;
         }
 
         struct FoldLine
@@ -267,6 +273,11 @@ namespace Drakepg
         /// </summary>
         public async Task Fold(float groundY, Action<float, float> landed)
         {
+            if (Solid)
+            {
+                await FoldSolid(groundY, landed);
+                return;
+            }
             folding = true;
             var watch = System.Diagnostics.Stopwatch.StartNew();
             StartCanvas();
@@ -423,12 +434,20 @@ namespace Drakepg
             RenderTexture.ReleaseTemporary(small);
             var px = scanTex.GetPixels32();
             float fx = FW / (float)sw, fy = FH / (float)sh;
-            var s = new Scan { Pts = new List<Vector2>(), Min = new Vector2(float.MaxValue, float.MaxValue), Max = new Vector2(float.MinValue, float.MinValue) };
+            var s = new Scan
+            {
+                Pts = new List<Vector2>(), Min = new Vector2(float.MaxValue, float.MaxValue), Max = new Vector2(float.MinValue, float.MinValue),
+                Solid = new bool[sw * sh], SW = sw, SH = sh, FX = fx, FY = fy,
+            };
             var sum = Vector2.zero;
+            var colSum = Vector4.zero;
             for (int y = 0; y < sh; y++)
             for (int x = 0; x < sw; x++)
             {
                 if (px[y * sw + x].a <= 60) continue;
+                Color cc = px[y * sw + x];
+                colSum += new Vector4(cc.r, cc.g, cc.b, 1);
+                s.Solid[y * sw + x] = true;
                 var p = new Vector2((x + 0.5f) * fx, (y + 0.5f) * fy);
                 s.Pts.Add(p);
                 sum += p;
@@ -436,6 +455,7 @@ namespace Drakepg
                 s.Max = Vector2.Max(s.Max, p + new Vector2(fx / 2, fy / 2));
             }
             s.Mid = s.Pts.Count > 0 ? sum / s.Pts.Count : new Vector2(FW / 2f, FH / 2f);
+            s.Mean = colSum.w > 0 ? new Color(colSum.x / colSum.w, colSum.y / colSum.w, colSum.z / colSum.w, 1) : Color.gray;
             return s;
         }
 
@@ -626,6 +646,7 @@ namespace Drakepg
         public (Vector2 mid, float width, float height) Packet()
         {
             if (quad == null) return (Design.FromWorld(body.transform.position), 60, 40);
+            if (solidOn && pos != null) return PacketSolid();
             var scan = ScanCanvas();
             if (scan.Pts.Count == 0) return (ToDesign(origin), 60, 40);
             var a = ToDesign(scan.Min);
@@ -636,7 +657,8 @@ namespace Drakepg
         /// <summary>Fade the folded paper (0 gone).</summary>
         public void SetAlpha(float a)
         {
-            if (mat != null) mat.SetColor(ColorId, new Color(tint.r, tint.g, tint.b, a));
+            if (showMat != null) showMat.SetColor(ColorId, new Color(tint.r, tint.g, tint.b, a));
+            else if (mat != null) mat.SetColor(ColorId, new Color(tint.r, tint.g, tint.b, a));
             if (shadow != null)
             {
                 var r = shadow.GetComponent<SpriteRenderer>();
@@ -646,6 +668,11 @@ namespace Drakepg
 
         void OnDestroy()
         {
+            if (solidOn)
+            {
+                DestroySolid();
+                sheet = null;
+            }
             if (sheet != null) sheet.Release();
             if (next != null) next.Release();
             if (sheet != null) Destroy(sheet);
