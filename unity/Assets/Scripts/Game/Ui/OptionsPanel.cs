@@ -19,6 +19,7 @@ namespace Drakepg
         public static UiModal Open(Action onClose = null)
         {
             string waiting = null;
+            bool? fullscreen = null;
             var modal = new UiModal(W, H, "Options", () =>
             {
                 Keys.StopCatching();
@@ -102,8 +103,9 @@ namespace Drakepg
                 // Screen and sound.
                 const float x = 760;
                 Ui.Text(c, x, 82, "Screen and sound", 24, Palette.Text, true, 0, 0.5f);
-                Choices(x, 124, "Fullscreen", new List<(string, bool)> { ("On", true), ("Off", false) }, UnityEngine.Screen.fullScreen,
-                    v => UnityEngine.Screen.fullScreen = v, 80);
+                // Unity switches fullscreen at the end of the frame, so the page shows the pick, not what Screen says yet.
+                Choices(x, 124, "Fullscreen", new List<(string, bool)> { ("On", true), ("Off", false) }, fullscreen ?? UnityEngine.Screen.fullScreen,
+                    v => UnityEngine.Screen.fullScreen = (fullscreen = v).Value, 80);
                 Choices(x, 204, "Screen shake", new List<(string, int)> { ("Full", 0), ("Low", 1), ("Off", 2) }, Saves.Shake, v => Saves.Shake = v, 80);
                 Choices(x, 284, "Flashes", new List<(string, int)> { ("Full", 0), ("Soft", 1), ("Off", 2) }, Saves.Flashes, v => Saves.Flashes = v, 80);
                 Choices(x, 364, "Sound", new List<(string, int)> { ("Off", 0), ("25%", 25), ("50%", 50), ("75%", 75), ("100%", 100) },
