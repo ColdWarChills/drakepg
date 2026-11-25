@@ -99,7 +99,7 @@ namespace Drakepg
                 var worn = Items.EquipSlots.Count(slot => slot != player.HandSlot && player.Data.Equipment.TryGetValue(slot, out var piece) && piece != null);
                 var sets = Sets.SetCounts(player.Data.Equipment).Select(sc => $"{Db.Set(sc.id).Name} {sc.count}/{Db.Set(sc.id).Pieces.Count}");
                 Ui.Text(c, 380, 138, string.Join("  ·  ", new[] { $"Gear  {worn}/{Items.EquipSlots.Length - 1} slots" }.Concat(sets)), 17, Palette.TextDim);
-                new UiButton(c, 960, 122, "Inventory (I)", () => modal.Close(openInventory), 190, 48, 19);
+                new UiButton(c, 960, 122, $"Inventory ({Controls.Label("bag")})", () => modal.Close(openInventory), 190, 48, 19);
 
                 // --- Skills ---
                 // Known skills (level skills, then books read); carried ones (filled diamond) go into battle. Click one to
@@ -107,7 +107,7 @@ namespace Drakepg
                 var slots = Db.B.SkillSlots;
                 Ui.Text(c, 380, 190, "Skills", 22, Palette.TextGold, true);
                 Ui.Text(c, 460, 194, $"carried {player.Data.Loadout.Count} / {slots}  ·  click to swap", 15, Palette.TextDim);
-                if (openSpellbook != null) new UiButton(c, 960, 196, "Spellbook (K)", () => modal.Close(openSpellbook), 190, 44, 18);
+                if (openSpellbook != null) new UiButton(c, 960, 196, $"Spellbook ({Controls.Label("spellbook")})", () => modal.Close(openSpellbook), 190, 44, 18);
                 var skills = player.KnownSkills;
                 var perColumn = Math.Max(8, (skills.Count + 2) / 3);
                 for (int i = 0; i < skills.Count && i < perColumn * 3; i++)

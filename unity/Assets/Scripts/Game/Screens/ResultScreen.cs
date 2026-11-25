@@ -715,13 +715,12 @@ namespace Drakepg
             if (!InputEnabled) return;
             if (page == 2)
             {
-                // Keys 1-4 place a stat point.
-                Key[] keys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4 };
-                for (int i = 0; i < keys.Length; i++)
-                    if (Keys.Pressed(keys[i])) { PlacePoint(Stat.Keys[i]); return; }
+                // The battle's buttons 1-4 (keys 1-4 unless changed in Options) place a stat point.
+                for (int i = 0; i < 4; i++)
+                    if (Controls.Pressed("act" + (i + 1))) { PlacePoint(Stat.Keys[i]); return; }
             }
             if (go == null || Time.time < keysFrom) return;
-            if (Keys.Pressed(Key.Space) || Keys.Pressed(Key.Enter) || Keys.Pressed(Key.E)) go();
+            if (Keys.Pressed(Key.Space) || Keys.Pressed(Key.Enter) || Controls.Pressed("talk")) go();
         }
     }
 }

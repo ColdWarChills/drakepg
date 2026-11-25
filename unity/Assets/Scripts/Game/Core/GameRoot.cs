@@ -235,7 +235,9 @@ namespace Drakepg
         /// <summary>A full-screen flash of color that fades out (cam.flash).</summary>
         public void Flash(float seconds, Color color)
         {
-            if (Screen?.Root == null) return;
+            // Options: flashes soft or off.
+            color.a *= Saves.FlashScale;
+            if (Screen?.Root == null || color.a <= 0) return;
             var f = new VisualElement { pickingMode = PickingMode.Ignore };
             f.style.position = Position.Absolute;
             f.style.left = f.style.top = 0;
@@ -264,7 +266,7 @@ namespace Drakepg
         /// </summary>
         public void Kick(float dx, float dy)
         {
-            kick += new Vector2(dx, dy);
+            kick += new Vector2(dx, dy) * Saves.ShakeScale;
             kickVelocity = Vector2.zero;
         }
 
@@ -276,7 +278,9 @@ namespace Drakepg
         /// <summary>Camera shake of `pixels` design px that fades out over `seconds`. A weaker one doesn't cut a stronger one short.</summary>
         public void Shake(float seconds, float pixels)
         {
-            if (pixels < shakeAmount * ShakeLeft) return;
+            // Options: screen shake low or off.
+            pixels *= Saves.ShakeScale;
+            if (pixels <= 0 || pixels < shakeAmount * ShakeLeft) return;
             shakeAmount = pixels;
             shakeTime = shakeTotal = Mathf.Max(0.01f, seconds);
         }
@@ -313,6 +317,8 @@ namespace Drakepg
             off += new Vector2(kick.x, -kick.y);
             if (shakeTime > 0 || off != Vector2.zero || Camera.transform.position != cameraHome)
                 Camera.transform.position = cameraHome + (Vector3)(off / Design.PixelsPerUnit);
+            // A key being caught for Options goes there and nowhere else.
+            Keys.CatchStep();
             if (Screen != null)
             {
                 try { Screen.Tick(dt); }

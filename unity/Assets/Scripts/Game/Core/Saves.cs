@@ -13,18 +13,32 @@ namespace Drakepg
         const string StoryKey = "drakepg.storyText";
         const string MuteKey = "drakepg.muted";
         const string SpeedKey = "drakepg.battleSpeed";
+        const string ShakeKey = "drakepg.shake";
+        const string FlashKey = "drakepg.flashes";
+        const string VolumeKey = "drakepg.volume";
 
         /// <summary>Show the full story dialogue for quests (off: one short line).</summary>
         public static bool StoryText;
         public static bool Muted;
         /// <summary>How fast battles play: 1 or 2 (the x2 button in battle).</summary>
         public static int BattleSpeed = 1;
+        /// <summary>Screen shake and flashes (Options): 0 full, 1 low, 2 off.</summary>
+        public static int Shake, Flashes;
+        /// <summary>Sound volume in percent (25-100); Muted is off.</summary>
+        public static int Volume = 100;
+
+        public static float ShakeScale => Shake == 0 ? 1 : Shake == 1 ? 0.4f : 0;
+        public static float FlashScale => Flashes == 0 ? 1 : Flashes == 1 ? 0.35f : 0;
 
         public static void Init()
         {
             StoryText = PlayerPrefs.GetInt(StoryKey, 0) == 1;
             Muted = PlayerPrefs.GetInt(MuteKey, 0) == 1;
             BattleSpeed = PlayerPrefs.GetInt(SpeedKey, 1) == 2 ? 2 : 1;
+            Shake = Mathf.Clamp(PlayerPrefs.GetInt(ShakeKey, 0), 0, 2);
+            Flashes = Mathf.Clamp(PlayerPrefs.GetInt(FlashKey, 0), 0, 2);
+            Volume = Mathf.Clamp(PlayerPrefs.GetInt(VolumeKey, 100) / 25 * 25, 25, 100);
+            Controls.Load();
         }
 
         public static void SaveSettings()
@@ -32,6 +46,9 @@ namespace Drakepg
             PlayerPrefs.SetInt(StoryKey, StoryText ? 1 : 0);
             PlayerPrefs.SetInt(MuteKey, Muted ? 1 : 0);
             PlayerPrefs.SetInt(SpeedKey, BattleSpeed);
+            PlayerPrefs.SetInt(ShakeKey, Shake);
+            PlayerPrefs.SetInt(FlashKey, Flashes);
+            PlayerPrefs.SetInt(VolumeKey, Volume);
             PlayerPrefs.Save();
         }
 

@@ -400,14 +400,13 @@ namespace Drakepg
             hero?.Apply();
             foe?.Apply();
             // Battle speed works while a turn plays too.
-            if (InputEnabled && Keys.Pressed(Key.S)) ToggleSpeed();
+            if (InputEnabled && Controls.Pressed("speed")) ToggleSpeed();
             if (InputEnabled && leavePayout != null && Time.time >= leavePayoutFrom
-                && (Keys.Pressed(Key.Space) || Keys.Pressed(Key.Enter) || Keys.Pressed(Key.E))) leavePayout();
+                && (Keys.Pressed(Key.Space) || Keys.Pressed(Key.Enter) || Controls.Pressed("talk"))) leavePayout();
             if (!InputEnabled || busy) return;
-            Key[] keys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5, Key.Digit6 };
-            for (int i = 0; i < keys.Length; i++)
+            for (int i = 0; i < 6; i++)
             {
-                if (!Keys.Pressed(keys[i])) continue;
+                if (!Controls.Pressed("act" + (i + 1))) continue;
                 if (i < menuButtons.Count && menuButtons[i].Enabled) menuButtons[i].Run();
                 break;
             }
@@ -1113,7 +1112,7 @@ namespace Drakepg
         /// two panels, so it can be pressed while a turn plays. Key S.</summary>
         void DrawSpeedButton()
         {
-            var b = new FeltButton(Root, Design.Width / 2, 40, $"x{Saves.BattleSpeed}", ToggleSpeed, 104, 46, null, "fast", null, 9, 0, "S", 21, 20);
+            var b = new FeltButton(Root, Design.Width / 2, 40, $"x{Saves.BattleSpeed}", ToggleSpeed, 104, 46, null, "fast", null, 9, 0, Controls.Short("speed"), 21, 20);
             speedLabel = b.Q<Label>();
             Tooltip.Attach(b, "Battle speed", "x2 plays fights twice as fast.");
         }
@@ -1350,7 +1349,7 @@ namespace Drakepg
                     run();
                 };
                 var btn = new FeltButton(holder, x, y, b.Label, () => b.Run(), w, h, b.Sub, b.Icon, cloth, 31 + i,
-                    angle, $"{i + 1}", size, iconSize, subSize);
+                    angle, Controls.Short("act" + (i + 1)), size, iconSize, subSize);
                 if (b.ArtIcon != null && Art.Has(b.ArtIcon))
                 {
                     // An item's own picture instead of the generic potion.

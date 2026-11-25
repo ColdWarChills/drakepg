@@ -46,6 +46,7 @@ namespace Drakepg
             Saves.PreparePicker();
             var import =new UiButton(Root, cx, 548, "Import save", () => { if (!Saves.PickOnPress) Saves.PickFile(Imported); }, 220, 44, 18);
             import.RegisterCallback<UnityEngine.UIElements.PointerDownEvent>(_ => { if (Saves.PickOnPress) Saves.PickFile(Imported); });
+            new UiButton(Root, cx, 604, "Options", () => OptionsPanel.Open(), 220, 44, 18);
             Ui.Text(Root, cx, Design.Height - 30, "v0.8 · Chapter 3 · Unity", 16, Palette.TextDim, ax: 0.5f, ay: 0.5f);
             if (note != null) Ui.Toast(note, Palette.TextGood);
         }
