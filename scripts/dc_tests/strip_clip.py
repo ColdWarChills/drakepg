@@ -13,7 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[2]
 S = ROOT / "art/tests/dc/strip"
 FFMPEG = r"C:/Users/Epic/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe"
-FIGS = [(S / "bare", "bare", "The bare skeleton (what we keep)"),
+FIGS = [(S / "bare", "bare", "The bare skeleton"),
         (S / "clothed", "shipped", "Knight = skeleton + its clothes"),
         (S / "clothed", "leather", "Same skeleton, our Leather chest")]
 FRAMES = 68
