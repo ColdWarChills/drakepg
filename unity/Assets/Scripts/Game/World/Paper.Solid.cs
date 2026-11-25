@@ -62,9 +62,21 @@ namespace Drakepg
         /// <summary>Try 2: where tucks and flaps fold (share of its reach that way), the paper back share wanted (a death
         /// re-rolls up to `CrumpleTries` times to land in it).</summary>
         public static Vector2 CrumpleTuckAt = new Vector2(0.3f, 0.5f), CrumpleFlapAt = new Vector2(0.4f, 0.6f), CrumpleBackRange = new Vector2(0.25f, 0.4f);
+        /// <summary>Rounder outlines: tucks from this one on cut whichever corner sticks out furthest (99: none), and with
+        /// `CrumpleFlapAim` the flaps turn such a corner over at the rim (the back shows there); both fold at
+        /// `CrumpleCornerAt` of the reach that way.</summary>
+        public static int CrumpleAimFrom = 99;
+        public static bool CrumpleFlapAim;
+        public static Vector2 CrumpleCornerAt = new Vector2(0.55f, 0.75f);
         /// <summary>Try 2: the relief's dome and random lift (shares of its reach), the rim pulled in, the outline smoothed
         /// (closing radius, share of the picture's height: a furry outline would leave specks), lines along cut edges.</summary>
         public static float CrumpleDome = 0.55f, CrumpleRelief = 0.14f, CrumpleShrink = 0.22f, CrumpleClose = 0.05f, CrumpleEdgeInk = 1, CrumpleStep = 0.1f;
+        /// <summary>Try 2: the outline's relief points about this far apart (share of its reach); the rim pull varied round
+        /// the rim by up to this share of itself (smooth lobes), so the outline isn't left a straight-sided box.</summary>
+        public static float CrumpleRimStep = 0.45f, CrumpleWobble = 0;
+        /// <summary>Gate C: neighbouring facets within this angle (degrees) read as one flat face; a try costs this much
+        /// for each share of the lump its largest flat face takes (0: only logged).</summary>
+        public static float CrumpleFlatAngle = 12, CrumpleFacetCost = 0;
         /// <summary>
         /// Gate B: the crumple's grid, cells across the sheet (coarser than the solver's: the folds cut it where it bends,
         /// and the panels between stay flat); points this near a fold's line (a share of a cell) count as on it; the
@@ -76,6 +88,9 @@ namespace Drakepg
         /// short way) before a try costs, and how much each step past it costs. Off (0): tried at 1 on 11 deaths, it made
         /// two rounder and two worse (a standing slab, an open V), so only logged.</summary>
         public static float CrumpleLong = 1.25f, CrumpleLongCost = 0f;
+        /// <summary>Testing: keep this try (0 to `CrumpleTries` - 1) whatever its score; every try is still made, so the
+        /// seed plays the same. -1: the best is kept.</summary>
+        public static int CrumpleForceTry = -1;
         /// <summary>Testing: the fold program checked after every crumple build (logged).</summary>
         public static bool CheckChain;
 
@@ -205,7 +220,10 @@ namespace Drakepg
         int seed;
 
         static readonly int ColorIdS = Shader.PropertyToID("_Color"), LightId = Shader.PropertyToID("_Light"), ShadeId = Shader.PropertyToID("_Shade"),
-            OutlineId = Shader.PropertyToID("_Outline"), EdgeInkId = Shader.PropertyToID("_EdgeInk");
+            OutlineId = Shader.PropertyToID("_Outline"), EdgeInkId = Shader.PropertyToID("_EdgeInk"), ToneId = Shader.PropertyToID("_Tone");
+        /// <summary>The crumple's facets shaded by how they face the light: x the darkest share, y the lightest, z how
+        /// many steps each way (0: smooth), w the fold lines' width in px (the shader's default otherwise).</summary>
+        public static Vector4 CrumpleTone = new Vector4(0.55f, 1.12f, 3, 1.1f);
 
         /// <summary>
         /// The paper folds on the solver: every crease at once toward its target (seeded mountain or valley, so no two
@@ -887,10 +905,11 @@ namespace Drakepg
                 sh.Back = BackShare(view);
                 sh.Round = Roundness(view, s, out sh.Long);
                 var score = (sh.Back < CrumpleBackRange.x ? CrumpleBackRange.x - sh.Back : sh.Back > CrumpleBackRange.y ? sh.Back - CrumpleBackRange.y : 0)
-                    + Mathf.Max(0, CrumpleRound - sh.Round) + CrumpleLongCost * Mathf.Max(0, sh.Long - CrumpleLong);
-                tries += $"{(a > 0 ? " " : "")}{sh.Back:P0}/{sh.Round:0.00}/{sh.Long:0.00}";
+                    + Mathf.Max(0, CrumpleRound - sh.Round) + CrumpleLongCost * Mathf.Max(0, sh.Long - CrumpleLong)
+                    + CrumpleFacetCost * sh.Facet;
+                tries += $"{(a > 0 ? " " : "")}{sh.Back:P0}/{sh.Round:0.00}/{sh.Long:0.00}/{sh.Facet:0.00}";
                 if (Trace) Debug.Log($"[Paper] crumple try {a}: back {sh.Back:P0}, round {sh.Round:0.00}, long {sh.Long:0.00}, {sh.Note}");
-                if (score < bestScore)
+                if (a == CrumpleForceTry || (CrumpleForceTry < 0 || CrumpleForceTry >= CrumpleTries) && score < bestScore)
                 {
                     bestScore = score;
                     bestTry = a;
@@ -902,7 +921,7 @@ namespace Drakepg
             bMask = best.Mask;
             crumplePos = best.Still;
             shape = best;
-            crumpleNote = $"try {bestTry} of back/round/long {tries}, back {best.Back:P0}, round {best.Round:0.00}, long {best.Long:0.00}, {best.Note}";
+            crumpleNote = $"try {bestTry} of back/round/long/face {tries}, back {best.Back:P0}, round {best.Round:0.00}, long {best.Long:0.00}, largest face {best.Facet:P0}, normals {best.Spread:0.00}, {best.Note}";
         }
 
         /// <summary>How round the lump's outline is as seen (`view`, its inked points): 4 pi area / perimeter squared of
@@ -979,7 +998,14 @@ namespace Drakepg
                 var c = Mean2();
                 var a0 = MainAngle2(c) + (srng.NextDouble() < 0.5 ? Mathf.PI : 0);
                 var n = Dir(a0 + U(-35, 35) * Mathf.Deg2Rad);
-                FlatFold(c + n * (U(CrumpleTuckAt.x, CrumpleTuckAt.y) * Reach(c, n)), n, eps, false, null);
+                var at = U(CrumpleTuckAt.x, CrumpleTuckAt.y);
+                // Later tucks cut whichever corner sticks out furthest (cutting corners rounds a polygon).
+                if (k >= CrumpleAimFrom)
+                {
+                    n = Rot2(FarDir(c), U(-15, 15) * Mathf.Deg2Rad);
+                    at = U(CrumpleCornerAt.x, CrumpleCornerAt.y);
+                }
+                FlatFold(c + n * (at * Reach(c, n)), n, eps, false, null);
                 tucks++;
             }
             // 2. Tapered pleats: folded over, then the part beyond folded back (turned twice the taper about where the
@@ -1016,7 +1042,14 @@ namespace Drakepg
             {
                 var c = Mean2();
                 var n = Dir(U(0, 2 * Mathf.PI));
-                FlatFold(c + n * (U(CrumpleFlapAt.x, CrumpleFlapAt.y) * Reach(c, n)), n, eps, true, null);
+                var at = U(CrumpleFlapAt.x, CrumpleFlapAt.y);
+                // Aimed: a corner turned over at the rim, so the back shows there and the outline breaks.
+                if (CrumpleFlapAim)
+                {
+                    n = Rot2(FarDir(c), U(-20, 20) * Mathf.Deg2Rad);
+                    at = U(CrumpleCornerAt.x, CrumpleCornerAt.y);
+                }
+                FlatFold(c + n * (at * Reach(c, n)), n, eps, true, null);
                 flaps++;
             }
             // The stack's depth doubles with each fold (as a stack does); only the layers' order is kept: each distinct
@@ -1041,12 +1074,30 @@ namespace Drakepg
                 c0 /= Mathf.Max(1, hull.Count);
                 float r0 = 1e-3f;
                 foreach (var p in bPos) r0 = Mathf.Max(r0, ((Vector2)p - c0).magnitude);
+                // Pulled in more on some sides than others (two smooth lobes round the rim): each ray from the middle
+                // keeps one rising map (the pull stays under a third), so still nothing crosses. Drawn only when on, so
+                // the seeds play as before without it.
+                float ph1 = 0, ph2 = 0;
+                int l1 = 2, l2 = 4;
+                if (CrumpleWobble > 0)
+                {
+                    ph1 = U(0, 2 * Mathf.PI);
+                    ph2 = U(0, 2 * Mathf.PI);
+                    l1 = 2 + srng.Next(2);
+                    l2 = 4 + srng.Next(2);
+                }
                 for (int i = 0; i < bPos.Count; i++)
                 {
                     var p = bPos[i];
                     var d = (Vector2)p - c0;
                     var rr = d.magnitude / r0;
-                    var q = c0 + d * (1 - CrumpleShrink * rr * rr);
+                    var k = CrumpleShrink;
+                    if (CrumpleWobble > 0)
+                    {
+                        var th = Mathf.Atan2(d.y, d.x);
+                        k = Mathf.Clamp(k * (1 + CrumpleWobble * (0.6f * Mathf.Sin(l1 * th + ph1) + 0.4f * Mathf.Sin(l2 * th + ph2))), 0, 0.3f);
+                    }
+                    var q = c0 + d * (1 - k * rr * rr);
                     bPos[i] = new Vector3(q.x, q.y, p.z);
                 }
             }
@@ -1061,7 +1112,7 @@ namespace Drakepg
             foreach (var p in bPos) R = Mathf.Max(R, ((Vector2)p - cen).magnitude);
             var ctrl = new List<Vector2>();
             foreach (var h in hp)
-                if (ctrl.Count == 0 || (h - ctrl[ctrl.Count - 1]).magnitude > 0.45f * R) ctrl.Add(h);
+                if (ctrl.Count == 0 || (h - ctrl[ctrl.Count - 1]).magnitude > CrumpleRimStep * R) ctrl.Add(h);
             var hullN = ctrl.Count;
             var minD = R * Mathf.Sqrt(Mathf.PI / Mathf.Max(1, CrumpleInner)) * 0.4f;
             for (int tries = 0, got = 0; got < CrumpleInner && tries < 4000; tries++)
@@ -1082,6 +1133,7 @@ namespace Drakepg
                 var rr = (ctrl[i] - cen).magnitude / R;
                 hz[i] = CrumpleDome * R * (1 - rr * rr) + U(-CrumpleRelief, CrumpleRelief) * R;
             }
+            FacetMeasures(ctrl, net, hz, out var spread, out var largestFace);
             // A flat skirt round the net, at its rim's heights, out far enough to hold the whole sheet: the paper
             // beyond the rim points takes its height from inside a facet too (the same plane for every layer there),
             // so no layer pokes through the one above it, and the net inside stays as it was.
@@ -1165,12 +1217,62 @@ namespace Drakepg
             {
                 Flat = bFlat, Tri = bTri, Mask = bMask, Folds = bFolds, Moves = bMoves, Z = bZ, Final = bPos.ToArray(), Relief = relief, Cen = cen,
                 Roll = rl, Lean = tb, Turn = yw, Still = crumplePos, FoldedXY = foldedXY, GridN = gridN, Note = note,
+                Facet = largestFace, Spread = spread,
             };
             bMoves = null;
             bZ = null;
             bFolds = null;
             crumpleNote = note;
             return sh;
+        }
+
+        /// <summary>How flat the relief reads: `spread`, its facets' normals summed by area over the area (1: all one way,
+        /// lower the more they differ); `largest`, its largest flat face (neighbouring facets within `CrumpleFlatAngle`
+        /// of each other) as a share of the whole. Build time only.</summary>
+        static void FacetMeasures(List<Vector2> p, List<int> net, float[] hz, out float spread, out float largest)
+        {
+            var n = net.Count / 3;
+            var nrm = new Vector3[n];
+            var area = new float[n];
+            var sum = Vector3.zero;
+            float total = 0;
+            for (int t = 0; t < n; t++)
+            {
+                int i0 = net[3 * t], i1 = net[3 * t + 1], i2 = net[3 * t + 2];
+                var a = new Vector3(p[i0].x, p[i0].y, hz[i0]);
+                var cr = Vector3.Cross(new Vector3(p[i1].x, p[i1].y, hz[i1]) - a, new Vector3(p[i2].x, p[i2].y, hz[i2]) - a);
+                area[t] = 0.5f * cr.magnitude;
+                nrm[t] = cr.z < 0 ? -cr.normalized : cr.normalized;
+                sum += area[t] * nrm[t];
+                total += area[t];
+            }
+            spread = total > 1e-6f ? sum.magnitude / total : 1;
+            var parent = new int[n];
+            for (int t = 0; t < n; t++) parent[t] = t;
+            int Find(int x)
+            {
+                while (parent[x] != x) x = parent[x] = parent[parent[x]];
+                return x;
+            }
+            var owner = new Dictionary<long, int>();
+            var cos = Mathf.Cos(CrumpleFlatAngle * Mathf.Deg2Rad);
+            for (int t = 0; t < n; t++)
+                for (int j = 0; j < 3; j++)
+                {
+                    int a = net[3 * t + j], b = net[3 * t + (j + 1) % 3];
+                    var key = Math.Min(a, b) * 100000L + Math.Max(a, b);
+                    if (!owner.TryGetValue(key, out var o)) owner[key] = t;
+                    else if (Vector3.Dot(nrm[o], nrm[t]) > cos) parent[Find(o)] = Find(t);
+                }
+            var grp = new float[n];
+            largest = 0;
+            for (int t = 0; t < n; t++)
+            {
+                var r = Find(t);
+                grp[r] += area[t];
+                largest = Mathf.Max(largest, grp[r]);
+            }
+            largest /= Mathf.Max(1e-6f, total);
         }
 
         /// <summary>The crumple's pose: about z (roll), then x (lean back), then y (turn); z toward the viewer.</summary>
@@ -1226,7 +1328,7 @@ namespace Drakepg
             public Vector2[] FoldedXY;
             public int GridN;
             public Vector2 Cen;
-            public float Roll, Lean, Turn, Back, Round, Long;
+            public float Roll, Lean, Turn, Back, Round, Long, Facet, Spread;
             public string Note;
         }
 
@@ -1479,6 +1581,30 @@ namespace Drakepg
             var c = Vector2.zero;
             foreach (var p in bPos) c += (Vector2)p;
             return c / Mathf.Max(1, bPos.Count);
+        }
+
+        /// <summary>The way from `c` to the sheet's point furthest from it (its most protruding corner).</summary>
+        Vector2 FarDir(Vector2 c)
+        {
+            float best = -1;
+            var d = Vector2.right;
+            foreach (var p in bPos)
+            {
+                var v = (Vector2)p - c;
+                var m = v.sqrMagnitude;
+                if (m > best)
+                {
+                    best = m;
+                    d = v;
+                }
+            }
+            return d.normalized;
+        }
+
+        static Vector2 Rot2(Vector2 v, float a)
+        {
+            float c = Mathf.Cos(a), s = Mathf.Sin(a);
+            return new Vector2(c * v.x - s * v.y, s * v.x + c * v.y);
         }
 
         /// <summary>How far the sheet reaches from `c` along `n`.</summary>
@@ -2256,6 +2382,7 @@ namespace Drakepg
             solidMat.SetColor(BackId, back);
             showMat.SetFloat(OutlineId, Crumple ? CrumpleOutline : 0);
             solidMat.SetFloat(EdgeInkId, Crumple && CrumpleKind == 2 ? CrumpleEdgeInk : 0);
+            if (Crumple && CrumpleKind == 2) solidMat.SetVector(ToneId, CrumpleTone);
             simTime = 0;
             landedOnce = false;
             startWidthPx = 0;

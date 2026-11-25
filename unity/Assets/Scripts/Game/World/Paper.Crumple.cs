@@ -38,6 +38,11 @@ namespace Drakepg
         /// <summary>The roll lost to its lumps while it touches the ground (a share of the spin a second): each lump that
         /// comes down takes some of it, so a fast roll dies quickly. It never holds the wad still (`RollResist` does).</summary>
         public static float RollDamp = 4f;
+        /// <summary>Testing (off: `SettleRate` 0): the roll let go by a set time: from `SettleFrom` seconds the ground
+        /// takes more of the wad's slide and spin each second (and its bounces soften), rising smoothly to `SettleRate` a
+        /// second at `SettleBy`, and no tip-off after it. A slowing, never a stop; it still sleeps by the usual rule. Not
+        /// enough on its own to end with today's fold (its folds alone take about 0.65 s), and not checked for a creep.</summary>
+        public static float SettleFrom = 0.85f, SettleBy = 1.15f, SettleRate = 0;
         /// <summary>The landing (the thud, dust and scraps): the first touch as hard as a fall of this share of the sheet.</summary>
         public static float LandFall = 0.2f;
         /// <summary>Test: log the body and the squeeze each tick (a sixtieth of a second) of the next deaths.</summary>
@@ -120,6 +125,7 @@ namespace Drakepg
         {
             folding = true;
             solidOn = true;
+            var crumpleStart = Time.time;
             var watch = System.Diagnostics.Stopwatch.StartNew();
             // Built as the fight started (a worker thread); a blow that kills at once may wait for it to finish.
             float waitMs = 0;
@@ -223,7 +229,7 @@ namespace Drakepg
             if (worstMs > SlowestMs) SlowestMs = worstMs;
             var turns = "";
             for (int k = 0; k < chainK; k++) turns += $"{(k > 0 ? " " : "")}{k}:{mOnAt[k]:0.00}-{mDownAt[k]:0.00}";
-            LastSolid = $"seed {seed}, {vCount} points, {tCount} triangles, build {buildMs:0} ms {built} (closing {closeMs:0}, shape {crumpleMs:0}), waited {waitMs:0} ms, start {startMs:0.0} ms ({marks}), "
+            LastSolid = $"took {Time.time - crumpleStart:0.00} s, seed {seed}, {vCount} points, {tCount} triangles, build {buildMs:0} ms {built} (closing {closeMs:0}, shape {crumpleMs:0}), waited {waitMs:0} ms, start {startMs:0.0} ms ({marks}), "
                 + $"folds {turns}, squeeze from {mSqueezeAt:0.00}, first touch {mTouchAt:0.00}, landed {mLandAt:0.00}, "
                 + $"touches (s:fall){mImpacts}, speed (s:along/spin){mTail}, " + (mCapped ? $"CAPPED at {mTime:0.00} s" : $"asleep at {mSleepAt:0.00} s on {mRestContacts} points{mRestNote}") + $", CPU a frame: worst {worstMs:0.00} ms, mean {sumMs / Mathf.Max(1, frames):0.00} ms over {frames} frames, the first{firstFrames}, {allocated / 1024f:0.0} KB allocated over them; parts worst/mean ms: {PartsNote(frames)}"
                 + (CheckChain ? $", chain stretch over the frames played {mStretch / Mathf.Max(1, sheetSize / CrumpleGrid):0.0000} cells" : "")
@@ -511,9 +517,10 @@ namespace Drakepg
                 mTailAt += 0.25f;
             }
             // Slow on a tip with its centre over it, paper is never left balanced: it is tipped off at once (at most
-            // `MaxKicks` times a death; after that the tip counts as held, so it always sleeps).
+            // `MaxKicks` times a death, and none once a settling is full; after that the tip counts as held, so it always
+            // sleeps).
             var slow = allDown && mInContact && speed < SleepSpeed * sheetSize;
-            if (slow && mOverTip && mKicks < MaxKicks)
+            if (slow && mOverTip && mKicks < MaxKicks && (SettleRate <= 0 || mTime < SettleBy))
             {
                 Kick();
                 mStillFor = 0;
@@ -562,11 +569,13 @@ namespace Drakepg
             // second) stop it: w' = -slowing - RollDamp w turns w/k - slowing/k^2 ln(1 + k w/slowing).
             var slowing = reach * gravityC.magnitude / mI;
             float wLo = 0, wHi = Mathf.Sqrt(2 * slowing * turn) + RollDamp * turn + 1e-3f;
-            while (TurnBeforeStop(wHi, slowing) < turn) wHi *= 2;
+            var damp = RollDamp + SettleNow(mTime);
+            wHi += (damp - RollDamp) * turn;
+            while (TurnBeforeStop(wHi, slowing, damp) < turn) wHi *= 2;
             for (int it = 0; it < 30; it++)
             {
                 var wMid = 0.5f * (wLo + wHi);
-                if (TurnBeforeStop(wMid, slowing) < turn) wLo = wMid;
+                if (TurnBeforeStop(wMid, slowing, damp) < turn) wLo = wMid;
                 else wHi = wMid;
             }
             mW = side * (1.2f + 0.4f * (float)krng.NextDouble()) * wHi;
@@ -574,10 +583,17 @@ namespace Drakepg
             mKicks++;
         }
 
-        /// <summary>How far a spin of `w` turns while a steady `slowing` and the lumps' `RollDamp` stop it.</summary>
-        static float TurnBeforeStop(float w, float slowing)
+        /// <summary>The settling's share a second at `t`: none before `SettleFrom`, rising smoothly to `SettleRate`
+        /// at `SettleBy`.</summary>
+        static float SettleNow(float t)
         {
-            var k = RollDamp;
+            var u = Mathf.Clamp01((t - SettleFrom) / Mathf.Max(1e-3f, SettleBy - SettleFrom));
+            return SettleRate * u * u * (3 - 2 * u);
+        }
+
+        /// <summary>How far a spin of `w` turns while a steady `slowing` and a share `k` a second stop it.</summary>
+        static float TurnBeforeStop(float w, float slowing, float k)
+        {
             if (k < 1e-4f) return w * w / (2 * slowing);
             return w / k - slowing / (k * k) * Mathf.Log(1 + k * w / slowing);
         }
@@ -772,6 +788,7 @@ namespace Drakepg
                 hardest = Mathf.Max(hardest, -vn0);
             }
             var g = gravityC.magnitude;
+            var settle = SettleNow(t);
             if (mContacts.Count == 0)
             {
                 mWasTouching = false;
@@ -794,7 +811,7 @@ namespace Drakepg
                     var vn = Vector2.Dot(mV + mW * perp, nrm);
                     var rn = r.x * nrm.y - r.y * nrm.x;
                     var kn = 1 + rn * rn / mI;
-                    var bias = ct.Vn0 < -bounceFrom ? -Bounce * ct.Vn0 : 0;
+                    var bias = ct.Vn0 < -bounceFrom ? -Bounce * (1 - settle / Mathf.Max(1e-3f, SettleRate)) * ct.Vn0 : 0;
                     var pn = Mathf.Max(0, ct.Pn + (bias - vn) / kn);
                     var dPn = pn - ct.Pn;
                     ct.Pn = pn;
@@ -829,6 +846,13 @@ namespace Drakepg
             var dw = reach * press / mI;
             mW = Mathf.Abs(mW) <= dw ? 0 : mW - Mathf.Sign(mW) * dw;
             mW *= Mathf.Exp(-RollDamp * dt);
+            // Settling: the slide and spin bled off a share a second (the bounce above softened the same way).
+            if (settle > 0)
+            {
+                var keep = Mathf.Exp(-settle * dt);
+                mW *= keep;
+                mV -= tan * (Vector2.Dot(mV, tan) * (1 - keep));
+            }
             // Held: on a support wider than that lever each way, its centre of mass over it (or within the lever of it,
             // what the rolling resistance holds). A narrower support with its centre over it is a tip: the sleep check
             // tips it off (`Kick`), never this step's forces, so a rocking wad gets no push.
