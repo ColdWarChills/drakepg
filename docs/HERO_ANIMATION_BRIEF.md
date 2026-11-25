@@ -1,5 +1,7 @@
 # Hero animation brief (2026-11-23)
 
+**Read `docs/HERO_ANIMATION_LESSONS.md` first (2026-11-25).** It says why the tries below failed, why the Dragon Crashers knight works, and the rules for any new try.
+
 Read this before any work on the hero's body, poses, gear-on-hero or attack animation. It replaces the open hero threads in `docs/PLANS.md` ("Layered hero", "Hero on bones", "Overnight runs"). The designer handed the technical decisions to Claude; they are made below and are not reopened unless a step fails its tests twice (see "Stop rule").
 
 The goal, in the designer's words: unique, powerful, fluent; every equipped item visible on the hero.
