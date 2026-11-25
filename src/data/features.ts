@@ -11,24 +11,28 @@ export const FEATURES: FeatureDef[] = [
     name: 'Elite monsters',
     text: 'Now and then a monster spawns as an Elite: bigger, glowing gold, with one affix. Tougher, but 3x XP and gold and a guaranteed piece of gear.',
     unlockedBy: 'heart_of_thorns',
+    picture: { art: 'news_elites' },
   },
   {
     id: 'chests',
     name: 'Treasure chests',
     text: 'Some monster rooms hide a chest. Walk into it for gold, materials and often gear.',
     unlockedBy: 'heart_of_thorns',
+    picture: { art: 'news_chests' },
   },
   {
     id: 'weapon_swap',
     name: 'Spare weapon',
     text: 'Carry a second weapon in the Spare slot (Inventory) and swap to it mid-fight with Swap. It costs your turn, so bring one of the element your foe is weak to.',
     unlockedBy: 'heart_of_thorns',
+    picture: { items: ['iron_sword', 'emberbrand'] },
   },
   {
     id: 'tower',
     name: 'The Spire',
     text: 'The Warden has opened the Spire behind Brindlemoor: floor after floor of hard fights, each with a twist. First clears pay marks for his wares.',
     unlockedBy: 'heart_of_thorns',
+    picture: { art: 'news_spire' },
   },
   {
     id: 'materials',
@@ -44,6 +48,7 @@ export const FEATURES: FeatureDef[] = [
     name: 'Travel between towns',
     text: 'Every town has a driver now. Ride to any town you have walked into, for a few gold. Odo waits by the north gate in Brindlemoor.',
     unlockedBy: 'rising_waters',
+    picture: { art: 'npc_odo' },
   },
   // After Chapter 2
   {
@@ -59,11 +64,13 @@ export const FEATURES: FeatureDef[] = [
     name: 'Sigils',
     text: 'Dropped gear can now be a rare Sigil version: stronger, glowing, and with extra lines (Dawn +1, Dusk +2, Eclipse +3). Bosses drop them most.',
     unlockedBy: 'eye_of_the_storm',
+    picture: { items: ['iron_sword'], sigil: 'dawn' },
   },
   {
     id: 'mimics',
     name: 'Mimics',
     text: 'Some chests bite. Watch for one that breathes, or whose lid twitches when you come near.',
     unlockedBy: 'eye_of_the_storm',
+    picture: { art: 'mon_mimic' },
   },
 ];
