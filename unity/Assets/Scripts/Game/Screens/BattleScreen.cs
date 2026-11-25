@@ -2265,7 +2265,7 @@ namespace Drakepg
                 Fx.PaperScraps(World, x - width / 4, GroundY - 24, -1, 0.5f, GroundY, GroundOrder);
                 Fx.PaperScraps(World, x + width / 4, GroundY - 24, 1, 0.5f, GroundY, GroundOrder);
             });
-            await Anim.Wait(0.1f);
+            await Anim.Wait(0.04f);
             var (mid, w, h) = paper.Packet();
             // It goes in a puff of paper: cream dust and bits of its paper and red scraps, not its blood.
             Fx.DeathPoof(World, mid.x, mid.y, 0xe9e0c9);

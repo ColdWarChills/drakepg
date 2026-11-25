@@ -272,7 +272,8 @@ namespace Drakepg
             var take = Mathf.Min(creases.Count, rough ? 8 : 4);
             var queue = new Queue<Vector4>(creases.GetRange(creases.Count - take, take));
             int folds = rough ? 5 : 3, done = 0;
-            float dur = rough ? 0.13f : 0.26f, gap = rough ? 0.01f : 0.04f, end = rough ? -0.85f : -1;
+            // Timed so the folds and the drop together take no longer than today's slump (about 0.95 s).
+            float dur = rough ? 0.095f : 0.16f, settle = rough ? 0.018f : 0.025f, end = rough ? -0.85f : -1;
             var startWidth = scan.Max.x - scan.Min.x;
             FindFace(scan);
             while (done < folds && scan.Pts.Count >= 12)
@@ -283,7 +284,7 @@ namespace Drakepg
                 Sfx.Play("crinkle");
                 // A fold going behind is only seen until it stands edge-on: it spends most of its time there (QuadIn).
                 await Anim.Float(0, 1, dur, t => SetFold(line, Mathf.Lerp(1, end * 1.08f, t), valley, level, rough), valley ? Ease.CubicInOut : Ease.QuadIn).Task;
-                await Anim.Float(1.08f, 1, 0.05f, k => SetFold(line, end * k, valley, level, rough), Ease.QuadOut).Task;
+                await Anim.Float(1.08f, 1, settle, k => SetFold(line, end * k, valley, level, rough), Ease.QuadOut).Task;
                 watch.Restart();
                 SetFold(line, end, valley, level, rough);
                 Graphics.Blit(sheet, next, mat, 1);
@@ -296,8 +297,7 @@ namespace Drakepg
                 if (shadow != null && startWidth > 0)
                     shadow.localScale = new Vector3(shadowWidth * Mathf.Max(0.3f, (scan.Max.x - scan.Min.x) / startWidth), shadow.localScale.y, 1);
                 done++;
-                dur = Mathf.Max(rough ? 0.08f : 0.15f, dur * 0.75f);
-                if (gap > 0) await Anim.Wait(gap);
+                dur = Mathf.Max(rough ? 0.07f : 0.11f, dur * 0.82f);
             }
             await Drop(scan, groundY, landed);
             Debug.Log($"drakepg: paper fold, {done} folds ({creases.Count} creases), slowest CPU step {SlowestMs:0.0} ms");
@@ -428,21 +428,27 @@ namespace Drakepg
 
         /// <summary>
         /// Where the face is, which no fold may cover, so the packet stays the monster: the middle of the top part of
-        /// the picture, a little toward its front (pictures face right). Generic, nothing marked per monster.
+        /// the picture, a little toward its front (pictures face right); for a wide one, its front above the legs.
+        /// Generic, nothing marked per monster.
         /// </summary>
         void FindFace(Scan scan)
         {
-            var top = scan.Min.y + 0.55f * (scan.Max.y - scan.Min.y);
+            var w = scan.Max.x - scan.Min.x;
+            var h = scan.Max.y - scan.Min.y;
+            // Upright (a blob, a bird, a man): the top part. Wide (a boar, a wolf): the front, above the legs.
+            var wide = w > 1.3f * h;
+            var top = scan.Min.y + (wide ? 0.35f : 0.55f) * h;
+            var front = wide ? scan.Max.x - 0.3f * w : float.MinValue;
             var sum = Vector2.zero;
             var n = 0;
             foreach (var q in scan.Pts)
-                if (q.y >= top)
+                if (q.y >= top && q.x >= front)
                 {
                     sum += q;
                     n++;
                 }
-            face = (n > 0 ? sum / n : scan.Mid) + new Vector2(0.08f * W, 0);
-            faceRadius = 0.2f * H;
+            face = (n > 0 ? sum / n : scan.Mid) + new Vector2(wide ? 0 : 0.08f * W, 0);
+            faceRadius = (wide ? 0.25f : 0.2f) * H;
         }
 
         /// <summary>
@@ -518,7 +524,7 @@ namespace Drakepg
         /// <summary>A canvas px in design px (through the quad, so after it moved and turned too).</summary>
         Vector2 ToDesign(Vector2 px) => Design.FromWorld(quad.transform.TransformPoint(new Vector3((px.x - origin.x) / canvasPpu, (px.y - origin.y) / canvasPpu, 0)));
 
-        /// <summary>The folded packet falls to `groundY`, turning a little, bounces up to twice and lies still.</summary>
+        /// <summary>The folded packet falls to `groundY`, turning a little, bounces once and lies still.</summary>
         async Task Drop(Scan scan, float groundY, Action<float, float> landed)
         {
             if (scan.Pts.Count == 0) return;
@@ -533,7 +539,7 @@ namespace Drakepg
             Rebuild();
             var start = t.position;
             // The path worked out ahead and played on Anim time, so the x2 battle speed and recordings keep it.
-            const float gravity = 2000, step = 1 / 240f;
+            const float gravity = 3000, step = 1 / 240f;
             var ys = new List<float>();
             float y = 0, v = 0, hitAt = -1;
             int bounces = 0;
@@ -545,9 +551,9 @@ namespace Drakepg
                 {
                     y = fall;
                     if (hitAt < 0) hitAt = ys.Count * step;
-                    if (v > 170 && bounces < 2)
+                    if (v > 170 && bounces < 1)
                     {
-                        v = -v * 0.32f;
+                        v = -v * 0.22f;
                         bounces++;
                     }
                     else
