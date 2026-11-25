@@ -555,6 +555,15 @@ namespace Drakepg.Rules
     {
         public string Id, Name, Text, UnlockedBy;
         public bool Disabled;
+        /// <summary>The picture on its "New!" card.</summary>
+        public FeaturePicture Picture;
+    }
+
+    /// <summary>A "New!" card's picture: `Art` (a snapshot of the game or a figure), or `Items` (two with a swap arrow between), glowing as a `Sigil`.</summary>
+    public class FeaturePicture
+    {
+        public string Art, Sigil;
+        public List<string> Items;
     }
 
     public class QuestObjective

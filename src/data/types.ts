@@ -606,6 +606,15 @@ export interface FeatureDef {
   unlockedBy: string;
   /** Switched off for now: never unlocks or gets announced (the code stays for later). */
   disabled?: boolean;
+  /** The picture on its "New!" card (Unity): a picture from the game (`art` key), or items drawn as in the bag. */
+  picture?: FeaturePicture;
+}
+
+/** A "New!" card's picture: `art` (a snapshot of the game or a figure), or `items` (two with a swap arrow between), glowing as a Sigil. */
+export interface FeaturePicture {
+  art?: string;
+  items?: string[];
+  sigil?: 'dawn' | 'dusk' | 'eclipse';
 }
 
 export interface NpcDef {

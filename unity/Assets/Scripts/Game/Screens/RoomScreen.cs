@@ -431,51 +431,112 @@ namespace Drakepg
             if (!news.Any) return;
             Features.MarkSeen(P, news);
             Save(false);
-            var rows = new List<(string title, string text, Color color, string icon)>();
-            foreach (var f in news.Features) rows.Add((f.Name, f.Text, Palette.TextGold, null));
-            // Too much news for the popup (a chapter start, an old save): the new skills share one line.
-            if (news.Skills.Count > 1 && rows.Count + news.Skills.Count > 5)
+            var cards = news.Features.Select(f => new NewsItem { Title = f.Name, Text = f.Text, Picture = f.Picture, Color = Palette.TextGold }).ToList();
+            // Much news at once (a chapter start, an old save): the new skills share one card.
+            if (news.Skills.Count > 1 && cards.Count + news.Skills.Count > 5)
             {
-                rows.Add(($"New skills: {string.Join(", ", news.Skills.Select(s => s.Name))}",
-                    "See what they do, and pick the ones you carry into battle, in the Spellbook (K).", Palette.TextMagic, "book"));
+                cards.Add(new NewsItem
+                {
+                    Title = "New skills", Sub = string.Join(", ", news.Skills.Select(s => s.Name)), Icon = "book", Color = Palette.TextMagic,
+                    Text = "See what they do, and pick the ones you carry into battle, in the Spellbook (K).",
+                });
             }
             else foreach (var s in news.Skills)
             {
-                var element = s.Element != null && s.Element != "weapon" ? $" · {Db.Data.ElementLabels[s.Element]}" : "";
-                var cd = s.Cooldown > 0 ? $" · cooldown {s.Cooldown}" : "";
+                var element = s.Element != null && s.Element != "weapon" ? $"  ·  {Db.Data.ElementLabels[s.Element]}" : "";
+                var cd = s.Cooldown > 0 ? $"  ·  cooldown {s.Cooldown}" : "";
                 var slot = P.IsCarried(s.Id) ? "" : $" Your {Db.B.SkillSlots} skill slots are full: carry it from the Spellbook (K).";
-                rows.Add(($"New skill: {s.Name}  ({s.MpCost} MP{element}{cd})", s.Description + slot, Palette.TextMagic, SkillUi.Icon(s)));
+                var icon = SkillUi.Icon(s);
+                cards.Add(new NewsItem
+                {
+                    Title = $"New skill: {s.Name}", Sub = $"{s.MpCost} MP{element}{cd}", Text = s.Description + slot, Color = Palette.TextMagic,
+                    Icon = Felt.HasIcon(icon) ? icon : "book",
+                });
             }
             Sfx.Play("quest");
-            var height = Math.Min(640, 150 + rows.Count * 84);
-            var modal = new UiModal(760, height, "New!", Refresh);
-            var list = new VisualElement { pickingMode = PickingMode.Ignore };
-            Ui.Place(list, 40, 80);
-            list.style.width = 680;
-            list.style.flexDirection = FlexDirection.Column;
-            modal.Content.Add(list);
-            foreach (var r in rows)
+            NewsCard(cards, 0);
+        }
+
+        class NewsItem
+        {
+            public string Title, Sub, Text, Icon;
+            public FeaturePicture Picture;
+            public Color Color;
+        }
+
+        /// <summary>The "New!" card on screen and its Next (Space and Enter press it), or null.</summary>
+        Action newsNext;
+        UiModal newsModal;
+
+        /// <summary>
+        /// One "New!" card: its picture, name and what it does, then Next (the last one: Got it). X and Esc go to the
+        /// next card too, so closing early loses nothing; each card opens as the last closes, so nothing waiting on
+        /// the popup (the elder's greeting, a room's opening lines) starts in between.
+        /// </summary>
+        void NewsCard(List<NewsItem> cards, int i)
+        {
+            var c = cards[i];
+            var last = i == cards.Count - 1;
+            void Next()
             {
-                var title = FlowText(r.title, 20, r.color, true, 4);
-                if (Felt.HasIcon(r.icon))
-                {
-                    // A new skill shows its drawing next to its name.
-                    var head = new VisualElement { pickingMode = PickingMode.Ignore };
-                    head.style.flexDirection = FlexDirection.Row;
-                    head.style.alignItems = Align.Center;
-                    head.style.marginBottom = 4;
-                    var ic = Felt.Icon(null, 0, 0, 30, r.icon);
-                    ic.style.position = Position.Relative;
-                    ic.style.marginRight = 8;
-                    head.Add(ic);
-                    title.style.marginBottom = 0;
-                    head.Add(title);
-                    list.Add(head);
-                }
-                else list.Add(title);
-                list.Add(FlowText(r.text, 16, Palette.Text, false, 14));
+                newsNext = null;
+                if (last) Refresh();
+                else NewsCard(cards, i + 1);
             }
-            new UiButton(modal.Content, 380, height - 44, "Got it", () => modal.Close(Refresh), 180, 48);
+            const float w = 640, h = 580, picW = 480, picH = 300;
+            var modal = new UiModal(w, h, "New!", Next);
+            var box = modal.Content;
+            NewsPicture(box, (w - picW) / 2, 70, picW, picH, c);
+            var title = Ui.Text(box, w / 2, 402, c.Title, 26, c.Color, true, 0.5f, 0.5f);
+            Fonts.Title(title);
+            var y = 428f;
+            if (c.Sub != null)
+            {
+                Ui.Text(box, w / 2, y + 4, c.Sub, 16, Palette.TextDim, false, 0.5f, 0.5f);
+                y += 22;
+            }
+            Ui.Text(box, w / 2, y, c.Text, 17, Palette.Text, false, 0.5f, 0, wrap: 560, align: TextAnchor.UpperCenter);
+            if (cards.Count > 1) Ui.Text(box, 40, h - 44, $"{i + 1} of {cards.Count}", 17, Palette.TextDim, false, 0, 0.5f);
+            new UiButton(box, w / 2, h - 44, last ? "Got it" : "Next", () => modal.Close(Next), 180, 48);
+            newsNext = () => modal.Close(Next);
+            newsModal = modal;
+        }
+
+        /// <summary>A card's picture in a frame: a snapshot of the game fills it; a figure, items or a skill's drawing stand on a darker sheet.</summary>
+        static void NewsPicture(VisualElement parent, float x, float y, float w, float h, NewsItem c)
+        {
+            var frame = Ui.Rect(parent, x, y, w, h, new Color(0, 0, 0, 0.1f), 8, 3, Felt.Text);
+            frame.style.overflow = Overflow.Hidden;
+            // Inside the 3 px border.
+            float iw = w - 6, ih = h - 6, cx = iw / 2, cy = ih / 2;
+            var p = c.Picture;
+            if (p?.Art != null && Art.Has(p.Art))
+            {
+                var size = Art.Size(Art.Get(p.Art));
+                var aspect = size.y > 0 ? size.x / size.y : 1;
+                if (Mathf.Abs(aspect - w / h) < 0.05f) Ui.Image(frame, 0, 0, iw, ih, p.Art);
+                else
+                {
+                    // A figure: feet near the bottom, as tall as fits.
+                    var fh = Mathf.Min(ih - 30, (iw - 40) / aspect);
+                    Ui.Image(frame, cx, ih - 12, fh * aspect, fh, p.Art, 0.5f, 1);
+                }
+                return;
+            }
+            if (p?.Items != null && p.Items.Count > 0)
+            {
+                var n = p.Items.Count;
+                for (int k = 0; k < n; k++)
+                {
+                    var ix = cx + (k - (n - 1) / 2f) * 200;
+                    Ui.Rect(frame, ix - 70, cy - 70, 140, 140, new Color(0, 0, 0, 0.12f), 12, 3, p.Sigil != null ? ItemUi.SigilColors[p.Sigil].Color : Felt.Text);
+                    var icon = ItemUi.DrawItemIcon(frame, ix, cy, 110, Db.Item(p.Items[k]));
+                    if (p.Sigil != null) ItemUi.AnimateSigilIcon(icon, p.Sigil, 110);
+                }
+                if (n == 2) Felt.Icon(frame, cx - 24, cy - 24, 48, "swap");
+                return;
+            }
+            if (Felt.HasIcon(c.Icon)) Felt.Icon(frame, cx - 90, cy - 90, 180, c.Icon);
         }
 
         static Label FlowText(string text, float size, Color color, bool bold, float gapBelow)
@@ -1107,6 +1168,12 @@ namespace Drakepg
         {
             if (!InputEnabled) return;
             if (Keys.Pressed(Key.Escape)) CloseTopModal();
+            // Space and Enter turn the "New!" cards; the same press doesn't also start a talk.
+            if (newsNext != null && UiModal.Top == newsModal && (Keys.Pressed(Key.Space) || Keys.Pressed(Key.Enter)))
+            {
+                newsNext();
+                return;
+            }
             if (Keys.Pressed(Key.C)) OpenCharacter();
             if (Keys.Pressed(Key.I)) ToggleInventory();
             if (Keys.Pressed(Key.M)) ToggleMap();
