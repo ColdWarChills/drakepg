@@ -3,14 +3,14 @@
 // over the line, squashed toward it by `_Fold.x` (1 flat, 0 edge-on, -1 folded over). A valley fold (`_Fold.y` 1)
 // comes toward the viewer and lies on top showing the paper's back (`_Back`, a little of the picture showing through:
 // `_Back.a`) with a soft shadow under it; a mountain fold (0) goes behind. Passes: 0 draws it on the figure's quad
-// (premultiplied, faded by `_Color.a`); 1 bakes a finished fold into the next canvas (Graphics.Blit); 2 lays the
+// (premultiplied, tinted by `_Color.rgb`, faded by `_Color.a`); 1 bakes a finished fold into the next canvas (Graphics.Blit); 2 lays the
 // living picture with its creases (Paper.cginc) onto the first canvas, from the art's own texture.
 Shader "Drakepg/PaperFold"
 {
     Properties
     {
         _MainTex ("Canvas", 2D) = "white" {}
-        _Color ("Fade", Color) = (1,1,1,1)
+        _Color ("Tint and fade", Color) = (1,1,1,1)
         _Canvas ("Canvas px", Vector) = (1,1,0,0)
         _FoldLine ("Fold line", Vector) = (0,0,0,1)
         _Fold ("Fold", Vector) = (1,1,0,1)
@@ -113,7 +113,7 @@ Shader "Drakepg/PaperFold"
             {
                 float4 c = FoldAt(i.uv);
                 float a = c.a * _Color.a;
-                return fixed4(c.rgb * a, a);
+                return fixed4(c.rgb * _Color.rgb * a, a);
             }
         ENDCG
         }

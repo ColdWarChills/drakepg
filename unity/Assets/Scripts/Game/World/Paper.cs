@@ -7,18 +7,19 @@ using UnityEngine.Rendering;
 namespace Drakepg
 {
     /// <summary>
-    /// Paper damage, the proof on one monster (docs/PLANS.md, roadmap job 4; the idea and its behaviour come from
+    /// Paper damage, on every monster (docs/PLANS.md, roadmap job 4 and "paper damage for every monster"; the idea and its behaviour come from
     /// art/tests/paper_damage_mock.html). The figure is a sheet of paper and the damage happens to the paper: each blow
     /// leaves a crease across its picture (drawn by Fx/PaperSprite.shader on the art itself, so nothing is copied while
     /// it lives), it tears when badly hurt (at a third of its HP and again at 15%), fire burns holes in it, and when it dies it folds up along the creases the fight left, so no two deaths match, then drops to
     /// the ground as a folded packet (Fx/PaperFold.shader, on the GPU: the picture is baked onto a canvas with room
-    /// around it, one fold at a time). One set of rules for any picture, nothing drawn per monster. Testing switch `On`.
+    /// around it, one fold at a time). One set of rules for any picture, nothing drawn per monster. Switch: `On`.
     /// "Sheet space": the picture with its height 1, y up. Canvas px: the fold canvas, y up.
     /// </summary>
     public class Paper : MonoBehaviour
     {
-        /// <summary>Testing switch (cheat menu, this session only): monsters made while it's on are paper.</summary>
-        public static bool On;
+        /// <summary>Every monster is paper (the designer, 2026-11-25: "Yes, every monster"). The cheat menu turns it off for
+        /// this session, for testing: monsters made while it's off bleed and slump as before.</summary>
+        public static bool On = true;
 
         /// <summary>Milliseconds the slowest step on the CPU took (a fold's bake and read-back): the cost check.</summary>
         public static float SlowestMs;
@@ -238,6 +239,8 @@ namespace Drakepg
         Vector2 origin;
         Transform shadow;
         float shadowWidth;
+        /// <summary>The picture's tint as the fold starts (a boss's new form), kept on the folding paper.</summary>
+        Color tint = Color.white;
         /// <summary>The face (canvas px) and how far around it folds keep clear.</summary>
         Vector2 face;
         float faceRadius;
@@ -258,8 +261,9 @@ namespace Drakepg
         /// Fold the picture up: the fight's creases first (when one cuts off a good share), else lines across the
         /// middle of what is left, square to its long side. Folds take turns coming toward the viewer (the paper's back
         /// on top, a shadow under it) and going behind, so some of the picture stays in sight. Few creases: three folds
-        /// into a neat packet; seven or more: five quick, rough ones. Then it drops to `groundY` and bounces; `landed`
-        /// runs as it first hits (design x of its middle, its width in design px).
+        /// into a neat packet; seven or more: five quick, rough ones. It sinks as what it stands on folds away (`Sink`),
+        /// then drops the rest of the way to `groundY` and bounces; `landed` runs as it first hits (design x of its
+        /// middle, its width in design px).
         /// </summary>
         public async Task Fold(float groundY, Action<float, float> landed)
         {
@@ -282,8 +286,16 @@ namespace Drakepg
                 var valley = level % 2 == 0;
                 if (!NextLine(scan, queue, valley, out var line)) break;
                 Sfx.Play("crinkle");
+                // What it stands on folds away under it, so it sinks as it folds (most of the lift; the drop does the rest),
+                // rather than hanging in the air at chest height and falling only at the end.
+                var from = quad.transform.position;
+                var sink = Sink(scan, line, end, groundY) / Design.PixelsPerUnit;
                 // A fold going behind is only seen until it stands edge-on: it spends most of its time there (QuadIn).
-                await Anim.Float(0, 1, dur, t => SetFold(line, Mathf.Lerp(1, end * 1.08f, t), valley, level, rough), valley ? Ease.CubicInOut : Ease.QuadIn).Task;
+                await Anim.Float(0, 1, dur, t =>
+                {
+                    SetFold(line, Mathf.Lerp(1, end * 1.08f, t), valley, level, rough);
+                    if (sink > 0) quad.transform.position = from + Vector3.down * (sink * Mathf.Clamp01(t));
+                }, valley ? Ease.CubicInOut : Ease.QuadIn).Task;
                 await Anim.Float(1.08f, 1, settle, k => SetFold(line, end * k, valley, level, rough), Ease.QuadOut).Task;
                 watch.Restart();
                 SetFold(line, end, valley, level, rough);
@@ -300,7 +312,7 @@ namespace Drakepg
                 dur = Mathf.Max(rough ? 0.07f : 0.11f, dur * 0.82f);
             }
             await Drop(scan, groundY, landed);
-            Debug.Log($"drakepg: paper fold, {done} folds ({creases.Count} creases), slowest CPU step {SlowestMs:0.0} ms");
+            Debug.Log($"drakepg: paper fold, {done} folds ({creases.Count} creases), face at the {faceNote}, slowest CPU step {SlowestMs:0.0} ms");
         }
 
         RenderTexture NewCanvas()
@@ -332,7 +344,8 @@ namespace Drakepg
             next = NewCanvas();
             Graphics.Blit(body.sprite.texture, sheet, mat, 2);
             mat.mainTexture = sheet;
-            mat.SetColor(ColorId, Color.white);
+            tint = new Color(body.color.r, body.color.g, body.color.b, 1);
+            mat.SetColor(ColorId, tint);
             SetFlat();
 
             canvasPpu = ppu * k;
@@ -449,7 +462,11 @@ namespace Drakepg
                 }
             face = (n > 0 ? sum / n : scan.Mid) + new Vector2(wide ? 0 : 0.08f * W, 0);
             faceRadius = (wide ? 0.25f : 0.2f) * H;
+            faceNote = $"{(wide ? "front" : "top")} (paper {w / Mathf.Max(1, h):0.00} wide to its height)";
         }
+
+        /// <summary>Which face rule the fold used, for the log.</summary>
+        string faceNote;
 
         /// <summary>
         /// The next fold. A crease of the fight's first (newest last), folding the side away from the face, when it
@@ -524,6 +541,33 @@ namespace Drakepg
         /// <summary>A canvas px in design px (through the quad, so after it moved and turned too).</summary>
         Vector2 ToDesign(Vector2 px) => Design.FromWorld(quad.transform.TransformPoint(new Vector3((px.x - origin.x) / canvasPpu, (px.y - origin.y) / canvasPpu, 0)));
 
+        /// <summary>Of a fold's lift (how far it raises the paper's lowest point), the share the paper sinks while folding.</summary>
+        const float SinkShare = 0.75f;
+
+        /// <summary>
+        /// How far (design px) the paper sinks during the fold along `l`: `SinkShare` of how much the fold raises its lowest
+        /// point, never past the ground. A fold across a wide monster raises nothing, and a flyer keeps its height.
+        /// </summary>
+        float Sink(Scan scan, FoldLine l, float end, float groundY)
+        {
+            if (scan.Pts.Count == 0) return 0;
+            float low = float.MaxValue, lowAfter = float.MaxValue;
+            foreach (var q in scan.Pts)
+            {
+                low = Mathf.Min(low, q.y);
+                // The folding side ends up mirrored over the line (scaled by `end`).
+                var d = Vector2.Dot(q - l.P, l.N);
+                lowAfter = Mathf.Min(lowAfter, d > 0 ? (q - (1 - end) * d * l.N).y : q.y);
+            }
+            if (lowAfter <= low) return 0;
+            var x = scan.Mid.x;
+            var bottom = ToDesign(new Vector2(x, low)).y;
+            var lift = bottom - ToDesign(new Vector2(x, lowAfter)).y;
+            // Never below the ground: the gap under it once folded.
+            var gap = groundY - (bottom - lift);
+            return Mathf.Clamp(SinkShare * lift, 0, Mathf.Max(0, gap));
+        }
+
         /// <summary>The folded packet falls to `groundY`, turning a little, bounces once and lies still.</summary>
         async Task Drop(Scan scan, float groundY, Action<float, float> landed)
         {
@@ -592,7 +636,7 @@ namespace Drakepg
         /// <summary>Fade the folded paper (0 gone).</summary>
         public void SetAlpha(float a)
         {
-            if (mat != null) mat.SetColor(ColorId, new Color(1, 1, 1, a));
+            if (mat != null) mat.SetColor(ColorId, new Color(tint.r, tint.g, tint.b, a));
             if (shadow != null)
             {
                 var r = shadow.GetComponent<SpriteRenderer>();
