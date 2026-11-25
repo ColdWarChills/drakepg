@@ -612,5 +612,13 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - **Tried:** all 5 tries of the Glacier Golem and the Stormcoil rendered (none is a ball, and none reads as paper at game size). Then the making: no roundness target, 20 relief points with twice the lift, lighter fold lines, an uneven rim pull, smooth and stronger facet shading on the Golem, Stormcoil and Mossling (try 0 forced); corner-aimed tucks and flaps on the six boxy monsters (one seed each). Each is a knob in the code, off.
 - **Result, not reached:** with every setting the Golem and the Stormcoil still read as blue crystal; the look is mostly their glassy pictures folded into flat, dark-edged facets, not the outline. The denser relief costs a worst frame of 16.8-19 ms and a build of about 1 s. A flat-face measure is logged per try (largest flat face, normals' spread). Not shown to the designer.
 - **Timing:** today's fold and the crumple now log how long they take; every crumple ends later than the fold (see above). A settle that bleeds off the roll by a set time is in the code, off, and not enough on its own.
-- **Third try, the two named levers** (Golem, Stormcoil, Gust Sprite, game size; `claude/unity-port` 9a310cb adds the crease-line knob `CrumpleLineDeg`, default unchanged): more crease lines make the wads spikier and icier (worse); more back showing (4 flaps, 45-60% back) gives the closest-to-paper Golem yet but leaves the Stormcoil a dark blue lump, and costs a 1 s build and a 15.9 ms worst frame. Still not "mostly paper"; nothing shown, the crumple stays off.
-- To look at, in the `claude/unity-port` worktree on the PC: `art/tests/paper_clip/paper_crumple_pass2_settings.jpg`, `paper_crumple_pass2_aim.jpg`, `paper_crumple_vs_fold_timing.jpg`, `paper_crumple_pass3_levers.jpg`.
+- **Third try, the two named levers** (game size; `claude/unity-port` 9a310cb adds the crease-line knob `CrumpleLineDeg`, default unchanged):
+  - **Finer crease lines:** no visible change at game size on the Golem, Stormcoil and Gust Sprite. With the dense relief they get icier, but that comes from the relief.
+  - **More back showing** (4 flaps, 45-60% back): it gives the closest-to-paper Golem yet. On all 30 it trades which wads look like gems:
+    - better: Golem, Gust Sprite, Dew Slug;
+    - worse: Mossling, Thornheart, Hedge Troll, and Old Snowmaw, which never came to rest before the 3 s cap;
+    - unchanged: Stormcoil, Frostbinder and Dusk Wraith still read as gems;
+    - three worst frames went over 16.7 ms.
+  - Not adopted. The back share counts hidden layers, so the Stormcoil shows almost none of its cream back at 55%.
+  - Still not "mostly paper"; nothing shown, the crumple stays off.
+- To look at, in the `claude/unity-port` worktree on the PC: `art/tests/paper_clip/paper_crumple_pass2_settings.jpg`, `paper_crumple_pass2_aim.jpg`, `paper_crumple_vs_fold_timing.jpg`, `paper_crumple_pass3_levers.jpg`, `paper_crumple_pass3_more_back_30a.jpg`, `_30b.jpg`.
