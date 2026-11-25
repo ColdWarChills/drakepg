@@ -17,14 +17,28 @@ Shader "Drakepg/PaperSolid"
         _Shade ("Shadow strength (x), blur mip (y), front faces flip (z)", Vector) = (0.38,2.5,-1,0)
         _Outline ("A dark line round the outline in pass 0, texels (0 none)", Float) = 0
         _EdgeInk ("A line along every cut edge of the paper in pass 1, times the fold line's width (0 none)", Float) = 0
+        _CloseTex ("The outline's closing: what it adds round the picture (premultiplied)", 2D) = "black" {}
+        _Close ("How much of the closing shows (0-1)", Float) = 0
     }
 
     CGINCLUDE
     #include "UnityCG.cginc"
 
-    sampler2D _MainTex;
+    sampler2D _MainTex, _CloseTex;
     float4 _Color, _Back, _Ink, _Light, _Tone, _Shade, _MainTex_TexelSize;
-    float _Outline, _EdgeInk;
+    float _Outline, _EdgeInk, _Close;
+
+    // The canvas with the outline's closing under it (made as the fight starts, so the fight's burns and tears on the
+    // canvas stay open): where the picture is clear, the closing's colour; its cover, whichever is more.
+    float4 Closed(float4 p, float4 c)
+    {
+        c *= _Close;
+        if (p.a < 0.5 && c.a > 1e-3) p.rgb = c.rgb / c.a;
+        p.a = max(p.a, c.a);
+        return p;
+    }
+    float4 Pic(float2 uv) { return Closed(tex2D(_MainTex, uv), tex2D(_CloseTex, uv)); }
+    float4 PicLod(float2 uv, float lod) { return Closed(tex2Dlod(_MainTex, float4(uv, 0, lod)), tex2Dlod(_CloseTex, float4(uv, 0, lod))); }
 
     struct appdata
     {
@@ -124,7 +138,7 @@ Shader "Drakepg/PaperSolid"
 
             float4 frag(v2f i, float face : VFACE) : SV_Target
             {
-                float4 pic = tex2D(_MainTex, i.uv);
+                float4 pic = Pic(i.uv);
                 bool front = face * _Shade.z > 0;
                 // The paper's normal here (smooth across a panel, split at creases), turned to the side we see.
                 float3 n = normalize(i.normal);
@@ -143,7 +157,7 @@ Shader "Drakepg/PaperSolid"
                 else
                 {
                     // The paper's back: its own colour, the picture faintly through it, and its cut edge drawn.
-                    float edge = 1 - smoothstep(0.35, 0.95, tex2Dlod(_MainTex, float4(i.uv, 0, 1.2)).a);
+                    float edge = 1 - smoothstep(0.35, 0.95, PicLod(i.uv, 1.2).a);
                     rgb = lerp(_Back.rgb, pic.rgb, _Back.a) * tone * (1 - 0.45 * edge);
                 }
                 // Crisp lines at the folds, a constant width on screen.
@@ -195,7 +209,7 @@ Shader "Drakepg/PaperSolid"
 
             float4 frag(v2f i) : SV_Target
             {
-                float a = tex2Dlod(_MainTex, float4(i.uv, 0, _Shade.y)).a;
+                float a = PicLod(i.uv, _Shade.y).a;
                 clip(a - 0.05);
                 return float4((1 - _Shade.x * a).xxx, 1);
             }

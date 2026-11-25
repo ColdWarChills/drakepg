@@ -65,6 +65,15 @@ namespace Drakepg
         /// <summary>Try 2: the relief's dome and random lift (shares of its reach), the rim pulled in, the outline smoothed
         /// (closing radius, share of the picture's height: a furry outline would leave specks), lines along cut edges.</summary>
         public static float CrumpleDome = 0.55f, CrumpleRelief = 0.14f, CrumpleShrink = 0.22f, CrumpleClose = 0.05f, CrumpleEdgeInk = 1, CrumpleStep = 0.1f;
+        /// <summary>
+        /// Gate B: the crumple's grid, cells across the sheet (coarser than the solver's: the folds cut it where it bends,
+        /// and the panels between stay flat); points this near a fold's line (a share of a cell) count as on it; the
+        /// roundness (the lump's outline as seen, 4 pi area / perimeter squared) a try must reach before it costs.
+        /// </summary>
+        public static int CrumpleGrid = 8;
+        public static float CrumpleEps = 0.002f, CrumpleRound = 0.9f;
+        /// <summary>Testing: the fold program checked after every crumple build (logged).</summary>
+        public static bool CheckChain;
 
         /// <summary>Testing: which passes draw (1 the paper, 2 its shadows), and a file the paper's texture is saved to once
         /// the solver reaches `DumpAt` seconds (then cleared).</summary>
@@ -266,27 +275,7 @@ namespace Drakepg
         /// <summary>The living picture with its creases baked onto a canvas (with mips, for soft shadows), and the quad that shows the paper.</summary>
         void StartSolid()
         {
-            var k = Mathf.Min(1, Mathf.Max(64, heightPx) / size.y);
-            W = Mathf.Max(8, Mathf.RoundToInt(size.x * k));
-            H = Mathf.Max(8, Mathf.RoundToInt(size.y * k));
-            pad = Mathf.RoundToInt(Mathf.Max(W, H) * 0.3f);
-            FW = W + 2 * pad;
-            FH = H + 2 * pad;
-            mat = new Material(foldShader) { name = "Paper fold" };
-            mat.SetVector(CanvasId, new Vector4(FW, FH, 0, 0));
-            mat.SetVector(PadId, new Vector4(pad, pad, W, H));
-            mat.SetVector(RectId, rect);
-            mat.SetVector(InfoId, Info);
-            for (int i = 0; i < MaxCreases; i++) creaseArray[i] = i < creases.Count ? creases[i] : Vector4.zero;
-            mat.SetVectorArray(CreasesId, creaseArray);
-            mat.SetVectorArray(TearsId, tears);
-            mat.SetVectorArray(HolesId, holes);
-            solidCanvas = new RenderTexture(FW, FH, 0, RenderTextureFormat.ARGB32)
-            {
-                name = "paper canvas", filterMode = FilterMode.Trilinear, wrapMode = TextureWrapMode.Clamp, useMipMap = true, autoGenerateMips = true,
-            };
-            solidCanvas.Create();
-            Graphics.Blit(body.sprite.texture, solidCanvas, mat, 2);
+            MakeCanvas();
             closeMs = crumpleMs = 0;
             if (Crumple && CrumpleKind == 2 && CrumpleClose > 0)
             {
@@ -294,8 +283,50 @@ namespace Drakepg
                 CloseCanvas();
                 closeMs = (float)cw.Elapsed.TotalMilliseconds;
             }
-            // `sheet` is what the scan reads.
+            StartScene();
+        }
+
+        /// <summary>The canvas: the living picture with the fight's damage on it, padded round; `sheet` is what the scan reads.</summary>
+        void MakeCanvas()
+        {
+            var k = Mathf.Min(1, Mathf.Max(64, heightPx) / size.y);
+            W = Mathf.Max(8, Mathf.RoundToInt(size.x * k));
+            H = Mathf.Max(8, Mathf.RoundToInt(size.y * k));
+            pad = Mathf.RoundToInt(Mathf.Max(W, H) * 0.3f);
+            FW = W + 2 * pad;
+            FH = H + 2 * pad;
+            canvasK = k;
+            mat = new Material(foldShader) { name = "Paper fold" };
+            mat.SetVector(CanvasId, new Vector4(FW, FH, 0, 0));
+            mat.SetVector(PadId, new Vector4(pad, pad, W, H));
+            mat.SetVector(RectId, rect);
+            solidCanvas = new RenderTexture(FW, FH, 0, RenderTextureFormat.ARGB32)
+            {
+                name = "paper canvas", filterMode = FilterMode.Trilinear, wrapMode = TextureWrapMode.Clamp, useMipMap = true, autoGenerateMips = true,
+            };
+            solidCanvas.Create();
+            BakeDamage();
             sheet = solidCanvas;
+        }
+
+        float canvasK;
+
+        /// <summary>The picture with the fight's creases, tears and burns as they are now, onto the canvas (the crumple's
+        /// canvas is made as the fight starts and baked again at the death).</summary>
+        void BakeDamage()
+        {
+            mat.SetVector(InfoId, Info);
+            for (int i = 0; i < MaxCreases; i++) creaseArray[i] = i < creases.Count ? creases[i] : Vector4.zero;
+            mat.SetVectorArray(CreasesId, creaseArray);
+            mat.SetVectorArray(TearsId, tears);
+            mat.SetVectorArray(HolesId, holes);
+            Graphics.Blit(body.sprite.texture, solidCanvas, mat, 2);
+        }
+
+        /// <summary>The paper's materials and render texture, the quad that shows it in the figure's place, its shadow.</summary>
+        void StartScene()
+        {
+            var k = canvasK;
             tint = new Color(body.color.r, body.color.g, body.color.b, 1);
 
             var shader = Resources.Load<Shader>("Fx/PaperSolid");
@@ -549,7 +580,7 @@ namespace Drakepg
         /// </summary>
         void BuildMesh(Scan scan, System.Random srng)
         {
-            var s = sheetSize / GridCells;
+            var s = sheetSize / (Crumple && CrumpleKind == 2 ? CrumpleGrid : GridCells);
             var rowH = s * 0.8660254f;
             var x0 = scan.Min.x - s;
             var y0 = scan.Min.y - s;
@@ -612,6 +643,7 @@ namespace Drakepg
             {
                 var cw = System.Diagnostics.Stopwatch.StartNew();
                 CrumpleFlatTries(srng, s);
+                BuildChain(shape);
                 crumpleMs = (float)cw.Elapsed.TotalMilliseconds;
             }
             flat = bFlat.ToArray();
@@ -808,18 +840,18 @@ namespace Drakepg
             var f0 = new List<Vector2>(bFlat);
             var t0 = new List<int>(bTri);
             var m0 = new List<int>(bMask);
-            float bestScore = float.MaxValue, bestShare = 0;
+            float bestScore = float.MaxValue;
             int bestTry = 0;
-            List<Vector2> bf = null;
-            List<int> bt = null, bm = null;
-            Vector3[] bp = null;
-            string bestNote = "";
+            CrumpleShape best = null;
+            var tries = "";
+            // Every try is made (each from the seed's next number) and the best kept: its back share inside the range,
+            // its outline as seen round enough (a box or a crystal reads less as a paper ball).
             for (int a = 0; a < Mathf.Max(1, CrumpleTries); a++)
             {
                 bFlat = new List<Vector2>(f0);
                 bTri = new List<int>(t0);
                 bMask = new List<int>(m0);
-                CrumpleFlat(new System.Random(srng.Next()), s);
+                var sh = CrumpleFlat(new System.Random(srng.Next()), s);
                 flat = bFlat.ToArray();
                 tri = bTri.ToArray();
                 vCount = flat.Length;
@@ -827,27 +859,45 @@ namespace Drakepg
                 // Seen as drawn: the look down (`Tilt`) shows more of its top.
                 var view = new Vector3[vCount];
                 for (int i = 0; i < vCount; i++) view[i] = new Vector3(crumplePos[i].x, crumplePos[i].y - Tilt * crumplePos[i].z, crumplePos[i].z);
-                var share = BackShare(view);
-                var score = share < CrumpleBackRange.x ? CrumpleBackRange.x - share : share > CrumpleBackRange.y ? share - CrumpleBackRange.y : 0;
-                if (Trace) Debug.Log($"[Paper] crumple try {a}: back {share:P0}, {crumpleNote}");
+                sh.Back = BackShare(view);
+                sh.Round = Roundness(view, s);
+                var score = (sh.Back < CrumpleBackRange.x ? CrumpleBackRange.x - sh.Back : sh.Back > CrumpleBackRange.y ? sh.Back - CrumpleBackRange.y : 0)
+                    + Mathf.Max(0, CrumpleRound - sh.Round);
+                tries += $"{(a > 0 ? " " : "")}{sh.Back:P0}/{sh.Round:0.00}";
+                if (Trace) Debug.Log($"[Paper] crumple try {a}: back {sh.Back:P0}, round {sh.Round:0.00}, {sh.Note}");
                 if (score < bestScore)
                 {
                     bestScore = score;
-                    bestShare = share;
                     bestTry = a;
-                    bf = bFlat;
-                    bt = bTri;
-                    bm = bMask;
-                    bp = crumplePos;
-                    bestNote = crumpleNote;
+                    best = sh;
                 }
-                if (score <= 0) break;
             }
-            bFlat = bf;
-            bTri = bt;
-            bMask = bm;
-            crumplePos = bp;
-            crumpleNote = $"try {bestTry}, back {bestShare:P0}, {bestNote}";
+            bFlat = best.Flat;
+            bTri = best.Tri;
+            bMask = best.Mask;
+            crumplePos = best.Still;
+            shape = best;
+            crumpleNote = $"try {bestTry} of back/round {tries}, back {best.Back:P0}, round {best.Round:0.00}, {best.Note}";
+        }
+
+        /// <summary>How round the lump's outline is as seen (`view`, its inked points): 4 pi area / perimeter squared of
+        /// their hull (1 a circle, 0.79 a square).</summary>
+        float Roundness(Vector3[] view, float s)
+        {
+            var pts = new List<Vector2>(vCount);
+            var near = Vector2.one * (0.3f * s);
+            for (int i = 0; i < vCount; i++)
+                if (Count(bSat, bScan, flat[i] - near, flat[i] + near) > 0) pts.Add(view[i]);
+            if (pts.Count < 3) return 0;
+            var hull = HullIdx(pts);
+            float area = 0, per = 0;
+            for (int j = 0; j < hull.Count; j++)
+            {
+                Vector2 a = pts[hull[j]], b = pts[hull[(j + 1) % hull.Count]];
+                area += a.x * b.y - b.x * a.y;
+                per += (b - a).magnitude;
+            }
+            return per > 1e-4f ? 4 * Mathf.PI * Mathf.Abs(area / 2) / (per * per) : 0;
         }
 
         /// <summary>
@@ -858,13 +908,30 @@ namespace Drakepg
         /// the outline's points and `CrumpleInner` inside) lifted as a dome with random heights: one height field added
         /// to every layer, so nothing passes through anything. `crumplePos`: the lump about its middle, posed.
         /// </summary>
-        void CrumpleFlat(System.Random srng, float s)
+        CrumpleShape CrumpleFlat(System.Random srng, float s)
         {
             bPos = new List<Vector3>(bFlat.Count * 4);
             foreach (var f in bFlat) bPos.Add(new Vector3(f.x, f.y, 0));
+            var gridN = bFlat.Count;
+            bGridN = gridN;
+            bBorn.Clear();
+            bStrayed = false;
+            // The fold program (gate B): each fold, which points it turned, and the stack's depths after it.
+            var stages = CrumpleTucks + 2 * CrumplePleats + CrumpleFlaps;
+            bFolds = new List<FoldRec>();
+            bMoves = new List<long>(bFlat.Count * 4);
+            for (int i = 0; i < bFlat.Count; i++) bMoves.Add(0);
+            bZ = new List<float>[stages + 1];
+            for (int k = 0; k <= stages; k++)
+            {
+                bZ[k] = new List<float>(bFlat.Count * 4);
+                for (int i = 0; i < bFlat.Count; i++) bZ[k].Add(0);
+            }
             float U(float a, float b) => a + (b - a) * (float)srng.NextDouble();
             Vector2 Dir(float a) => new Vector2(Mathf.Cos(a), Mathf.Sin(a));
-            var eps = 0.15f * s;
+            // Only points right on a fold's line count as on it: one left a little off it would stay put while its
+            // neighbours turn, and the paper there would stretch as the fold turns (gate B animates the folds).
+            var eps = CrumpleEps * s;
             int tucks = 0, pleats = 0, flaps = 0;
             // 1. Corners tucked behind, along its longest spread (either end, a little off), so tall or wide sheets ball up.
             for (int k = 0; k < CrumpleTucks; k++)
@@ -887,7 +954,15 @@ namespace Drakepg
                 var along = new Vector2(-n.y, n.x);
                 var alpha = U(8, 18) * Mathf.Deg2Rad;
                 var wid = U(0.08f, 0.16f) * r;
-                var q = c1 + along * ((srng.NextDouble() < 0.5 ? -1 : 1) * wid / Mathf.Tan(alpha));
+                var side = srng.NextDouble() < 0.5 ? -1 : 1;
+                // The creases meet off the paper (folded flat, two creases meeting on it would have to tear it there, and
+                // the second fold would drag the first crease's points out of the paper beside it): at least as far
+                // along the first crease as the paper reaches on that side; the taper eases to fit.
+                float far = 0;
+                foreach (var p in bPos) far = Mathf.Max(far, side * Vector2.Dot((Vector2)p - c1, along));
+                var dist = Mathf.Max(wid / Mathf.Tan(alpha), far + s);
+                alpha = Mathf.Atan(wid / dist);
+                var q = c1 + along * (side * dist);
                 var sgn = Vector2.Dot(c1 - q, along) > 0 ? 1 : -1;
                 var n2 = Dir(a + sgn * alpha);
                 if (Vector2.Dot(c1 - q, n2) > 0) n2 = Dir(a - sgn * alpha);
@@ -905,21 +980,18 @@ namespace Drakepg
                 flaps++;
             }
             // The stack's depth doubles with each fold (as a stack does); only the layers' order is kept: each distinct
-            // depth becomes the next small step (one increasing map for every point, so the order holds).
-            var levels = new SortedSet<float>();
-            foreach (var p in bPos) levels.Add(Mathf.Round(p.z * 1e4f) / 1e4f);
-            var rank = new Dictionary<float, int>();
-            int ri = 0, zero = 0;
-            foreach (var z in levels)
+            // depth becomes the next small step (one increasing map for every point, so the order holds). The same for
+            // the depths after each earlier fold (the folds turning one by one pass through those).
+            var levelCount = 0;
+            for (int k = 1; k < bZ.Length; k++)
             {
-                if (z <= 0) zero = ri;
-                rank[z] = ri++;
+                var lc = Compress(bZ[k]);
+                if (k == bFolds.Count) levelCount = lc;
             }
-            for (int i = 0; i < bPos.Count; i++)
-            {
-                var p = bPos[i];
-                bPos[i] = new Vector3(p.x, p.y, (rank[Mathf.Round(p.z * 1e4f) / 1e4f] - zero) * CrumpleStep);
-            }
+            for (int i = 0; i < bPos.Count; i++) bPos[i] = new Vector3(bPos[i].x, bPos[i].y, bZ[Mathf.Min(bFolds.Count, bZ.Length - 1)][i]);
+            var foldedN = bPos.Count;
+            var foldedXY = new Vector2[foldedN];
+            for (int i = 0; i < foldedN; i++) foldedXY[i] = bPos[i];
             // 4. The rim pulled in while still flat (monotonic in the distance, so nothing crosses; before the relief,
             // so stacked layers stay parallel).
             {
@@ -1018,6 +1090,7 @@ namespace Drakepg
                 // A tiny snap only: a point left just off a crease would bend its triangle across it, out of plane.
                 SplitLine(p0, nn, 0.002f * s, null, true, p0, p1, out _);
             }
+            var relief = new float[bPos.Count];
             for (int i = 0; i < bPos.Count; i++)
             {
                 var p = (Vector2)bPos[i];
@@ -1038,6 +1111,7 @@ namespace Drakepg
                 bb = Vector3.Max(bb, Vector3.zero);
                 bb /= Mathf.Max(1e-6f, bb.x + bb.y + bb.z);
                 var add = bb.x * hz[net[best]] + bb.y * hz[net[best + 1]] + bb.z * hz[net[best + 2]];
+                relief[i] = add;
                 bPos[i] += new Vector3(0, 0, add);
             }
             // 6. Posed: about its middle, leaning back a little, turned a little.
@@ -1045,16 +1119,319 @@ namespace Drakepg
             var rl = U(-25, 25) * Mathf.Deg2Rad;
             var yw = U(-20, 20) * Mathf.Deg2Rad;
             crumplePos = new Vector3[bPos.Count];
-            for (int i = 0; i < bPos.Count; i++)
+            for (int i = 0; i < bPos.Count; i++) crumplePos[i] = PoseRot(bPos[i] - new Vector3(cen.x, cen.y, 0), rl, tb, yw);
+            var note = $"{tucks} tucks, {pleats} pleats, {flaps} flaps, {levelCount} depths, {ctrl.Count} relief points ({hullN} on the outline, skirt to x{skirtK:0.00}), {facets} facets";
+            var sh = new CrumpleShape
             {
-                var p = bPos[i] - new Vector3(cen.x, cen.y, 0);
-                // z (roll), then x (lean), then y (turn); z toward the viewer.
-                p = new Vector3(Mathf.Cos(rl) * p.x - Mathf.Sin(rl) * p.y, Mathf.Sin(rl) * p.x + Mathf.Cos(rl) * p.y, p.z);
-                p = new Vector3(p.x, Mathf.Cos(tb) * p.y - Mathf.Sin(tb) * p.z, Mathf.Sin(tb) * p.y + Mathf.Cos(tb) * p.z);
-                p = new Vector3(Mathf.Cos(yw) * p.x + Mathf.Sin(yw) * p.z, p.y, -Mathf.Sin(yw) * p.x + Mathf.Cos(yw) * p.z);
-                crumplePos[i] = p;
+                Flat = bFlat, Tri = bTri, Mask = bMask, Folds = bFolds, Moves = bMoves, Z = bZ, Final = bPos.ToArray(), Relief = relief, Cen = cen,
+                Roll = rl, Lean = tb, Turn = yw, Still = crumplePos, FoldedXY = foldedXY, GridN = gridN, Note = note,
+            };
+            bMoves = null;
+            bZ = null;
+            bFolds = null;
+            crumpleNote = note;
+            return sh;
+        }
+
+        /// <summary>The crumple's pose: about z (roll), then x (lean back), then y (turn); z toward the viewer.</summary>
+        static Vector3 PoseRot(Vector3 p, float rl, float tb, float yw)
+        {
+            p = new Vector3(Mathf.Cos(rl) * p.x - Mathf.Sin(rl) * p.y, Mathf.Sin(rl) * p.x + Mathf.Cos(rl) * p.y, p.z);
+            p = new Vector3(p.x, Mathf.Cos(tb) * p.y - Mathf.Sin(tb) * p.z, Mathf.Sin(tb) * p.y + Mathf.Cos(tb) * p.z);
+            return new Vector3(Mathf.Cos(yw) * p.x + Mathf.Sin(yw) * p.z, p.y, -Mathf.Sin(yw) * p.x + Mathf.Cos(yw) * p.z);
+        }
+
+        /// <summary>The stack's depths as steps: each distinct depth the next `CrumpleStep` up, the flat sheet's level at 0
+        /// (one increasing map, so the order holds). Returns how many depths.</summary>
+        static int Compress(List<float> z)
+        {
+            var levels = new SortedSet<float>();
+            foreach (var v in z) levels.Add(Mathf.Round(v * 1e4f) / 1e4f);
+            var rank = new Dictionary<float, int>();
+            int ri = 0, zero = 0;
+            foreach (var l in levels)
+            {
+                if (l <= 0) zero = ri;
+                rank[l] = ri++;
             }
-            crumpleNote = $"{tucks} tucks, {pleats} pleats, {flaps} flaps, {levels.Count} depths, {ctrl.Count} relief points ({hullN} on the outline, skirt to x{skirtK:0.00}), {facets} facets";
+            for (int i = 0; i < z.Count; i++) z[i] = (rank[Mathf.Round(z[i] * 1e4f) / 1e4f] - zero) * CrumpleStep;
+            return levels.Count;
+        }
+
+        // --- Crumple, gate B: the fold program, played as hinges turning ---
+
+        /// <summary>One fold as it was made: its line (a point, and the normal toward the side that turned, in the sheet
+        /// as folded so far) and which way it turned (up: over the front, the paper's back showing).</summary>
+        struct FoldRec
+        {
+            public Vector2 C, N;
+            public bool Up;
+        }
+
+        /// <summary>
+        /// A crumple as built: the flat sheet and its triangles; the folds; per point, which folds turned it (bit k) and
+        /// its depth in the stack after each fold (`Z[k]`, stage 0 the flat sheet); where the folds, the rim pull and the
+        /// relief leave it (`Final`, about nothing: canvas px) and the relief's share of that; the pose; the still.
+        /// </summary>
+        class CrumpleShape
+        {
+            public List<Vector2> Flat;
+            public List<int> Tri, Mask;
+            public List<FoldRec> Folds;
+            public List<long> Moves;
+            public List<float>[] Z;
+            public Vector3[] Final, Still;
+            public float[] Relief;
+            /// <summary>Testing: each point's place after the folds (the points there then).</summary>
+            public Vector2[] FoldedXY;
+            public int GridN;
+            public Vector2 Cen;
+            public float Roll, Lean, Turn, Back, Round;
+            public string Note;
+        }
+
+        CrumpleShape shape;
+        /// <summary>Testing: for each point cut in, the fold then and its two ends (the grid's points first: `bGridN`).</summary>
+        List<Vector3Int> bBorn = new List<Vector3Int>();
+        int bGridN;
+        bool bStrayed;
+        string Bits(long m)
+        {
+            var b = "";
+            for (int k = 0; k < 10; k++) b += (m & (1L << k)) != 0 ? "1" : "0";
+            return b;
+        }
+        List<long> bMoves;
+        List<float>[] bZ;
+        List<FoldRec> bFolds;
+
+        /// <summary>A hinge of a point's chain: which fold, a point on its line and its direction, in the flat sheet.</summary>
+        struct ChainHinge
+        {
+            public int Fold;
+            public Vector3 A, U;
+        }
+
+        /// <summary>Per group of points turned by the same folds, their hinges (in fold order); each point's group; each
+        /// point's depth gained with each fold (`chainK` a point).</summary>
+        ChainHinge[][] chainGroups;
+        int[] chainGroup;
+        float[] chainDz;
+        int chainK;
+        Quaternion[] chainQ;
+        Vector3[] chainT;
+
+        /// <summary>
+        /// The fold program as hinges: a point turned by folds k1 &lt; k2 &lt; ... turns about each one's line taken back
+        /// into the flat sheet through the folds before it (each a mirror across its line on the flat: a half turn about a
+        /// line in the sheet). Played last fold first, each about its own line, any angles keep every length; all at a
+        /// half turn they give the folded sheet.
+        /// </summary>
+        void BuildChain(CrumpleShape sh)
+        {
+            var K = sh.Folds.Count;
+            chainK = K;
+            var ids = new Dictionary<long, int>();
+            var groups = new List<ChainHinge[]>();
+            var n = sh.Flat.Count;
+            chainGroup = new int[n];
+            var list = new List<ChainHinge>();
+            for (int v = 0; v < n; v++)
+            {
+                var m = sh.Moves[v];
+                if (!ids.TryGetValue(m, out var g))
+                {
+                    ids[m] = g = groups.Count;
+                    list.Clear();
+                    for (int k = 0; k < K; k++)
+                    {
+                        if ((m & (1L << k)) == 0) continue;
+                        var f = sh.Folds[k];
+                        Vector2 c = f.C, d = new Vector2(-f.N.y, f.N.x);
+                        for (int j = list.Count - 1; j >= 0; j--)
+                        {
+                            var fj = sh.Folds[list[j].Fold];
+                            c -= 2 * Vector2.Dot(c - fj.C, fj.N) * fj.N;
+                            d -= 2 * Vector2.Dot(d, fj.N) * fj.N;
+                        }
+                        list.Add(new ChainHinge { Fold = k, A = c, U = new Vector3(d.x, d.y, 0).normalized });
+                    }
+                    groups.Add(list.ToArray());
+                }
+                chainGroup[v] = g;
+            }
+            chainGroups = groups.ToArray();
+            chainQ = new Quaternion[chainGroups.Length];
+            chainT = new Vector3[chainGroups.Length];
+            chainDz = new float[n * Mathf.Max(1, K)];
+            for (int v = 0; v < n; v++)
+                for (int k = 0; k < K; k++)
+                    chainDz[v * K + k] = sh.Z[k + 1][v] - sh.Z[k][v];
+            // Which folds must wait for which: where two points on one edge were both turned by fold k but only one of them
+            // by an earlier fold j (the edge crosses j's line inside k's flap), k turns layers on both sides of j, which
+            // lie in one plane only once j is down; before that, turning them together would stretch the paper.
+            chainWait = new long[K];
+            var tri = sh.Tri;
+            for (int t = 0; t < tri.Count; t += 3)
+                for (int e = 0; e < 3; e++)
+                {
+                    long ma = sh.Moves[tri[t + e]], mb = sh.Moves[tri[t + (e + 1) % 3]];
+                    long diff = ma ^ mb, both = ma & mb;
+                    if (diff == 0 || both == 0) continue;
+                    for (int k = 0; k < K; k++)
+                    {
+                        if ((both & (1L << k)) == 0) continue;
+                        chainWait[k] |= diff & ((1L << k) - 1);
+                    }
+                }
+        }
+
+        /// <summary>Per fold, the earlier folds (bits) that must be down before it starts turning.</summary>
+        long[] chainWait;
+
+        /// <summary>The waits for the log: "3<1,2" (fold 3 after 1 and 2).</summary>
+        string WaitNote()
+        {
+            var w = "";
+            for (int k = 0; k < chainK; k++)
+            {
+                if (chainWait[k] == 0) continue;
+                w += (w.Length > 0 ? " " : "") + k + "<";
+                var first = true;
+                for (int j = 0; j < k; j++)
+                    if ((chainWait[k] & (1L << j)) != 0)
+                    {
+                        w += (first ? "" : ",") + j;
+                        first = false;
+                    }
+            }
+            return w.Length > 0 ? w : "none";
+        }
+
+        /// <summary>
+        /// The sheet with fold k turned `ang[k]` (radians: 0 flat, pi folded; up folds turn toward the viewer) and its
+        /// stack's depth `prog[k]` of the way there (null: none), into `outPos` (canvas px).
+        /// </summary>
+        void ChainPose(float[] ang, float[] prog, Vector3[] outPos)
+        {
+            var folds = shape.Folds;
+            for (int g = 0; g < chainGroups.Length; g++)
+            {
+                var q = Quaternion.identity;
+                var t = Vector3.zero;
+                var hs = chainGroups[g];
+                for (int j = hs.Length - 1; j >= 0; j--)
+                {
+                    var h = hs[j];
+                    var phi = (folds[h.Fold].Up ? -1 : 1) * ang[h.Fold];
+                    var r = Quaternion.AngleAxis(phi * Mathf.Rad2Deg, h.U);
+                    // About the line through A: p' = r (p - A) + A, after what came before.
+                    q = r * q;
+                    t = r * t + (h.A - r * h.A);
+                }
+                chainQ[g] = q;
+                chainT[g] = t;
+            }
+            var flatL = shape.Flat;
+            var K = chainK;
+            for (int v = 0; v < outPos.Length; v++)
+            {
+                var g = chainGroup[v];
+                var p = chainQ[g] * new Vector3(flatL[v].x, flatL[v].y, 0) + chainT[g];
+                if (prog != null)
+                    for (int k = 0; k < K; k++) p.z += prog[k] * chainDz[v * K + k];
+                outPos[v] = p;
+            }
+        }
+
+        /// <summary>
+        /// Testing (`CheckChain`): the fold program against the build. All folds at a half turn: the folded sheet; at
+        /// random angles: every edge its flat length; each fold alone part way: up folds toward the viewer; the folds,
+        /// the squeeze and the pose all the way: the still. Logged, in cells.
+        /// </summary>
+        void CheckChainNow(float s)
+        {
+            var n = shape.Flat.Count;
+            var K = chainK;
+            var p = new Vector3[n];
+            var ang = new float[K];
+            var prog = new float[K];
+            for (int k = 0; k < K; k++)
+            {
+                ang[k] = Mathf.PI;
+                prog[k] = 1;
+            }
+            ChainPose(ang, null, p);
+            float foldedErr = 0, foldedZ = 0;
+            int worst = 0, off = 0;
+            for (int v = 0; v < shape.FoldedXY.Length; v++)
+            {
+                var e = ((Vector2)p[v] - shape.FoldedXY[v]).magnitude;
+                if (e > 0.01f * s) off++;
+                if (e > foldedErr)
+                {
+                    foldedErr = e;
+                    worst = v;
+                }
+                foldedZ = Mathf.Max(foldedZ, Mathf.Abs(p[v].z));
+            }
+            if (foldedErr > 0.01f * s)
+            {
+                // The worst point's mirrors replayed from its flat place, fold by fold (its bits): the bits wrong, or the chain?
+                Vector2 x = shape.Flat[worst];
+                var bits = "";
+                for (int k = 0; k < K; k++)
+                {
+                    var on = (shape.Moves[worst] & (1L << k)) != 0;
+                    bits += on ? "1" : "0";
+                    if (on) x -= 2 * Vector2.Dot(x - shape.Folds[k].C, shape.Folds[k].N) * shape.Folds[k].N;
+                }
+                Debug.Log($"drakepg paper chain check: {off} points off; the worst #{worst} (of {shape.GridN} grid points), folds {bits}, flat {shape.Flat[worst]}, "
+                    + $"built {shape.FoldedXY[worst]}, mirrors replayed {x}, chain {(Vector2)p[worst]}");
+            }
+            var rnd = new System.Random(7);
+            float stretch = 0;
+            for (int trial = 0; trial < 20; trial++)
+            {
+                // Random angles that keep the waits: a fold part way (or flat) holds every fold waiting on it flat.
+                for (int k = 0; k < K; k++)
+                {
+                    var r = rnd.NextDouble();
+                    ang[k] = r < 0.4 ? Mathf.PI : (float)rnd.NextDouble() * Mathf.PI;
+                    for (int j = 0; j < k; j++)
+                        if ((chainWait[k] & (1L << j)) != 0 && ang[j] < Mathf.PI) ang[k] = 0;
+                }
+                ChainPose(ang, null, p);
+                for (int t = 0; t < shape.Tri.Count; t += 3)
+                    for (int j = 0; j < 3; j++)
+                    {
+                        int a = shape.Tri[t + j], b = shape.Tri[t + (j + 1) % 3];
+                        stretch = Mathf.Max(stretch, Mathf.Abs((p[a] - p[b]).magnitude - (shape.Flat[a] - shape.Flat[b]).magnitude));
+                    }
+            }
+            var wrongWay = 0;
+            for (int k = 0; k < K; k++)
+            {
+                for (int j = 0; j < K; j++) ang[j] = j < k ? Mathf.PI : j == k ? Mathf.PI / 2 : 0;
+                ChainPose(ang, null, p);
+                float zs = 0;
+                var bit = 1L << k;
+                for (int v = 0; v < n; v++)
+                    if ((shape.Moves[v] & bit) != 0) zs += p[v].z;
+                if (zs * (shape.Folds[k].Up ? 1 : -1) < 0) wrongWay++;
+            }
+            for (int k = 0; k < K; k++) ang[k] = Mathf.PI;
+            ChainPose(ang, prog, p);
+            float stillErr = 0;
+            for (int v = 0; v < n; v++)
+            {
+                // The squeeze all the way: the rim pull (xy) and the relief (z) added, then posed about the middle.
+                var q = new Vector3(shape.Final[v].x, shape.Final[v].y, p[v].z + shape.Relief[v]);
+                var posed = PoseRot(q - new Vector3(shape.Cen.x, shape.Cen.y, 0), shape.Roll, shape.Lean, shape.Turn);
+                stillErr = Mathf.Max(stillErr, (posed - shape.Still[v]).magnitude);
+            }
+            Debug.Log($"drakepg paper chain check: {n} points, {chainGroups.Length} groups, {K} folds; folded: off by {foldedErr / s:0.0000} cells (z {foldedZ / s:0.0000}); "
+                + $"part way: edges off by up to {stretch / s:0.0000} cells; folds turning the wrong way: {wrongWay}; the still: off by {stillErr / s:0.0000} cells; waits {WaitNote()}");
         }
 
         Vector2 Mean2()
@@ -1228,6 +1605,41 @@ namespace Drakepg
                 var p = bPos[v];
                 bPos[v] = new Vector3(p.x - 2 * d[v] * n.x, p.y - 2 * d[v] * n.y, 2 * h - p.z);
             }
+            // The fold program: this fold, the points it turned, and every point's depth after it.
+            if (bMoves != null && bFolds.Count < 63)
+            {
+                var bit = 1L << bFolds.Count;
+                bFolds.Add(new FoldRec { C = c, N = n, Up = up });
+                foreach (var v in mv) bMoves[v] |= bit;
+                if (bFolds.Count < bZ.Length)
+                {
+                    var zl = bZ[bFolds.Count];
+                    for (int i = 0; i < bPos.Count; i++) zl[i] = bPos[i].z;
+                }
+                // Testing: every point's mirrors replayed from its flat place; the first that strays, and how it was made.
+                if (CheckChain && !bStrayed)
+                    for (int i = 0; i < bPos.Count; i++)
+                    {
+                        Vector2 x = bFlat[i];
+                        for (int k = 0; k < bFolds.Count; k++)
+                            if ((bMoves[i] & (1L << k)) != 0) x -= 2 * Vector2.Dot(x - bFolds[k].C, bFolds[k].N) * bFolds[k].N;
+                        var off = (x - (Vector2)bPos[i]).magnitude;
+                        if (off < 5 * eps) continue;
+                        bStrayed = true;
+                        var born = i < bGridN ? "a grid point" : $"cut in fold {bBorn[i - bGridN].x} between #{bBorn[i - bGridN].y} (bits {Bits(bMoves[bBorn[i - bGridN].y])}) and #{bBorn[i - bGridN].z} (bits {Bits(bMoves[bBorn[i - bGridN].z])})";
+                        var inSel = 0;
+                        var inMoved = 0;
+                        for (int t = 0; t < bTri.Count / 3; t++)
+                            if (bTri[t * 3] == i || bTri[t * 3 + 1] == i || bTri[t * 3 + 2] == i)
+                            {
+                                if (flags[t]) inSel++;
+                                if (movedT.Contains(t)) inMoved++;
+                            }
+                        Debug.Log($"drakepg paper chain check: after fold {bFolds.Count - 1} ({(sel == null ? "all" : "a pleat's second")}), #{i} strays {off:0.00} px: bits {Bits(bMoves[i])}, "
+                            + $"d {d[i]:0.000}, in {inSel} selected and {inMoved} turned triangles, {born}");
+                        break;
+                    }
+            }
             return movedT;
         }
 
@@ -1256,6 +1668,14 @@ namespace Drakepg
                     bPos.Add(Vector3.Lerp(bPos[a], bPos[b], u));
                     bMask.Add(0);
                     d.Add(0);
+                    // The fold program: a new point was turned by whatever turned either end (one end can lie on an
+                    // earlier fold's line), and lay between them in the stack at every stage.
+                    if (bMoves != null)
+                    {
+                        bMoves.Add(bMoves[a] | bMoves[b]);
+                        foreach (var zl in bZ) zl.Add(zl[a] + (zl[b] - zl[a]) * u);
+                        if (CheckChain) bBorn.Add(new Vector3Int(bFolds.Count, a, b));
+                    }
                     cache[key] = m;
                 }
                 return m;
@@ -1328,19 +1748,35 @@ namespace Drakepg
             tex.ReadPixels(new Rect(0, 0, w, h), 0, 0, false);
             RenderTexture.active = was;
             var px = tex.GetPixels32();
+            CloseAdd(px, w, h, H);
+            tex.SetPixels32(px);
+            tex.Apply(false);
+            Graphics.Blit(tex, solidCanvas);
+            Destroy(tex);
+        }
+
+        /// <summary>
+        /// The closing on the canvas's pixels `px` (changed in place); returns what it adds, premultiplied (clear where it
+        /// adds nothing: inside the picture, so a burn made later in the fight stays open). No Unity calls (a worker
+        /// thread runs it).
+        /// </summary>
+        static Color32[] CloseAdd(Color32[] px, int w, int h, int picH)
+        {
             var inside = new bool[w * h];
             for (int i = 0; i < inside.Length; i++) inside[i] = px[i].a > 100;
-            var r3 = Mathf.Max(3, Mathf.RoundToInt(CrumpleClose * H * 3));
+            var r3 = Math.Max(3, (int)Math.Round(CrumpleClose * picH * 3));
             var near = new int[w * h];
             var d1 = Chamfer(inside, w, h, near);
             var outside = new bool[w * h];
             for (int i = 0; i < outside.Length; i++) outside[i] = d1[i] > r3;
             var d2 = Chamfer(outside, w, h, null);
+            var add = new Color32[px.Length];
             for (int i = 0; i < px.Length; i++)
             {
                 var a = Mathf.Clamp01((d2[i] - r3) / 3f + 0.5f);
                 if (a <= 0) continue;
                 var p = px[i];
+                var was = p.a;
                 if (p.a < 128 && near[i] >= 0)
                 {
                     var q = px[near[i]];
@@ -1348,13 +1784,12 @@ namespace Drakepg
                     p.g = q.g;
                     p.b = q.b;
                 }
-                p.a = (byte)Mathf.Max(p.a, Mathf.RoundToInt(a * 255));
+                var ca = (byte)Math.Round(a * 255);
+                p.a = (byte)Math.Max(p.a, ca);
                 px[i] = p;
+                if (was < 128 || ca > was) add[i] = new Color32((byte)(p.r * ca / 255), (byte)(p.g * ca / 255), (byte)(p.b * ca / 255), ca);
             }
-            tex.SetPixels32(px);
-            tex.Apply(false);
-            Graphics.Blit(tex, solidCanvas);
-            Destroy(tex);
+            return add;
         }
 
         /// <summary>Chamfer distance (3 a step, 4 a diagonal) to the nearest set point; `near` gets that point's index.</summary>
@@ -1540,6 +1975,41 @@ namespace Drakepg
 
         void SetupSolver(Scan scan, System.Random srng, float groundY)
         {
+            SetupTopology(srng);
+            SetupScene(scan, groundY);
+            if (Crumple)
+            {
+                CrumplePose();
+                Angles();
+            }
+            else if (!float.IsNaN(HandAngle))
+            {
+                HandPose(HandAngle);
+                Angles();
+            }
+            else
+            {
+                // The pop: up, away from the hero, turning (seeded).
+                var mid = Vector2.zero;
+                for (int i = 0; i < vCount; i++) mid += flat[i];
+                mid /= Mathf.Max(1, vCount);
+                var rightL = body.transform.InverseTransformVector(Vector3.right);
+                var away = new Vector2(rightL.x, rightL.y).normalized;
+                var vUp = upC * Mathf.Sqrt(2 * gravityC.magnitude * Hop * sheetSize) + away * (HopPush * sheetSize);
+                var spin = HopSpin * (0.5f + 0.5f * (float)srng.NextDouble()) * (srng.NextDouble() < 0.5 ? -1 : 1);
+                for (int i = 0; i < vCount; i++)
+                {
+                    var r = flat[i] - mid;
+                    var v = vUp + spin * new Vector2(-r.y, r.x);
+                    prev[i] = pos[i] - new Vector3(v.x, v.y, 0) * SubStep;
+                }
+            }
+        }
+
+        /// <summary>The mesh's bars, hinges and panels, and the face panel: the canvas only (no Unity calls; the crumple
+        /// makes them on a worker thread as the fight starts).</summary>
+        void SetupTopology(System.Random srng)
+        {
             pos = new Vector3[vCount];
             prev = new Vector3[vCount];
             force = new Vector3[vCount];
@@ -1720,7 +2190,11 @@ namespace Drakepg
             }
             facePanel = panel.ToArray();
             zHold = 0;
+        }
 
+        /// <summary>The ground, gravity and the light where the figure stands now, the materials' colours, the meshes.</summary>
+        void SetupScene(Scan scan, float groundY)
+        {
             // The ground, gravity and the light in canvas px.
             var gw = Design.World(Design.FromWorld(body.transform.position).x, groundY);
             var gl = body.transform.InverseTransformPoint(gw);
@@ -1770,33 +2244,6 @@ namespace Drakepg
             shadowMesh.SetUVs(2, rBary);
             shadowMesh.SetUVs(3, rLines);
             shadowMesh.SetIndices(idx, MeshTopology.Triangles, 0);
-            if (Crumple)
-            {
-                CrumplePose();
-                Angles();
-            }
-            else if (!float.IsNaN(HandAngle))
-            {
-                HandPose(HandAngle);
-                Angles();
-            }
-            else
-            {
-                // The pop: up, away from the hero, turning (seeded).
-                var mid = Vector2.zero;
-                for (int i = 0; i < vCount; i++) mid += flat[i];
-                mid /= Mathf.Max(1, vCount);
-                var rightL = body.transform.InverseTransformVector(Vector3.right);
-                var away = new Vector2(rightL.x, rightL.y).normalized;
-                var vUp = upC * Mathf.Sqrt(2 * gravityC.magnitude * Hop * sheetSize) + away * (HopPush * sheetSize);
-                var spin = HopSpin * (0.5f + 0.5f * (float)srng.NextDouble()) * (srng.NextDouble() < 0.5 ? -1 : 1);
-                for (int i = 0; i < vCount; i++)
-                {
-                    var r = flat[i] - mid;
-                    var v = vUp + spin * new Vector2(-r.y, r.x);
-                    prev[i] = pos[i] - new Vector3(v.x, v.y, 0) * SubStep;
-                }
-            }
         }
 
         /// <summary>

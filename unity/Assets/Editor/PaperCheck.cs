@@ -18,6 +18,34 @@ namespace Drakepg.EditorTools
     {
         public static bool Busy;
 
+        /// <summary>Whole-frame times (unscaled, ms): the worst and the mean over the ordinary attacks (the baseline) and
+        /// over the killing blow to 3 s after it. Logged per fight; record no frames (`frames` 0) for a fair number.</summary>
+        static float probeWorst, probeSum;
+        static int probeCount;
+        static bool probing;
+
+        static IEnumerator Probe()
+        {
+            probing = true;
+            probeWorst = probeSum = 0;
+            probeCount = 0;
+            yield return null;
+            while (probing)
+            {
+                var ms = Time.unscaledDeltaTime * 1000;
+                probeWorst = Mathf.Max(probeWorst, ms);
+                probeSum += ms;
+                probeCount++;
+                yield return null;
+            }
+        }
+
+        static string ProbeEnd()
+        {
+            probing = false;
+            return $"worst frame {probeWorst:0.0} ms, mean {probeSum / Mathf.Max(1, probeCount):0.0} ms over {probeCount} frames";
+        }
+
         public static void Run(string monsters, string dir, int hits = 4, int speed = 1, bool paper = true, string elite = null, bool heroic = false,
             int floor = 0, bool oneHit = false, int frames = 80, bool escape = false, bool solid = false, int seed = 0)
         {
@@ -42,6 +70,10 @@ namespace Drakepg.EditorTools
             var keepSolid = Paper.Solid;
             Paper.Solid = solid;
             Cheats.God = true;
+            // Uncapped for the frame times (the game asks for 60 fps, so every frame would read about 16.7 ms).
+            var keepRate = Application.targetFrameRate;
+            var keepSync = QualitySettings.vSyncCount;
+            if (frames <= 0) { Application.targetFrameRate = -1; QualitySettings.vSyncCount = 0; }
             int nth = 0;
             foreach (var id in ids)
             {
@@ -52,6 +84,8 @@ namespace Drakepg.EditorTools
                 yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) && Time.captureFramerate == 0);
                 Saves.BattleSpeed = speed;
                 Paper.On = paper;
+                // Set before the battle: the crumple is built from it as the fight starts.
+                Paper.NextSeed = fightSeed;
                 var zone = ZoneOf(id);
                 GameRoot.I.Go(new BattleScreen(new BattleSetup
                 {
@@ -80,11 +114,13 @@ namespace Drakepg.EditorTools
                     steps.Add(1 / 3.0 + 0.005);
                     steps.Add(0.15 + 0.005);
                 }
+                GameRoot.I.StartCoroutine(Probe());
                 foreach (var s in steps)
                 {
                     if (s > 0) SetHp(battle, shown, battle.Enemy.MaxHp * s);
                     yield return Attack();
                 }
+                var baseline = ProbeEnd();
                 if (escape)
                 {
                     // A Lucky Impling: hit until its next turn is the one it runs on, then recorded as it gets away.
@@ -102,14 +138,18 @@ namespace Drakepg.EditorTools
                     // Any blow can miss (an evasive monster, the hit cap): again until it lands, the recording redone.
                     for (int tries = 0; tries < 6; tries++)
                     {
-                        Paper.NextSeed = fightSeed;
+                        if (tries > 0) Paper.NextSeed = fightSeed;
                         SetHp(battle, shown, 1);
                         if (tries == 0) Drive.Shot($"{dir}/{name}_before.png");
                         yield return new WaitForSeconds(0.3f);
-                        Drive.Record($"{dir}/{name}", frames, 20, 1920);
+                        if (frames > 0) Drive.Record($"{dir}/{name}", frames, 20, 1920);
                         yield return null;
+                        GameRoot.I.StartCoroutine(Probe());
                         Drive.Press(0);
                         yield return new WaitUntil(() => Time.captureFramerate == 0);
+                        if (frames <= 0) yield return new WaitForSecondsRealtime(4f);
+                        var death = ProbeEnd();
+                        Debug.Log($"drakepg paper check: {name} frame times: baseline (attacks) {baseline}; the killing blow to 4 s after it {death}");
                         if (battle.Enemy.Hp <= 0) break;
                         Debug.LogWarning($"drakepg paper check: {name} missed, again");
                         yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) || MenuReady());
@@ -126,6 +166,8 @@ namespace Drakepg.EditorTools
             Saves.BattleSpeed = keepSpeed;
             Paper.On = keepPaper;
             Paper.Solid = keepSolid;
+            Application.targetFrameRate = keepRate;
+            QualitySettings.vSyncCount = keepSync;
             Busy = false;
             Debug.Log("drakepg paper check: done");
         }
