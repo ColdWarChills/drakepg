@@ -245,7 +245,7 @@ namespace Drakepg
         Look PlayerLook => battle.Player.Look;
         /// <summary>What spills from the monster (null: red blood).</summary>
         Blood MonsterBlood => monster.Look.Blood;
-        /// <summary>The monster as paper (the paper damage test, `Paper.On`), else null.</summary>
+        /// <summary>The monster as paper (`Paper.On`, on unless switched off in the cheat menu), else null.</summary>
         Paper paper;
         /// <summary>Sorting order of things lying on the ground (splats, pools): under the fighters.</summary>
         static int GroundOrder => Design.Depth(GroundY) - 60;
@@ -289,7 +289,7 @@ namespace Drakepg
             }
             foe = new Fighter { Fig = foeFigure, X = Design.Width + 200, Facing = -1, Base = (float)monster.Look.Scale * StageScale };
             foe.Fig.EnableBend();
-            // The paper damage test: its picture as paper, sized for the biggest it is drawn (2x screens, a close-up).
+            // Paper damage: its picture as paper, sized for the biggest it is drawn (2x screens, a close-up).
             paper = Paper.On ? Paper.Attach(foe.Fig, foe.Fig.DrawnHeight * foe.Base * 2.6f) : null;
             foe.ReadWeapons();
             hero.Apply();
@@ -2004,7 +2004,7 @@ namespace Drakepg
                                 var bx = EnemyX + Random.Range(-body.width / 2, body.width / 2);
                                 var by = Random.Range(body.top + 20, GroundY - 40);
                                 Fx.Explosion(World, bx, by, colors);
-                                Fx.Bleed(World, bx, by, Random.value < 0.5f ? -1 : 1, blood, 1.2f, GroundY, GroundOrder);
+                                Spill(bx, by, Random.value < 0.5f ? -1 : 1, 1.2f);
                                 Fx.WhiteFlash(f.Fig, 90);
                                 Sfx.Play("explode");
                                 GameRoot.I.Shake(0.12f, 7);
@@ -2252,7 +2252,7 @@ namespace Drakepg
             await Vanish(f, f.X, body.width * 0.8f, (GroundY - body.top) * 0.6f, colors, gold);
         }
 
-        /// <summary>Paper monsters (the paper damage test): it folds up along the fight's creases and drops as a packet.</summary>
+        /// <summary>Paper monsters: it folds up along the fight's creases and drops as a packet.</summary>
         async Task PaperFold(Fighter f, long[] colors, double gold)
         {
             await paper.Fold(GroundY, (x, width) =>
