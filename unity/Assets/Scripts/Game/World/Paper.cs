@@ -281,6 +281,7 @@ namespace Drakepg
                 return;
             }
             folding = true;
+            var foldStart = Time.time;
             var watch = System.Diagnostics.Stopwatch.StartNew();
             StartCanvas();
             var scan = ScanCanvas();
@@ -325,7 +326,7 @@ namespace Drakepg
                 dur = Mathf.Max(rough ? 0.07f : 0.11f, dur * 0.82f);
             }
             await Drop(scan, groundY, landed);
-            Debug.Log($"drakepg: paper fold, {done} folds ({creases.Count} creases), face at the {faceNote}, slowest CPU step {SlowestMs:0.0} ms");
+            Debug.Log($"drakepg: paper fold, {done} folds ({creases.Count} creases), face at the {faceNote}, slowest CPU step {SlowestMs:0.0} ms, took {Time.time - foldStart:0.00} s");
         }
 
         RenderTexture NewCanvas()
