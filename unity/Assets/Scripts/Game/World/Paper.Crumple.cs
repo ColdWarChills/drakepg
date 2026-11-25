@@ -35,6 +35,9 @@ namespace Drakepg
         /// <summary>Rolling resistance: a lumpy wad loses its roll against the ground (a share of what presses it down,
         /// at the wad's mean radius); without it a round one rolls on and on.</summary>
         public static float RollResist = 0.08f;
+        /// <summary>The roll lost to its lumps while it touches the ground (a share of the spin a second): each lump that
+        /// comes down takes some of it, so a fast roll dies quickly. It never holds the wad still (`RollResist` does).</summary>
+        public static float RollDamp = 4f;
         /// <summary>The landing (the thud, dust and scraps): the first touch as hard as a fall of this share of the sheet.</summary>
         public static float LandFall = 0.2f;
         /// <summary>Test: log the body and the squeeze each tick (a sixtieth of a second) of the next deaths.</summary>
@@ -555,10 +558,28 @@ namespace Drakepg
             var inside = side > 0 ? Mathf.Max(0, -mSupLo) : Mathf.Max(0, mSupHi);
             var reach = RollResist * Mathf.Sqrt(mI);
             var turn = (inside + 2 * reach) / Mathf.Max(mRise, 0.05f * sheetSize);
+            // The spin that turns that far before the rolling resistance (a steady slowing) and the lumps (a share a
+            // second) stop it: w' = -slowing - RollDamp w turns w/k - slowing/k^2 ln(1 + k w/slowing).
             var slowing = reach * gravityC.magnitude / mI;
-            mW = side * (1.2f + 0.4f * (float)krng.NextDouble()) * Mathf.Sqrt(2 * slowing * turn);
+            float wLo = 0, wHi = Mathf.Sqrt(2 * slowing * turn) + RollDamp * turn + 1e-3f;
+            while (TurnBeforeStop(wHi, slowing) < turn) wHi *= 2;
+            for (int it = 0; it < 30; it++)
+            {
+                var wMid = 0.5f * (wLo + wHi);
+                if (TurnBeforeStop(wMid, slowing) < turn) wLo = wMid;
+                else wHi = wMid;
+            }
+            mW = side * (1.2f + 0.4f * (float)krng.NextDouble()) * wHi;
             mV = -mW * new Vector2(-pivot.y, pivot.x);
             mKicks++;
+        }
+
+        /// <summary>How far a spin of `w` turns while a steady `slowing` and the lumps' `RollDamp` stop it.</summary>
+        static float TurnBeforeStop(float w, float slowing)
+        {
+            var k = RollDamp;
+            if (k < 1e-4f) return w * w / (2 * slowing);
+            return w / k - slowing / (k * k) * Mathf.Log(1 + k * w / slowing);
         }
 
         /// <summary>One step of the folds' springs and the squeeze's.</summary>
@@ -807,6 +828,7 @@ namespace Drakepg
             var reach = RollResist * Mathf.Sqrt(mI);
             var dw = reach * press / mI;
             mW = Mathf.Abs(mW) <= dw ? 0 : mW - Mathf.Sign(mW) * dw;
+            mW *= Mathf.Exp(-RollDamp * dt);
             // Held: on a support wider than that lever each way, its centre of mass over it (or within the lever of it,
             // what the rolling resistance holds). A narrower support with its centre over it is a tip: the sleep check
             // tips it off (`Kick`), never this step's forces, so a rocking wad gets no push.

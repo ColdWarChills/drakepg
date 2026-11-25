@@ -72,6 +72,10 @@ namespace Drakepg
         /// </summary>
         public static int CrumpleGrid = 8;
         public static float CrumpleEps = 0.002f, CrumpleRound = 0.9f;
+        /// <summary>Gate B: how long a lump may be for its width as seen (the spread of its outline's points, long way over
+        /// short way) before a try costs, and how much each step past it costs. Off (0): tried at 1 on 11 deaths, it made
+        /// two rounder and two worse (a standing slab, an open V), so only logged.</summary>
+        public static float CrumpleLong = 1.25f, CrumpleLongCost = 0f;
         /// <summary>Testing: the fold program checked after every crumple build (logged).</summary>
         public static bool CheckChain;
 
@@ -881,11 +885,11 @@ namespace Drakepg
                 var view = new Vector3[vCount];
                 for (int i = 0; i < vCount; i++) view[i] = new Vector3(crumplePos[i].x, crumplePos[i].y - Tilt * crumplePos[i].z, crumplePos[i].z);
                 sh.Back = BackShare(view);
-                sh.Round = Roundness(view, s);
+                sh.Round = Roundness(view, s, out sh.Long);
                 var score = (sh.Back < CrumpleBackRange.x ? CrumpleBackRange.x - sh.Back : sh.Back > CrumpleBackRange.y ? sh.Back - CrumpleBackRange.y : 0)
-                    + Mathf.Max(0, CrumpleRound - sh.Round);
-                tries += $"{(a > 0 ? " " : "")}{sh.Back:P0}/{sh.Round:0.00}";
-                if (Trace) Debug.Log($"[Paper] crumple try {a}: back {sh.Back:P0}, round {sh.Round:0.00}, {sh.Note}");
+                    + Mathf.Max(0, CrumpleRound - sh.Round) + CrumpleLongCost * Mathf.Max(0, sh.Long - CrumpleLong);
+                tries += $"{(a > 0 ? " " : "")}{sh.Back:P0}/{sh.Round:0.00}/{sh.Long:0.00}";
+                if (Trace) Debug.Log($"[Paper] crumple try {a}: back {sh.Back:P0}, round {sh.Round:0.00}, long {sh.Long:0.00}, {sh.Note}");
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -898,18 +902,33 @@ namespace Drakepg
             bMask = best.Mask;
             crumplePos = best.Still;
             shape = best;
-            crumpleNote = $"try {bestTry} of back/round {tries}, back {best.Back:P0}, round {best.Round:0.00}, {best.Note}";
+            crumpleNote = $"try {bestTry} of back/round/long {tries}, back {best.Back:P0}, round {best.Round:0.00}, long {best.Long:0.00}, {best.Note}";
         }
 
         /// <summary>How round the lump's outline is as seen (`view`, its inked points): 4 pi area / perimeter squared of
-        /// their hull (1 a circle, 0.79 a square).</summary>
-        float Roundness(Vector3[] view, float s)
+        /// their hull (1 a circle, 0.79 a square); `along`: how long it is for its width (the spread of those points the
+        /// long way over the short way, 1 for a round lump).</summary>
+        float Roundness(Vector3[] view, float s, out float along)
         {
             var pts = new List<Vector2>(vCount);
             var near = Vector2.one * (0.3f * s);
             for (int i = 0; i < vCount; i++)
                 if (Count(bSat, bScan, flat[i] - near, flat[i] + near) > 0) pts.Add(view[i]);
+            along = 1;
             if (pts.Count < 3) return 0;
+            var mean = Vector2.zero;
+            foreach (var p in pts) mean += p;
+            mean /= pts.Count;
+            float sxx = 0, syy = 0, sxy = 0;
+            foreach (var p in pts)
+            {
+                var d = p - mean;
+                sxx += d.x * d.x;
+                syy += d.y * d.y;
+                sxy += d.x * d.y;
+            }
+            float half = 0.5f * (sxx + syy), gap = Mathf.Sqrt(0.25f * (sxx - syy) * (sxx - syy) + sxy * sxy);
+            along = Mathf.Sqrt((half + gap) / Mathf.Max(1e-6f, half - gap));
             var hull = HullIdx(pts);
             float area = 0, per = 0;
             for (int j = 0; j < hull.Count; j++)
@@ -1207,7 +1226,7 @@ namespace Drakepg
             public Vector2[] FoldedXY;
             public int GridN;
             public Vector2 Cen;
-            public float Roll, Lean, Turn, Back, Round;
+            public float Roll, Lean, Turn, Back, Round, Long;
             public string Note;
         }
 
