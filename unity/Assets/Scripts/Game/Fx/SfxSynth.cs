@@ -290,6 +290,18 @@ namespace Drakepg
                     m.Hiss(0, 0.12, 0.35, Pass.Lowpass, 1600 * v, 250, 1.5);
                     m.Tone(0, Wave.Sine, 220 * v, 90, 0.08, 0.25);
                     return true;
+                case "crinkle":
+                    // Paper being struck or folded (paper monsters, World/Paper.cs): a few dry crackles.
+                    m.Hiss(0, 0.05, 0.22, Pass.Bandpass, 3200 * v, 2600, 2);
+                    m.Hiss(0.04, 0.04, 0.16, Pass.Bandpass, 4300 * v, 3700, 2.5);
+                    m.Hiss(0.075, 0.06, 0.2, Pass.Bandpass, 2500 * v, 2100, 2);
+                    m.Hiss(0.12, 0.05, 0.1, Pass.Highpass, 5000, 7000);
+                    return true;
+                case "rip":
+                    // Paper tearing: a rough rising rasp.
+                    m.Hiss(0, 0.24, 0.3, Pass.Bandpass, 1500 * v, 4200, 1.3);
+                    m.Hiss(0.03, 0.2, 0.12, Pass.Highpass, 4000, 8000);
+                    return true;
                 case "thud":
                     // A body hitting the ground.
                     m.Tone(0, Wave.Sine, 95 * v, 38, 0.32, 0.9);

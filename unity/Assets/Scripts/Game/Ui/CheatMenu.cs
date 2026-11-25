@@ -202,6 +202,14 @@ namespace Drakepg
                 }, 220, Bend.On ? On : (Color?)null);
                 Ui.Text(c, 930, 598, "Animation test: breathing, sway, lean and crouch. Next fight.", 14, Palette.TextDim, wrap: 240);
 
+                // The paper damage proof (Paper): monsters crease, tear and burn like paper and fold up when they die.
+                Btn(700, 540, $"Paper monsters: {(Paper.On ? "ON" : "off")}", () =>
+                {
+                    Paper.On = !Paper.On;
+                    Render();
+                }, 220, Paper.On ? On : (Color?)null);
+                Ui.Text(c, 930, 538, "Paper damage test: creases, tears, red scraps, fire burns holes, a fold at death. Next fight.", 14, Palette.TextDim, wrap: 240);
+
                 Btn(40, 600, "Reset character...", ConfirmReset, 220, Danger);
             }
 
