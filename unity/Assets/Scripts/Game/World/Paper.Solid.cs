@@ -37,6 +37,16 @@ namespace Drakepg
         /// <summary>Testing: no solver; the first crease's side turned by this many degrees (the renderer alone).</summary>
         public static float HandAngle = float.NaN;
 
+        /// <summary>Testing (step 1c, gate A): no solver; the paper is crumpled into a fixed lump (the look alone) by folding
+        /// the whole sheet across planes, again and again: `CrumpleBig` folds through its middle across its longest spread in 3D (each halves it, so it balls up), then
+        /// `CrumpleRim` smaller ones near its edge (corners turned in). Each fold tilts `CrumpleTilt` degrees (min, max)
+        /// out of the sheet, so a flap lies 180 minus twice that from the paper it folds onto. The lump is turned to show
+        /// about `CrumpleBack` of paper back.</summary>
+        public static bool Crumple;
+        public static int CrumpleBig = 4, CrumpleRim = 6;
+        public static Vector2 CrumpleTilt = new Vector2(12, 32);
+        public static float CrumpleBack = 0.25f;
+
         /// <summary>Testing: which passes draw (1 the paper, 2 its shadows), and a file the paper's texture is saved to once
         /// the solver reaches `DumpAt` seconds (then cleared).</summary>
         public static int Passes = 3;
@@ -60,7 +70,7 @@ namespace Drakepg
         // --- Tuning (found by eye) ---
 
         /// <summary>Grid cells across the paper's longer side.</summary>
-        const int GridCells = 15;
+        public static int GridCells = 15;
         /// <summary>Fold stiffness (per grid cell of crease, by the paper's size squared, so any size folds alike).</summary>
         public static float FoldK = 20f;
         /// <summary>Between creases: how stiffly the paper stays flat (a share of the fold stiffness).</summary>
@@ -154,7 +164,7 @@ namespace Drakepg
         bool landedOnce, solidOn;
         float startWidthPx;
         SpriteRenderer shadowSr;
-        float shadowAlpha;
+        float shadowAlpha, shadowHeight;
         int seed;
 
         static readonly int ColorIdS = Shader.PropertyToID("_Color"), LightId = Shader.PropertyToID("_Light"), ShadeId = Shader.PropertyToID("_Shade");
@@ -182,8 +192,9 @@ namespace Drakepg
                 if (scan.Max.x - scan.Min.x <= 1.3f * hh) face.y = Mathf.Min(face.y, scan.Min.y + 0.67f * hh);
                 faceRadius = Mathf.Max(faceRadius, 0.28f * hh);
             }
-            PickLines(scan, srng);
-            BuildMesh(scan);
+            if (Crumple) lines.Clear();
+            else PickLines(scan, srng);
+            BuildMesh(scan, srng);
             SetupSolver(scan, srng, groundY);
             var buildMs = (float)watch.Elapsed.TotalMilliseconds;
             Took(watch);
@@ -291,6 +302,7 @@ namespace Drakepg
                     {
                         shadow = c;
                         shadowWidth = c.localScale.x;
+                        shadowHeight = c.localScale.y;
                         shadowSr = c.GetComponent<SpriteRenderer>();
                         if (shadowSr != null) shadowAlpha = shadowSr.color.a;
                     }
@@ -492,12 +504,17 @@ namespace Drakepg
         List<Vector2> bFlat;
         List<int> bTri;
         List<int> bMask;
+        /// <summary>The crumple (testing): each point's place in the lump, beside `bFlat` while building, then fixed.</summary>
+        List<Vector3> bPos;
+        Vector3[] crumplePos;
+        Scan bScan;
+        int[] bSat;
 
         /// <summary>
         /// A triangle grid over the paper (the picture's own alpha is the outline), kept where the picture is, then cut
         /// along every crease line (grid points near a line snapped onto it first, so no slivers).
         /// </summary>
-        void BuildMesh(Scan scan)
+        void BuildMesh(Scan scan, System.Random srng)
         {
             var s = sheetSize / GridCells;
             var rowH = s * 0.8660254f;
@@ -506,6 +523,8 @@ namespace Drakepg
             var cols = Mathf.CeilToInt((scan.Max.x - x0) / s) + 2;
             var rows = Mathf.CeilToInt((scan.Max.y - y0) / rowH) + 2;
             var sat = Integral(scan);
+            bScan = scan;
+            bSat = sat;
             bFlat = new List<Vector2>();
             bTri = new List<int>();
             bMask = new List<int>();
@@ -555,6 +574,7 @@ namespace Drakepg
                 }
             }
             for (int k = 0; k < lines.Count; k++) Cut(k, s);
+            if (Crumple) CrumpleFolds(srng, s);
             flat = bFlat.ToArray();
             tri = bTri.ToArray();
             vCount = flat.Length;
@@ -600,6 +620,192 @@ namespace Drakepg
             int y0 = Mathf.Clamp(Mathf.FloorToInt(mn.y / scan.FY), 0, scan.SH), y1 = Mathf.Clamp(Mathf.CeilToInt(mx.y / scan.FY), 0, scan.SH);
             if (x1 <= x0 || y1 <= y0) return 0;
             return sat[y1 * (w + 1) + x1] - sat[y0 * (w + 1) + x1] - sat[y1 * (w + 1) + x0] + sat[y0 * (w + 1) + x0];
+        }
+
+        /// <summary>
+        /// The crumple (testing): the sheet folded across planes, every layer at once. Each fold cuts the triangles the
+        /// plane crosses (a point on each edge it crosses, shared) and mirrors everything on the plane's far side
+        /// through it, so the paper keeps every length, the layers stack, and the mirrored part shows its other face.
+        /// </summary>
+        void CrumpleFolds(System.Random srng, float s)
+        {
+            bPos = new List<Vector3>(bFlat.Count * 3);
+            foreach (var f in bFlat) bPos.Add(new Vector3(f.x, f.y, 0));
+            float U(float a, float b) => a + (b - a) * (float)srng.NextDouble();
+            for (int k = 0; k < CrumpleBig + CrumpleRim; k++)
+            {
+                var cen = Vector3.zero;
+                foreach (var q in bPos) cen += q;
+                cen /= Mathf.Max(1, bPos.Count);
+                if (k < CrumpleBig)
+                {
+                    // Across its longest spread in 3D (the covariance's main axis), the plane tilted a little about a
+                    // random line across it, through near its middle: it halves, and the lump grows round, not flat.
+                    float xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
+                    foreach (var q in bPos)
+                    {
+                        var r = q - cen;
+                        xx += r.x * r.x; xy += r.x * r.y; xz += r.x * r.z;
+                        yy += r.y * r.y; yz += r.y * r.z; zz += r.z * r.z;
+                    }
+                    var ax3 = new Vector3(1, 0.3f, 0.1f).normalized;
+                    for (int it = 0; it < 24; it++)
+                    {
+                        ax3 = new Vector3(xx * ax3.x + xy * ax3.y + xz * ax3.z, xy * ax3.x + yy * ax3.y + yz * ax3.z,
+                            xz * ax3.x + yz * ax3.y + zz * ax3.z);
+                        var m = ax3.magnitude;
+                        if (m < 1e-9f) { ax3 = Vector3.right; break; }
+                        ax3 /= m;
+                    }
+                    var across = Vector3.Cross(ax3, new Vector3(U(-1, 1), U(-1, 1), U(-1, 1)));
+                    if (across.sqrMagnitude < 1e-8f) across = Vector3.Cross(ax3, Vector3.forward);
+                    across.Normalize();
+                    var tilt3 = U(CrumpleTilt.x, CrumpleTilt.y) * Mathf.Deg2Rad * (srng.NextDouble() < 0.5 ? -1 : 1);
+                    var n3 = ax3 * Mathf.Cos(tilt3) + across * Mathf.Sin(tilt3);
+                    float ext3 = 0;
+                    foreach (var q in bPos) ext3 = Mathf.Max(ext3, Mathf.Abs(Vector3.Dot(q - cen, n3)));
+                    FoldAcross(cen + n3 * (U(-0.15f, 0.15f) * ext3), n3, 0.15f * s);
+                    continue;
+                }
+                {
+                    // A corner turned in: a plane part way out toward the edge, any way round.
+                    var a = U(0, 2 * Mathf.PI);
+                    var ax = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                    float ext = 0;
+                    foreach (var q in bPos) ext = Mathf.Max(ext, Vector2.Dot((Vector2)q - (Vector2)cen, ax));
+                    var c2 = (Vector2)cen + ax * (U(0.45f, 0.7f) * ext);
+                    var tilt = U(CrumpleTilt.x, CrumpleTilt.y) * Mathf.Deg2Rad * (srng.NextDouble() < 0.5 ? -1 : 1);
+                    var n = new Vector3(ax.x * Mathf.Cos(tilt), ax.y * Mathf.Cos(tilt), Mathf.Sin(tilt));
+                    FoldAcross(new Vector3(c2.x, c2.y, cen.z), n, 0.15f * s);
+                }
+            }
+            crumplePos = bPos.ToArray();
+        }
+
+        void FoldAcross(Vector3 c, Vector3 n, float snap)
+        {
+            var d = new List<float>(bPos.Count + 64);
+            for (int i = 0; i < bPos.Count; i++)
+            {
+                var x = Vector3.Dot(bPos[i] - c, n);
+                // Points very near the plane go onto it (no slivers; the paper stretches by far less than a pixel's worth).
+                if (Mathf.Abs(x) < snap)
+                {
+                    bPos[i] -= n * x;
+                    x = 0;
+                }
+                d.Add(x);
+            }
+            var cache = new Dictionary<long, int>();
+            int Mid(int a, int b)
+            {
+                var key = Math.Min(a, b) * 1000003L + Math.Max(a, b);
+                if (!cache.TryGetValue(key, out var m))
+                {
+                    var u = d[a] / (d[a] - d[b]);
+                    m = bFlat.Count;
+                    bFlat.Add(Vector2.Lerp(bFlat[a], bFlat[b], u));
+                    bPos.Add(Vector3.Lerp(bPos[a], bPos[b], u));
+                    bMask.Add(0);
+                    d.Add(0);
+                    cache[key] = m;
+                }
+                return m;
+            }
+            var outTri = new List<int>(bTri.Count + 256);
+            var poly = new List<int>(5);
+            for (int t = 0; t < bTri.Count; t += 3)
+            {
+                float d0 = d[bTri[t]], d1 = d[bTri[t + 1]], d2 = d[bTri[t + 2]];
+                if (Mathf.Min(d0, Mathf.Min(d1, d2)) >= 0 || Mathf.Max(d0, Mathf.Max(d1, d2)) <= 0)
+                {
+                    outTri.Add(bTri[t]);
+                    outTri.Add(bTri[t + 1]);
+                    outTri.Add(bTri[t + 2]);
+                    continue;
+                }
+                for (int side = 1; side >= -1; side -= 2)
+                {
+                    poly.Clear();
+                    for (int j = 0; j < 3; j++)
+                    {
+                        int a = bTri[t + j], b = bTri[t + (j + 1) % 3];
+                        float da = side * d[a], db = side * d[b];
+                        if (da >= 0) poly.Add(a);
+                        if ((da > 0 && db < 0) || (da < 0 && db > 0)) poly.Add(Mid(a, b));
+                    }
+                    int o = 0;
+                    if (poly.Count == 4)
+                    {
+                        var a0 = Mathf.Min(Alt(poly[0], poly[1], poly[2]), Alt(poly[0], poly[2], poly[3]));
+                        var a1 = Mathf.Min(Alt(poly[1], poly[2], poly[3]), Alt(poly[1], poly[3], poly[0]));
+                        if (a1 > a0) o = 1;
+                    }
+                    for (int j = 1; j + 1 < poly.Count; j++)
+                    {
+                        outTri.Add(poly[o]);
+                        outTri.Add(poly[(o + j) % poly.Count]);
+                        outTri.Add(poly[(o + j + 1) % poly.Count]);
+                    }
+                }
+            }
+            bTri = outTri;
+            // The far side mirrored through the plane (it lands on the near side, over or under the paper there).
+            for (int i = 0; i < bPos.Count; i++)
+                if (d[i] > 0) bPos[i] -= 2 * d[i] * n;
+        }
+
+        /// <summary>Of what the viewer sees of the lump (a coarse depth buffer), the share that is the paper's back.</summary>
+        float BackShare(Vector3[] p)
+        {
+            const int G = 48;
+            Vector2 mn = new Vector2(float.MaxValue, float.MaxValue), mx = new Vector2(float.MinValue, float.MinValue);
+            for (int i = 0; i < vCount; i++)
+            {
+                mn = Vector2.Min(mn, p[i]);
+                mx = Vector2.Max(mx, p[i]);
+            }
+            var cell = Mathf.Max(mx.x - mn.x, mx.y - mn.y) / G + 1e-4f;
+            var zb = new float[G * G];
+            var bk = new bool[G * G];
+            for (int i = 0; i < zb.Length; i++) zb[i] = float.MinValue;
+            for (int t = 0; t < tCount; t++)
+            {
+                int i0 = tri[t * 3], i1 = tri[t * 3 + 1], i2 = tri[t * 3 + 2];
+                Vector2 a = (Vector2)(p[i0] - (Vector3)mn) / cell, b = (Vector2)(p[i1] - (Vector3)mn) / cell, c = (Vector2)(p[i2] - (Vector3)mn) / cell;
+                var den = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+                if (Mathf.Abs(den) < 1e-6f) continue;
+                Vector2 fa = flat[i0], fb = flat[i1], fc = flat[i2];
+                var fden = (fb.x - fa.x) * (fc.y - fa.y) - (fc.x - fa.x) * (fb.y - fa.y);
+                var isBack = den * fden < 0;
+                int x0 = Mathf.Max(0, Mathf.FloorToInt(Mathf.Min(a.x, Mathf.Min(b.x, c.x)))), x1 = Mathf.Min(G - 1, Mathf.CeilToInt(Mathf.Max(a.x, Mathf.Max(b.x, c.x))));
+                int y0 = Mathf.Max(0, Mathf.FloorToInt(Mathf.Min(a.y, Mathf.Min(b.y, c.y)))), y1 = Mathf.Min(G - 1, Mathf.CeilToInt(Mathf.Max(a.y, Mathf.Max(b.y, c.y))));
+                for (int y = y0; y <= y1; y++)
+                for (int x = x0; x <= x1; x++)
+                {
+                    float px = x + 0.5f, py = y + 0.5f;
+                    var l1 = ((px - a.x) * (c.y - a.y) - (c.x - a.x) * (py - a.y)) / den;
+                    var l2 = ((b.x - a.x) * (py - a.y) - (px - a.x) * (b.y - a.y)) / den;
+                    var l0 = 1 - l1 - l2;
+                    if (l0 < 0 || l1 < 0 || l2 < 0) continue;
+                    var z = l0 * p[i0].z + l1 * p[i1].z + l2 * p[i2].z;
+                    var k = y * G + x;
+                    if (z <= zb[k]) continue;
+                    // Only where the picture is (the sheet's margin round it isn't drawn).
+                    var fp = l0 * fa + l1 * fb + l2 * fc;
+                    if (Count(bSat, bScan, fp - Vector2.one, fp + Vector2.one) == 0) continue;
+                    zb[k] = z;
+                    bk[k] = isBack;
+                }
+            }
+            int seen = 0, back = 0;
+            for (int k = 0; k < zb.Length; k++)
+                if (zb[k] > float.MinValue)
+                {
+                    seen++;
+                    if (bk[k]) back++;
+                }
+            return seen > 0 ? (float)back / seen : 0;
         }
 
         /// <summary>Cut every triangle the line `k` crosses in two (a point on each edge it crosses, shared).</summary>
@@ -888,7 +1094,7 @@ namespace Drakepg
             var flip = body.transform.lossyScale.x < 0 ? -1 : 1;
             lightC = new Vector3(-0.5f * flip, 0.7f, 0.55f).normalized;
             solidMat.SetVector(LightId, lightC);
-            var back = Color.Lerp(Back[0] * BackLight, scan.Mean, BackTint);
+            var back = Crumple ? Color.Lerp(Back[0], scan.Mean, 0.1f) : Color.Lerp(Back[0] * BackLight, scan.Mean, BackTint);
             back.a = 0.04f;
             solidMat.SetColor(BackId, back);
             simTime = 0;
@@ -919,7 +1125,12 @@ namespace Drakepg
             shadowMesh.SetUVs(2, rBary);
             shadowMesh.SetUVs(3, rLines);
             shadowMesh.SetIndices(idx, MeshTopology.Triangles, 0);
-            if (!float.IsNaN(HandAngle))
+            if (Crumple)
+            {
+                CrumplePose();
+                Angles();
+            }
+            else if (!float.IsNaN(HandAngle))
             {
                 HandPose(HandAngle);
                 Angles();
@@ -943,6 +1154,88 @@ namespace Drakepg
             }
         }
 
+        /// <summary>
+        /// Testing (step 1c, gate A): the folded lump (<see cref="CrumpleFolds"/>) at rest: its broad side to the viewer,
+        /// its longest spread along the ground, the side showing nearer `CrumpleBack` of paper back; set where the picture
+        /// stood, on the ground.
+        /// </summary>
+        void CrumplePose()
+        {
+            var mid = Vector3.zero;
+            for (int i = 0; i < vCount; i++) mid += (Vector3)flat[i];
+            mid /= Mathf.Max(1, vCount);
+            var cen = Vector3.zero;
+            for (int i = 0; i < vCount; i++) cen += crumplePos[i];
+            cen /= Mathf.Max(1, vCount);
+            // Its broad side to the viewer and its longest spread along the ground (as a lump comes to rest): the
+            // covariance's axes, longest (e1) to the ground's direction, the thinnest (e3) toward the viewer.
+            float xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
+            for (int i = 0; i < vCount; i++)
+            {
+                var r = crumplePos[i] - cen;
+                xx += r.x * r.x; xy += r.x * r.y; xz += r.x * r.z;
+                yy += r.y * r.y; yz += r.y * r.z; zz += r.z * r.z;
+            }
+            Vector3 Mul(Vector3 v) => new Vector3(xx * v.x + xy * v.y + xz * v.z, xy * v.x + yy * v.y + yz * v.z, xz * v.x + yz * v.y + zz * v.z);
+            Vector3 Main(Vector3 v, Vector3 without)
+            {
+                for (int it = 0; it < 40; it++)
+                {
+                    v = Mul(v);
+                    v -= Vector3.Dot(v, without) * without;
+                    var m = v.magnitude;
+                    if (m < 1e-9f) return Vector3.Cross(without, Vector3.forward).normalized;
+                    v /= m;
+                }
+                return v;
+            }
+            var e1 = Main(new Vector3(1, 0.31f, 0.17f).normalized, Vector3.zero);
+            var e2 = Main(Vector3.Cross(e1, new Vector3(0.2f, 0.3f, 1)).normalized, e1);
+            var e3 = Vector3.Cross(e1, e2);
+            var up3 = new Vector3(upC.x, upC.y, 0).normalized;
+            var side3 = new Vector3(upC.y, -upC.x, 0).normalized;
+            var test = new Vector3[vCount];
+            float bestScore = float.MaxValue;
+            int bestFace = 1;
+            // Its two broad sides (the other one: half a turn about the up axis); the one nearer `CrumpleBack` of back.
+            for (int face = 1; face >= -1; face -= 2)
+            {
+                for (int i = 0; i < vCount; i++)
+                {
+                    var r = crumplePos[i] - cen;
+                    test[i] = side3 * (face * Vector3.Dot(r, e1)) + up3 * Vector3.Dot(r, e2) + Vector3.forward * (face * Vector3.Dot(r, e3));
+                }
+                var share = BackShare(test);
+                var score = Mathf.Abs(share - CrumpleBack);
+                if (Trace) Debug.Log($"[Paper] crumple side {face}: back {share:P0}");
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestFace = face;
+                }
+            }
+            for (int i = 0; i < vCount; i++)
+            {
+                var r = crumplePos[i] - cen;
+                pos[i] = prev[i] = mid + side3 * (bestFace * Vector3.Dot(r, e1)) + up3 * Vector3.Dot(r, e2) + Vector3.forward * (bestFace * Vector3.Dot(r, e3));
+            }
+            // On the ground: its lowest inked point there.
+            float low = float.MaxValue;
+            for (int i = 0; i < vCount; i++)
+                if (inked[i]) low = Mathf.Min(low, Vector2.Dot(pos[i], upC));
+            var lift = (Vector3)(upC * (groundC - low));
+            for (int i = 0; i < vCount; i++) pos[i] = prev[i] = pos[i] + lift;
+            // The shadow narrows from the flat picture's width (design units, as PacketSolid measures) to the lump's.
+            float w0 = float.MaxValue, w1 = float.MinValue;
+            for (int i = 0; i < vCount; i++)
+            {
+                var x = CanvasToDesign(flat[i]).x;
+                w0 = Mathf.Min(w0, x);
+                w1 = Mathf.Max(w1, x);
+            }
+            startWidthPx = Mathf.Max(1, w1 - w0);
+        }
+
         /// <summary>Testing: the first line's far side turned by `deg` about the line (the renderer alone).</summary>
         void HandPose(float deg)
         {
@@ -964,7 +1257,7 @@ namespace Drakepg
         /// <summary>Step the solver to `time` (Anim seconds) in fixed steps, a cap a frame.</summary>
         void Advance(float time, Action<float, float> landed)
         {
-            if (!float.IsNaN(HandAngle))
+            if (!float.IsNaN(HandAngle) || Crumple)
             {
                 simTime = time;
                 return;
@@ -1147,7 +1440,7 @@ namespace Drakepg
         /// <summary>Lying still: on the ground (or never leaving it), hardly moving, after the creases had time.</summary>
         bool Settled()
         {
-            if (!float.IsNaN(HandAngle)) return simTime > 1.2f;
+            if (!float.IsNaN(HandAngle) || Crumple) return simTime > 1.2f;
             if (HoldAt >= 0) return false;
             if (simTime < 0.5f) return false;
             // The paper's mean speed (one point buzzing on a thin triangle doesn't keep it awake); once still, it sleeps.
@@ -1207,7 +1500,9 @@ namespace Drakepg
                     if (hi < 0) continue;
                     var h = hinges[hi];
                     var deg = Mathf.Abs(h.Theta) * Mathf.Rad2Deg;
-                    w[j] = h.Line >= 0 ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(8, 35, deg)) : Mathf.SmoothStep(0, 1, Mathf.InverseLerp(35, 70, deg)) * 0.6f;
+                    w[j] = h.Line >= 0 ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(8, 35, deg))
+                        : Crumple ? Mathf.SmoothStep(0, 1, Mathf.InverseLerp(14, 40, deg))
+                        : Mathf.SmoothStep(0, 1, Mathf.InverseLerp(35, 70, deg)) * 0.6f;
                 }
                 rLines[t * 3] = rLines[t * 3 + 1] = rLines[t * 3 + 2] = w;
             }
@@ -1220,7 +1515,7 @@ namespace Drakepg
             for (int j = 0; j < 3; j++)
             {
                 var nn = nAcc[tri[t * 3 + j] * panelCount + triPanel[t]];
-                rNormal[t * 3 + j] = nn.sqrMagnitude > 1e-12f ? nn.normalized : normal[t];
+                rNormal[t * 3 + j] = Crumple ? normal[t] : nn.sqrMagnitude > 1e-12f ? nn.normalized : normal[t];
             }
             paperMesh.vertices = rv;
             paperMesh.normals = rNormal;
@@ -1264,11 +1559,13 @@ namespace Drakepg
                 var rise = Mathf.Clamp01((low - groundC) / (0.6f * sheetSize));
                 var sp = shadow.position;
                 shadow.position = new Vector3(Design.World(mid.x, 0).x, sp.y, sp.z);
-                shadow.localScale = new Vector3(shadowWidth * Mathf.Clamp(width / startWidthPx, 0.3f, 1) * (1 - 0.3f * rise), shadow.localScale.y, 1);
+                // A crumpled lump sits on a small, dark contact shadow (a soft blob as wide as the monster reads as nothing).
+                var tight = Crumple ? 0.7f : 1;
+                shadow.localScale = new Vector3(shadowWidth * Mathf.Clamp(width / startWidthPx, 0.3f, 1) * (1 - 0.3f * rise), shadowHeight * tight, 1);
                 if (shadowSr != null)
                 {
                     var col = shadowSr.color;
-                    col.a = shadowAlpha * (1 - 0.6f * rise);
+                    col.a = (Crumple ? Mathf.Max(shadowAlpha, 0.7f) : shadowAlpha) * (1 - 0.6f * rise);
                     shadowSr.color = col;
                 }
             }
