@@ -106,6 +106,32 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
             4. a crisp edge line at every fold, with the paper's back clearly another colour;
             5. paper between creases curves a little and lags;
             6. flaps cast shadows on the paper and the ground, and the packet lands with weight.
+        - **Result (2026-11-25): stopped after two failed tries, nothing shown to the designer.**
+          - **What's built:** on `claude/unity-port`, switched off (`Paper.Solid` false), so today's fold stays in the game. Files: `World/Paper.Solid.cs` and `Resources/Fx/PaperSolid.shader`.
+            - The solver is the Origami Simulator hinge model (MIT, Ghassaei 2018), Verlet, on a mesh of about 300 points.
+          - **What works:**
+            - all creases fold at once and settle with spring;
+            - the packet hops, lands, tumbles and settles, in three deaths of four;
+            - a flap folded toward the viewer shows the paper's back in its own colour, with the picture's outline on it;
+            - crisp crease lines;
+            - flap shadows on the paper (checked by saving one frame with and without them).
+          - **Judged on the settled frame of four Mossling deaths per try**, at about 2.25 times design size (the brief asked for 3). The sheet `art/tests/paper_solid/report_two_tries.jpg` in the worktree is about 1.5 times. Only 2 of 4 (try 1) and then 1 of 4 (try 2) read as folded paper. The rest look like a flat cut-out with lines drawn on it.
+          - **Why:** the angle the forward flap comes to rest at.
+            - Every flap that rested at 135° or more showed its back and read as paper. Every one that rested at 112-120° stood almost edge-on and didn't. That held for all 9 deaths checked.
+            - Try 2 guarded the face wider and kept a 12° margin for swinging past the aim, which capped most flaps near 118°. So try 2 failed mostly on its own limit.
+            - The real tension: on a round picture with the face in the middle, a flap needs to lie flat enough (about 135° or more) without covering the face.
+            - The slight look-down of the paper's drawing may also hide flaps on the bottom edge. Not tested.
+          - **Also weak:**
+            - one death in four (seed 101, both tries) never settles: a point keeps buzzing, it runs to the 3 s cap, and in try 2 it rests with a crease past 180°. That is one of try 2's three failures, not the angle;
+            - one tone per flap (pass item 1);
+            - no visible curve (item 5);
+            - the face is guessed as the top part of the picture, but the Mossling's eyes sit lower, so try 1 covered an eye;
+            - in try 2 the fight's own creases were crowded out;
+            - cost: about 0.75 ms per solver step in the editor, worst frame 26-88 ms, lying still after 1.1-3 s.
+          - **Next, if the designer wants it continued (not decided):**
+            - forward flaps sized so they can lie at 135° or more clear of the face (a smaller flap rather than a less folded one);
+            - fix the death that never settles;
+            - cut the cost.
         - Ruled out: a fold baked offline (Houdini or Blender: not procedural), and full crumple simulation papers (hours per clip). Crumpling comes later on the same solver.
       - **Later steps** (each after the designer's yes to the one before): the other elements (water soaks, ice frosts and snaps, energy rips), then a crumple for some deaths.
     2. Should loot drop as a folded paper packet as part of the paper proof?
