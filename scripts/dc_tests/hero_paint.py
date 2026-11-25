@@ -5,9 +5,9 @@ python -I -B hero_paint.py [src dir] [out dir]
   out: the repaints, same names and sizes (art/tests/dc/hero/paint/)
 
 The outline never changes: alpha is the knight's own, untouched (except the tabard strip under the hips, made clear so
-the legs behind it show). Inside it, each pixel is matched softly to the knight's own flat colours for that drawing
-(its swatches below) and takes the hero colour given for that swatch, scaled by how much lighter or darker the pixel
-is than the swatch (so the knight's shading shapes, far-side darkening and soft edges carry over). The hero colours are
+the legs behind it show). Inside it, each pixel takes the hero colour of the nearest of the knight's own flat colours
+for that drawing (its swatches below), as a hard flat fill with a 3x3 majority vote (`flat`), so no knight shading or
+halo lines carry over; only the eyes and mouth are matched softly (`repaint`, SOFT). The hero colours are
 one palette sampled from today's hero (char_hero_bare.png), two or three flat tones per material, so every part is
 painted from the same colours. A few details are drawn on top: the headband, the V of the shirt, a square buckle.
 Colours past the outline are bled from the nearest painted pixel, so the edge never samples the knight's colours.
