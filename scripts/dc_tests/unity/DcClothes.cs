@@ -23,7 +23,8 @@ namespace Drakepg.EditorTools
     public static class DcClothes
     {
         const string Dir = "Assets/Test2D/dc/";
-        const string PrefabPath = Dir + "Art/Characters/_Prefabs/PV_Character_Knight.prefab";
+        /// <summary>The figure Run/Measure spawn; set to the bare mannequin (PV_Character_Base_Bipedal) to see the skeleton alone.</summary>
+        public static string PrefabPath = Dir + "Art/Characters/_Prefabs/PV_Character_Knight.prefab";
         const string ClipPath = Dir + "Animations/Characters/AnimClips/Knight/Anim_Character_Knight_Attack.anim";
         static readonly Color Backdrop = new Color(0.40f, 0.44f, 0.47f, 1f);
         static readonly Vector3 Stage = new Vector3(5000f, 5000f, 0f);
