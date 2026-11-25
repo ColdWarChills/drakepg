@@ -136,16 +136,144 @@ namespace Drakepg
             else
             {
                 GameRoot.I.Shake(0.3f, 8);
-                var lines = new List<string> { $"{Capitalize(The(data.MonsterName))} got the better of you.", "", $"You wake up in {Db.Room(data.Wake.RoomId).Name}, fully rested." };
-                if (data.Grit is double grit && grit > 0)
-                {
-                    var max = grit >= Db.B.Grit.Max ? " (max)" : "";
-                    lines.Add("");
-                    lines.Add($"Grit: +{Math.Round(grit * 100)}% damage against {The(data.MonsterName)} next time{max}.");
-                }
-                Ui.Text(Root, cx, 330, string.Join("\n", lines), 26, ax: 0.5f, ay: 0.5f, align: TextAnchor.MiddleCenter);
-                ContinueButton("Wake up", ToRoom(RoomArrival.Spawn(data.Wake.RoomId, (float)data.Wake.X, (float)data.Wake.Y)), 520);
+                DefeatCard(cx);
             }
+        }
+
+        /// <summary>
+        /// Defeated, and why: its biggest hit on you, the hits of yours it resisted, its weak spots (icons, the words on
+        /// hover, as on the battle's monster sheet), grit, then where you go. A room's boss offers Try again at its door.
+        /// </summary>
+        void DefeatCard(float cx)
+        {
+            Ui.Text(Root, cx, 236, $"{Capitalize(The(data.MonsterName))} got the better of you.", 24, ax: 0.5f, ay: 0.5f);
+            const float labelX = 548, valueX = 566;
+            float y = 292;
+            var shown = 0;
+            void Row(string label, List<VisualElement> parts, string note = null)
+            {
+                var name = Ui.Text(Root, labelX, y, label, 20, Palette.TextDim, false, 1, 0.5f);
+                var row = new VisualElement();
+                Ui.Place(row, valueX, y, 0, 0.5f);
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.alignItems = Align.Center;
+                foreach (var p in parts) row.Add(p);
+                Root.Add(row);
+                var fade = new List<VisualElement> { name, row };
+                if (note != null)
+                {
+                    fade.Add(Ui.Text(Root, valueX, y + 18, note, 16, Palette.TextDim, false, 0, 0, wrap: 410));
+                    y += 4 + 19 * Mathf.CeilToInt(note.Length * 6.8f / 410);   // ~6.6 px a letter at 16 px
+                }
+                foreach (var e in fade)
+                {
+                    e.style.opacity = 0;
+                    var at = 0.35f + shown * 0.15f;
+                    Anim.Float(0, 1, 0.25f, a => e.style.opacity = a, Ease.Linear, at);
+                }
+                shown++;
+                y += 44;
+            }
+            var recap = data.Recap;
+            if (recap != null && recap.BiggestHit > 0)
+            {
+                var parts = new List<VisualElement> { Word(JsMath.Str(recap.BiggestHit), 28, Palette.TextBad, true), Word(recap.BiggestMove ?? "", 20, Palette.Text, false, 10) };
+                if (recap.BiggestCrit) parts.Add(Word("critical", 16, Palette.TextDim, false, 8));
+                // Its signature move: the trait says how to meet it ("Defend on the beat!").
+                var trait = data.Monster?.Trait;
+                var named = recap.BiggestMove != null && trait != null && trait.IndexOf(recap.BiggestMove, StringComparison.OrdinalIgnoreCase) >= 0;
+                Row("Biggest hit", parts, named ? trait : null);
+            }
+            if (recap != null && recap.Resisted.Count > 0)
+            {
+                var parts = new List<VisualElement>();
+                foreach (var kv in recap.Resisted.OrderByDescending(kv => kv.Value))
+                {
+                    var label = Db.Data.ElementLabels[kv.Key];
+                    var r = ResistOf(data.Monster, kv.Key);
+                    var icon = Token("el_" + kv.Key, r > 100 ? $"Absorbs {label}" : r >= 100 ? $"Immune to {label}" : $"Resists {label}",
+                        $"{kv.Value} of your {recap.Hits} hits were {label}" + (r > 100 ? ": they healed it." : r >= 100 ? ": they did nothing." : $", {JsMath.Str(r)}% weaker."));
+                    parts.Add(icon);
+                    parts.Add(Word($"×{kv.Value}", 18, Palette.Text, true, 2, 10));
+                }
+                Row("Resisted", parts);
+            }
+            if (data.Monster != null)
+            {
+                var spots = WeakSpots(data.Monster);
+                Row("Weak to", spots.Count > 0 ? spots : new List<VisualElement> { Word("nothing", 20, Palette.TextDim, false) });
+            }
+            if (data.Grit is double grit && grit > 0)
+            {
+                var max = grit >= Db.B.Grit.Max ? " (max)" : "";
+                Row("Grit", new List<VisualElement> { Word($"+{Math.Round(grit * 100)}% damage against it next time{max}", 20, Palette.TextGood, false) });
+            }
+            var town = Db.Room(data.Wake.RoomId).Name;
+            var wake = ToRoom(RoomArrival.Spawn(data.Wake.RoomId, (float)data.Wake.X, (float)data.Wake.Y));
+            var lineY = Mathf.Max(486, y + 4);
+            var buttonY = Mathf.Min(570, lineY + 56);
+            if (data.Door == null)
+            {
+                Ui.Text(Root, cx, lineY, $"You wake up in {town}, fully rested.", 21, Palette.TextDim, false, 0.5f, 0.5f);
+                ContinueButton("Wake up", wake, buttonY);
+                return;
+            }
+            Ui.Text(Root, cx, lineY, $"Fully rested: try again at its door, or wake up in {town}.", 21, Palette.TextDim, false, 0.5f, 0.5f);
+            var tryAgain = ToRoom(data.Door);
+            go = tryAgain;
+            var b1 = new UiButton(Root, cx - 150, buttonY, "Try again", tryAgain, 260, 56);
+            var b2 = new UiButton(Root, cx + 150, buttonY, "Wake up", wake, 260, 56);
+            foreach (var b in new[] { b1, b2 })
+            {
+                b.style.opacity = 0;
+                Anim.Float(0, 1, 0.3f, a => b.style.opacity = a, Ease.Linear, 0.7f);
+            }
+            keysFrom = Time.time + 0.7f;
+        }
+
+        static Label Word(string text, float size, Color color, bool bold, float marginLeft = 0, float marginRight = 0)
+        {
+            var l = new Label(text) { pickingMode = PickingMode.Ignore };
+            l.style.fontSize = size;
+            l.style.color = color;
+            l.style.whiteSpace = WhiteSpace.NoWrap;
+            l.style.unityFontStyleAndWeight = bold ? FontStyle.Bold : FontStyle.Normal;
+            l.style.marginLeft = marginLeft;
+            l.style.marginRight = marginRight;
+            l.style.marginTop = l.style.marginBottom = 0;
+            l.style.paddingLeft = l.style.paddingRight = l.style.paddingTop = l.style.paddingBottom = 0;
+            return l;
+        }
+
+        static VisualElement Token(string icon, string title, string body)
+        {
+            var t = Felt.Icon(null, 0, 0, 30, icon);
+            t.style.position = Position.Relative;
+            t.style.marginRight = 4;
+            t.pickingMode = PickingMode.Position;
+            Tooltip.Attach(t, title, body);
+            return t;
+        }
+
+        static double ResistOf(MonsterDef m, string element)
+        {
+            var resists = m?.Resists;
+            double R(string e) => resists != null && resists.TryGetValue(e, out var v) ? v : 0;
+            return R(element) + R("all");
+        }
+
+        /// <summary>The monster's weak spots as icons (the battle sheet's "Weak" icons): elements, then Blunt and Poison.</summary>
+        static List<VisualElement> WeakSpots(MonsterDef m)
+        {
+            var parts = new List<VisualElement>();
+            foreach (var e in Db.Data.Elements.Where(e => ResistOf(m, e) <= -25))
+            {
+                var label = Db.Data.ElementLabels[e];
+                parts.Add(Token("el_" + e, $"Weak to {label}", $"Takes {JsMath.Str(-ResistOf(m, e))}% more from {label}."));
+            }
+            if (m.WeakTo?.Blunt > 0) parts.Add(Token("spot_blunt", "Weak to Blunt", $"Takes {JsMath.Str(m.WeakTo.Blunt.Value)}% more from Blunt skills."));
+            if (m.WeakTo?.Poison > 0) parts.Add(Token("spot_poison", "Weak to Poison", $"Poison hurts it {JsMath.Str(m.WeakTo.Poison.Value)}% more."));
+            return parts;
         }
 
         static readonly Dictionary<string, string> StatHelp = new Dictionary<string, string>

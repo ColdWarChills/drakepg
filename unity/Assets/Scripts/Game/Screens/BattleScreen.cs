@@ -2953,6 +2953,8 @@ namespace Drakepg
                     {
                         Outcome = "defeat", MonsterName = monsterName, Wake = Db.Room(back.RoomId).WakeAt ?? Db.Data.InnSpawn,
                         Grit = monster.Boss ? battle.Grit : (double?)null,
+                        Recap = battle.Recap, Monster = battle.Enemy.Def,
+                        Door = monster.Boss ? RoomArrival.BossDoor(back.RoomId, back.Y) : null,
                     }));
                     break;
                 }
