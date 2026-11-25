@@ -136,6 +136,15 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
       - **Step 1c, a crumple-into-a-ball death instead of folds (the designer, 2026-11-25, after seeing step 1b's stills, to "Try a crumple-into-a-ball death instead of folds?": "Yes, try crumple").** Claude's reason for the pick: the references read as paper because they are made of many small faces, each catching the light differently, and a crumple gives that where one or two big flaps on a round monster can't. It is also what the designer first asked for (line 75: "crumbled as well"). Two failed tries, then stop. Today's fold stays in the game until the crumple beats it.
         - **The look comes first, the physics after** (step 1b's solver worked, and its look failed: one tone per flap, no curve).
           - **Gate A, no solver:** the Mossling's mesh pushed into a fixed crumpled shape by any quick procedural means, and one still rendered through the real battle camera and renderer, because a ball overlaps itself and draw-order faults show only there. Judged at game size and at 3x, beside photos of a crumpled printed page or photo (the monster is a printed picture, not white paper). The pass list is written from those photos. The facet count is picked from what reads at game size; too many facets turn to speckle. One dark monster on a dark stage too (the Thornheart or the bandit). No face guard: a ball has no face to keep.
+            - **Pass list for the still** (from photos of crumpled printed pages and newspaper balls and flat-drawn paper balls; `art/tests/paper_refs/crumple_*.jpg` in the worktree):
+              1. the picture survives, broken into pieces that run different ways: a nearer layer covers a farther one and the picture breaks across its edge;
+              2. each facet has its own tone from its angle to the light (lit tops bright, sides mid, undersides dark, 3-4 steps);
+              3. dark gaps and crisp lines at the ridges and between layers;
+              4. plain paper back where the sheet turns over, about 10-40% of what is seen;
+              5. the sheet's own cut edges lie across the ball, inside its outline;
+              6. a lumpy, angular outline: not a circle, and not the monster's own outline;
+              7. it sits on a contact shadow;
+              8. at game size about 10-25 facets read, not speckle.
           - **Gate B, the motion:** the crumple driven to a definite end on the solver, then the shape frozen and dropped as one rigid lump (bounce, roll, settle), so nothing buzzes. It has a frame budget, logged. If the live solver can't meet it, a crumpled shape made per death at runtime is still procedural, but it is checked against the designer's "physics based" first.
           - **Gate C:** the other monsters.
           - **A try** is one full pass through gate A; tuning inside a gate doesn't count, and a try isn't spent on a limit the session set itself.
