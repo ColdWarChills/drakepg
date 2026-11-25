@@ -483,7 +483,8 @@ namespace Drakepg
                 if (last) Refresh();
                 else NewsCard(cards, i + 1);
             }
-            const float w = 640, h = 580, picW = 480, picH = 300;
+            // Tall enough for four lines of text (a long skill plus the slots-full note) above the button.
+            const float w = 640, h = 610, picW = 480, picH = 300;
             var modal = new UiModal(w, h, "New!", Next);
             var box = modal.Content;
             NewsPicture(box, (w - picW) / 2, 70, picW, picH, c);
