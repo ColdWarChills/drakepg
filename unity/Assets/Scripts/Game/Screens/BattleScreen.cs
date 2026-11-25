@@ -2913,9 +2913,12 @@ namespace Drakepg
                     var before = HeroBefore.Of(player);
                     var levelBefore = before.Level;
                     var (levelsGained, lost) = player.GrantRewards(rewards);
+                    var guards = player.Data.GuardsBeaten.Count;
                     Travel.RecordGuard(player, back.RoomId, monster.Id);
-                    var quests = Quests.RecordKill(player, monster)
-                        .Select(q => new QuestTick { Name = q.Quest.Name, Goal = q.Quest.Goal, Count = q.Count, Target = q.Target }).ToList();
+                    var kills = Quests.RecordKill(player, monster);
+                    var firstKill = FirstKill.Of(monster, battle.Turn, kills, player.Data.GuardsBeaten.Count > guards, back.RoomId);
+                    var quests = kills
+                        .Select(q => new QuestTick { Name = q.Quest.Name, Goal = q.Quest.Goal, Count = q.Count, Target = q.Target, TurnIn = Quests.GiverName(q.Quest), Quest = q.Quest }).ToList();
                     // Guild hunts: kills counted, and gather items picked up this fight.
                     string HuntName(int rank) => $"Hunt ({Guild.RankId(rank)})";
                     foreach (var u in Guild.RecordHuntKill(player, monster))
@@ -2935,7 +2938,7 @@ namespace Drakepg
                     var result = new BattleResult
                     {
                         Outcome = "victory", MonsterName = monsterName, Rewards = rewards, Lost = lost, LevelsGained = levelsGained, NewSkills = newSkills,
-                        Quests = quests, Back = backTo, Before = before,
+                        Quests = quests, Back = backTo, Before = before, FirstKill = firstKill,
                     };
                     // An everyday win pays out right here; a boss, a level-up or gear gets the Victory card.
                     var big = monster.Boss || levelsGained > 0 || lost.Count > 0

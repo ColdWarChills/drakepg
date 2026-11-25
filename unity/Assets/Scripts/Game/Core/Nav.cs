@@ -72,6 +72,8 @@ namespace Drakepg
     {
         public string Name, Goal, TurnIn;
         public int Count, Target;
+        /// <summary>The story quest this ticked (null for a Guild hunt).</summary>
+        public QuestDef Quest;
     }
 
     /// <summary>The result screen's input (ResultSceneData).</summary>
@@ -101,6 +103,38 @@ namespace Drakepg
         public RoomArrival Door;
         /// <summary>A tower floor's outcome (null for other fights).</summary>
         public TowerOutcome Tower;
+        /// <summary>Victory over a boss for the first time: its own card (null for every other win).</summary>
+        public FirstKill FirstKill;
+    }
+
+    /// <summary>A story boss or gate guard beaten for the first time, and what that opened.</summary>
+    public class FirstKill
+    {
+        public MonsterDef Monster;
+        public int Turns;
+        /// <summary>A story boss: its quest, who to see and where (null for a gate guard).</summary>
+        public QuestDef Quest;
+        public string Giver, GiverRoom;
+        /// <summary>What waits at the giver: the next story quest, the features turning it in unlocks.</summary>
+        public List<string> Opens = new List<string>();
+        /// <summary>A gate guard: the room its gate opens onto.</summary>
+        public string Road;
+
+        /// <summary>The card for this win, or null: a quest boss whose quest this kill finished, or a guard beaten just now.</summary>
+        public static FirstKill Of(MonsterDef monster, int turns, List<Quests.Update> kills, bool guardBeaten, string roomId)
+        {
+            if (!monster.Boss || monster.IsHeroic || monster.Elite != null) return null;
+            var quest = kills.FirstOrDefault(k => k.Count >= k.Target && k.Quest.Objective.MonsterId == monster.Id)?.Quest;
+            if (quest != null)
+                return new FirstKill
+                {
+                    Monster = monster, Turns = turns, Quest = quest, Giver = Quests.GiverName(quest), GiverRoom = Quests.GiverRoom(quest)?.Name,
+                    Opens = Quests.Opens(quest),
+                };
+            if (!guardBeaten) return null;
+            var gate = Db.Room(roomId).Exits.FirstOrDefault(e => e.Guarded);
+            return new FirstKill { Monster = monster, Turns = turns, Road = gate != null ? Db.Room(gate.To).Name : null };
+        }
     }
 
     /// <summary>The hero's numbers before a fight's rewards landed.</summary>

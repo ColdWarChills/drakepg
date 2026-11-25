@@ -2166,8 +2166,7 @@ namespace Drakepg
             if (points > 0) charPulse = Anim.Float(1, 1.07f, 0.5f, s => charBtn.style.scale = new Scale(new Vector3(s, s, 1)), Ease.Linear, repeat: -1, yoyo: true);
         }
 
-        static string GiverName(QuestDef quest) =>
-            Db.Data.Rooms.SelectMany(r => r.Npcs).FirstOrDefault(n => n.Id == quest.Giver)?.Name ?? "the quest giver";
+        static string GiverName(QuestDef quest) => Quests.GiverName(quest);
 
         void LevelUpToasts(int levelsGained, IEnumerable<SkillDef> skills, float delay)
         {
