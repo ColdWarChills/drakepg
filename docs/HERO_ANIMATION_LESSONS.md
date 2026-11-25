@@ -44,8 +44,8 @@ Claude gave hero 4's last clip and the knight the same verdict: a wind-up taller
 
 ## Still unproven
 
-- Our whole hero redrawn on the mannequin in our flat style. So far only the knight's chest has been redrawn, and Qwen painted it glossy.
-- Timing in our fight: the knight's attack takes 1.13 s against today's 0.5 s, and it slides because our fight moves the hero.
+- Our whole hero redrawn on the mannequin in our flat style. Done on 2026-11-25 as a repaint of the knight's own drawings (flat fills inside its outlines; `docs/IMPROVEMENTS_2026-10.md`, "Our hero on the knight's skeleton"). Still open: a hero drawn fresh on the mannequin's parts, and whether the designer likes the repaint.
+- Timing in our fight: the slide is gone (2026-11-25: the run clip at its stride speed, then the attack in place), but the whole move takes about 2.9 s against today's 0.8 s, and the knight's wind-up is still its tall, still hold.
 - The licence against our public repo (the sample's files stay on the PC; `docs/PLANS.md`).
 - The woman hero, other armors and other moves.
 
