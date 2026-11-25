@@ -65,6 +65,7 @@ namespace Drakepg
             if (clip == null) return;
             var source = FreeSource();
             source.clip = clip;
+            source.volume = Saves.Volume / 100f;
             source.Play();
         }
 

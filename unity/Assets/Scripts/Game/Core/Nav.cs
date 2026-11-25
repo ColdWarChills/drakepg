@@ -184,14 +184,48 @@ namespace Drakepg
 
         public static bool Pressed(Key key)
         {
+            if (Quiet) return false;
             var kb = Keyboard.current;
             return kb != null && kb[key].wasPressedThisFrame && (key == Key.Enter || key == Key.Escape || !Typing);
         }
 
         public static bool Held(Key key)
         {
+            if (Quiet) return false;
             var kb = Keyboard.current;
             return kb != null && kb[key].isPressed && !Typing;
+        }
+
+        // --- Catching a key for Options (Controls) ---
+
+        static System.Action<Key> catching;
+        static int caughtFrame = -1;
+
+        /// <summary>While a key is being caught, and on the frame it was caught, no screen sees any key.</summary>
+        static bool Quiet => catching != null || caughtFrame == UnityEngine.Time.frameCount;
+
+        public static bool Catching => catching != null;
+
+        /// <summary>The next key pressed goes to `got` (Esc too: the caller treats it as cancel) and nowhere else.</summary>
+        public static void Catch(System.Action<Key> got) => catching = got;
+
+        public static void StopCatching() => catching = null;
+
+        /// <summary>Run by GameRoot every frame before the screen's Tick, so the caught key can't also do its old job.</summary>
+        public static void CatchStep()
+        {
+            if (catching == null) return;
+            var kb = Keyboard.current;
+            if (kb == null) return;
+            foreach (var k in kb.allKeys)
+            {
+                if (k == null || !k.wasPressedThisFrame) continue;
+                var got = catching;
+                catching = null;
+                caughtFrame = UnityEngine.Time.frameCount;
+                got(k.keyCode);
+                return;
+            }
         }
     }
 }

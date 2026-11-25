@@ -438,14 +438,14 @@ namespace Drakepg
                 cards.Add(new NewsItem
                 {
                     Title = "New skills", Sub = string.Join(", ", news.Skills.Select(s => s.Name)), Icon = "book", Color = Palette.TextMagic,
-                    Text = "See what they do, and pick the ones you carry into battle, in the Spellbook (K).",
+                    Text = $"See what they do, and pick the ones you carry into battle, in the Spellbook ({Controls.Label("spellbook")}).",
                 });
             }
             else foreach (var s in news.Skills)
             {
                 var element = s.Element != null && s.Element != "weapon" ? $"  ·  {Db.Data.ElementLabels[s.Element]}" : "";
                 var cd = s.Cooldown > 0 ? $"  ·  cooldown {s.Cooldown}" : "";
-                var slot = P.IsCarried(s.Id) ? "" : $" Your {Db.B.SkillSlots} skill slots are full: carry it from the Spellbook (K).";
+                var slot = P.IsCarried(s.Id) ? "" : $" Your {Db.B.SkillSlots} skill slots are full: carry it from the Spellbook ({Controls.Label("spellbook")}).";
                 var icon = SkillUi.Icon(s);
                 cards.Add(new NewsItem
                 {
@@ -1099,7 +1099,9 @@ namespace Drakepg
             if (!showedControls)
             {
                 showedControls = true;
-                var hint = Ui.Text(ui, Design.Width / 2, Design.Height - 18, "WASD / arrows: move    E / Space: talk    C: character    K: spellbook    M: map    Click: walk there",
+                var hint = Ui.Text(ui, Design.Width / 2, Design.Height - 18,
+                    $"{WalkKeys()} / arrows: move    {Controls.Label("talk")} / Space: talk    {Controls.Label("character")}: character    " +
+                    $"{Controls.Label("bag")}: inventory    {Controls.Label("spellbook")}: spellbook    {Controls.Label("map")}: map    Click: walk there",
                     17, Palette.Text, ax: 0.5f, ay: 1, stroke: true);
                 Anim.Float(1, 0, 1, a => hint.style.opacity = a, Ease.Linear, 9).OnComplete(hint.RemoveFromHierarchy);
             }
@@ -1175,12 +1177,19 @@ namespace Drakepg
                 newsNext();
                 return;
             }
-            if (Keys.Pressed(Key.C)) OpenCharacter();
-            if (Keys.Pressed(Key.I)) ToggleInventory();
-            if (Keys.Pressed(Key.M)) ToggleMap();
-            if (Keys.Pressed(Key.K)) ToggleSpellbook();
+            if (Controls.Pressed("character")) OpenCharacter();
+            if (Controls.Pressed("bag")) ToggleInventory();
+            if (Controls.Pressed("map")) ToggleMap();
+            if (Controls.Pressed("spellbook")) ToggleSpellbook();
             if (Keys.Pressed(Key.Backquote)) OpenCheats();
-            if (Keys.Pressed(Key.E) || Keys.Pressed(Key.Space)) Talk();
+            if (Controls.Pressed("talk") || Keys.Pressed(Key.Space)) Talk();
+        }
+
+        /// <summary>The four walking keys for the hint line: "WASD", or spaced when any is longer than a letter.</summary>
+        static string WalkKeys()
+        {
+            var k = new[] { Controls.Label("up"), Controls.Label("left"), Controls.Label("down"), Controls.Label("right") };
+            return k.All(s => s.Length == 1) ? string.Concat(k) : string.Join(" ", k);
         }
 
         void Talk()
@@ -1281,8 +1290,8 @@ namespace Drakepg
             float vx = 0, vy = 0;
             if (!blocked)
             {
-                vx = (Keys.Held(Key.D) || Keys.Held(Key.RightArrow) ? 1 : 0) - (Keys.Held(Key.A) || Keys.Held(Key.LeftArrow) ? 1 : 0);
-                vy = (Keys.Held(Key.S) || Keys.Held(Key.DownArrow) ? 1 : 0) - (Keys.Held(Key.W) || Keys.Held(Key.UpArrow) ? 1 : 0);
+                vx = (Controls.Held("right") || Keys.Held(Key.RightArrow) ? 1 : 0) - (Controls.Held("left") || Keys.Held(Key.LeftArrow) ? 1 : 0);
+                vy = (Controls.Held("down") || Keys.Held(Key.DownArrow) ? 1 : 0) - (Controls.Held("up") || Keys.Held(Key.UpArrow) ? 1 : 0);
                 if (vx != 0 || vy != 0)
                 {
                     moveTarget = null;
@@ -1521,7 +1530,7 @@ namespace Drakepg
 
         void PromptAt(string verb, float x, float y)
         {
-            promptText.text = "E  " + verb;
+            promptText.text = Controls.Label("talk") + "  " + verb;
             prompt.style.left = x;
             prompt.style.top = y;
             ShowPrompt(true);
@@ -1719,43 +1728,24 @@ namespace Drakepg
             GameRoot.I.Go(new TitleScreen());
         }
 
-        /// <summary>Save, sound, story text, fullscreen and back to the title, in one place so the screen stays clear.</summary>
+        /// <summary>Save, Options (keys, screen, sound, story text) and back to the title, so the screen stays clear.</summary>
         void OpenMenu()
         {
             if (ModalOpen || leaving) return;
             moveTarget = null;
-            var modal = new UiModal(460, 470, "Menu", () => { });
-            void Render()
+            var modal = new UiModal(460, 320, "Menu", () => { });
+            var rows = new List<(string label, Action run)>
             {
-                modal.Clear();
-                var c = modal.Content;
-                var rows = new List<(string label, Action run)>
+                ("Save", () => Save(true)),
+                // Options' keys show in the room's hints and prompts: they read the keys as they are drawn.
+                ("Options", () => modal.Close(() => OptionsPanel.Open())),
+                ("Save and quit to title", () =>
                 {
-                    ("Save", () => Save(true)),
-                    (Saves.Muted ? "Sound: off" : "Sound: on", () =>
-                    {
-                        Saves.Muted = !Saves.Muted;
-                        Saves.SaveSettings();
-                        Render();
-                    }),
-                    (Saves.StoryText ? "Story text: on" : "Story text: off", () =>
-                    {
-                        Saves.StoryText = !Saves.StoryText;
-                        Saves.SaveSettings();
-                        Render();
-                    }),
-                    ("Fullscreen", () => UnityEngine.Screen.fullScreen = !UnityEngine.Screen.fullScreen),
-                    ("Save and quit to title", () =>
-                    {
-                        modal.Close();
-                        SaveAndQuit();
-                    }),
-                };
-                for (int i = 0; i < rows.Count; i++) new UiButton(c, 230, 100 + i * 66, rows[i].label, rows[i].run, 300, 52, 19);
-                Ui.Text(c, 230, 440, "Story text off: quests say in one line what to do.", 14, Palette.TextDim, ax: 0.5f, ay: 0.5f, wrap: 400,
-                    align: TextAnchor.MiddleCenter);
-            }
-            Render();
+                    modal.Close();
+                    SaveAndQuit();
+                }),
+            };
+            for (int i = 0; i < rows.Count; i++) new UiButton(modal.Content, 230, 100 + i * 66, rows[i].label, rows[i].run, 300, 52, 19);
         }
 
         void OpenCharacter()
@@ -2007,7 +1997,7 @@ namespace Drakepg
             var bottomBar = Ui.Rect(layer, 0, Design.Height, Design.Width, 150, new Color(0, 0, 0, 0.88f));
             var text = Ui.Text(layer, Design.Width / 2, Design.Height - 88, "", 24, ax: 0.5f, ay: 0.5f, wrap: 1040, align: TextAnchor.MiddleCenter);
             text.style.opacity = 0;
-            var hint = Ui.Text(layer, Design.Width - 24, Design.Height - 16, "E / Space / click: continue", 14, Palette.TextDim, ax: 1, ay: 1);
+            var hint = Ui.Text(layer, Design.Width - 24, Design.Height - 16, $"{Controls.Label("talk")} / Space / click: continue", 14, Palette.TextDim, ax: 1, ay: 1);
             hint.style.opacity = 0;
             // The room's own buttons and labels would zoom too: hide them for the scene.
             labels.style.display = DisplayStyle.None;
@@ -2244,7 +2234,7 @@ namespace Drakepg
             {
                 Fx.LevelUpBurst(World, player.X, player.Y);
                 Sfx.Play("levelup");
-                Ui.Toast($"Level up! Now level {P.Level}. +{levelsGained * Db.B.StatPointsPerLevel} stat points (C)", Palette.TextGood);
+                Ui.Toast($"Level up! Now level {P.Level}. +{levelsGained * Db.B.StatPointsPerLevel} stat points ({Controls.Label("character")})", Palette.TextGood);
                 foreach (var sk in list) Ui.Toast($"New skill: {sk.Name}", Palette.TextMagic);
             });
         }
