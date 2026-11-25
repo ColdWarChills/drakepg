@@ -619,6 +619,8 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
     - worse: Mossling, Thornheart, Hedge Troll, and Old Snowmaw, which never came to rest before the 3 s cap;
     - unchanged: Stormcoil, Frostbinder and Dusk Wraith still read as gems;
     - three worst frames went over 16.7 ms.
+  - One seed each, so single cases may be chance.
   - Not adopted. The back share counts hidden layers, so the Stormcoil shows almost none of its cream back at 55%.
+  - The motion was not stepped on three more monsters; that waits for the look and the timing answer.
   - Still not "mostly paper"; nothing shown, the crumple stays off.
 - To look at, in the `claude/unity-port` worktree on the PC: `art/tests/paper_clip/paper_crumple_pass2_settings.jpg`, `paper_crumple_pass2_aim.jpg`, `paper_crumple_vs_fold_timing.jpg`, `paper_crumple_pass3_levers.jpg`, `paper_crumple_pass3_more_back_30a.jpg`, `_30b.jpg`.
