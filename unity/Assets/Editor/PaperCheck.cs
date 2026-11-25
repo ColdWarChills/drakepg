@@ -19,6 +19,8 @@ namespace Drakepg.EditorTools
         public static bool Busy;
         /// <summary>Frames a second the recordings are captured at (game time steps by one frame each).</summary>
         public static int Fps = 20;
+        /// <summary>The killing blow as soon as the attack can be pressed (a one-hit kill right as the fight opens), timed, not recorded.</summary>
+        public static bool FastKill;
 
         /// <summary>Whole-frame times (unscaled, ms): the worst and the mean over the ordinary attacks (the baseline) and
         /// over the killing blow to 3 s after it. Logged per fight; record no frames (`frames` 0) for a fair number.</summary>
@@ -48,7 +50,8 @@ namespace Drakepg.EditorTools
                 if (ms > 16.7f)
                 {
                     probeSlow++;
-                    if (probeSlow <= 12) probeSlowList += $" {Time.realtimeSinceStartup - probeStart:0.00}s:{ms:0}{(gcNow != gc ? "g" : "")}";
+                    if (probeSlow <= 12) probeSlowList += $" {Time.realtimeSinceStartup - probeStart:0.00}s:{ms:0}{(gcNow != gc ? "g" : "")}"
+                        + (ms > 100 ? $"[{GameRoot.I.Screen?.GetType().Name}]" : "");
                 }
                 gc = gcNow;
                 yield return null;
@@ -107,6 +110,25 @@ namespace Drakepg.EditorTools
                     MonsterId = floor > 0 ? null : id, ZoneId = zone, RoomId = "thornwood_path", Elite = elite, Heroic = heroic, TowerFloor = floor,
                     X = 640, Y = 600,
                 }), 0);
+                if (FastKill)
+                {
+                    var began = Time.realtimeSinceStartup;
+                    Battle fb = null;
+                    yield return new WaitUntil(() => (fb = Drive.Field("battle") as Battle) != null);
+                    SetHp(fb, Drive.Field("hpShown") as Dictionary<string, double>, 1);
+                    GameRoot.I.StartCoroutine(Probe());
+                    yield return new WaitUntil(() => Drive.Press(0) || !(GameRoot.I.Screen is BattleScreen));
+                    var pressedAt = Time.realtimeSinceStartup - began;
+                    yield return new WaitForSecondsRealtime(4f);
+                    var blow = ProbeEnd();
+                    Debug.Log($"drakepg paper check: {id}{(speed > 1 ? "_x2" : "")}_fast_s{fightSeed}: attack pressed {pressedAt:0.00} s after the battle began, "
+                        + $"{(fb.Enemy.Hp <= 0 ? "killed" : "NOT killed")}; the press to 4 s after it {blow}; {(solid ? Paper.LastSolid : "")}");
+                    yield return new WaitForSeconds(1f);
+                    if (GameRoot.I.Screen is BattleScreen) yield return new WaitForSeconds(3f);
+                    Drive.Room("brindlemoor");
+                    yield return new WaitForSeconds(0.5f);
+                    continue;
+                }
                 yield return new WaitForSeconds(0.5f);
                 var battle = Drive.Field("battle") as Battle;
                 if (battle == null)
