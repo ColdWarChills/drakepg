@@ -43,6 +43,17 @@ namespace Drakepg.Rules
 
         public static bool Done(Player player, string questId) => player.Data.Quests.TryGetValue(questId, out var s) && s.Status == "done";
 
+        /// <summary>The room the quest's giver stands in (null if no room has them).</summary>
+        public static RoomDef GiverRoom(QuestDef quest) => Db.Data.Rooms.FirstOrDefault(r => r.Npcs != null && r.Npcs.Any(n => n.Id == quest.Giver));
+
+        public static string GiverName(QuestDef quest) =>
+            GiverRoom(quest)?.Npcs.First(n => n.Id == quest.Giver).Name ?? "the quest giver";
+
+        /// <summary>What turning this quest in opens: the story quest that needs it, then the features it unlocks.</summary>
+        public static List<string> Opens(QuestDef quest) =>
+            Db.Quests().Where(q => q.Requires == quest.Id).Select(q => $"{q.Name} (new quest)")
+                .Concat(Db.Data.Features.Where(f => f.UnlockedBy == quest.Id && !f.Disabled).Select(f => f.Name)).ToList();
+
         /// <summary>The quest this NPC has something to say about: ready > available > active > rank.</summary>
         public static (QuestDef quest, string status)? ForNpc(Player player, string npcId)
         {

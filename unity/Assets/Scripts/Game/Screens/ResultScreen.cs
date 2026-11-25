@@ -30,6 +30,8 @@ namespace Drakepg
             const float cx = Design.Width / 2;
             var player = Session.Player;
             var won = data.Outcome == "victory";
+            // A boss's first kill: a bigger sheet, its name for the title.
+            var first = won && data.Tower == null ? data.FirstKill : null;
 
             Backdrop.Rect(World, cx, Design.Height / 2, Design.Width, Design.Height, Design.Hex(won ? 0x1d2a1a : 0x2a1418), -32000);
             // Slow light rays behind the panel.
@@ -48,7 +50,7 @@ namespace Drakepg
             go.transform.SetParent(World, false);
             go.transform.position = Design.World(cx, Design.Height / 2, 4);
             var panel = go.AddComponent<SpriteRenderer>();
-            panel.sprite = Felt.PatchSprite(720, 520, 77, Felt.Patch.Menu());
+            panel.sprite = Felt.PatchSprite(first != null ? 860 : 720, first != null ? 600 : 520, 77, Felt.Patch.Menu());
             panel.sortingOrder = -30000;
             panel.color = new Color(1, 1, 1, 0);
             Anim.Float(0, 1, 0.3f, t =>
@@ -60,7 +62,8 @@ namespace Drakepg
             }, Ease.BackOut);
             Root.AddToClassList(FeltPass.Class);
 
-            var title = Ui.Text(Root, cx, 170, won ? "Victory!" : "Defeated", 64, won ? Palette.TextGold : Palette.TextBad, false, 0.5f, 0.5f, stroke: true);
+            var heading = first != null ? $"{Capitalize(The(first.Monster.Name).Substring(4))} defeated!" : won ? "Victory!" : "Defeated";
+            var title = Ui.Text(Root, cx, first != null ? 116 : 170, heading, first != null ? 54 : 64, won ? Palette.TextGold : Palette.TextBad, false, 0.5f, 0.5f, stroke: true);
             Fonts.Title(title);
             title.style.opacity = 0;
             title.style.scale = new Scale(Vector3.one * 2);
@@ -76,68 +79,156 @@ namespace Drakepg
                 TowerResult(cx, won);
                 return;
             }
-            if (won)
-            {
-                var rewards = data.Rewards;
-                Anim.After(0.25f, () => Fx.Confetti(World));
-                Sfx.Play("victory");
-
-                // Count-up rows.
-                Ui.Text(Root, cx, 240, $"You defeated {The(data.MonsterName)}.", 24, ax: 0.5f, ay: 0.5f);
-                var xpText = Ui.Text(Root, cx - 120, 288, "+0 XP", 30, Palette.TextGood, true, 0.5f, 0.5f);
-                var goldText = Ui.Text(Root, cx + 120, 288, "+0 gold", 30, Palette.TextGold, true, 0.5f, 0.5f);
-                // With no drops the rows below move up into their place.
-                var low = rewards.Items.Count > 0 ? 0 : -64;
-                DropReveal(cx, 360, rewards.Items, data.Lost);
-                for (int i = 0; i < data.Quests.Count; i++)
-                {
-                    var q = data.Quests[i];
-                    var done = q.Count >= q.Target;
-                    var line = Ui.Text(Root, cx, 456 + low + i * 28, $"{q.Name}: {q.Goal} {q.Count}/{q.Target}{(done ? $"  ✔ Return to {q.TurnIn ?? "the quest giver"}" : "")}",
-                        19, done ? Palette.TextGood : Palette.TextGold, done, 0.5f, 0.5f);
-                    line.style.opacity = 0;
-                    Anim.Float(0, 1, 0.3f, a => line.style.opacity = a, Ease.Linear, 1.1f + i * 0.15f);
-                    if (done) Anim.After(1.1f, () => Sfx.Play("quest"));
-                }
-                var shift = data.Quests.Count * 28 + low;
-                CountUp(xpText, rewards.Xp, " XP", 0.4f);
-                CountUp(goldText, rewards.Gold, " gold", 0.65f);
-
-                // The XP bar fills from where it stood before the fight; a level-up fills it to the brim, then bursts.
-                var before = data.Before ?? HeroBefore.Of(player);
-                var leveled = data.LevelsGained > 0;
-                var barY = 484 + shift;
-                var bar = new UiBar(Root, cx - 190, barY, 380, 24, Palette.Xp, "XP ");
-                bar.SetValue(before.Xp, before.XpNeeded, false);
-                Anim.After(0.5f, () => bar.SetValue(leveled ? before.XpNeeded : player.Xp, leveled ? before.XpNeeded : player.XpNeeded));
-                if (leveled)
-                {
-                    Anim.After(1.2f, () =>
-                    {
-                        if (page != 1) return;
-                        Fx.LevelUpBurst(World, cx, barY);
-                        Sfx.Play("levelup");
-                        GameRoot.I.Shake(0.2f, 8);
-                        bar.SetValue(player.Xp, player.XpNeeded, false);
-                        var banner = Ui.Text(Root, cx, barY + 36, $"LEVEL UP!  Now level {player.Level}", 30, Palette.TextGood, true, 0.5f, 0.5f, stroke: true);
-                        banner.style.scale = new Scale(Vector3.zero);
-                        void Scale(float s) => banner.style.scale = new Scale(new Vector3(s, s, 1));
-                        Anim.Float(0, 1.2f, 0.2f, Scale, Ease.BackOut)
-                            .OnComplete(() => Anim.Float(1.2f, 1, 0.15f, Scale)
-                                .OnComplete(() => Anim.Float(1, 1.06f, 0.5f, Scale, Ease.Linear, repeat: -1, yoyo: true)));
-                    });
-                }
-
-                // A level-up gets its own page (what grew, the stat points) before the room.
-                var buttonY = Mathf.Min(576, barY + (leveled ? 92 : 62));
-                if (leveled) ContinueButton("Level up!", () => LevelPage(true), buttonY);
-                else ContinueButton("Continue", ToRoom(data.Back), buttonY);
-            }
+            if (won) WonCard(cx);
             else
             {
                 GameRoot.I.Shake(0.3f, 8);
                 DefeatCard(cx);
             }
+        }
+
+        /// <summary>
+        /// Victory: XP and gold counting up, the drops, quest progress, the XP bar (a level-up gets its page next).
+        /// A boss's first kill gets its own card: the boss on the left under a FIRST KILL stamp, the turns it took,
+        /// and what the win opened (who to see and what waits there, or the road a guard kept shut).
+        /// </summary>
+        void WonCard(float cx)
+        {
+            var player = Session.Player;
+            var rewards = data.Rewards;
+            var first = data.FirstKill;
+            Anim.After(0.25f, () => Fx.Confetti(World));
+            Sfx.Play("victory");
+
+            // The column the rows sit in: the card's middle, or right of the boss on a first kill.
+            var x = first != null ? 800f : cx;
+            var dropsY = first != null ? 292f : 360f;
+            if (first != null)
+            {
+                BossPortrait(first.Monster, 405, 360, 548);
+                var turns = first.Turns == 1 ? "1 turn" : $"{first.Turns} turns";
+                Ui.Text(Root, x, 180, $"Beaten in {turns}.", 24, ax: 0.5f, ay: 0.5f);
+            }
+            else Ui.Text(Root, cx, 240, $"You defeated {The(data.MonsterName)}.", 24, ax: 0.5f, ay: 0.5f);
+            var rowY = first != null ? 228f : 288f;
+            var xpText = Ui.Text(Root, x - 120, rowY, "+0 XP", 30, Palette.TextGood, true, 0.5f, 0.5f);
+            var goldText = Ui.Text(Root, x + 120, rowY, "+0 gold", 30, Palette.TextGold, true, 0.5f, 0.5f);
+            // With no drops the rows below move up into their place.
+            var low = rewards.Items.Count > 0 ? 0 : first != null ? -70 : -64;
+            DropReveal(x, dropsY, rewards.Items, data.Lost, first != null ? 460 : 680);
+            var y = (first != null ? 392f : 456f) + low;
+            var lines = new List<VisualElement>();
+            if (first != null) y = Opened(first, x, y, lines);
+            foreach (var q in data.Quests)
+            {
+                if (first?.Quest != null && q.Quest == first.Quest) continue;
+                var done = q.Count >= q.Target;
+                lines.Add(Ui.Text(Root, x, y, $"{q.Name}: {q.Goal} {q.Count}/{q.Target}{(done ? $"  ✔ Return to {q.TurnIn ?? "the quest giver"}" : "")}",
+                    19, done ? Palette.TextGood : Palette.TextGold, done, 0.5f, 0.5f));
+                if (done) Anim.After(1.1f, () => Sfx.Play("quest"));
+                y += 28;
+            }
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                line.style.opacity = 0;
+                Anim.Float(0, 1, 0.3f, a => line.style.opacity = a, Ease.Linear, 1.1f + i * 0.15f);
+            }
+            CountUp(xpText, rewards.Xp, " XP", 0.4f);
+            CountUp(goldText, rewards.Gold, " gold", 0.65f);
+
+            // The XP bar fills from where it stood before the fight; a level-up fills it to the brim, then bursts.
+            var before = data.Before ?? HeroBefore.Of(player);
+            var leveled = data.LevelsGained > 0;
+            var barY = y + (first != null ? 30 : 28);
+            var bar = new UiBar(Root, x - 190, barY, 380, 24, Palette.Xp, "XP ");
+            bar.SetValue(before.Xp, before.XpNeeded, false);
+            Anim.After(0.5f, () => bar.SetValue(leveled ? before.XpNeeded : player.Xp, leveled ? before.XpNeeded : player.XpNeeded));
+            if (leveled)
+            {
+                Anim.After(1.2f, () =>
+                {
+                    if (page != 1) return;
+                    Fx.LevelUpBurst(World, x, barY);
+                    Sfx.Play("levelup");
+                    GameRoot.I.Shake(0.2f, 8);
+                    bar.SetValue(player.Xp, player.XpNeeded, false);
+                    var banner = Ui.Text(Root, x, barY + 36, $"LEVEL UP!  Now level {player.Level}", 30, Palette.TextGood, true, 0.5f, 0.5f, stroke: true);
+                    banner.style.scale = new Scale(Vector3.zero);
+                    void Scale(float s) => banner.style.scale = new Scale(new Vector3(s, s, 1));
+                    Anim.Float(0, 1.2f, 0.2f, Scale, Ease.BackOut)
+                        .OnComplete(() => Anim.Float(1.2f, 1, 0.15f, Scale)
+                            .OnComplete(() => Anim.Float(1, 1.06f, 0.5f, Scale, Ease.Linear, repeat: -1, yoyo: true)));
+                });
+            }
+
+            // A level-up gets its own page (what grew, the stat points) before the room.
+            var buttonY = first != null ? 616 : Mathf.Min(576, barY + (leveled ? 92 : 62));
+            if (leveled) ContinueButton("Level up!", () => LevelPage(true), buttonY);
+            else ContinueButton("Continue", ToRoom(data.Back), buttonY);
+        }
+
+        /// <summary>What a first kill opened, as lines from `y` (returns the y under them): the quest done and who to see with what waits there, or the open road.</summary>
+        float Opened(FirstKill first, float x, float y, List<VisualElement> lines)
+        {
+            if (first.Quest == null)
+            {
+                lines.Add(Ui.Text(Root, x, y, first.Road != null ? $"✔  The road to {first.Road} is open." : "✔  The way on is open.", 21, Palette.TextGood, true, 0.5f, 0.5f));
+                Anim.After(1.1f, () => Sfx.Play("quest"));
+                return y + 30;
+            }
+            lines.Add(Ui.Text(Root, x, y, $"✔  {first.Quest.Name}", 21, Palette.TextGood, true, 0.5f, 0.5f));
+            Anim.After(1.1f, () => Sfx.Play("quest"));
+            var where = first.GiverRoom != null ? $" in {first.GiverRoom}" : "";
+            lines.Add(Ui.Text(Root, x, y + 30, $"Return to {first.Giver}{where}.", 19, Palette.Text, false, 0.5f, 0.5f));
+            y += 46;
+            if (first.Opens.Count > 0)
+            {
+                var opens = $"Waiting there: {string.Join(", ", first.Opens)}.";
+                lines.Add(Ui.Text(Root, x, y, opens, 17, Palette.TextDim, false, 0.5f, 0, wrap: 460, align: TextAnchor.UpperCenter));
+                y += 22 * Mathf.CeilToInt(opens.Length * 7.4f / 460);   // ~7 px a letter at 17 px
+            }
+            return y + 10;
+        }
+
+        /// <summary>The beaten boss on the card's left, centred on `midY` (feet no lower than `floorY`), a FIRST KILL stamp slamming down on its feet.</summary>
+        void BossPortrait(MonsterDef monster, float x, float midY, float floorY)
+        {
+            var y = midY;
+            var key = Art.Pick(monster.Look?.Art);
+            if (key != null && Art.Has(key))
+            {
+                var size = Art.Size(Art.Get(key));
+                float h = 360, w = size.y > 0 ? h * size.x / size.y : h;
+                if (w > 330) { h *= 330 / w; w = 330; }
+                y = Mathf.Min(floorY, midY + h / 2);
+                var pic = Ui.Image(Root, x, y, w, h, key, 0.5f, 1);
+                pic.style.opacity = 0;
+                Anim.Float(0, 1, 0.35f, a => pic.style.opacity = a, Ease.Linear, 0.15f);
+            }
+
+            var stamp = new VisualElement { pickingMode = PickingMode.Ignore };
+            const float dx = 30, dy = -20;
+            Ui.Place(stamp, x + dx, y + dy);
+            Root.Add(stamp);
+            Ui.Rect(stamp, -128, -34, 256, 68, new Color(1, 1, 1, 0.55f), 6, 5, Palette.TextBad);
+            var word = Ui.Text(stamp, 0, 0, "FIRST KILL", 38, Palette.TextBad, true, 0.5f, 0.5f);
+            Fonts.Title(word);
+            stamp.style.rotate = new Rotate(-10);
+            stamp.style.opacity = 0;
+            const float at = 0.95f;
+            Anim.Float(0, 1, 0.16f, t =>
+            {
+                var s = Mathf.Lerp(2.6f, 1, t);
+                stamp.style.scale = new Scale(new Vector3(s, s, 1));
+                stamp.style.opacity = Mathf.Clamp01(t * 2);
+            }, Ease.QuadIn, at).OnComplete(() =>
+            {
+                if (page != 1) return;
+                Sfx.Play("thud");
+                GameRoot.I.Shake(0.25f, 10);
+                Fx.Burst(World, x + dx, y + dy, "fx_star", 14, 60, 220, 0.6f, 0.6f, Palette.TextBad, true);
+            });
         }
 
         /// <summary>
@@ -405,7 +496,7 @@ namespace Drakepg
         /// Plain drops just pop; Superior and Masterwork glow first; Sigils get a long charge-up and their fanfare
         /// (timings in `BALANCE.dropReveal`). Loot that didn't fit the bag is greyed out.
         /// </summary>
-        void DropReveal(float cx, float y, List<ItemGrant> items, List<ItemGrant> lost)
+        void DropReveal(float cx, float y, List<ItemGrant> items, List<ItemGrant> lost, float width = 680)
         {
             var r = Db.B.DropReveal;
             float Ms(string key) => (float)(r.TryGetValue(key, out var v) ? v : 0) / 1000f;
@@ -428,7 +519,7 @@ namespace Drakepg
             var cards = shown.OrderBy(c => Array.IndexOf(RevealOrder, c.Tier)).ToList();
 
             const float step = 128;
-            var scale = Mathf.Min(1, 680 / (cards.Count * step));
+            var scale = Mathf.Min(1, width / (cards.Count * step));
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             Ui.Place(row, cx, y);
             row.style.scale = new Scale(new Vector3(scale, scale, 1));
