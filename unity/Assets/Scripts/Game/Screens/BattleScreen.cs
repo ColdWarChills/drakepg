@@ -245,6 +245,8 @@ namespace Drakepg
         Look PlayerLook => battle.Player.Look;
         /// <summary>What spills from the monster (null: red blood).</summary>
         Blood MonsterBlood => monster.Look.Blood;
+        /// <summary>The monster as paper (the paper damage test, `Paper.On`), else null.</summary>
+        Paper paper;
         /// <summary>Sorting order of things lying on the ground (splats, pools): under the fighters.</summary>
         static int GroundOrder => Design.Depth(GroundY) - 60;
 
@@ -287,6 +289,8 @@ namespace Drakepg
             }
             foe = new Fighter { Fig = foeFigure, X = Design.Width + 200, Facing = -1, Base = (float)monster.Look.Scale * StageScale };
             foe.Fig.EnableBend();
+            // The paper damage test: its picture as paper, sized for the biggest it is drawn (2x screens, a close-up).
+            paper = Paper.On ? Paper.Attach(foe.Fig, foe.Fig.DrawnHeight * foe.Base * 2.6f) : null;
             foe.ReadWeapons();
             hero.Apply();
             foe.Apply();
@@ -1149,6 +1153,20 @@ namespace Drakepg
             // Badly hurt fighters hunch and breathe hard.
             var bend = FighterOf(side)?.Fig?.Bend;
             if (bend != null) bend.Hurt = hp > 0 && hp < max * 0.3 ? 1 : 0;
+            // A paper monster tears when badly hurt (not on the killing blow: it folds up instead).
+            if (side == "enemy" && paper != null && hp > 0 && paper.Wounded((float)(hp / max)))
+            {
+                Sfx.Play("rip");
+                var f = FighterOf(side);
+                if (f != null) Spill(f.X, GroundY - Chest - 30, Random.value < 0.5f ? -1 : 1, 0.6f);
+            }
+        }
+
+        /// <summary>The monster's spill at design (x, y): its blood, or red paper scraps when it is paper.</summary>
+        void Spill(float x, float y, int dir, float amount)
+        {
+            if (paper != null) Fx.PaperScraps(World, x, y, dir, amount, GroundY, GroundOrder);
+            else Fx.Bleed(World, x, y, dir, MonsterBlood, amount, GroundY, GroundOrder);
         }
 
         /// <summary>MP changes come from the hero's own moves, so the battle's value is the one to show.</summary>
@@ -1686,7 +1704,7 @@ namespace Drakepg
                         if (def.Harmful) Sfx.Play("debuff");
                         Fx.StatusMark(World, x, head - 20, color, !def.Harmful);
                         // Bleed opens a wound (on a monster: its own blood); other harmful statuses burst in their color.
-                        if (def.Harmful && e.Target == "enemy" && e.Status == "bleed") Fx.Bleed(World, x - 20, GroundY - Chest, 1, MonsterBlood, 0.4f, GroundY, GroundOrder);
+                        if (def.Harmful && e.Target == "enemy" && e.Status == "bleed") Spill(x - 20, GroundY - Chest, 1, 0.4f);
                         else if (def.Harmful) Fx.StatusPuff(World, x, GroundY - Chest, color);
                     }
                     SetShown(e.Target, def.Id, e.Turns);
@@ -1720,8 +1738,8 @@ namespace Drakepg
                         Fx.WhiteFlash(f.Fig, 100, 0xffffff, tint);
                         if (e.Target == "enemy" && e.Status == "bleed")
                         {
-                            Fx.Bleed(World, x - 20, GroundY - Chest, Random.value < 0.5f ? -1 : 1, MonsterBlood, 0.3f, GroundY, GroundOrder);
-                            Sfx.Play("splat");
+                            Spill(x - 20, GroundY - Chest, Random.value < 0.5f ? -1 : 1, 0.3f);
+                            Sfx.Play(paper != null ? "crinkle" : "splat");
                         }
                         Sfx.Play("hit");
                         var tilt = e.Target == "player" ? -4 : 4;
@@ -1999,7 +2017,8 @@ namespace Drakepg
                         }
                         // The camera eases back out so the whole fall shows.
                         ViewOut(0.5f);
-                        if (kind == "chips") await Shatter(f, body, blood, colors, gold);
+                        if (paper != null) await PaperFold(f, colors, gold);
+                        else if (kind == "chips") await Shatter(f, body, blood, colors, gold);
                         else if (kind == "wisps") await FadeAway(f, body, blood, colors, gold);
                         else if (m.Look.Shape == "humanoid") await Topple(f, blood, colors, gold);
                         else await Slump(f, body, blood, colors, gold);
@@ -2232,6 +2251,32 @@ namespace Drakepg
             Fx.Pool(World, f.X - 10, GroundY + 6, body.width, blood, GroundOrder);
             await Anim.Wait(0.6f);
             await Vanish(f, f.X, body.width * 0.8f, (GroundY - body.top) * 0.6f, colors, gold);
+        }
+
+        /// <summary>Paper monsters (the paper damage test): it folds up along the fight's creases and drops as a packet.</summary>
+        async Task PaperFold(Fighter f, long[] colors, double gold)
+        {
+            await paper.Fold(GroundY, (x, width) =>
+            {
+                Sfx.Play("thud");
+                GameRoot.I.Shake(0.1f, 4);
+                for (int i = 0; i < 3; i++) Fx.Dust(World, x - width / 2 + width * i / 2f, GroundY + 4, 3, Design.Depth(GroundY) + 1);
+                Fx.PaperScraps(World, x - width / 4, GroundY - 24, -1, 0.5f, GroundY, GroundOrder);
+                Fx.PaperScraps(World, x + width / 4, GroundY - 24, 1, 0.5f, GroundY, GroundOrder);
+            });
+            await Anim.Wait(0.1f);
+            var (mid, w, h) = paper.Packet();
+            // It goes in a puff of paper: cream dust and bits of its paper and red scraps, not its blood.
+            Fx.DeathPoof(World, mid.x, mid.y, 0xe9e0c9);
+            Fx.Dissolve(World, mid.x, GroundY, Mathf.Max(60, w), Mathf.Max(40, h), new long[] { 0xefe7d2, 0xd9ceb3, 0xc8372d, 0xe0483a });
+            Sfx.Play("explode");
+            _ = Fx.CoinShower(World, new Vector2(mid.x, GroundY - 100), new Vector2(60, 40), (int)Math.Ceiling(gold / 2), () => Sfx.Play("coin"));
+            var folded = paper;
+            await f.Track(Anim.Float(0, 1, 0.3f, t =>
+            {
+                f.Fig.SetAlpha(1 - t);
+                folded.SetAlpha(1 - t);
+            }, Ease.CubicIn)).Task;
         }
 
         /// <summary>Stone, bark, shell and wood: it shakes, cracks white, and bursts into bits.</summary>
@@ -2804,12 +2849,18 @@ namespace Drakepg
             UiMotion.Jolt(targetSide == "player" ? heroHud : enemyHud, (guarded || dull ? 3 : 5) + weight * 22 + (e.Crit ? 5 : 0));
 
             // Monsters spill blood (or chips, or wisps): more for heavier blows, a gush for the last one.
+            if (targetSide == "enemy" && e.Effect != "immune" && paper != null)
+            {
+                paper.Hit(x, y, weight, e.Element);
+                if (e.Element == "fire") Anim.After(0.12f, () => Fx.PaperEmbers(World, x, y));
+            }
             if (targetSide == "enemy" && e.Effect != "immune")
             {
                 var amount = (0.2f + weight * 1.6f + (e.Crit ? 0.35f : 0) + (e.Effect == "weak" ? 0.2f : 0)) * (e.Effect == "resisted" ? 0.5f : 1);
                 if (chain.Finisher) amount = 2;
-                Fx.Bleed(World, x - 40 * dir, y + Random.Range(-20f, 20f), dir, MonsterBlood, amount, GroundY, GroundOrder);
-                if ((MonsterBlood?.Kind ?? "liquid") == "liquid") Anim.After(0.06f, () => Sfx.Play("splat"));
+                Spill(x - 40 * dir, y + Random.Range(-20f, 20f), dir, amount);
+                if (paper != null) Anim.After(0.03f, () => Sfx.Play("crinkle"));
+                else if ((MonsterBlood?.Kind ?? "liquid") == "liquid") Anim.After(0.06f, () => Sfx.Play("splat"));
             }
             if (chain.Finisher) FinishingBlow(targetSide, x, y, dir, style, e, chain.Grand);
 

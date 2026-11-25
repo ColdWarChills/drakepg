@@ -1551,11 +1551,12 @@ namespace Drakepg
         static void Paint(FlashState st, long color)
         {
             var c = Design.Hex(color);
-            var m = FillMaterial;
-            foreach (var r in st.Rs)
+            for (int i = 0; i < st.Rs.Count; i++)
             {
+                var r = st.Rs[i];
                 if (r == null) continue;
-                Use(r, m);
+                // A paper monster keeps its tears and burn holes through the flash.
+                Use(r, Paper.FillFor(st.Mats[i]) ?? FillMaterial);
                 r.color = new Color(c.r, c.g, c.b, r.color.a);
             }
         }
