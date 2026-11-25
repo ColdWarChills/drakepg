@@ -91,7 +91,7 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
   - **Open: questions for the designer** (at most one or two at a time, with a picture):
     1. **Does the current art stay, with paper damage on top, or does a style trial come first?** This gates the night run. The paper proof's clip (2026-11-25, job 4 above) shows paper damage on today's Mossling art.
     - **Decided: paper damage for every monster** (the designer, 2026-11-25, after the proof clip, to "Turn paper damage on for every monster?": "Yes, every monster"). In steps:
-      - **Step 1 built 2026-11-25 (Unity, live branch):** on for every monster by default; the cheat switch stays as an off switch for testing; the hurt poses stay. All 31 monsters passed Claude's look at 3x after one fix (tall ones hung in the air before dropping; they now sink as they fold), and the clip of five monsters was sent to the designer (`art/tests/paper_clip/paper_every_monster.mp4` in the `claude/unity-port` worktree on the PC). Weaker than today: stone monsters and spirits lose their own deaths (the shatter, the fade) and take 0.3-0.6 s longer; the dark Thornheart is hard to make out as it folds. Record: `docs/IMPROVEMENTS_2026-10.md`, "Paper damage on every monster, step 1".
+      - **Step 1 built 2026-11-25 (Unity, live branch):** on for every monster by default; the cheat switch stays as an off switch for testing; the hurt poses stay. All 31 monsters passed Claude's look (full-size crops of each fold, 1.5 times game size) after one fix (tall ones hung in the air before dropping; they now sink as they fold), and the clip of five monsters was sent to the designer (`art/tests/paper_clip/paper_every_monster.mp4` in the `claude/unity-port` worktree on the PC). Weaker than today: stone monsters and spirits lose their own deaths (the shatter, the fade) and take 0.3-0.6 s longer; the dark Thornheart is hard to make out as it folds. Record: `docs/IMPROVEMENTS_2026-10.md`, "Paper damage on every monster, step 1".
       - **Later steps** (each after the designer's yes to the one before): the other elements (water soaks, ice frosts and snaps, energy rips), then a crumple for some deaths.
     2. Should loot drop as a folded paper packet as part of the paper proof?
     3. The last boss. The advisor's proposal: the old dragon at the bottom of the Depths. The Chapter 3 spec asks whether it wakes in Chapter 4 instead.
@@ -785,6 +785,7 @@ Market research on 25 indie 2D turn-based or loot-and-class RPGs released on Ste
 
 ## Smaller open items
 
+- A monster killed while winding up a big move keeps its red warning glow (`chargeAura` in `BattleScreen`) through its death; seen as soft red blobs around the Frostbinder and the Mimic in the paper checks (2026-11-25). Only the monster's next move clears it, so a death never does, paper or not. Small fix: clear it when the monster dies.
 - Economy review was skipped: the forge's gold costs and late-game gold flow weren't checked.
 - `docs/CHAPTER2_SPEC.md` "Later": player marketplace (needs a backend), Alchemy, mobile touch controls, itch.io release.
 - `docs/CHAPTER3_SPEC.md` "Open questions": does Hearthold get its own smith?
