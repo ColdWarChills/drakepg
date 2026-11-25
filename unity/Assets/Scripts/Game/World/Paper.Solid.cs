@@ -46,6 +46,11 @@ namespace Drakepg
         public static int CrumpleBig = 4, CrumpleRim = 6;
         public static Vector2 CrumpleTilt = new Vector2(12, 32);
         public static float CrumpleBack = 0.25f;
+        /// <summary>How far out a corner fold's plane sits, as a share of the lump's reach that way (min, max).</summary>
+        public static Vector2 CrumpleRimAt = new Vector2(0.45f, 0.7f);
+        /// <summary>The lump drawn this much bigger than the folds leave it (a crumpled sheet is a third of the picture,
+        /// too small for its facets to read at game size), and a dark line this many canvas px round its outline.</summary>
+        public static float CrumpleScale = 1.5f, CrumpleOutline = 2.5f;
 
         /// <summary>Testing: which passes draw (1 the paper, 2 its shadows), and a file the paper's texture is saved to once
         /// the solver reaches `DumpAt` seconds (then cleared).</summary>
@@ -165,9 +170,12 @@ namespace Drakepg
         float startWidthPx;
         SpriteRenderer shadowSr;
         float shadowAlpha, shadowHeight;
+        Renderer quadRenderer;
+        bool shadowLogged;
         int seed;
 
-        static readonly int ColorIdS = Shader.PropertyToID("_Color"), LightId = Shader.PropertyToID("_Light"), ShadeId = Shader.PropertyToID("_Shade");
+        static readonly int ColorIdS = Shader.PropertyToID("_Color"), LightId = Shader.PropertyToID("_Light"), ShadeId = Shader.PropertyToID("_Shade"),
+            OutlineId = Shader.PropertyToID("_Outline");
 
         /// <summary>
         /// The paper folds on the solver: every crease at once toward its target (seeded mountain or valley, so no two
@@ -673,7 +681,7 @@ namespace Drakepg
                     var ax = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
                     float ext = 0;
                     foreach (var q in bPos) ext = Mathf.Max(ext, Vector2.Dot((Vector2)q - (Vector2)cen, ax));
-                    var c2 = (Vector2)cen + ax * (U(0.45f, 0.7f) * ext);
+                    var c2 = (Vector2)cen + ax * (U(CrumpleRimAt.x, CrumpleRimAt.y) * ext);
                     var tilt = U(CrumpleTilt.x, CrumpleTilt.y) * Mathf.Deg2Rad * (srng.NextDouble() < 0.5 ? -1 : 1);
                     var n = new Vector3(ax.x * Mathf.Cos(tilt), ax.y * Mathf.Cos(tilt), Mathf.Sin(tilt));
                     FoldAcross(new Vector3(c2.x, c2.y, cen.z), n, 0.15f * s);
@@ -1097,6 +1105,7 @@ namespace Drakepg
             var back = Crumple ? Color.Lerp(Back[0], scan.Mean, 0.1f) : Color.Lerp(Back[0] * BackLight, scan.Mean, BackTint);
             back.a = 0.04f;
             solidMat.SetColor(BackId, back);
+            showMat.SetFloat(OutlineId, Crumple ? CrumpleOutline : 0);
             simTime = 0;
             landedOnce = false;
             startWidthPx = 0;
@@ -1217,7 +1226,7 @@ namespace Drakepg
             for (int i = 0; i < vCount; i++)
             {
                 var r = crumplePos[i] - cen;
-                pos[i] = prev[i] = mid + side3 * (bestFace * Vector3.Dot(r, e1)) + up3 * Vector3.Dot(r, e2) + Vector3.forward * (bestFace * Vector3.Dot(r, e3));
+                pos[i] = prev[i] = mid + CrumpleScale * (side3 * (bestFace * Vector3.Dot(r, e1)) + up3 * Vector3.Dot(r, e2) + Vector3.forward * (bestFace * Vector3.Dot(r, e3)));
             }
             // On the ground: its lowest inked point there.
             float low = float.MaxValue;
@@ -1548,7 +1557,13 @@ namespace Drakepg
             else
                 Render(Passes);
             quad.transform.localPosition = new Vector3((c.x - origin.x) / canvasPpu, (c.y - origin.y) / canvasPpu, 0);
+            if (quadRenderer == null) quadRenderer = quad.GetComponent<Renderer>();
             // The shadow on the ground follows the paper along it, narrows with it and pales as it rises.
+            if (Trace && Crumple && shadow == null && !shadowLogged)
+            {
+                shadowLogged = true;
+                Debug.Log("[Paper] shadow probe: no shadow found");
+            }
             if (shadow != null)
             {
                 var (mid, width, _) = PacketSolid();
@@ -1567,6 +1582,19 @@ namespace Drakepg
                     var col = shadowSr.color;
                     col.a = (Crumple ? Mathf.Max(shadowAlpha, 0.7f) : shadowAlpha) * (1 - 0.6f * rise);
                     shadowSr.color = col;
+                    // The figure's shadow sits under the stage's ground art; the lump's is drawn just under the paper.
+                    if (Crumple && quadRenderer != null)
+                    {
+                        shadowSr.sortingLayerID = quadRenderer.sortingLayerID;
+                        shadowSr.sortingOrder = quadRenderer.sortingOrder - 1;
+                    }
+                }
+                if (Trace && Crumple && simTime >= 0.5f && !shadowLogged)
+                {
+                    shadowLogged = true;
+                    Debug.Log($"[Paper] shadow probe: sr {(shadowSr != null)}, enabled {(shadowSr != null && shadowSr.enabled)}, active {shadow.gameObject.activeInHierarchy}, " +
+                        $"colour {(shadowSr != null ? shadowSr.color.ToString() : "-")}, layer {(shadowSr != null ? shadowSr.sortingLayerName : "-")} order {(shadowSr != null ? shadowSr.sortingOrder : 0)}, " +
+                        $"paper order {quad.GetComponent<Renderer>().sortingOrder}, pos {shadow.position}, scale {shadow.lossyScale}, quad pos {quad.transform.position}, width {width:0} start {startWidthPx:0}");
                 }
             }
         }
