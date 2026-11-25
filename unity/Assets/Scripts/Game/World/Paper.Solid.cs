@@ -951,29 +951,6 @@ namespace Drakepg
             foreach (var h in hp)
                 if (ctrl.Count == 0 || (h - ctrl[ctrl.Count - 1]).magnitude > 0.45f * R) ctrl.Add(h);
             var hullN = ctrl.Count;
-            var ringR = new float[hullN];
-            for (int i = 0; i < hullN; i++) ringR[i] = (ctrl[i] - cen).magnitude / R;
-            float ringK = 1;
-            // The thinned ring pushed out just enough to hold the whole sheet: every point then takes its height from
-            // inside one facet, the same plane for every layer there, so the layers stay parallel and none pokes
-            // through the one above it.
-            if (hullN >= 3)
-            {
-                float k = 1;
-                for (int i = 0; i < hullN; i++)
-                {
-                    Vector2 a = ctrl[i], b = ctrl[(i + 1) % hullN];
-                    var e = b - a;
-                    var nOut = new Vector2(e.y, -e.x).normalized;
-                    var h0 = Vector2.Dot(nOut, a - cen);
-                    if (h0 <= 1e-4f) continue;
-                    foreach (var p in hp) k = Mathf.Max(k, Vector2.Dot(nOut, p - cen) / h0);
-                }
-                k = Mathf.Min(k * 1.01f, 3);
-                ringK = k;
-                // (Its heights stay those of where it was: only the reach grows.)
-                for (int i = 0; i < hullN; i++) ctrl[i] = cen + (ctrl[i] - cen) * k;
-            }
             var minD = R * Mathf.Sqrt(Mathf.PI / Mathf.Max(1, CrumpleInner)) * 0.4f;
             for (int tries = 0, got = 0; got < CrumpleInner && tries < 4000; tries++)
             {
@@ -990,8 +967,40 @@ namespace Drakepg
             var hz = new float[ctrl.Count];
             for (int i = 0; i < ctrl.Count; i++)
             {
-                var rr = i < hullN ? ringR[i] : (ctrl[i] - cen).magnitude / R;
+                var rr = (ctrl[i] - cen).magnitude / R;
                 hz[i] = CrumpleDome * R * (1 - rr * rr) + U(-CrumpleRelief, CrumpleRelief) * R;
+            }
+            // A flat skirt round the net, at its rim's heights, out far enough to hold the whole sheet: the paper
+            // beyond the rim points takes its height from inside a facet too (the same plane for every layer there),
+            // so no layer pokes through the one above it, and the net inside stays as it was.
+            var facets = net.Count / 3;
+            float skirtK = 1;
+            {
+                var outer = HullIdx(ctrl);
+                var n0 = ctrl.Count;
+                for (int j = 0; j < outer.Count; j++)
+                {
+                    Vector2 a = ctrl[outer[j]], b = ctrl[outer[(j + 1) % outer.Count]];
+                    var e = b - a;
+                    var nOut = new Vector2(e.y, -e.x).normalized;
+                    var h0 = Vector2.Dot(nOut, a - cen);
+                    if (h0 <= 1e-4f) continue;
+                    foreach (var p in hp) skirtK = Mathf.Max(skirtK, Vector2.Dot(nOut, p - cen) / h0);
+                }
+                skirtK = Mathf.Min(skirtK * 1.02f, 4);
+                var hzl = new List<float>(hz);
+                for (int j = 0; j < outer.Count; j++)
+                {
+                    ctrl.Add(cen + (ctrl[outer[j]] - cen) * skirtK);
+                    hzl.Add(hz[outer[j]]);
+                }
+                for (int j = 0; j < outer.Count; j++)
+                {
+                    int a = outer[j], b = outer[(j + 1) % outer.Count], sa = n0 + j, sb = n0 + (j + 1) % outer.Count;
+                    net.Add(a); net.Add(b); net.Add(sb);
+                    net.Add(a); net.Add(sb); net.Add(sa);
+                }
+                hz = hzl.ToArray();
             }
             var netEdges = new HashSet<long>();
             for (int t = 0; t < net.Count; t += 3)
@@ -1045,7 +1054,7 @@ namespace Drakepg
                 p = new Vector3(Mathf.Cos(yw) * p.x + Mathf.Sin(yw) * p.z, p.y, -Mathf.Sin(yw) * p.x + Mathf.Cos(yw) * p.z);
                 crumplePos[i] = p;
             }
-            crumpleNote = $"{tucks} tucks, {pleats} pleats, {flaps} flaps, {levels.Count} depths, {ctrl.Count} relief points ({hullN} on the outline, pushed out x{ringK:0.00}), {net.Count / 3} facets";
+            crumpleNote = $"{tucks} tucks, {pleats} pleats, {flaps} flaps, {levels.Count} depths, {ctrl.Count} relief points ({hullN} on the outline, skirt to x{skirtK:0.00}), {facets} facets";
         }
 
         Vector2 Mean2()
@@ -1092,6 +1101,28 @@ namespace Drakepg
                 {
                     var p = pts[pass == 0 ? i : pts.Count - 1 - i];
                     while (h.Count >= start + 2 && Cross(h[h.Count - 2], h[h.Count - 1], p) <= 0) h.RemoveAt(h.Count - 1);
+                    h.Add(p);
+                }
+                h.RemoveAt(h.Count - 1);
+            }
+            return h;
+        }
+
+        /// <summary>The convex hull of the points as their indices, anticlockwise.</summary>
+        static List<int> HullIdx(List<Vector2> pts)
+        {
+            var idx = new List<int>(pts.Count);
+            for (int i = 0; i < pts.Count; i++) idx.Add(i);
+            idx.Sort((a, b) => pts[a].x != pts[b].x ? pts[a].x.CompareTo(pts[b].x) : pts[a].y.CompareTo(pts[b].y));
+            var h = new List<int>();
+            float Cross(Vector2 o, Vector2 a, Vector2 b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+            for (int pass = 0; pass < 2; pass++)
+            {
+                var start = h.Count;
+                for (int i = 0; i < idx.Count; i++)
+                {
+                    var p = idx[pass == 0 ? i : idx.Count - 1 - i];
+                    while (h.Count >= start + 2 && Cross(pts[h[h.Count - 2]], pts[h[h.Count - 1]], pts[p]) <= 0) h.RemoveAt(h.Count - 1);
                     h.Add(p);
                 }
                 h.RemoveAt(h.Count - 1);
