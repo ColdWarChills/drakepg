@@ -173,6 +173,7 @@ namespace Drakepg.EditorTools
                 else
                 {
                     // Any blow can miss (an evasive monster, the hit cap): again until it lands, the recording redone.
+                    var noteBefore = Paper.LastSolid;
                     for (int tries = 0; tries < 6; tries++)
                     {
                         if (tries > 0) Paper.NextSeed = fightSeed;
@@ -191,7 +192,10 @@ namespace Drakepg.EditorTools
                         Debug.LogWarning($"drakepg paper check: {name} missed, again");
                         yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) || MenuReady());
                     }
-                    Debug.Log($"drakepg paper check: {name} recorded ({frames} frames){(solid ? ", " + Paper.LastSolid : "")}");
+                    // This death's own note: a long one may still be moving when the recording ends.
+                    var waitFrom = Time.realtimeSinceStartup;
+                    if (solid) yield return new WaitUntil(() => !ReferenceEquals(Paper.LastSolid, noteBefore) || Time.realtimeSinceStartup - waitFrom > 8);
+                    Debug.Log($"drakepg paper check: {name} recorded ({frames} frames){(solid ? ", " + (ReferenceEquals(Paper.LastSolid, noteBefore) ? "NO NOTE of its own after 8 s" : Paper.LastSolid) : "")}");
                 }
                 // On to the result screen and away from the battle.
                 yield return new WaitForSeconds(1f);
