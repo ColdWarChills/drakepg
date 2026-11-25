@@ -61,10 +61,10 @@ namespace Drakepg
         public static int CrumpleTucks = 4, CrumplePleats = 2, CrumpleFlaps = 2, CrumpleInner = 8, CrumpleTries = 5;
         /// <summary>Try 2: where tucks and flaps fold (share of its reach that way), the paper back share wanted (a death
         /// re-rolls up to `CrumpleTries` times to land in it).</summary>
-        public static Vector2 CrumpleTuckAt = new Vector2(0.3f, 0.5f), CrumpleFlapAt = new Vector2(0.4f, 0.6f), CrumpleBackRange = new Vector2(0.15f, 0.35f);
+        public static Vector2 CrumpleTuckAt = new Vector2(0.3f, 0.5f), CrumpleFlapAt = new Vector2(0.4f, 0.6f), CrumpleBackRange = new Vector2(0.25f, 0.4f);
         /// <summary>Try 2: the relief's dome and random lift (shares of its reach), the rim pulled in, the outline smoothed
         /// (closing radius, share of the picture's height: a furry outline would leave specks), lines along cut edges.</summary>
-        public static float CrumpleDome = 0.55f, CrumpleRelief = 0.14f, CrumpleShrink = 0.22f, CrumpleClose = 0.05f, CrumpleEdgeInk = 1;
+        public static float CrumpleDome = 0.55f, CrumpleRelief = 0.14f, CrumpleShrink = 0.22f, CrumpleClose = 0.05f, CrumpleEdgeInk = 1, CrumpleStep = 0.1f;
 
         /// <summary>Testing: which passes draw (1 the paper, 2 its shadows), and a file the paper's texture is saved to once
         /// the solver reaches `DumpAt` seconds (then cleared).</summary>
@@ -252,7 +252,7 @@ namespace Drakepg
             if (worstMs > SlowestMs) SlowestMs = worstMs;
             LastSolid = $"seed {seed}, {vCount} points, {tCount} triangles, {lines.Count} creases ({CountFight()} from the fight), "
                 + $"{simTime:0.00} s to lie still, build {buildMs:0.0} ms, worst frame {worstMs:0.00} ms over {frames} frames";
-            if (Crumple) LastSolid += $", crumple {CrumpleKind}: {crumpleNote}";
+            if (Crumple) LastSolid += $", crumple {CrumpleKind}: {crumpleNote}, outline closing {closeMs:0} ms, crumple shape {crumpleMs:0} ms";
             Debug.Log($"drakepg: paper fold (solver), {LastSolid}, face at the {faceNote}");
         }
 
@@ -287,7 +287,13 @@ namespace Drakepg
             };
             solidCanvas.Create();
             Graphics.Blit(body.sprite.texture, solidCanvas, mat, 2);
-            if (Crumple && CrumpleKind == 2 && CrumpleClose > 0) CloseCanvas();
+            closeMs = crumpleMs = 0;
+            if (Crumple && CrumpleKind == 2 && CrumpleClose > 0)
+            {
+                var cw = System.Diagnostics.Stopwatch.StartNew();
+                CloseCanvas();
+                closeMs = (float)cw.Elapsed.TotalMilliseconds;
+            }
             // `sheet` is what the scan reads.
             sheet = solidCanvas;
             tint = new Color(body.color.r, body.color.g, body.color.b, 1);
@@ -602,7 +608,12 @@ namespace Drakepg
             }
             for (int k = 0; k < lines.Count; k++) Cut(k, s);
             if (Crumple && CrumpleKind == 1) CrumpleFolds(srng, s);
-            if (Crumple && CrumpleKind == 2) CrumpleFlatTries(srng, s);
+            if (Crumple && CrumpleKind == 2)
+            {
+                var cw = System.Diagnostics.Stopwatch.StartNew();
+                CrumpleFlatTries(srng, s);
+                crumpleMs = (float)cw.Elapsed.TotalMilliseconds;
+            }
             flat = bFlat.ToArray();
             tri = bTri.ToArray();
             vCount = flat.Length;
@@ -786,6 +797,7 @@ namespace Drakepg
         // --- Crumple, try 2: folded flat, then a coarse relief ---
 
         string crumpleNote = "";
+        float closeMs, crumpleMs;
 
         /// <summary>
         /// Up to `CrumpleTries` crumples of the same grid (each from the seed's next number); the first whose paper back
@@ -906,7 +918,7 @@ namespace Drakepg
             for (int i = 0; i < bPos.Count; i++)
             {
                 var p = bPos[i];
-                bPos[i] = new Vector3(p.x, p.y, (rank[Mathf.Round(p.z * 1e4f) / 1e4f] - zero) * 0.1f);
+                bPos[i] = new Vector3(p.x, p.y, (rank[Mathf.Round(p.z * 1e4f) / 1e4f] - zero) * CrumpleStep);
             }
             // 4. The rim pulled in while still flat (monotonic in the distance, so nothing crosses; before the relief,
             // so stacked layers stay parallel).
@@ -939,6 +951,29 @@ namespace Drakepg
             foreach (var h in hp)
                 if (ctrl.Count == 0 || (h - ctrl[ctrl.Count - 1]).magnitude > 0.45f * R) ctrl.Add(h);
             var hullN = ctrl.Count;
+            var ringR = new float[hullN];
+            for (int i = 0; i < hullN; i++) ringR[i] = (ctrl[i] - cen).magnitude / R;
+            float ringK = 1;
+            // The thinned ring pushed out just enough to hold the whole sheet: every point then takes its height from
+            // inside one facet, the same plane for every layer there, so the layers stay parallel and none pokes
+            // through the one above it.
+            if (hullN >= 3)
+            {
+                float k = 1;
+                for (int i = 0; i < hullN; i++)
+                {
+                    Vector2 a = ctrl[i], b = ctrl[(i + 1) % hullN];
+                    var e = b - a;
+                    var nOut = new Vector2(e.y, -e.x).normalized;
+                    var h0 = Vector2.Dot(nOut, a - cen);
+                    if (h0 <= 1e-4f) continue;
+                    foreach (var p in hp) k = Mathf.Max(k, Vector2.Dot(nOut, p - cen) / h0);
+                }
+                k = Mathf.Min(k * 1.01f, 3);
+                ringK = k;
+                // (Its heights stay those of where it was: only the reach grows.)
+                for (int i = 0; i < hullN; i++) ctrl[i] = cen + (ctrl[i] - cen) * k;
+            }
             var minD = R * Mathf.Sqrt(Mathf.PI / Mathf.Max(1, CrumpleInner)) * 0.4f;
             for (int tries = 0, got = 0; got < CrumpleInner && tries < 4000; tries++)
             {
@@ -955,7 +990,7 @@ namespace Drakepg
             var hz = new float[ctrl.Count];
             for (int i = 0; i < ctrl.Count; i++)
             {
-                var rr = (ctrl[i] - cen).magnitude / R;
+                var rr = i < hullN ? ringR[i] : (ctrl[i] - cen).magnitude / R;
                 hz[i] = CrumpleDome * R * (1 - rr * rr) + U(-CrumpleRelief, CrumpleRelief) * R;
             }
             var netEdges = new HashSet<long>();
@@ -971,7 +1006,8 @@ namespace Drakepg
                 var u = p1 - p0;
                 if (u.sqrMagnitude < 1e-6f) continue;
                 var nn = new Vector2(-u.y, u.x).normalized;
-                SplitLine(p0, nn, 0.05f * s, null, true, p0, p1, out _);
+                // A tiny snap only: a point left just off a crease would bend its triangle across it, out of plane.
+                SplitLine(p0, nn, 0.002f * s, null, true, p0, p1, out _);
             }
             for (int i = 0; i < bPos.Count; i++)
             {
@@ -1009,7 +1045,7 @@ namespace Drakepg
                 p = new Vector3(Mathf.Cos(yw) * p.x + Mathf.Sin(yw) * p.z, p.y, -Mathf.Sin(yw) * p.x + Mathf.Cos(yw) * p.z);
                 crumplePos[i] = p;
             }
-            crumpleNote = $"{tucks} tucks, {pleats} pleats, {flaps} flaps, {levels.Count} depths, {ctrl.Count} relief points ({hullN} on the outline), {net.Count / 3} facets";
+            crumpleNote = $"{tucks} tucks, {pleats} pleats, {flaps} flaps, {levels.Count} depths, {ctrl.Count} relief points ({hullN} on the outline, pushed out x{ringK:0.00}), {net.Count / 3} facets";
         }
 
         Vector2 Mean2()
