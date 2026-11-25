@@ -34,6 +34,8 @@ The designer, 2026-11-25, after the two Dragon Crashers clips ("oh, this looks g
 
 Claude gave hero 4's last clip and the knight the same verdict: a wind-up taller and stiffer than today's crouch and twist. Hero 4 was not shown, because nothing that loses to the game is shown. The knight was shown only because the browser chat's handoff required it, and the designer said "looks good". Perhaps the bar Claude held the tries to (beat today's drawn pose at its strongest moment) was stricter than the designer's. Perhaps the designer liked something hero 4 lacked (a smooth whole body, clothes that swap). We don't know which, so it stays open. Until then, show close calls with a plain line on what is weaker, and let the designer decide.
 
+The other side of the bar (2026-11-25): our hero repainted on the knight's skeleton was checked for slides, seams, snaps and the sword hand, and passed them all, but nobody judged whether he looked good. The designer: "uhhh, well it looks pretty.. unappealing, like the character itself". Up close beside `char_hero_bare`, the flat code fills had lost what makes today's hero appealing: ink lines, shading, folds, real hands, his face. So technical checks are not the bar either. Before showing a hero, put one still of him beside today's hero at the same height, at 3x, and ask first whether he looks as good.
+
 ## Rules for next time (Claude's proposal; the designer has not agreed to them yet)
 
 1. **Start from a body made for animation** (the mannequin), never from a finished picture. Our art is drawn onto the mannequin's parts, outlines and pivots (test 2 proved this works), never cut from a painting.
@@ -44,7 +46,7 @@ Claude gave hero 4's last clip and the knight the same verdict: a wind-up taller
 
 ## Still unproven
 
-- Our whole hero redrawn on the mannequin in our flat style. Done on 2026-11-25 as a repaint of the knight's own drawings (flat fills inside its outlines; `docs/IMPROVEMENTS_2026-10.md`, "Our hero on the knight's skeleton"). Still open: a hero drawn fresh on the mannequin's parts, and whether the designer likes the repaint.
+- Our whole hero redrawn on the mannequin in our flat style. Done on 2026-11-25 as a repaint of the knight's own drawings (flat fills inside its outlines; `docs/IMPROVEMENTS_2026-10.md`, "Our hero on the knight's skeleton"). The designer found that repaint unappealing (failed try 1 of 2 for the look). Try 2 paints the parts in today's hero's drawn style (`docs/PLANS.md`). Still open: a hero drawn fresh on the mannequin's parts, at our hero's own height and head size.
 - Timing in our fight: the slide is gone (2026-11-25: the run clip at its stride speed, then the attack in place), but the whole move takes about 2.9 s against today's 0.8 s, and the knight's wind-up is still its tall, still hold.
 - The licence against our public repo (the sample's files stay on the PC; `docs/PLANS.md`).
 - The woman hero, other armors and other moves.
