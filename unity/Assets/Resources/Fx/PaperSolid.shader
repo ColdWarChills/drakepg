@@ -16,6 +16,7 @@ Shader "Drakepg/PaperSolid"
         _Tone ("Tone: x dark, y light, z steps, w line px", Vector) = (0.55,1.12,3,1.1)
         _Shade ("Shadow strength (x), blur mip (y), front faces flip (z)", Vector) = (0.38,2.5,-1,0)
         _Outline ("A dark line round the outline in pass 0, texels (0 none)", Float) = 0
+        _EdgeInk ("A line along every cut edge of the paper in pass 1, times the fold line's width (0 none)", Float) = 0
     }
 
     CGINCLUDE
@@ -23,7 +24,7 @@ Shader "Drakepg/PaperSolid"
 
     sampler2D _MainTex;
     float4 _Color, _Back, _Ink, _Light, _Tone, _Shade, _MainTex_TexelSize;
-    float _Outline;
+    float _Outline, _EdgeInk;
 
     struct appdata
     {
@@ -149,6 +150,14 @@ Shader "Drakepg/PaperSolid"
                 float3 w = fwidth(i.bary);
                 float3 near = 1 - smoothstep(_Tone.w * 0.5, _Tone.w * 0.5 + 1, i.bary / max(w, 1e-5));
                 float ink = saturate(max(max(near.x * i.lines.x, near.y * i.lines.y), near.z * i.lines.z));
+                if (_EdgeInk > 0)
+                {
+                    // The paper's own cut edge (its alpha's half line), a line just inside it: where one layer's edge
+                    // lies over another, the layers read apart.
+                    float edgePx = (pic.a - 0.5) / max(fwidth(pic.a), 1e-4);
+                    float lw = _Tone.w * 0.5 * _EdgeInk;
+                    ink = max(ink, 1 - smoothstep(lw, lw + 1, edgePx));
+                }
                 rgb = lerp(rgb, _Ink.rgb, ink * _Ink.a);
                 // Alpha to coverage: sharpen so the edge spans about a pixel.
                 float a = pic.a;

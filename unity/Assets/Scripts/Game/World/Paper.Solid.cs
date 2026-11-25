@@ -52,6 +52,20 @@ namespace Drakepg
         /// too small for its facets to read at game size), and a dark line this many canvas px round its outline.</summary>
         public static float CrumpleScale = 1.5f, CrumpleOutline = 2.5f;
 
+        /// <summary>Which crumple (testing): 1 the folds across planes above (try 1), 2 the sheet folded flat, then given a
+        /// coarse relief (try 2, <see cref="CrumpleFlat"/>): it can't pass through itself, and its facets are counted.</summary>
+        public static int CrumpleKind = 2;
+        /// <summary>Try 2: corners tucked behind (along its longest spread), tapered pleats (the picture breaks into pieces
+        /// turned against each other), flaps turned over onto the front (the back shows there), and how many relief
+        /// points inside (the facets are the triangles between them and the outline's).</summary>
+        public static int CrumpleTucks = 4, CrumplePleats = 2, CrumpleFlaps = 2, CrumpleInner = 8, CrumpleTries = 5;
+        /// <summary>Try 2: where tucks and flaps fold (share of its reach that way), the paper back share wanted (a death
+        /// re-rolls up to `CrumpleTries` times to land in it).</summary>
+        public static Vector2 CrumpleTuckAt = new Vector2(0.3f, 0.5f), CrumpleFlapAt = new Vector2(0.4f, 0.6f), CrumpleBackRange = new Vector2(0.15f, 0.35f);
+        /// <summary>Try 2: the relief's dome and random lift (shares of its reach), the rim pulled in, the outline smoothed
+        /// (closing radius, share of the picture's height: a furry outline would leave specks), lines along cut edges.</summary>
+        public static float CrumpleDome = 0.55f, CrumpleRelief = 0.14f, CrumpleShrink = 0.22f, CrumpleClose = 0.05f, CrumpleEdgeInk = 1;
+
         /// <summary>Testing: which passes draw (1 the paper, 2 its shadows), and a file the paper's texture is saved to once
         /// the solver reaches `DumpAt` seconds (then cleared).</summary>
         public static int Passes = 3;
@@ -67,6 +81,9 @@ namespace Drakepg
         public static bool NoCross = true;
         int[] pickSat;
         public static string DumpRt;
+        /// <summary>Testing: the paper's back in this colour (a loud one, to count it in the saved texture).</summary>
+        public static Color? BackTest;
+        bool dumpedRt;
         public static float DumpAt;
 
         /// <summary>The last solid fold, for the paper check's log: seed, mesh size, creases, time, CPU cost.</summary>
@@ -175,7 +192,7 @@ namespace Drakepg
         int seed;
 
         static readonly int ColorIdS = Shader.PropertyToID("_Color"), LightId = Shader.PropertyToID("_Light"), ShadeId = Shader.PropertyToID("_Shade"),
-            OutlineId = Shader.PropertyToID("_Outline");
+            OutlineId = Shader.PropertyToID("_Outline"), EdgeInkId = Shader.PropertyToID("_EdgeInk");
 
         /// <summary>
         /// The paper folds on the solver: every crease at once toward its target (seeded mountain or valley, so no two
@@ -235,6 +252,7 @@ namespace Drakepg
             if (worstMs > SlowestMs) SlowestMs = worstMs;
             LastSolid = $"seed {seed}, {vCount} points, {tCount} triangles, {lines.Count} creases ({CountFight()} from the fight), "
                 + $"{simTime:0.00} s to lie still, build {buildMs:0.0} ms, worst frame {worstMs:0.00} ms over {frames} frames";
+            if (Crumple) LastSolid += $", crumple {CrumpleKind}: {crumpleNote}";
             Debug.Log($"drakepg: paper fold (solver), {LastSolid}, face at the {faceNote}");
         }
 
@@ -269,6 +287,7 @@ namespace Drakepg
             };
             solidCanvas.Create();
             Graphics.Blit(body.sprite.texture, solidCanvas, mat, 2);
+            if (Crumple && CrumpleKind == 2 && CrumpleClose > 0) CloseCanvas();
             // `sheet` is what the scan reads.
             sheet = solidCanvas;
             tint = new Color(body.color.r, body.color.g, body.color.b, 1);
@@ -582,7 +601,8 @@ namespace Drakepg
                 }
             }
             for (int k = 0; k < lines.Count; k++) Cut(k, s);
-            if (Crumple) CrumpleFolds(srng, s);
+            if (Crumple && CrumpleKind == 1) CrumpleFolds(srng, s);
+            if (Crumple && CrumpleKind == 2) CrumpleFlatTries(srng, s);
             flat = bFlat.ToArray();
             tri = bTri.ToArray();
             vCount = flat.Length;
@@ -761,6 +781,554 @@ namespace Drakepg
             // The far side mirrored through the plane (it lands on the near side, over or under the paper there).
             for (int i = 0; i < bPos.Count; i++)
                 if (d[i] > 0) bPos[i] -= 2 * d[i] * n;
+        }
+
+        // --- Crumple, try 2: folded flat, then a coarse relief ---
+
+        string crumpleNote = "";
+
+        /// <summary>
+        /// Up to `CrumpleTries` crumples of the same grid (each from the seed's next number); the first whose paper back
+        /// share lands in `CrumpleBackRange` is kept, else the nearest.
+        /// </summary>
+        void CrumpleFlatTries(System.Random srng, float s)
+        {
+            var f0 = new List<Vector2>(bFlat);
+            var t0 = new List<int>(bTri);
+            var m0 = new List<int>(bMask);
+            float bestScore = float.MaxValue, bestShare = 0;
+            int bestTry = 0;
+            List<Vector2> bf = null;
+            List<int> bt = null, bm = null;
+            Vector3[] bp = null;
+            string bestNote = "";
+            for (int a = 0; a < Mathf.Max(1, CrumpleTries); a++)
+            {
+                bFlat = new List<Vector2>(f0);
+                bTri = new List<int>(t0);
+                bMask = new List<int>(m0);
+                CrumpleFlat(new System.Random(srng.Next()), s);
+                flat = bFlat.ToArray();
+                tri = bTri.ToArray();
+                vCount = flat.Length;
+                tCount = tri.Length / 3;
+                // Seen as drawn: the look down (`Tilt`) shows more of its top.
+                var view = new Vector3[vCount];
+                for (int i = 0; i < vCount; i++) view[i] = new Vector3(crumplePos[i].x, crumplePos[i].y - Tilt * crumplePos[i].z, crumplePos[i].z);
+                var share = BackShare(view);
+                var score = share < CrumpleBackRange.x ? CrumpleBackRange.x - share : share > CrumpleBackRange.y ? share - CrumpleBackRange.y : 0;
+                if (Trace) Debug.Log($"[Paper] crumple try {a}: back {share:P0}, {crumpleNote}");
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestShare = share;
+                    bestTry = a;
+                    bf = bFlat;
+                    bt = bTri;
+                    bm = bMask;
+                    bp = crumplePos;
+                    bestNote = crumpleNote;
+                }
+                if (score <= 0) break;
+            }
+            bFlat = bf;
+            bTri = bt;
+            bMask = bm;
+            crumplePos = bp;
+            crumpleNote = $"try {bestTry}, back {bestShare:P0}, {bestNote}";
+        }
+
+        /// <summary>
+        /// The sheet folded FLAT first, every fold a half turn about its hinge with the turned layers stacked in order
+        /// above (or below) everything: corners tucked behind (straight fold edges in the outline), tapered pleats (the
+        /// part beyond comes back over, turned, so the picture breaks into pieces that run different ways), flaps turned
+        /// over onto the front (its back shows there). Then the rim pulled in, and a coarse crease network (Delaunay over
+        /// the outline's points and `CrumpleInner` inside) lifted as a dome with random heights: one height field added
+        /// to every layer, so nothing passes through anything. `crumplePos`: the lump about its middle, posed.
+        /// </summary>
+        void CrumpleFlat(System.Random srng, float s)
+        {
+            bPos = new List<Vector3>(bFlat.Count * 4);
+            foreach (var f in bFlat) bPos.Add(new Vector3(f.x, f.y, 0));
+            float U(float a, float b) => a + (b - a) * (float)srng.NextDouble();
+            Vector2 Dir(float a) => new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+            var eps = 0.15f * s;
+            int tucks = 0, pleats = 0, flaps = 0;
+            // 1. Corners tucked behind, along its longest spread (either end, a little off), so tall or wide sheets ball up.
+            for (int k = 0; k < CrumpleTucks; k++)
+            {
+                var c = Mean2();
+                var a0 = MainAngle2(c) + (srng.NextDouble() < 0.5 ? Mathf.PI : 0);
+                var n = Dir(a0 + U(-35, 35) * Mathf.Deg2Rad);
+                FlatFold(c + n * (U(CrumpleTuckAt.x, CrumpleTuckAt.y) * Reach(c, n)), n, eps, false, null);
+                tucks++;
+            }
+            // 2. Tapered pleats: folded over, then the part beyond folded back (turned twice the taper about where the
+            // two creases meet, off the sheet); the strip between hides under it.
+            for (int k = 0; k < CrumplePleats; k++)
+            {
+                var c = Mean2();
+                var a = U(0, 2 * Mathf.PI);
+                var n = Dir(a);
+                var r = Reach(c, n);
+                var c1 = c + n * (U(-0.1f, 0.25f) * r);
+                var along = new Vector2(-n.y, n.x);
+                var alpha = U(8, 18) * Mathf.Deg2Rad;
+                var wid = U(0.08f, 0.16f) * r;
+                var q = c1 + along * ((srng.NextDouble() < 0.5 ? -1 : 1) * wid / Mathf.Tan(alpha));
+                var sgn = Vector2.Dot(c1 - q, along) > 0 ? 1 : -1;
+                var n2 = Dir(a + sgn * alpha);
+                if (Vector2.Dot(c1 - q, n2) > 0) n2 = Dir(a - sgn * alpha);
+                var moved = FlatFold(c1, n, eps, true, null);
+                var n2m = n2 - 2 * Vector2.Dot(n2, n) * n;
+                FlatFold(q, n2m, eps, true, moved);
+                pleats++;
+            }
+            // 3. Flaps turned over onto the front.
+            for (int k = 0; k < CrumpleFlaps; k++)
+            {
+                var c = Mean2();
+                var n = Dir(U(0, 2 * Mathf.PI));
+                FlatFold(c + n * (U(CrumpleFlapAt.x, CrumpleFlapAt.y) * Reach(c, n)), n, eps, true, null);
+                flaps++;
+            }
+            // The stack's depth doubles with each fold (as a stack does); only the layers' order is kept: each distinct
+            // depth becomes the next small step (one increasing map for every point, so the order holds).
+            var levels = new SortedSet<float>();
+            foreach (var p in bPos) levels.Add(Mathf.Round(p.z * 1e4f) / 1e4f);
+            var rank = new Dictionary<float, int>();
+            int ri = 0, zero = 0;
+            foreach (var z in levels)
+            {
+                if (z <= 0) zero = ri;
+                rank[z] = ri++;
+            }
+            for (int i = 0; i < bPos.Count; i++)
+            {
+                var p = bPos[i];
+                bPos[i] = new Vector3(p.x, p.y, (rank[Mathf.Round(p.z * 1e4f) / 1e4f] - zero) * 0.1f);
+            }
+            // 4. The rim pulled in while still flat (monotonic in the distance, so nothing crosses; before the relief,
+            // so stacked layers stay parallel).
+            {
+                var hull = Hull2();
+                var c0 = Vector2.zero;
+                foreach (var h in hull) c0 += h;
+                c0 /= Mathf.Max(1, hull.Count);
+                float r0 = 1e-3f;
+                foreach (var p in bPos) r0 = Mathf.Max(r0, ((Vector2)p - c0).magnitude);
+                for (int i = 0; i < bPos.Count; i++)
+                {
+                    var p = bPos[i];
+                    var d = (Vector2)p - c0;
+                    var rr = d.magnitude / r0;
+                    var q = c0 + d * (1 - CrumpleShrink * rr * rr);
+                    bPos[i] = new Vector3(q.x, q.y, p.z);
+                }
+            }
+            // 5. The relief: control points on the outline (about one per 0.45 of its reach) and inside (darts, kept
+            // apart), a Delaunay net over them, a height for each (a dome plus a random lift), the sheet cut along every
+            // net edge (crisp creases) and lifted by the net's height field.
+            var hp = Hull2();
+            var cen = Vector2.zero;
+            foreach (var h in hp) cen += h;
+            cen /= Mathf.Max(1, hp.Count);
+            float R = 1e-3f;
+            foreach (var p in bPos) R = Mathf.Max(R, ((Vector2)p - cen).magnitude);
+            var ctrl = new List<Vector2>();
+            foreach (var h in hp)
+                if (ctrl.Count == 0 || (h - ctrl[ctrl.Count - 1]).magnitude > 0.45f * R) ctrl.Add(h);
+            var hullN = ctrl.Count;
+            var minD = R * Mathf.Sqrt(Mathf.PI / Mathf.Max(1, CrumpleInner)) * 0.4f;
+            for (int tries = 0, got = 0; got < CrumpleInner && tries < 4000; tries++)
+            {
+                var p = cen + new Vector2(U(-R, R), U(-R, R));
+                if (!InConvex(hp, p)) continue;
+                var ok = true;
+                foreach (var q in ctrl)
+                    if ((p - q).sqrMagnitude < minD * minD) { ok = false; break; }
+                if (!ok) continue;
+                ctrl.Add(p);
+                got++;
+            }
+            var net = Delaunay(ctrl);
+            var hz = new float[ctrl.Count];
+            for (int i = 0; i < ctrl.Count; i++)
+            {
+                var rr = (ctrl[i] - cen).magnitude / R;
+                hz[i] = CrumpleDome * R * (1 - rr * rr) + U(-CrumpleRelief, CrumpleRelief) * R;
+            }
+            var netEdges = new HashSet<long>();
+            for (int t = 0; t < net.Count; t += 3)
+                for (int j = 0; j < 3; j++)
+                {
+                    int a = net[t + j], b = net[t + (j + 1) % 3];
+                    netEdges.Add(Math.Min(a, b) * 100000L + Math.Max(a, b));
+                }
+            foreach (var e in netEdges)
+            {
+                Vector2 p0 = ctrl[(int)(e / 100000L)], p1 = ctrl[(int)(e % 100000L)];
+                var u = p1 - p0;
+                if (u.sqrMagnitude < 1e-6f) continue;
+                var nn = new Vector2(-u.y, u.x).normalized;
+                SplitLine(p0, nn, 0.05f * s, null, true, p0, p1, out _);
+            }
+            for (int i = 0; i < bPos.Count; i++)
+            {
+                var p = (Vector2)bPos[i];
+                int best = 0;
+                Vector3 bb = Vector3.zero;
+                float bestMin = float.MinValue;
+                for (int t = 0; t < net.Count; t += 3)
+                {
+                    var b = Bary(ctrl[net[t]], ctrl[net[t + 1]], ctrl[net[t + 2]], p);
+                    var m = Mathf.Min(b.x, Mathf.Min(b.y, b.z));
+                    if (m > bestMin)
+                    {
+                        bestMin = m;
+                        best = t;
+                        bb = b;
+                    }
+                }
+                bb = Vector3.Max(bb, Vector3.zero);
+                bb /= Mathf.Max(1e-6f, bb.x + bb.y + bb.z);
+                var add = bb.x * hz[net[best]] + bb.y * hz[net[best + 1]] + bb.z * hz[net[best + 2]];
+                bPos[i] += new Vector3(0, 0, add);
+            }
+            // 6. Posed: about its middle, leaning back a little, turned a little.
+            var tb = U(10, 25) * Mathf.Deg2Rad;
+            var rl = U(-25, 25) * Mathf.Deg2Rad;
+            var yw = U(-20, 20) * Mathf.Deg2Rad;
+            crumplePos = new Vector3[bPos.Count];
+            for (int i = 0; i < bPos.Count; i++)
+            {
+                var p = bPos[i] - new Vector3(cen.x, cen.y, 0);
+                // z (roll), then x (lean), then y (turn); z toward the viewer.
+                p = new Vector3(Mathf.Cos(rl) * p.x - Mathf.Sin(rl) * p.y, Mathf.Sin(rl) * p.x + Mathf.Cos(rl) * p.y, p.z);
+                p = new Vector3(p.x, Mathf.Cos(tb) * p.y - Mathf.Sin(tb) * p.z, Mathf.Sin(tb) * p.y + Mathf.Cos(tb) * p.z);
+                p = new Vector3(Mathf.Cos(yw) * p.x + Mathf.Sin(yw) * p.z, p.y, -Mathf.Sin(yw) * p.x + Mathf.Cos(yw) * p.z);
+                crumplePos[i] = p;
+            }
+            crumpleNote = $"{tucks} tucks, {pleats} pleats, {flaps} flaps, {levels.Count} depths, {ctrl.Count} relief points ({hullN} on the outline), {net.Count / 3} facets";
+        }
+
+        Vector2 Mean2()
+        {
+            var c = Vector2.zero;
+            foreach (var p in bPos) c += (Vector2)p;
+            return c / Mathf.Max(1, bPos.Count);
+        }
+
+        /// <summary>How far the sheet reaches from `c` along `n`.</summary>
+        float Reach(Vector2 c, Vector2 n)
+        {
+            float r = 0;
+            foreach (var p in bPos) r = Mathf.Max(r, Vector2.Dot((Vector2)p - c, n));
+            return r;
+        }
+
+        /// <summary>The angle of its longest spread (on the flat).</summary>
+        float MainAngle2(Vector2 c)
+        {
+            float xx = 0, xy = 0, yy = 0;
+            foreach (var p in bPos)
+            {
+                var d = (Vector2)p - c;
+                xx += d.x * d.x;
+                xy += d.x * d.y;
+                yy += d.y * d.y;
+            }
+            return 0.5f * Mathf.Atan2(2 * xy, xx - yy);
+        }
+
+        /// <summary>The convex hull of the points (on the flat), anticlockwise.</summary>
+        List<Vector2> Hull2()
+        {
+            var pts = new List<Vector2>(bPos.Count);
+            foreach (var p in bPos) pts.Add(p);
+            pts.Sort((a, b) => a.x != b.x ? a.x.CompareTo(b.x) : a.y.CompareTo(b.y));
+            var h = new List<Vector2>();
+            float Cross(Vector2 o, Vector2 a, Vector2 b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+            for (int pass = 0; pass < 2; pass++)
+            {
+                var start = h.Count;
+                for (int i = 0; i < pts.Count; i++)
+                {
+                    var p = pts[pass == 0 ? i : pts.Count - 1 - i];
+                    while (h.Count >= start + 2 && Cross(h[h.Count - 2], h[h.Count - 1], p) <= 0) h.RemoveAt(h.Count - 1);
+                    h.Add(p);
+                }
+                h.RemoveAt(h.Count - 1);
+            }
+            return h;
+        }
+
+        static bool InConvex(List<Vector2> hull, Vector2 p)
+        {
+            for (int i = 0; i < hull.Count; i++)
+            {
+                Vector2 a = hull[i], b = hull[(i + 1) % hull.Count];
+                if ((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x) < 0) return false;
+            }
+            return true;
+        }
+
+        static Vector3 Bary(Vector2 a, Vector2 b, Vector2 c, Vector2 p)
+        {
+            var den = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
+            if (Mathf.Abs(den) < 1e-9f) return new Vector3(-1, -1, -1);
+            var l0 = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / den;
+            var l1 = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / den;
+            return new Vector3(l0, l1, 1 - l0 - l1);
+        }
+
+        /// <summary>A Delaunay triangulation (Bowyer-Watson; a few dozen points): triangles as index triples.</summary>
+        static List<int> Delaunay(List<Vector2> pts)
+        {
+            Vector2 mn = new Vector2(float.MaxValue, float.MaxValue), mx = new Vector2(float.MinValue, float.MinValue);
+            foreach (var p in pts)
+            {
+                mn = Vector2.Min(mn, p);
+                mx = Vector2.Max(mx, p);
+            }
+            var span = Mathf.Max(mx.x - mn.x, mx.y - mn.y) + 1;
+            var mid = (mn + mx) / 2;
+            var all = new List<Vector2>(pts)
+            {
+                mid + new Vector2(-20 * span, -20 * span), mid + new Vector2(20 * span, -20 * span), mid + new Vector2(0, 20 * span),
+            };
+            int n = pts.Count;
+            var tris = new List<int[]> { new[] { n, n + 1, n + 2 } };
+            bool InCircle(int[] t, Vector2 p)
+            {
+                Vector2 a = all[t[0]] - p, b = all[t[1]] - p, c = all[t[2]] - p;
+                var det = (a.x * a.x + a.y * a.y) * (b.x * c.y - c.x * b.y) - (b.x * b.x + b.y * b.y) * (a.x * c.y - c.x * a.y)
+                    + (c.x * c.x + c.y * c.y) * (a.x * b.y - b.x * a.y);
+                var orient = (all[t[1]].x - all[t[0]].x) * (all[t[2]].y - all[t[0]].y) - (all[t[2]].x - all[t[0]].x) * (all[t[1]].y - all[t[0]].y);
+                return orient > 0 ? det > 0 : det < 0;
+            }
+            for (int i = 0; i < n; i++)
+            {
+                var p = all[i];
+                var bad = tris.FindAll(t => InCircle(t, p));
+                var edges = new Dictionary<long, (int, int)>();
+                foreach (var t in bad)
+                    for (int j = 0; j < 3; j++)
+                    {
+                        int a = t[j], b = t[(j + 1) % 3];
+                        var key = Math.Min(a, b) * 100000L + Math.Max(a, b);
+                        if (edges.ContainsKey(key)) edges.Remove(key);
+                        else edges[key] = (a, b);
+                    }
+                tris.RemoveAll(t => bad.Contains(t));
+                foreach (var e in edges.Values) tris.Add(new[] { e.Item1, e.Item2, i });
+            }
+            var outT = new List<int>();
+            foreach (var t in tris)
+                if (t[0] < n && t[1] < n && t[2] < n) outT.AddRange(t);
+            return outT;
+        }
+
+        /// <summary>
+        /// A half turn of the part on `n`'s side of the line through `c` about it (lengths kept): onto the top (`up`, its
+        /// back shows) or under; the turned layers stack in reverse order above (or below) everything. Only the triangles
+        /// in `sel` turn when it is given. Returns the turned triangles.
+        /// </summary>
+        HashSet<int> FlatFold(Vector2 c, Vector2 n, float eps, bool up, HashSet<int> sel)
+        {
+            var d = SplitLine(c, n, eps, sel, false, default, default, out var flags);
+            float zmax = float.MinValue, zmin = float.MaxValue;
+            foreach (var p in bPos)
+            {
+                zmax = Mathf.Max(zmax, p.z);
+                zmin = Mathf.Min(zmin, p.z);
+            }
+            var h = up ? zmax + 0.3f : zmin - 0.3f;
+            var movedT = new HashSet<int>();
+            var mv = new HashSet<int>();
+            for (int t = 0; t < bTri.Count / 3; t++)
+            {
+                if (!flags[t]) continue;
+                int i0 = bTri[t * 3], i1 = bTri[t * 3 + 1], i2 = bTri[t * 3 + 2];
+                if (Mathf.Max(d[i0], Mathf.Max(d[i1], d[i2])) <= 0) continue;
+                movedT.Add(t);
+                if (d[i0] > 0) mv.Add(i0);
+                if (d[i1] > 0) mv.Add(i1);
+                if (d[i2] > 0) mv.Add(i2);
+            }
+            foreach (var v in mv)
+            {
+                var p = bPos[v];
+                bPos[v] = new Vector3(p.x - 2 * d[v] * n.x, p.y - 2 * d[v] * n.y, 2 * h - p.z);
+            }
+            return movedT;
+        }
+
+        /// <summary>
+        /// Cut the triangles (all, or those in `sel`) that the line through `c` (normal `n`, on the flat) crosses; with
+        /// `seg`, only those reaching the stretch `p0`-`p1`. Points within `eps` count as on it. Returns each point's
+        /// signed distance; `flags`: per triangle after the cut, whether it was selected.
+        /// </summary>
+        List<float> SplitLine(Vector2 c, Vector2 n, float eps, HashSet<int> sel, bool seg, Vector2 p0, Vector2 p1, out List<bool> flags)
+        {
+            var d = new List<float>(bPos.Count + 64);
+            foreach (var p in bPos)
+            {
+                var x = Vector2.Dot((Vector2)p - c, n);
+                d.Add(Mathf.Abs(x) < eps ? 0 : x);
+            }
+            var cache = new Dictionary<long, int>();
+            int Mid(int a, int b)
+            {
+                var key = Math.Min(a, b) * 1000003L + Math.Max(a, b);
+                if (!cache.TryGetValue(key, out var m))
+                {
+                    var u = d[a] / (d[a] - d[b]);
+                    m = bFlat.Count;
+                    bFlat.Add(Vector2.Lerp(bFlat[a], bFlat[b], u));
+                    bPos.Add(Vector3.Lerp(bPos[a], bPos[b], u));
+                    bMask.Add(0);
+                    d.Add(0);
+                    cache[key] = m;
+                }
+                return m;
+            }
+            var su = p1 - p0;
+            var sl = Mathf.Max(1e-6f, su.sqrMagnitude);
+            var outTri = new List<int>(bTri.Count + 256);
+            flags = new List<bool>(bTri.Count / 3 + 64);
+            var poly = new List<int>(5);
+            for (int t = 0; t < bTri.Count; t += 3)
+            {
+                var s = sel == null || sel.Contains(t / 3);
+                float d0 = d[bTri[t]], d1 = d[bTri[t + 1]], d2 = d[bTri[t + 2]];
+                var keep = !s || Mathf.Min(d0, Mathf.Min(d1, d2)) >= 0 || Mathf.Max(d0, Mathf.Max(d1, d2)) <= 0;
+                if (!keep && seg)
+                {
+                    float t0 = Vector2.Dot((Vector2)bPos[bTri[t]] - p0, su) / sl, t1 = Vector2.Dot((Vector2)bPos[bTri[t + 1]] - p0, su) / sl,
+                        t2 = Vector2.Dot((Vector2)bPos[bTri[t + 2]] - p0, su) / sl;
+                    if (Mathf.Max(t0, Mathf.Max(t1, t2)) < -0.02f || Mathf.Min(t0, Mathf.Min(t1, t2)) > 1.02f) keep = true;
+                }
+                if (keep)
+                {
+                    outTri.Add(bTri[t]);
+                    outTri.Add(bTri[t + 1]);
+                    outTri.Add(bTri[t + 2]);
+                    flags.Add(s);
+                    continue;
+                }
+                for (int side = 1; side >= -1; side -= 2)
+                {
+                    poly.Clear();
+                    for (int j = 0; j < 3; j++)
+                    {
+                        int a = bTri[t + j], b = bTri[t + (j + 1) % 3];
+                        float da = side * d[a], db = side * d[b];
+                        if (da >= 0) poly.Add(a);
+                        if ((da > 0 && db < 0) || (da < 0 && db > 0)) poly.Add(Mid(a, b));
+                    }
+                    int o = 0;
+                    if (poly.Count == 4)
+                    {
+                        var a0 = Mathf.Min(Alt(poly[0], poly[1], poly[2]), Alt(poly[0], poly[2], poly[3]));
+                        var a1 = Mathf.Min(Alt(poly[1], poly[2], poly[3]), Alt(poly[1], poly[3], poly[0]));
+                        if (a1 > a0) o = 1;
+                    }
+                    for (int j = 1; j + 1 < poly.Count; j++)
+                    {
+                        outTri.Add(poly[o]);
+                        outTri.Add(poly[(o + j) % poly.Count]);
+                        outTri.Add(poly[(o + j + 1) % poly.Count]);
+                        flags.Add(s);
+                    }
+                }
+            }
+            bTri = outTri;
+            return d;
+        }
+
+        /// <summary>
+        /// Try 2: the canvas's outline smoothed (a closing: grown, then shrunk, by `CrumpleClose` of the picture's
+        /// height; chamfer distances), the new pixels taking the colour of the picture next to them, so a furry outline
+        /// folded inside the lump doesn't leave specks of the layer under it.
+        /// </summary>
+        void CloseCanvas()
+        {
+            int w = FW, h = FH;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            var was = RenderTexture.active;
+            RenderTexture.active = solidCanvas;
+            tex.ReadPixels(new Rect(0, 0, w, h), 0, 0, false);
+            RenderTexture.active = was;
+            var px = tex.GetPixels32();
+            var inside = new bool[w * h];
+            for (int i = 0; i < inside.Length; i++) inside[i] = px[i].a > 100;
+            var r3 = Mathf.Max(3, Mathf.RoundToInt(CrumpleClose * H * 3));
+            var near = new int[w * h];
+            var d1 = Chamfer(inside, w, h, near);
+            var outside = new bool[w * h];
+            for (int i = 0; i < outside.Length; i++) outside[i] = d1[i] > r3;
+            var d2 = Chamfer(outside, w, h, null);
+            for (int i = 0; i < px.Length; i++)
+            {
+                var a = Mathf.Clamp01((d2[i] - r3) / 3f + 0.5f);
+                if (a <= 0) continue;
+                var p = px[i];
+                if (p.a < 128 && near[i] >= 0)
+                {
+                    var q = px[near[i]];
+                    p.r = q.r;
+                    p.g = q.g;
+                    p.b = q.b;
+                }
+                p.a = (byte)Mathf.Max(p.a, Mathf.RoundToInt(a * 255));
+                px[i] = p;
+            }
+            tex.SetPixels32(px);
+            tex.Apply(false);
+            Graphics.Blit(tex, solidCanvas);
+            Destroy(tex);
+        }
+
+        /// <summary>Chamfer distance (3 a step, 4 a diagonal) to the nearest set point; `near` gets that point's index.</summary>
+        static int[] Chamfer(bool[] src, int w, int h, int[] near)
+        {
+            const int Inf = 1 << 28;
+            var d = new int[w * h];
+            for (int i = 0; i < d.Length; i++)
+            {
+                d[i] = src[i] ? 0 : Inf;
+                if (near != null) near[i] = src[i] ? i : -1;
+            }
+            void Relax(int i, int x, int y, int cost)
+            {
+                if (x < 0 || y < 0 || x >= w || y >= h) return;
+                var j = y * w + x;
+                if (d[j] + cost < d[i])
+                {
+                    d[i] = d[j] + cost;
+                    if (near != null) near[i] = near[j];
+                }
+            }
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                var i = y * w + x;
+                Relax(i, x - 1, y, 3);
+                Relax(i, x - 1, y - 1, 4);
+                Relax(i, x, y - 1, 3);
+                Relax(i, x + 1, y - 1, 4);
+            }
+            for (int y = h - 1; y >= 0; y--)
+            for (int x = w - 1; x >= 0; x--)
+            {
+                var i = y * w + x;
+                Relax(i, x + 1, y, 3);
+                Relax(i, x + 1, y + 1, 4);
+                Relax(i, x, y + 1, 3);
+                Relax(i, x - 1, y + 1, 4);
+            }
+            return d;
         }
 
         /// <summary>Of what the viewer sees of the lump (a coarse depth buffer), the share that is the paper's back.</summary>
@@ -1102,10 +1670,11 @@ namespace Drakepg
             var flip = body.transform.lossyScale.x < 0 ? -1 : 1;
             lightC = new Vector3(-0.5f * flip, 0.7f, 0.55f).normalized;
             solidMat.SetVector(LightId, lightC);
-            var back = Crumple ? Color.Lerp(Back[0], scan.Mean, 0.1f) : Color.Lerp(Back[0] * BackLight, scan.Mean, BackTint);
+            var back = BackTest ?? (Crumple ? Color.Lerp(Back[0], scan.Mean, 0.1f) : Color.Lerp(Back[0] * BackLight, scan.Mean, BackTint));
             back.a = 0.04f;
             solidMat.SetColor(BackId, back);
             showMat.SetFloat(OutlineId, Crumple ? CrumpleOutline : 0);
+            solidMat.SetFloat(EdgeInkId, Crumple && CrumpleKind == 2 ? CrumpleEdgeInk : 0);
             simTime = 0;
             landedOnce = false;
             startWidthPx = 0;
@@ -1173,6 +1742,19 @@ namespace Drakepg
             var mid = Vector3.zero;
             for (int i = 0; i < vCount; i++) mid += (Vector3)flat[i];
             mid /= Mathf.Max(1, vCount);
+            if (CrumpleKind == 2)
+            {
+                // Try 2 is posed already (about its middle): set where the picture stood, upright to the ground.
+                var u3 = new Vector3(upC.x, upC.y, 0).normalized;
+                var s3 = new Vector3(upC.y, -upC.x, 0).normalized;
+                for (int i = 0; i < vCount; i++)
+                {
+                    var r = crumplePos[i];
+                    pos[i] = prev[i] = mid + s3 * r.x + u3 * r.y + Vector3.forward * r.z;
+                }
+                CrumpleGround();
+                return;
+            }
             var cen = Vector3.zero;
             for (int i = 0; i < vCount; i++) cen += crumplePos[i];
             cen /= Mathf.Max(1, vCount);
@@ -1228,6 +1810,12 @@ namespace Drakepg
                 var r = crumplePos[i] - cen;
                 pos[i] = prev[i] = mid + CrumpleScale * (side3 * (bestFace * Vector3.Dot(r, e1)) + up3 * Vector3.Dot(r, e2) + Vector3.forward * (bestFace * Vector3.Dot(r, e3)));
             }
+            CrumpleGround();
+        }
+
+        /// <summary>The lump set on the ground, and the shadow's starting width.</summary>
+        void CrumpleGround()
+        {
             // On the ground: its lowest inked point there.
             float low = float.MaxValue;
             for (int i = 0; i < vCount; i++)
@@ -1546,13 +2134,16 @@ namespace Drakepg
                 Graphics.ExecuteCommandBuffer(cmd);
             }
             // Testing: the texture saved, and the same frame without its shadows beside it.
-            if (DumpRt != null && simTime >= DumpAt)
+            if (DumpRt != null && simTime >= DumpAt && !dumpedRt)
             {
+                // "{seed}" in the path: every death saves its own (else only the next one).
+                var path = DumpRt.Replace("{seed}", seed.ToString());
                 Render(1);
-                SaveRt(DumpRt.Replace(".png", "_noshadow.png"));
+                SaveRt(path.Replace(".png", "_noshadow.png"));
                 Render(Passes);
-                SaveRt(DumpRt);
-                DumpRt = null;
+                SaveRt(path);
+                if (DumpRt.Contains("{seed}")) dumpedRt = true;
+                else DumpRt = null;
             }
             else
                 Render(Passes);
@@ -1576,9 +2167,16 @@ namespace Drakepg
                 shadow.position = new Vector3(Design.World(mid.x, 0).x, sp.y, sp.z);
                 // A crumpled lump sits on a small, dark contact shadow (a soft blob as wide as the monster reads as nothing).
                 var tight = Crumple ? 0.7f : 1;
-                shadow.localScale = new Vector3(shadowWidth * Mathf.Clamp(width / startWidthPx, 0.3f, 1) * (1 - 0.3f * rise), shadowHeight * tight, 1);
+                // Try 2: a flat cut-paper shadow (a hard ellipse a little wider than the lump; a soft one vanishes on the
+                // stages' dark ground).
+                var flatShadow = Crumple && CrumpleKind == 2;
+                if (flatShadow) tight = 0.6f;
+                shadow.localScale = flatShadow
+                    ? new Vector3(shadowWidth * Mathf.Clamp(width / startWidthPx, 0.2f, 1) * 1.57f * (1 - 0.3f * rise), shadowHeight * tight, 1)
+                    : new Vector3(shadowWidth * Mathf.Clamp(width / startWidthPx, 0.3f, 1) * (1 - 0.3f * rise), shadowHeight * tight, 1);
                 if (shadowSr != null)
                 {
+                    if (flatShadow && shadowSr.sprite != Art.Circle) shadowSr.sprite = Art.Circle;
                     var col = shadowSr.color;
                     col.a = (Crumple ? Mathf.Max(shadowAlpha, 0.7f) : shadowAlpha) * (1 - 0.6f * rise);
                     shadowSr.color = col;
