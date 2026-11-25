@@ -69,6 +69,39 @@ namespace Drakepg.Rules
         public bool Weak;
     }
 
+    /// <summary>
+    /// How a fight went, for the Defeated card: the biggest hit the hero took (and from what), and how the hero's hits
+    /// met the enemy's resists. Counted as the fight runs (Battle.Recap); nothing here is saved.
+    /// </summary>
+    public class FightRecap
+    {
+        public double BiggestHit;
+        public string BiggestMove;
+        public bool BiggestCrit;
+        /// <summary>The hero's hits that connected (attacks, procs and skills; not ticks).</summary>
+        public int Hits;
+        /// <summary>Element -> how many of the hero's hits it resisted, shrugged off or absorbed.</summary>
+        public readonly Dictionary<string, int> Resisted = new Dictionary<string, int>();
+        /// <summary>The hero's hits on a weak spot.</summary>
+        public int WeakHits;
+
+        public void Took(double damage, string move, bool crit)
+        {
+            if (damage <= BiggestHit) return;
+            BiggestHit = damage;
+            BiggestMove = move;
+            BiggestCrit = crit;
+        }
+
+        public void Dealt(string element, string effect)
+        {
+            Hits++;
+            if (effect == "weak") WeakHits++;
+            else if (element != null && (effect == "resisted" || effect == "immune" || effect == "absorb"))
+                Resisted[element] = (Resisted.TryGetValue(element, out var n) ? n : 0) + 1;
+        }
+    }
+
     /// <summary>One fight, a port of src/game/Battle.ts. Never touches Unity.</summary>
     public class Battle
     {
@@ -77,6 +110,8 @@ namespace Drakepg.Rules
         /// <summary>player_turn, victory, defeat, fled or escaped.</summary>
         public string State = "player_turn";
         public Rewards Rewards;
+        /// <summary>How the fight went (the Defeated card).</summary>
+        public readonly FightRecap Recap = new FightRecap();
         public double RewardScale = 1;
         public string ZoneId;
         public MonsterAttack Charging;
@@ -450,6 +485,7 @@ namespace Drakepg.Rules
                     {
                         var damage = mult > 0 && !(Cheats.God && side == "player") ? Math.Max(1, JsMath.Round(s.Tick * mult)) : 0;
                         DamageSide(side, damage);
+                        if (side == "player") Recap.Took(damage, s.Def.Name ?? s.Def.Id, false);
                         events.Add(new BattleEvent { Kind = "tick", Target = side, Status = s.Def.Id, Damage = damage, Heal = 0, Element = s.Element, Effect = s.Weak ? "weak" : effect });
                     }
                 }
@@ -722,6 +758,7 @@ namespace Drakepg.Rules
             if (mult < 0)
             {
                 var healed = HealSide(target, Math.Max(1, JsMath.Round(ScaleHit(source, target, damage, -mult))));
+                if (source == "player") Recap.Dealt(element, "absorb");
                 var ev = Base("hit");
                 ev.Damage = healed;
                 ev.Crit = crit;
@@ -739,6 +776,8 @@ namespace Drakepg.Rules
             if (Cheats.God && target == "player") final = 0;
             if (Cheats.OneHit && target == "enemy") final = Math.Max(final, Enemy.Hp);
             DamageSide(target, final);
+            if (source == "player") Recap.Dealt(element, effect);
+            else Recap.Took(final, move, crit);
             var result = Base("hit");
             result.Damage = final;
             result.Crit = crit;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Drakepg.Rules;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -34,6 +35,18 @@ namespace Drakepg
 
         public static RoomArrival Battle(string roomId, string outcome, float x, float y) =>
             new RoomArrival { RoomId = roomId, Via = "battle", Outcome = outcome, X = x, Y = y };
+
+        /// <summary>
+        /// The door of a room's boss: arriving through its exit from the room before (the quiet one with a campfire, else
+        /// the first exit that isn't guarded), at height `y`. Null if the room has no boss or no way in.
+        /// </summary>
+        public static RoomArrival BossDoor(string roomId, float y)
+        {
+            var room = Db.Room(roomId);
+            if (room.Boss == null) return null;
+            var exit = room.Exits.FirstOrDefault(e => !e.Guarded && Db.Room(e.To).Campfire != null) ?? room.Exits.FirstOrDefault(e => !e.Guarded);
+            return exit == null ? null : Exit(roomId, exit.Side, y, exit.X is double x ? (float)x : (float?)null);
+        }
     }
 
     /// <summary>What a battle is against and where it goes back to (BattleSceneData).</summary>
@@ -80,6 +93,12 @@ namespace Drakepg
         public Location Wake;
         /// <summary>Defeat against a boss: grit you now have (0-1).</summary>
         public double? Grit;
+        /// <summary>Defeat: how the fight went (the biggest hit taken, the hits it resisted).</summary>
+        public FightRecap Recap;
+        /// <summary>Defeat: the monster as the fight ended (its weak spots and resists, after any change of form).</summary>
+        public MonsterDef Monster;
+        /// <summary>Defeat by a room's boss: Try again puts you at its door, fully rested (null: no Try again).</summary>
+        public RoomArrival Door;
         /// <summary>A tower floor's outcome (null for other fights).</summary>
         public TowerOutcome Tower;
     }
