@@ -37,7 +37,9 @@ namespace Drakepg.EditorTools
             var load = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             load.LoadImage(File.ReadAllBytes(png));
             var rect = orig.rect;
-            if (load.width != (int)rect.width || load.height != (int)rect.height)
+            // A repaint may come at twice the knight's pixel size (try 2: thin ink lines survive); it then draws at double ppu.
+            float k = load.width == 2 * (int)rect.width && load.height == 2 * (int)rect.height ? 2f : 1f;
+            if (load.width != (int)(rect.width * k) || load.height != (int)(rect.height * k))
                 throw new System.Exception($"{png} is {load.width}x{load.height}, {orig.name} is {rect.width}x{rect.height}");
             var tex = new Texture2D(load.width, load.height, TextureFormat.RGBA32, src.mipmapCount > 1);
             tex.SetPixels32(load.GetPixels32());
@@ -48,7 +50,7 @@ namespace Drakepg.EditorTools
             Object.Destroy(load);
             made.Add(tex);
             var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
-                new Vector2(orig.pivot.x / rect.width, orig.pivot.y / rect.height), orig.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+                new Vector2(orig.pivot.x / rect.width, orig.pivot.y / rect.height), orig.pixelsPerUnit * k, 0, SpriteMeshType.FullRect);
             sp.name = orig.name + " (hero)";
             made.Add(sp);
             int n = orig.GetVertexCount();
@@ -140,8 +142,16 @@ namespace Drakepg.EditorTools
             tex.filterMode = FilterMode.Bilinear;
             tex.wrapMode = TextureWrapMode.Clamp;
             made.Add(tex);
-            var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 1 - SwordGrip),
-                tex.height / length, 0, SpriteMeshType.FullRect);
+            // Resources art sits in the top-left of a power-of-two canvas (scripts/unity_art.py): the grip and length are
+            // shares of the picture itself, so cut the canvas to the opaque box first (try 1 used the padded canvas, which
+            // put the grip below and beside the hilt and drew the blade short).
+            var px = tex.GetPixels32();
+            int x0 = tex.width, y0 = tex.height, x1 = -1, y1 = -1;
+            for (int y = 0; y < tex.height; y++)
+                for (int x = 0; x < tex.width; x++)
+                    if (px[y * tex.width + x].a > 10) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+            var box = x1 < 0 ? new Rect(0, 0, tex.width, tex.height) : new Rect(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+            var sp = Sprite.Create(tex, box, new Vector2(0.5f, 1 - SwordGrip), box.height / length, 0, SpriteMeshType.FullRect);
             sp.name = "Iron Sword (hero)";
             made.Add(sp);
             return sp;

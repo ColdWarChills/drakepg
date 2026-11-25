@@ -269,6 +269,57 @@ namespace Drakepg.EditorTools
             return "running; " + string.Join("; ", swapped.ToArray());
         }
 
+        /// <summary>
+        /// Try 2 of the hero's look (2026-11-25): one knight dressed by DcHero.Dress from `paintDir`, posed at attack-clip
+        /// frames (comma list; 0 = standing, 33 = the strike), one camera (`ppu` screen px per unit, w x h, centre offset
+        /// cx,cy from the root) to dir/&lt;name&gt;_fNNN.png. `hide`: renderer names to switch off (comma list), to see
+        /// which knight-only pieces can go. Status ends "stills done ...".
+        /// </summary>
+        public static string HeroStills(string dir, string name, string paintDir, string frames, float ppu, int w, int h,
+            float cx, float cy, string hide = "")
+        {
+            if (!EditorApplication.isPlaying) return "needs play mode";
+            Clear();
+            DcHero.Clear();
+            Directory.CreateDirectory(dir);
+            var k = Spawn(name, null, 0);
+            graphs.Add(k.Graph);
+            var list = new List<int>();
+            foreach (var s in frames.Split(',')) if (s.Length > 0) list.Add(int.Parse(s));
+            GameRoot.I.StartCoroutine(StillsLoop(dir, k, paintDir, list, ppu, w, h, cx, cy, hide ?? ""));
+            return "rendering " + list.Count + " stills";
+        }
+
+        static IEnumerator StillsLoop(string dir, Knight k, string paintDir, List<int> frames, float ppu, int w, int h,
+            float cx, float cy, string hide)
+        {
+            Status = "stills: posing";
+            yield return null;
+            k.Play.SetTime(0);
+            k.Graph.Evaluate(0);
+            yield return new WaitForEndOfFrame();
+            DcHero.PaintDir = paintDir;
+            var dressed = DcHero.Dress(k.Go);
+            var off = new HashSet<string>(hide.Split(','));
+            foreach (var r in k.Go.GetComponentsInChildren<SpriteRenderer>(true)) if (off.Contains(r.name)) r.enabled = false;
+            var cam = Cam("dc stills cam " + k.Name, w, h, h / (2f * ppu));
+            cam.transform.position = k.Go.transform.position + new Vector3(cx, cy, -10);
+            var buf = new Texture2D(w, h, TextureFormat.RGB24, false);
+            made.Add(buf);
+            foreach (var f in frames)
+            {
+                for (int warm = 3; warm > 0; warm--)
+                {
+                    yield return null;
+                    k.Play.SetTime(f / 60.0);
+                    k.Graph.Evaluate(0);
+                    yield return new WaitForEndOfFrame();
+                }
+                Save(cam, buf, Path.Combine(dir, $"{k.Name}_f{f:000}.png"));
+            }
+            Status = "stills done; " + dressed + "; strays " + string.Join(",", DcHero.Strays(k.Go).ToArray());
+        }
+
         static IEnumerator RunLoop(string dir, List<Knight> ks, float ppu, int w, int h, float cx, float cy, int from, int to,
             HashSet<int> stills, float tx, float ty, int sw, int sh)
         {
