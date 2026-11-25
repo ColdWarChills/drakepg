@@ -15,13 +15,15 @@ Shader "Drakepg/PaperSolid"
         _Light ("Light (canvas space, toward it)", Vector) = (-0.5,0.7,0.5,0)
         _Tone ("Tone: x dark, y light, z steps, w line px", Vector) = (0.55,1.12,3,1.1)
         _Shade ("Shadow strength (x), blur mip (y), front faces flip (z)", Vector) = (0.38,2.5,-1,0)
+        _Outline ("A dark line round the outline in pass 0, texels (0 none)", Float) = 0
     }
 
     CGINCLUDE
     #include "UnityCG.cginc"
 
     sampler2D _MainTex;
-    float4 _Color, _Back, _Ink, _Light, _Tone, _Shade;
+    float4 _Color, _Back, _Ink, _Light, _Tone, _Shade, _MainTex_TexelSize;
+    float _Outline;
 
     struct appdata
     {
@@ -63,6 +65,22 @@ Shader "Drakepg/PaperSolid"
             fixed4 frag(v2f i) : SV_Target
             {
                 float4 c = tex2D(_MainTex, i.uv);
+                if (_Outline > 0)
+                {
+                    // A dark line just outside the paper's outline: the most cover among the texels around, minus its own.
+                    float2 d = _MainTex_TexelSize.xy * _Outline;
+                    float n = tex2D(_MainTex, i.uv + float2(d.x, 0)).a;
+                    n = max(n, tex2D(_MainTex, i.uv - float2(d.x, 0)).a);
+                    n = max(n, tex2D(_MainTex, i.uv + float2(0, d.y)).a);
+                    n = max(n, tex2D(_MainTex, i.uv - float2(0, d.y)).a);
+                    n = max(n, tex2D(_MainTex, i.uv + 0.7 * d).a);
+                    n = max(n, tex2D(_MainTex, i.uv - 0.7 * d).a);
+                    n = max(n, tex2D(_MainTex, i.uv + 0.7 * float2(d.x, -d.y)).a);
+                    n = max(n, tex2D(_MainTex, i.uv - 0.7 * float2(d.x, -d.y)).a);
+                    float o = saturate(n - c.a);
+                    c.rgb += _Ink.rgb * o;
+                    c.a += o;
+                }
                 return fixed4(c.rgb * _Color.rgb * _Color.a, c.a * _Color.a);
             }
         ENDCG
