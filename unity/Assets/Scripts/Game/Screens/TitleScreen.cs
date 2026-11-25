@@ -51,6 +51,12 @@ namespace Drakepg
             if (note != null) Ui.Toast(note, Palette.TextGood);
         }
 
+        /// <summary>Esc closes the top window (Options, a question), as in a room.</summary>
+        public override void Tick(float dt)
+        {
+            if (InputEnabled && Keys.Pressed(UnityEngine.InputSystem.Key.Escape)) UiModal.Top?.Escape();
+        }
+
         /// <summary>A picked file: a save from the web version (Export save on its title) becomes this game's save.</summary>
         void Imported(string text)
         {

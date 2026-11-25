@@ -1733,11 +1733,11 @@ namespace Drakepg
         {
             if (ModalOpen || leaving) return;
             moveTarget = null;
-            var modal = new UiModal(460, 320, "Menu", () => { });
+            var modal = new UiModal(460, 296, "Menu", () => { });
             var rows = new List<(string label, Action run)>
             {
                 ("Save", () => Save(true)),
-                // Options' keys show in the room's hints and prompts: they read the keys as they are drawn.
+                // Keys, screen and sound (OptionsPanel); it opens once the Menu has closed.
                 ("Options", () => modal.Close(() => OptionsPanel.Open())),
                 ("Save and quit to title", () =>
                 {

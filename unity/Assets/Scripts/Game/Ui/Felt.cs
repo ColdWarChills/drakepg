@@ -590,6 +590,8 @@ namespace Drakepg
             Ui.Place(e, x - pad, y - pad);
             Ui.Size(e, size + pad * 2, size + pad * 2);
             e.style.backgroundImage = new StyleBackground(ButtonTexture(size));
+            // A changed key can be two or three letters ("F10", "Tab"): smaller, so it stays inside the dot.
+            if (text.Length > 1) fontSize *= text.Length == 2 ? 0.86f : 0.74f;
             var n = Ui.Text(e, pad + size / 2, pad + size / 2, text, fontSize, Cream, false, 0.5f, 0.5f);
             Fonts.Heavy(n);
             parent?.Add(e);
