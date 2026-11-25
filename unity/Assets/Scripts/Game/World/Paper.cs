@@ -672,6 +672,14 @@ namespace Drakepg
 
         void OnDestroy()
         {
+            var freeing = System.Diagnostics.Stopwatch.StartNew();
+            FreeAll();
+            if (Solid && freeing.Elapsed.TotalMilliseconds > 2)
+                Debug.Log($"drakepg: paper freed in {freeing.Elapsed.TotalMilliseconds:0.0} ms");
+        }
+
+        void FreeAll()
+        {
             // Also what the crumple made as the fight started, for a paper that never folded.
             if (solidOn || solidMat != null)
             {

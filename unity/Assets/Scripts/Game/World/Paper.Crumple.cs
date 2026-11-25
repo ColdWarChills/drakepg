@@ -175,8 +175,10 @@ namespace Drakepg
             var firstFrames = "";
             Array.Clear(mTicks, 0, mTicks.Length);
             Array.Clear(mWorstTicks, 0, mWorstTicks.Length);
+            long allocated = 0;
             var handle = Anim.Float(0, 30, 30, time =>
             {
+                var bytes0 = GC.GetTotalMemory(false);
                 var w = System.Diagnostics.Stopwatch.StartNew();
                 StepMotion(time, landed);
                 var t0 = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -187,6 +189,7 @@ namespace Drakepg
                 sumMs += ms;
                 if (frames < 6) firstFrames += $" {ms:0.0}";
                 frames++;
+                allocated += Math.Max(0, GC.GetTotalMemory(false) - bytes0);
             }, Ease.Linear);
             var over = false;
             handle.OnComplete(() => over = true);
@@ -208,7 +211,7 @@ namespace Drakepg
             for (int k = 0; k < chainK; k++) turns += $"{(k > 0 ? " " : "")}{k}:{mOnAt[k]:0.00}-{mDownAt[k]:0.00}";
             LastSolid = $"seed {seed}, {vCount} points, {tCount} triangles, build {buildMs:0} ms {built} (closing {closeMs:0}, shape {crumpleMs:0}), waited {waitMs:0} ms, start {startMs:0.0} ms ({marks}), "
                 + $"folds {turns}, squeeze from {mSqueezeAt:0.00}, first touch {mTouchAt:0.00}, landed {mLandAt:0.00}, "
-                + $"touches (s:fall){mImpacts}, speed (s:along/spin){mTail}, " + (mCapped ? $"CAPPED at {mTime:0.00} s" : $"asleep at {mSleepAt:0.00} s on {mRestContacts} points") + $", CPU a frame: worst {worstMs:0.00} ms, mean {sumMs / Mathf.Max(1, frames):0.00} ms over {frames} frames, the first{firstFrames}; parts worst/mean ms: {PartsNote(frames)}"
+                + $"touches (s:fall){mImpacts}, speed (s:along/spin){mTail}, " + (mCapped ? $"CAPPED at {mTime:0.00} s" : $"asleep at {mSleepAt:0.00} s on {mRestContacts} points") + $", CPU a frame: worst {worstMs:0.00} ms, mean {sumMs / Mathf.Max(1, frames):0.00} ms over {frames} frames, the first{firstFrames}, {allocated / 1024f:0.0} KB allocated over them; parts worst/mean ms: {PartsNote(frames)}"
                 + (CheckChain ? $", chain stretch over the frames played {mStretch / Mathf.Max(1, sheetSize / CrumpleGrid):0.0000} cells" : "")
                 + $", crumple: {crumpleNote}";
             Debug.Log($"drakepg: paper crumple, {LastSolid}");
