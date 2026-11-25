@@ -17,18 +17,25 @@ namespace Drakepg.EditorTools
     public static class PaperCheck
     {
         public static bool Busy;
+        /// <summary>Frames a second the recordings are captured at (game time steps by one frame each).</summary>
+        public static int Fps = 20;
 
         /// <summary>Whole-frame times (unscaled, ms): the worst and the mean over the ordinary attacks (the baseline) and
         /// over the killing blow to 3 s after it. Logged per fight; record no frames (`frames` 0) for a fair number.</summary>
-        static float probeWorst, probeSum;
-        static int probeCount;
+        static float probeWorst, probeSum, probeStart;
+        static int probeCount, probeSlow;
         static bool probing;
+        /// <summary>The frames over 16.7 ms: seconds after the probe began and their ms (the first dozen).</summary>
+        static string probeSlowList = "";
 
         static IEnumerator Probe()
         {
             probing = true;
             probeWorst = probeSum = 0;
-            probeCount = 0;
+            probeCount = probeSlow = 0;
+            probeSlowList = "";
+            probeStart = Time.realtimeSinceStartup;
+            var gc = System.GC.CollectionCount(0);
             yield return null;
             while (probing)
             {
@@ -36,6 +43,14 @@ namespace Drakepg.EditorTools
                 probeWorst = Mathf.Max(probeWorst, ms);
                 probeSum += ms;
                 probeCount++;
+                // "g": the garbage collector ran in that frame.
+                var gcNow = System.GC.CollectionCount(0);
+                if (ms > 16.7f)
+                {
+                    probeSlow++;
+                    if (probeSlow <= 12) probeSlowList += $" {Time.realtimeSinceStartup - probeStart:0.00}s:{ms:0}{(gcNow != gc ? "g" : "")}";
+                }
+                gc = gcNow;
                 yield return null;
             }
         }
@@ -43,7 +58,7 @@ namespace Drakepg.EditorTools
         static string ProbeEnd()
         {
             probing = false;
-            return $"worst frame {probeWorst:0.0} ms, mean {probeSum / Mathf.Max(1, probeCount):0.0} ms over {probeCount} frames";
+            return $"worst frame {probeWorst:0.0} ms, mean {probeSum / Mathf.Max(1, probeCount):0.0} ms over {probeCount} frames, {probeSlow} over 16.7 ms{(probeSlow > 0 ? " (s:ms" + probeSlowList + ")" : "")}";
         }
 
         public static void Run(string monsters, string dir, int hits = 4, int speed = 1, bool paper = true, string elite = null, bool heroic = false,
@@ -126,7 +141,7 @@ namespace Drakepg.EditorTools
                     // A Lucky Impling: hit until its next turn is the one it runs on, then recorded as it gets away.
                     for (int i = 0; i < 8 && battle.EscapeIn > 1 && GameRoot.I.Screen is BattleScreen; i++) yield return Attack();
                     Drive.Shot($"{dir}/{name}_before.png");
-                    Drive.Record($"{dir}/{name}", frames, 20, 1920);
+                    Drive.Record($"{dir}/{name}", frames, Fps, 1920);
                     yield return null;
                     Drive.Press(0);
                     yield return new WaitUntil(() => Time.captureFramerate == 0);
@@ -142,7 +157,7 @@ namespace Drakepg.EditorTools
                         SetHp(battle, shown, 1);
                         if (tries == 0) Drive.Shot($"{dir}/{name}_before.png");
                         yield return new WaitForSeconds(0.3f);
-                        if (frames > 0) Drive.Record($"{dir}/{name}", frames, 20, 1920);
+                        if (frames > 0) Drive.Record($"{dir}/{name}", frames, Fps, 1920);
                         yield return null;
                         GameRoot.I.StartCoroutine(Probe());
                         Drive.Press(0);

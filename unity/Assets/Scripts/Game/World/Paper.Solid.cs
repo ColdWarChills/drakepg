@@ -210,6 +210,11 @@ namespace Drakepg
         /// </summary>
         async Task FoldSolid(float groundY, Action<float, float> landed)
         {
+            if (Crumple && CrumpleKind == 2 && CrumpleMotion)
+            {
+                await FoldCrumple(groundY, landed);
+                return;
+            }
             folding = true;
             solidOn = true;
             var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -326,9 +331,16 @@ namespace Drakepg
         /// <summary>The paper's materials and render texture, the quad that shows it in the figure's place, its shadow.</summary>
         void StartScene()
         {
-            var k = canvasK;
-            tint = new Color(body.color.r, body.color.g, body.color.b, 1);
+            PrepareScene();
+            ShowScene();
+        }
 
+        /// <summary>The materials, the render texture, the quad (hidden), the meshes and the command buffer: made once,
+        /// before anything is shown (the crumple makes them as the fight starts).</summary>
+        void PrepareScene()
+        {
+            if (solidMat != null) return;
+            var k = canvasK;
             var shader = Resources.Load<Shader>("Fx/PaperSolid");
             solidMat = new Material(shader) { name = "Paper solid" };
             solidMat.mainTexture = solidCanvas;
@@ -339,11 +351,11 @@ namespace Drakepg
             };
             solidRt.Create();
             showMat.mainTexture = solidRt;
-            showMat.SetColor(ColorIdS, tint);
 
             canvasPpu = ppu * k;
             origin = pivot * k + new Vector2(pad, pad);
             quad = new GameObject("paper fold");
+            quad.SetActive(false);
             quad.transform.SetParent(body.transform, false);
             mesh = new Mesh { name = "paper fold" };
             float hx = FW / 2f / canvasPpu, hy = FH / 2f / canvasPpu;
@@ -354,10 +366,24 @@ namespace Drakepg
             quad.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mr = quad.AddComponent<MeshRenderer>();
             mr.sharedMaterial = showMat;
-            mr.sortingLayerID = body.sortingLayerID;
-            mr.sortingOrder = body.sortingOrder;
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows = false;
+            paperMesh = new Mesh { name = "paper fold" };
+            paperMesh.MarkDynamic();
+            shadowMesh = new Mesh { name = "paper fold" };
+            shadowMesh.MarkDynamic();
+            cmd = new CommandBuffer { name = "paper fold" };
+        }
+
+        /// <summary>The paper in the figure's place: its colour and order as they are now, the figure hidden, its shadow found.</summary>
+        void ShowScene()
+        {
+            tint = new Color(body.color.r, body.color.g, body.color.b, 1);
+            showMat.SetColor(ColorIdS, tint);
+            var mr = quad.GetComponent<MeshRenderer>();
+            mr.sortingLayerID = body.sortingLayerID;
+            mr.sortingOrder = body.sortingOrder;
+            quad.SetActive(true);
             body.enabled = false;
             if (bend != null) bend.enabled = false;
             if (body.transform.parent != null)
@@ -370,11 +396,6 @@ namespace Drakepg
                         shadowSr = c.GetComponent<SpriteRenderer>();
                         if (shadowSr != null) shadowAlpha = shadowSr.color.a;
                     }
-            paperMesh = new Mesh { name = "paper fold" };
-            paperMesh.MarkDynamic();
-            shadowMesh = new Mesh { name = "paper fold" };
-            shadowMesh.MarkDynamic();
-            cmd = new CommandBuffer { name = "paper fold" };
         }
 
         /// <summary>The canvas read back (a quarter of its size), with its opaque cells kept for the mesh.</summary>
@@ -2219,6 +2240,13 @@ namespace Drakepg
             simTime = 0;
             landedOnce = false;
             startWidthPx = 0;
+            SetupBuffers();
+        }
+
+        /// <summary>The meshes' buffers, their corners' texture places and indices: made once (the crumple makes them as the fight starts).</summary>
+        void SetupBuffers()
+        {
+            if (rv != null && rv.Length == tCount * 3) return;
             rv = new Vector3[tCount * 3];
             sv = new Vector3[tCount * 3];
             ruv = new Vector2[tCount * 3];
@@ -2618,15 +2646,23 @@ namespace Drakepg
                 rLines[t * 3] = rLines[t * 3 + 1] = rLines[t * 3 + 2] = w;
             }
             // Smooth normals within a panel (each corner: the mean of its panel's triangles round that point).
-            Array.Clear(nAcc, 0, nAcc.Length);
-            for (int t = 0; t < tCount; t++)
-            for (int j = 0; j < 3; j++)
-                nAcc[tri[t * 3 + j] * panelCount + triPanel[t]] += normal[t];
-            for (int t = 0; t < tCount; t++)
-            for (int j = 0; j < 3; j++)
+            if (Crumple)
             {
-                var nn = nAcc[tri[t * 3 + j] * panelCount + triPanel[t]];
-                rNormal[t * 3 + j] = Crumple ? normal[t] : nn.sqrMagnitude > 1e-12f ? nn.normalized : normal[t];
+                // The crumple's facets are flat (each triangle its own normal).
+                for (int t = 0; t < tCount; t++) rNormal[t * 3] = rNormal[t * 3 + 1] = rNormal[t * 3 + 2] = normal[t];
+            }
+            else
+            {
+                Array.Clear(nAcc, 0, nAcc.Length);
+                for (int t = 0; t < tCount; t++)
+                for (int j = 0; j < 3; j++)
+                    nAcc[tri[t * 3 + j] * panelCount + triPanel[t]] += normal[t];
+                for (int t = 0; t < tCount; t++)
+                for (int j = 0; j < 3; j++)
+                {
+                    var nn = nAcc[tri[t * 3 + j] * panelCount + triPanel[t]];
+                    rNormal[t * 3 + j] = nn.sqrMagnitude > 1e-12f ? nn.normalized : normal[t];
+                }
             }
             paperMesh.vertices = rv;
             paperMesh.normals = rNormal;
@@ -2679,6 +2715,11 @@ namespace Drakepg
                 var rise = Mathf.Clamp01((low - groundC) / (0.6f * sheetSize));
                 var sp = shadow.position;
                 shadow.position = new Vector3(Design.World(mid.x, 0).x, sp.y, sp.z);
+                if (crumpleMoving)
+                {
+                    CrumpleShadow(width, rise);
+                    return;
+                }
                 // A crumpled lump sits on a small, dark contact shadow (a soft blob as wide as the monster reads as nothing).
                 var tight = Crumple ? 0.7f : 1;
                 // Try 2: a flat cut-paper shadow (a hard ellipse a little wider than the lump; a soft one vanishes on the
@@ -2764,6 +2805,7 @@ namespace Drakepg
             if (paperMesh != null) Destroy(paperMesh);
             if (shadowMesh != null) Destroy(shadowMesh);
             cmd?.Release();
+            DestroyCrumple();
         }
     }
 }

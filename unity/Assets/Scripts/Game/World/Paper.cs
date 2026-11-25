@@ -104,6 +104,7 @@ namespace Drakepg
             rng = new System.Random(Environment.TickCount ^ GetInstanceID());
             r.sharedMaterial = live;
             Push();
+            StartPrebuild();
         }
 
         float R() => (float)rng.NextDouble();
@@ -126,6 +127,7 @@ namespace Drakepg
         /// <summary>Burn holes eat outward for a moment, and their edges cool from a glow to scorch.</summary>
         void Update()
         {
+            PrebuildTick();
             if (folding || holeCount == 0) return;
             var dt = Time.deltaTime * Anim.TimeScale * Anim.Speed;
             var changed = false;
@@ -662,17 +664,21 @@ namespace Drakepg
             if (shadow != null)
             {
                 var r = shadow.GetComponent<SpriteRenderer>();
-                if (r != null) r.color = new Color(0, 0, 0, 0.45f * a);
+                // The crumple's own flat shadow fades with it (the figure's soft one is gone already).
+                if (r != null) r.color = new Color(0, 0, 0, flatShadowSr != null ? 0 : 0.45f * a);
+                if (flatShadowSr != null) flatShadowSr.color = new Color(0, 0, 0, flatShadowA * a);
             }
         }
 
         void OnDestroy()
         {
-            if (solidOn)
+            // Also what the crumple made as the fight started, for a paper that never folded.
+            if (solidOn || solidMat != null)
             {
                 DestroySolid();
                 sheet = null;
             }
+            else DestroyCrumple();
             if (sheet != null) sheet.Release();
             if (next != null) next.Release();
             if (sheet != null) Destroy(sheet);
