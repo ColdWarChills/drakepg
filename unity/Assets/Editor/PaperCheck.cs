@@ -225,7 +225,16 @@ namespace Drakepg.EditorTools
             string steps = "tidal_wave frost_lance attack spark_chain kill", int speed = 1) =>
             GameRoot.I.StartCoroutine(SequenceLoop(monster, dir, fps, close, width, record, steps.Split(' '), speed));
 
-        static bool recording;
+        static bool recording, holding;
+
+        static IEnumerator HoldView(float x, float y, float zoom)
+        {
+            while (holding)
+            {
+                GameRoot.I.View(x, y, zoom, 0);
+                yield return null;
+            }
+        }
 
         static IEnumerator RecordWhile(string dir, int fps, int width)
         {
@@ -298,6 +307,9 @@ namespace Drakepg.EditorTools
             {
                 var c = Design.FromWorld(paper.GetComponent<Figure>().Body.bounds.center);
                 GameRoot.I.View(c.x, c.y - 20, 2, 0);
+                // Held there the whole fight: the battle's own zooms (a hit's punch, the finish) would take it back out.
+                holding = true;
+                GameRoot.I.StartCoroutine(HoldView(c.x, c.y - 20, 2));
                 docs = Object.FindObjectsByType<UnityEngine.UIElements.UIDocument>(FindObjectsSortMode.None);
                 foreach (var d in docs) if (d.rootVisualElement != null) d.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.None;
             }
@@ -323,7 +335,8 @@ namespace Drakepg.EditorTools
                     SetHp(battle, shown, 1);
                     GameRoot.I.StartCoroutine(Probe());
                 }
-                System.Func<List<BattleEvent>> act = move == "attack" ? (System.Func<List<BattleEvent>>)(() => battle.Attack()) : () => battle.UseSkill(move);
+                List<BattleEvent> events = null;
+                System.Func<List<BattleEvent>> act = () => events = move == "attack" ? battle.Attack() : battle.UseSkill(move);
                 Drive.Call("Act", act);
                 Debug.Log($"drakepg paper sequence: {step}");
                 if (kill)
@@ -346,8 +359,22 @@ namespace Drakepg.EditorTools
                 yield return new WaitForSeconds(0.3f);
                 yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) || MenuReady());
                 yield return new WaitForSeconds(0.7f);
+                // It missed (no hit of the hero's landed): the same move again, up to three more times.
+                for (int again = 0; again < 3 && GameRoot.I.Screen is BattleScreen
+                    && (events == null || !events.Exists(e => e.Kind == "hit" && e.Source == "player")); again++)
+                {
+                    Debug.LogWarning($"drakepg paper sequence: {step} missed, again");
+                    p.Data.Mp = 999;
+                    (cooldowns?.GetValue(battle) as Dictionary<string, int>)?.Clear();
+                    (cooldownOrder?.GetValue(battle) as List<string>)?.Clear();
+                    Drive.Call("Act", act);
+                    yield return new WaitForSeconds(0.3f);
+                    yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) || MenuReady());
+                    yield return new WaitForSeconds(0.7f);
+                }
             }
             recording = false;
+            holding = false;
             yield return new WaitUntil(() => Time.captureFramerate == 0);
             if (docs != null)
                 foreach (var d in docs) if (d != null && d.rootVisualElement != null) d.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.Flex;
