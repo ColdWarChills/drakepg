@@ -761,3 +761,12 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - Two steps went through the game's rules instead of the screen (putting on two body armors, buying five potions), and the boss-kill clip used a boss set to 1 HP.
   - The build was `claude/unity-port`, which differs from live in the benched hero bone tests and about 60 lines on how the hero's hands are read. Nothing was checked a second time on live.
 - **Not covered:** Chapters 2 and 3; the forge, the coach, the Spire; a new player; the designer's own sit-down.
+
+## Gemini callable from Claude sessions (2026-11-26; PC only, live)
+
+- **Asked by the designer:** "set it up, I'll login when prompted, install what is needed", after proposing Gemini for the writing.
+- **Built:** `scripts\gemini.cmd <brief> [model]` asks Gemini to do what a brief file says and writes the answer to `<brief>.gemini.json` next to it. It runs read-only (plan mode, sandboxed) through Google's Antigravity CLI (`agy` 1.5.18) with the designer's Google login. The default model is Gemini 4 Neon (High). How to use it is in CLAUDE.md, Commands.
+- **Checked:** a one-word brief came back "ready", and the log named the model that answered.
+- **The dead end on the way:** Gemini CLI was installed first (npm, 0.71.1). It stopped serving personal Google accounts on 2026-06-18, so every call failed.
+- **Changed on the PC:** the Unity MCP server that `agy` copied from the old Gemini settings is switched off in `agy` (the designer's yes). `.gitignore` keeps out the script's log files, which hold the account email.
+- **First use:** the blind writing trial (PLANS, Next up).
