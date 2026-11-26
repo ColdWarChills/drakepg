@@ -19,7 +19,9 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
       4. The first goal on screen says "reach Guild Rank E" before the player has met the Guild.
       5. Developer leftovers: the chapter picker on the class screen, "v0.8 · Chapter 3 · Unity" on the title, flat shapes at the campfire.
   - **Proposed, step 3:** the designer's 20-minute sit-down, with the one question the scoring could not answer. Claude's pick: "Does any ordinary fight in Chapter 1 make me press something other than Attack?"
-  - **Proposed, step 4:** fix what the score found, one at a time, each shown before the next. Nothing is built. Claude's pick for the first: the hunt hand-in. Starts after the designer's yes.
+  - **Step 4, started 2026-11-26 (the designer: "Yes, hand-in first"):** fix what the score found, one at a time, each shown before the next.
+    - **First, being built: the hunt hand-in.** Handing in a hunt opens a card of its own (what it paid, then the promotion, then the same level page a fight gives) instead of loose lines over the Guild board. It is built on `claude/unity-port` and goes to live after the designer has seen it and said yes.
+    - **Not in this job:** the story quest hand-in uses the same loose lines. It is fixed with Chapter 1's end (the second of the five).
   - It takes the place of "Play the first hour by hand and fix" in the roadmap (`docs/HANDOFF_2026-11-23.md`, section 8) as the way the game is tested.
 - **Decided (the designer, 2026-11-26): armor parts shown on the hero are still wanted, but benched.** "I mean I still want different armor parts to be shown somehow. We just don't get it to work, seems like it's impossible. So benching it for a bit until we figure out something."
   - The work goes on with today's hero, where the weapon and the body armor show. This settles the handoff's "first decision" for now.
