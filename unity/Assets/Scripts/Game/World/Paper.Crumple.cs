@@ -484,6 +484,12 @@ namespace Drakepg
             Part(3, t1);
             solidMat.SetFloat(CloseId, Mathf.Clamp01(mTime / CloseFade));
             solidMat.SetFloat(EdgeInkId, CrumpleEdgeInk * Mathf.Clamp01(mTime / InkFade));
+            if (CrumplePrint != Vector2.zero)
+            {
+                var u = Mathf.Clamp01(mTime / Mathf.Max(1e-3f, CrumplePrintFade));
+                u = u * u * (3 - 2 * u);
+                solidMat.SetVector(PrintId, new Vector4(CrumplePrint.x * u, CrumplePrint.y * u, 0, 0));
+            }
             showMat.SetFloat(OutlineId, CrumpleOutline * Mathf.Clamp01(mTime / InkFade));
             if (CheckChain)
             {
