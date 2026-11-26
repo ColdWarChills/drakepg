@@ -769,4 +769,14 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - **Checked:** a one-word brief came back "ready", and the log named the model that answered.
 - **The dead end on the way:** Gemini CLI was installed first (npm, 0.71.1). It stopped serving personal Google accounts on 2026-06-18, so every call failed.
 - **Changed on the PC:** the Unity MCP server that `agy` copied from the old Gemini settings is switched off in `agy` (the designer's yes). `.gitignore` keeps out the script's log files, which hold the account email.
-- **First use:** the blind writing trial (PLANS, Next up).
+- **First use:** the blind writing trial, next.
+
+## Blind writing trial: Claude picked both times (2026-11-26; docs only)
+
+- **Why:** the designer proposed Gemini for the game's writing ("I've read it is way better at writing").
+- **How:**
+  - One brief, `docs/writing_trial/brief.md`: Chapter 1's finale quest, "Heart of Thorns" (offer, reminder, thanks), plus three Thornwood notes (torn note, guild sign, old stump).
+  - It was written by Claude (a fresh helper that saw only the brief, not the game's lines) and by Gemini 4 Neon (High). Each side's first try was kept, unedited (`claude.txt`, `gemini.txt`).
+  - The private page https://claude.ai/artifact/9YWc43cq2W9xYjUe8z33UZ showed them as A and B, shuffled per block (`key.txt`).
+- **The designer's picks:** "1 B, 2 A". Both are Claude's versions.
+- **Nothing in the game changed.**
