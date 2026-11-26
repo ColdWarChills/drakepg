@@ -624,3 +624,23 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - The motion was not stepped on three more monsters; that waits for the look and the timing answer.
   - Still not "mostly paper"; nothing shown, the crumple stays off.
 - To look at, in the `claude/unity-port` worktree on the PC: `art/tests/paper_clip/paper_crumple_pass2_settings.jpg`, `paper_crumple_pass2_aim.jpg`, `paper_crumple_vs_fold_timing.jpg`, `paper_crumple_pass3_levers.jpg`, `paper_crumple_pass3_more_back_30a.jpg`, `_30b.jpg`.
+
+## Paper crumple timing: ends by about 1.2 s (2026-11-26; Unity, `claude/unity-port` 156fbf7, the crumple still off)
+- **Asked by the parent session:** about 1.2 s from the fold's start to the dust at x1, never past 1.4 s; folds a little faster, a short squeeze, the roll's energy cut smoothly; judged by eye at x1 and x2.
+- **Built, now the crumple's defaults:**
+  - folds 1.3 times faster (done by 0.45-0.6 s) and a 6 Hz squeeze;
+  - the settling from 0.55 to 0.85 s, with the ground's grip widened 5 times so a leaning wad is held;
+  - once settled, slow is enough to sleep;
+  - a stop at 1.2 s that bleeds the whole motion toward it, so a wad on the ground sleeps by then (its speed is logged). In the air nothing is slowed.
+- **Measured on all 30 (one seed each, 20 fps):** every wad asleep by 1.21 s, none capped, typical 1.05 s from the fold's start to the dust. The stop caught two or three of them (Bogmother, Millstone Crab, the Dew Slug in one of two runs), all at 0.02-0.07 sheets a second. Stepped at 60 fps, both stopped wads sit still for 0.2-0.3 s before the dust, with no snap. The death is now a little shorter than the 1.2 s aim: wads that come to rest early aren't held back.
+- **By eye:** the folds still read at x1 and x2. Checked by stepping Old Snowmaw (boss), Hedge Troll (tall) and Gust Sprite (flying) frame by frame at 60 fps x2, and Old Snowmaw at x1. No jumps. On the two bosses the first folds happen under the boss's white flash, as before. All 30 resting wads at game size lie like settled lumps; none stands balanced on a corner.
+- **Tried and dropped:**
+  - letting a leaning wad tip over freely: it gave the Dew Slug a late lurch and left the Bogmother on a tip;
+  - a later, gentler settling (0.7-1.0 s, stop 1.25 s): typical 1.10 s, but the stop caught the Dew Slug mid-roll and the Bog Lurker standing on an edge.
+- **Cost:** the settling adds a few multiplications a step and no allocations. The crumple's worst frame in the 60 fps runs is under 9 ms; the 20 fps recordings run three motion ticks a frame and peak at 12 ms.
+- **Shape:** unchanged. The crystal monsters still crumple into crystal-looking wads; the surface lever is next.
+- To look at, in the `claude/unity-port` worktree on the PC (`art/tests/paper_clip/`):
+  - `paper_crumple_timing_rest_30a.jpg`, `_30b.jpg`: all 30 at rest, game size;
+  - `paper_crumple_timing_x2_old_snowmaw.jpg`, `_x2_hedge_troll.jpg`, `_x2_gust_sprite.jpg`, `_x1_old_snowmaw.jpg`: the motion stepped frame by frame;
+  - `paper_crumple_timing_stop_bogmother.jpg`, `_stop_millstone.jpg`: the two stopped endings, 60 fps.
+- Runs: `art/tests/paper_crumple/tm/` (`P1` the defaults, `P2` the later settling, `M30` without the stop, `M1x`/`M2x`/`Q1x` at 60 fps).
