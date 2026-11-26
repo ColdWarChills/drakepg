@@ -19,12 +19,13 @@ namespace Drakepg
         /// damping (a share of critical), and the share of its speed that comes back when it slaps onto the paper under
         /// it (only a fold no other waits on bounces: one that others wait on lies flat once down). A fold starts once
         /// the one before it is `FoldLead` of a half turn along (min and max, seeded) and every fold it waits on is down.
+        /// 1.3 times the first try's 3.6-4.8 Hz: the folds end at 0.45-0.6 s and still read at x1 and x2.
         /// </summary>
-        public static Vector2 FoldHz = new Vector2(3.6f, 4.8f), FoldLead = new Vector2(0.25f, 0.6f);
+        public static Vector2 FoldHz = new Vector2(4.68f, 6.24f), FoldLead = new Vector2(0.25f, 0.6f);
         public static float FoldDamp = 0.45f, FoldBounce = 0.1f;
         /// <summary>The squeeze (the rim pulled in, the relief, the lean) starts once every fold is `SqueezeAt` of a half
         /// turn along; a spring of `SqueezeHz`, damped `SqueezeDamp` of critical (a little spring-back, as paper has).</summary>
-        public static float SqueezeAt = 0.6f, SqueezeHz = 4f, SqueezeDamp = 0.75f;
+        public static float SqueezeAt = 0.6f, SqueezeHz = 6f, SqueezeDamp = 0.75f;
         /// <summary>The killing blow knocks it away from the hero (sheets a second) and up (as high as a share of the sheet).</summary>
         public static float KnockAway = 0.6f, KnockUp = 0.05f;
         /// <summary>It goes to sleep once slower than `SleepSpeed` (sheets a second) for `SleepFor` seconds, on the
@@ -38,11 +39,26 @@ namespace Drakepg
         /// <summary>The roll lost to its lumps while it touches the ground (a share of the spin a second): each lump that
         /// comes down takes some of it, so a fast roll dies quickly. It never holds the wad still (`RollResist` does).</summary>
         public static float RollDamp = 4f;
-        /// <summary>Testing (off: `SettleRate` 0): the roll let go by a set time: from `SettleFrom` seconds the ground
-        /// takes more of the wad's slide and spin each second (and its bounces soften), rising smoothly to `SettleRate` a
-        /// second at `SettleBy`, and no tip-off after it. A slowing, never a stop; it still sleeps by the usual rule. Not
-        /// enough on its own to end with today's fold (its folds alone take about 0.65 s), and not checked for a creep.</summary>
-        public static float SettleFrom = 0.85f, SettleBy = 1.15f, SettleRate = 0;
+        /// <summary>The settling, so a death ends by a set time (about 1.2 s from the fold's start to the dust, never
+        /// past 1.4 s): from `SettleFrom` seconds the ground takes more of the wad's slide and spin each second (and its
+        /// bounces soften), rising smoothly to `SettleRate` a second at `SettleBy`, and no tip-off after it (0: off).
+        /// With the grip, the sleep and the stop below, all 30 monsters sleep by 1.21 s (tm/P1, 2026-11-26).</summary>
+        public static float SettleFrom = 0.55f, SettleBy = 0.85f, SettleRate = 10;
+        /// <summary>Testing (off): a wad whose centre has passed the edge it stands on tips over that edge freely (no
+        /// lumps' damping, no settling while it pivots), instead of creeping over it.</summary>
+        public static bool ToppleFree;
+        /// <summary>The settling also grips (0: off): the rolling resistance's lever grows smoothly from `SettleFrom`
+        /// to (1 + `SettleGrip`) times by `SettleBy`, so the ground holds a leaning wad and stops a roll in a set time (a
+        /// steady slowing ends; a share a second only creeps).</summary>
+        public static float SettleGrip = 4;
+        /// <summary>Once the settling is full (`SettleBy`), slow is enough to sleep, held or not: a wad rocking between
+        /// lumps that barely touch the ground is still to the eye, and the held test sees only this step's touches.</summary>
+        public static bool SettleSleep = true;
+        /// <summary>The settling's stop (0: off). From `SettleBy` the ground also takes the wad's whole motion
+        /// (slide any way and spin), a share a second rising smoothly to `SettleStopRate` at `SettleStop` seconds; then a
+        /// wad on the ground with its folds down sleeps whatever is left (logged), so no death runs past it. In the air
+        /// it is neither slowed nor stopped. Two of the 30 reach it (tm/P1), both nearly still.</summary>
+        public static float SettleStop = 1.2f, SettleStopRate = 30;
         /// <summary>The landing (the thud, dust and scraps): the first touch as hard as a fall of this share of the sheet.</summary>
         public static float LandFall = 0.2f;
         /// <summary>Test: log the body and the squeeze each tick (a sixtieth of a second) of the next deaths.</summary>
@@ -84,7 +100,8 @@ namespace Drakepg
         }
         readonly List<Contact> mContacts = new List<Contact>();
         float mTime, mStillFor, mTouchAt, mLandAt, mSleepAt, mStretch;
-        bool mDone, mCapped, mInContact, mWasTouching, mLandNow, mChainDone, mShapeDone, mHeld, mOnTip, mOverTip;
+        bool mDone, mCapped, mInContact, mWasTouching, mLandNow, mChainDone, mShapeDone, mHeld, mOnTip, mOverTip, mStopped;
+        float mStopSpeed;
         // The support of the last step (along the ground from the centre of mass, its end points, the centre's height
         // over it) and how often the sleep check tipped the wad off a tip.
         float mSupLo, mSupHi, mRise;
@@ -364,7 +381,8 @@ namespace Drakepg
             mSqueezeOn = mSqueezed = false;
             mSqueezeAt = mTouchAt = mLandAt = mSleepAt = -1;
             mTime = mStillFor = mStretch = 0;
-            mDone = mCapped = mInContact = mWasTouching = mLandNow = mChainDone = mShapeDone = mHeld = mOnTip = mOverTip = false;
+            mDone = mCapped = mInContact = mWasTouching = mLandNow = mChainDone = mShapeDone = mHeld = mOnTip = mOverTip = mStopped = false;
+            mStopSpeed = 0;
             mKicks = 0;
             mImpacts = "";
             mTrace.Clear();
@@ -525,8 +543,15 @@ namespace Drakepg
                 Kick();
                 mStillFor = 0;
             }
-            else if (slow && (mHeld || mOverTip)) mStillFor += TickSteps * MotionStep;
+            else if (slow && (mHeld || mOverTip || (SettleSleep && SettleRate > 0 && mTime >= SettleBy))) mStillFor += TickSteps * MotionStep;
             else mStillFor = 0;
+            // The settling's stop: on the ground at `SettleStop` with the folds down, it sleeps now.
+            if (SettleStop > 0 && mTime >= SettleStop - 1e-4f && allDown && mInContact && mStillFor < SleepFor - 1e-4f)
+            {
+                mStopped = true;
+                mStopSpeed = speed / sheetSize;
+                mStillFor = SleepFor;
+            }
             if (mStillFor >= SleepFor - 1e-4f)
             {
                 mDone = true;
@@ -541,7 +566,7 @@ namespace Drakepg
                     lo = Mathf.Min(lo, o);
                     hi = Mathf.Max(hi, o);
                 }
-                mRestNote = mContacts.Count > 0 ? $" (along the ground {lo:+0.000;-0.000} to {hi:+0.000;-0.000} of the sheet from its centre, radius {Mathf.Sqrt(mI) / sheetSize:0.000}, tipped off a tip {mKicks} times{(mOverTip ? ", resting on one" : "")})" : "";
+                mRestNote = mContacts.Count > 0 ? $" (along the ground {lo:+0.000;-0.000} to {hi:+0.000;-0.000} of the sheet from its centre, radius {Mathf.Sqrt(mI) / sheetSize:0.000}, tipped off a tip {mKicks} times{(mOverTip ? ", resting on one" : mHeld ? "" : ", not held")}{(mStopped ? $", stopped by the settling at {mStopSpeed:0.000} sheets/s" : "")})" : "";
             }
             else if (mTime >= MotionCap)
             {
@@ -589,6 +614,21 @@ namespace Drakepg
         {
             var u = Mathf.Clamp01((t - SettleFrom) / Mathf.Max(1e-3f, SettleBy - SettleFrom));
             return SettleRate * u * u * (3 - 2 * u);
+        }
+
+        /// <summary>The rolling resistance's lever at `t`, as a multiple: 1 before `SettleFrom`, rising smoothly to
+        /// 1 + `SettleGrip` at `SettleBy`.</summary>
+        static float StopNow(float t)
+        {
+            if (SettleStop <= 0) return 0;
+            var u = Mathf.Clamp01((t - SettleBy) / Mathf.Max(1e-3f, SettleStop - SettleBy));
+            return SettleStopRate * u * u * (3 - 2 * u);
+        }
+
+        static float GripNow(float t)
+        {
+            var u = Mathf.Clamp01((t - SettleFrom) / Mathf.Max(1e-3f, SettleBy - SettleFrom));
+            return 1 + SettleGrip * u * u * (3 - 2 * u);
         }
 
         /// <summary>How far a spin of `w` turns while a steady `slowing` and a share `k` a second stop it.</summary>
@@ -842,23 +882,37 @@ namespace Drakepg
             }
             // Rolling resistance: the lumpy wad's spin loses a lever of `reach` times the ground's push (the soft, lumpy
             // patch it rolls on); it never turns the spin back.
-            var reach = RollResist * Mathf.Sqrt(mI);
+            var lever = RollResist * Mathf.Sqrt(mI);
+            var reach = lever * GripNow(t);
             var dw = reach * press / mI;
             mW = Mathf.Abs(mW) <= dw ? 0 : mW - Mathf.Sign(mW) * dw;
-            mW *= Mathf.Exp(-RollDamp * dt);
+            // Toppling (`ToppleFree`): its centre of mass past the end of what it stands on (beyond the lever), so
+            // gravity tips it over that edge; no lump comes down while it pivots, so neither the lumps' damping nor the
+            // settling holds it back (else it creeps over the edge for a second).
+            var toppling = ToppleFree && (lo >= reach || hi <= -reach);
+            if (!toppling) mW *= Mathf.Exp(-RollDamp * dt);
             // Settling: the slide and spin bled off a share a second (the bounce above softened the same way).
-            if (settle > 0)
+            if (settle > 0 && !toppling)
             {
                 var keep = Mathf.Exp(-settle * dt);
                 mW *= keep;
                 mV -= tan * (Vector2.Dot(mV, tan) * (1 - keep));
             }
-            // Held: on a support wider than that lever each way, its centre of mass over it (or within the lever of it,
-            // what the rolling resistance holds). A narrower support with its centre over it is a tip: the sleep check
-            // tips it off (`Kick`), never this step's forces, so a rocking wad gets no push.
-            mOnTip = hi - lo < 2 * reach;
-            mOverTip = mOnTip && lo < reach && hi > -reach;
-            mHeld = !mOnTip && lo < reach && hi > -reach;
+            // The settling's stop (`SettleStop`): the whole motion bled, more each moment toward the stop.
+            var stop = StopNow(t);
+            if (stop > 0)
+            {
+                var keep = Mathf.Exp(-stop * dt);
+                mW *= keep;
+                mV *= keep;
+            }
+            // A tip: a support narrower than the plain lever each way, its centre of mass over it: the sleep check tips
+            // it off (`Kick`), never this step's forces, so a rocking wad gets no push. Held: otherwise its centre of
+            // mass over its support or within the rolling resistance's lever of it (the settling's grip widens that
+            // lever, never the tip test).
+            mOnTip = hi - lo < 2 * lever;
+            mOverTip = mOnTip && lo < lever && hi > -lever;
+            mHeld = !mOverTip && lo < reach && hi > -reach;
             mSupLo = lo;
             mSupHi = hi;
             mRise = rise;
