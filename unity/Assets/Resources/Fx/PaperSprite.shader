@@ -62,7 +62,20 @@ Shader "Drakepg/PaperSprite"
                 fixed4 tex = SampleSpriteTexture(IN.texcoord);
                 float2 p = PaperSheet(IN.texcoord);
                 float px = fwidth(p.y);
-                float4 c = PaperDamaged(float4(PaperCreased(tex.rgb, p, px), tex.a), p, px);
+                float4 c = PaperWet(float4(PaperCreased(tex.rgb, p, px), tex.a), p, px);
+                if (_PaperFrost.x > 0)
+                {
+                    // The outline blurred to about 3 screen px (the art's own mips).
+                    float w2 = px * 3;
+                    float4 edge;
+                    float2 ups = float2(_PaperRect.z / _PaperInfo.x, _PaperRect.w);
+                    PAPER_EDGE(_MainTex, IN.texcoord, log2(max(1, w2 * _PaperMore.w)), w2, ups, edge)
+                    // And blurred wide (a twentieth of the sheet): how far in from the outline the frost creeps.
+                    float ww = max(0.035, px * 5);
+                    float wide = tex2Dlod(_MainTex, float4(IN.texcoord, 0, log2(max(1, ww * _PaperMore.w)))).a;
+                    c = PaperFrost(c, p, px, edge, wide);
+                }
+                c = PaperSnapped(PaperRipped(PaperDamaged(c, p, px), p, px), p, px);
                 fixed a = c.a * IN.color.a;
                 float3 rgb = lerp(c.rgb * IN.color.rgb, IN.color.rgb, _Fill);
                 return fixed4(rgb * a, a);

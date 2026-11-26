@@ -214,15 +214,170 @@ namespace Drakepg.EditorTools
             Debug.Log("drakepg paper check: done");
         }
 
+        /// <summary>
+        /// Step 1d in a real fight: the hero (given the skills for it, put back after) uses each step in turn, waiting
+        /// for the menu after each: a skill id (tidal_wave, frost_lance, spark_chain...), "attack", or "kill" (HP to 1,
+        /// then an attack). Recorded the whole way as dir/f000.jpg... at `fps` frames a game second (`close`: the camera
+        /// zoomed 2x on the monster, no HUD), until 5 s after the killing blow. `frames` 0: not recorded, frame times
+        /// probed instead. The monster has 20x HP so only "kill" kills it.
+        /// </summary>
+        public static void Sequence(string monster, string dir, int fps = 20, bool close = false, int width = 1920, bool record = true,
+            string steps = "tidal_wave frost_lance attack spark_chain kill", int speed = 1) =>
+            GameRoot.I.StartCoroutine(SequenceLoop(monster, dir, fps, close, width, record, steps.Split(' '), speed));
+
+        static bool recording;
+
+        static IEnumerator RecordWhile(string dir, int fps, int width)
+        {
+            System.IO.Directory.CreateDirectory(dir);
+            Time.captureFramerate = fps;
+            var rt = new RenderTexture(width, width * 9 / 16, 0);
+            var small = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+            var i = 0;
+            while (recording && i < 4000)
+            {
+                yield return new WaitForEndOfFrame();
+                var tex = ScreenCapture.CaptureScreenshotAsTexture();
+                Graphics.Blit(tex, rt);
+                RenderTexture.active = rt;
+                small.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                small.Apply();
+                RenderTexture.active = null;
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir, $"f{i:0000}.jpg"), small.EncodeToJPG(92));
+                Object.Destroy(tex);
+                i++;
+            }
+            Time.captureFramerate = 0;
+            Object.Destroy(rt);
+            Object.Destroy(small);
+            Debug.Log($"drakepg paper sequence: recorded {i} frames to {dir}");
+        }
+
+        static IEnumerator SequenceLoop(string monster, string dir, int fps, bool close, int width, bool record, string[] steps, int speed)
+        {
+            Busy = true;
+            Cheats.God = true;
+            var keepSpeed = Saves.BattleSpeed;
+            Saves.BattleSpeed = speed;
+            // Not recorded: uncapped, so the frame times are the work's (the game asks for 60 fps).
+            var keepRate = Application.targetFrameRate;
+            var keepSync = QualitySettings.vSyncCount;
+            if (!record)
+            {
+                Application.targetFrameRate = -1;
+                QualitySettings.vSyncCount = 0;
+            }
+            yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) && Time.captureFramerate == 0);
+            GameRoot.I.Go(new BattleScreen(new BattleSetup { MonsterId = monster, ZoneId = ZoneOf(monster), RoomId = "thornwood_path", X = 640, Y = 600 }), 0);
+            yield return new WaitForSeconds(0.5f);
+            var battle = Drive.Field("battle") as Battle;
+            var shown = Drive.Field("hpShown") as Dictionary<string, double>;
+            if (battle == null)
+            {
+                Debug.LogWarning("drakepg paper sequence: no battle");
+                Busy = false;
+                yield break;
+            }
+            var p = battle.Player;
+            var keepLoadout = new List<string>(p.Data.Loadout);
+            var keepLearned = new List<string>(p.Data.Learned);
+            var keepMp = p.Data.Mp;
+            foreach (var id in new[] { "tidal_wave", "frost_lance", "spark_chain", "fire_bolt" })
+            {
+                if (!p.Data.Learned.Contains(id)) p.Data.Learned.Add(id);
+                if (!p.Data.Loadout.Contains(id)) p.Data.Loadout.Add(id);
+            }
+            battle.Enemy.MaxHp *= 20;
+            battle.Enemy.Hp = battle.Enemy.MaxHp;
+            // The HUD's HP too, or the first hit reads as a fall to a twentieth (the old tears at a third and 15%).
+            if (shown != null) shown["enemy"] = battle.Enemy.Hp;
+            yield return new WaitForSeconds(2.5f);
+            var paper = Drive.Field("paper") as Paper;
+            UnityEngine.UIElements.UIDocument[] docs = null;
+            if (close && paper != null)
+            {
+                var c = Design.FromWorld(paper.GetComponent<Figure>().Body.bounds.center);
+                GameRoot.I.View(c.x, c.y - 20, 2, 0);
+                docs = Object.FindObjectsByType<UnityEngine.UIElements.UIDocument>(FindObjectsSortMode.None);
+                foreach (var d in docs) if (d.rootVisualElement != null) d.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.None;
+            }
+            if (record)
+            {
+                recording = true;
+                GameRoot.I.StartCoroutine(RecordWhile(dir, fps, width));
+            }
+            yield return new WaitForSeconds(0.6f);
+            var cooldowns = typeof(Battle).GetField("cooldowns", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var cooldownOrder = typeof(Battle).GetField("cooldownOrder", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            foreach (var step in steps)
+            {
+                if (string.IsNullOrEmpty(step) || !(GameRoot.I.Screen is BattleScreen)) continue;
+                p.Data.Mp = 999;
+                (cooldowns?.GetValue(battle) as Dictionary<string, int>)?.Clear();
+                (cooldownOrder?.GetValue(battle) as List<string>)?.Clear();
+                // "kill" or "kill:<skill>": HP to 1, then that blow.
+                var kill = step == "kill" || step.StartsWith("kill:");
+                var move = kill ? (step.Length > 5 ? step.Substring(5) : "attack") : step;
+                if (kill)
+                {
+                    SetHp(battle, shown, 1);
+                    GameRoot.I.StartCoroutine(Probe());
+                }
+                System.Func<List<BattleEvent>> act = move == "attack" ? (System.Func<List<BattleEvent>>)(() => battle.Attack()) : () => battle.UseSkill(move);
+                Drive.Call("Act", act);
+                Debug.Log($"drakepg paper sequence: {step}");
+                if (kill)
+                {
+                    // A miss: again (up to three more), until it dies.
+                    for (int again = 0; again < 3; again++)
+                    {
+                        yield return new WaitForSeconds(0.3f);
+                        yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) || MenuReady() || battle.IsOver);
+                        if (battle.Enemy.Hp <= 0 || battle.IsOver || !(GameRoot.I.Screen is BattleScreen)) break;
+                        Debug.LogWarning("drakepg paper sequence: the killing blow missed, again");
+                        yield return new WaitForSeconds(0.5f);
+                        SetHp(battle, shown, 1);
+                        Drive.Call("Act", act);
+                    }
+                    yield return new WaitForSeconds(5f);
+                    Debug.Log($"drakepg paper sequence: the killing blow to 5 s after it {ProbeEnd()}; {(battle.Enemy.Hp <= 0 ? "killed" : "NOT killed")}");
+                    break;
+                }
+                yield return new WaitForSeconds(0.3f);
+                yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) || MenuReady());
+                yield return new WaitForSeconds(0.7f);
+            }
+            recording = false;
+            yield return new WaitUntil(() => Time.captureFramerate == 0);
+            if (docs != null)
+                foreach (var d in docs) if (d != null && d.rootVisualElement != null) d.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.Flex;
+            GameRoot.I.View(Design.Width / 2, Design.Height / 2, 1, 0);
+            p.Data.Loadout = keepLoadout;
+            p.Data.Learned = keepLearned;
+            p.Data.Mp = keepMp;
+            Saves.BattleSpeed = keepSpeed;
+            Application.targetFrameRate = keepRate;
+            QualitySettings.vSyncCount = keepSync;
+            yield return new WaitForSeconds(1f);
+            if (GameRoot.I.Screen is BattleScreen) yield return new WaitForSeconds(3f);
+            Drive.Room("brindlemoor");
+            yield return new WaitForSeconds(0.8f);
+            Debug.Log($"drakepg paper sequence: done; paper left in the scene: {CountFolds()}");
+            Busy = false;
+        }
+
         /// <summary>Paper fold quads and canvases still alive (none once a battle is gone).</summary>
         public static string CountFolds()
         {
-            int quads = 0, canvases = 0;
+            int quads = 0, canvases = 0, pieces = 0;
             foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
                 if (t.name == "paper fold") quads++;
+                if (t.name == "paper piece") pieces++;
+            }
             foreach (var r in Resources.FindObjectsOfTypeAll<RenderTexture>())
                 if (r.name == "paper canvas") canvases++;
-            return $"{quads} fold quads, {canvases} paper canvases";
+            return $"{quads} fold quads, {canvases} paper canvases, {pieces} snapped pieces";
         }
 
         static void SetHp(Battle battle, Dictionary<string, double> shown, double hp)
@@ -241,5 +396,77 @@ namespace Drakepg.EditorTools
         }
 
         static bool MenuReady() => !(Drive.Field("busy") is bool b) || !b;
+
+        /// <summary>
+        /// Step 1d stills: each monster in each water, ice and energy state, set through the paper's own hit code
+        /// (Paper.TestHit, no damage) and settled, saved as dir/&lt;monster&gt;_&lt;state&gt;.png (the whole screen) and
+        /// _&lt;state&gt;_3x.png (the camera zoomed 2x on it: 3x game size at 1920 wide). States: clean, wet, drying, dried,
+        /// frost, snap, rip, chain (three energy hits of one move), melt (ice, then fire).
+        /// </summary>
+        public static void States(string monsters, string dir, string states = "clean wet drying dried frost snap rip chain melt") =>
+            GameRoot.I.StartCoroutine(StatesLoop(monsters.Split(' '), dir, states.Split(' ')));
+
+        static IEnumerator StatesLoop(string[] ids, string dir, string[] states)
+        {
+            Busy = true;
+            System.IO.Directory.CreateDirectory(dir);
+            Cheats.God = true;
+            foreach (var id in ids)
+            {
+                if (string.IsNullOrEmpty(id)) continue;
+                yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen));
+                GameRoot.I.Go(new BattleScreen(new BattleSetup { MonsterId = id, ZoneId = ZoneOf(id), RoomId = "thornwood_path", X = 640, Y = 600 }), 0);
+                yield return new WaitForSeconds(3f);
+                var paper = Drive.Field("paper") as Paper;
+                if (paper == null)
+                {
+                    Debug.LogWarning("drakepg paper states: no paper for " + id);
+                    continue;
+                }
+                foreach (var state in states)
+                {
+                    paper.TestClear();
+                    switch (state)
+                    {
+                        case "wet": paper.TestHit("water"); break;
+                        case "drying": paper.TestHit("water"); paper.Settle(); paper.Turn(); break;
+                        case "dried": paper.TestHit("water"); paper.Settle(); paper.Turn(); paper.Turn(); paper.Turn(); break;
+                        case "frost": paper.TestHit("ice"); break;
+                        case "snap":
+                            paper.TestHit("ice");
+                            paper.Settle();
+                            yield return new WaitForSeconds(0.6f);
+                            paper.TestHit(null, 0.4f);
+                            break;
+                        case "rip": paper.TestHit("energy", 0.4f); break;
+                        case "chain": paper.TestHit("energy", 0.25f); paper.TestHit("energy", 0.25f); paper.TestHit("energy", 0.25f); break;
+                        case "melt": paper.TestHit("ice"); paper.Settle(); paper.TestHit("fire"); break;
+                    }
+                    paper.Settle();
+                    yield return new WaitForSeconds(0.25f);
+                    // The snapped piece, its flakes and the steam gone before the picture.
+                    if (state == "snap" || state == "melt") yield return new WaitForSeconds(2f);
+                    GameRoot.I.Snapshot($"{dir}/{id}_{state}.png");
+                    yield return null;
+                    var c = Design.FromWorld(paper.GetComponent<Figure>().Body.bounds.center);
+                    GameRoot.I.View(c.x, c.y, 2, 0);
+                    // The close-up without the HUD and menus over it.
+                    var docs = Object.FindObjectsByType<UnityEngine.UIElements.UIDocument>(FindObjectsSortMode.None);
+                    foreach (var d in docs) if (d.rootVisualElement != null) d.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.None;
+                    yield return new WaitForSeconds(0.1f);
+                    GameRoot.I.Snapshot($"{dir}/{id}_{state}_3x.png");
+                    yield return null;
+                    yield return null;
+                    foreach (var d in docs) if (d != null && d.rootVisualElement != null) d.rootVisualElement.style.display = UnityEngine.UIElements.DisplayStyle.Flex;
+                    GameRoot.I.View(Design.Width / 2, Design.Height / 2, 1, 0);
+                    yield return new WaitForSeconds(0.1f);
+                }
+                paper.TestClear();
+                Drive.Room("brindlemoor");
+                yield return new WaitForSeconds(0.8f);
+            }
+            Busy = false;
+            Debug.Log("drakepg paper states: done");
+        }
     }
 }

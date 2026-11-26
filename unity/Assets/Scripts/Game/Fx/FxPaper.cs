@@ -14,6 +14,9 @@ namespace Drakepg
     {
         static readonly long[] ScrapReds = { 0xc8372d, 0xe0483a, 0xa82a24, 0xd9402f };
         const long ScrapBack = 0xf1b3aa;
+        /// <summary>Frozen paper's flakes (a snapped piece breaking up): icy white, a pale blue back.</summary>
+        static readonly long[] FrostWhites = { 0xf6f9fc, 0xe4eef7, 0xffffff, 0xd6e5f1 };
+        const long FrostBack = 0xbcd3e6;
         /// <summary>Scraps kept at once (the oldest go first).</summary>
         const int MaxScraps = 80;
         static readonly List<Transform> scrapList = new List<Transform>();
@@ -39,12 +42,56 @@ namespace Drakepg
             }
         }
 
-        static void Scrap(Transform root, float x, float y, float vx, float vy, float size, float floorY, int groundOrder)
+        /// <summary>
+        /// White flakes of frozen paper at (x, y): a frosted piece snapping off (or breaking up where it lands). They
+        /// burst out all around, smaller than the red scraps, and drift down like them. `amount` 0.3-1.
+        /// </summary>
+        public static void FrostScraps(Transform parent, float x, float y, float amount, float floorY, int groundOrder)
         {
+            var root = Root(parent);
+            if (root == null || amount <= 0) return;
+            var count = Mathf.Clamp(Mathf.RoundToInt(5 + amount * 9), 4, 16);
+            for (int i = 0; i < count; i++)
+            {
+                var vx = Random.Range(-300f, 300f) * (0.6f + 0.6f * amount);
+                var vy = -Random.Range(120f, 380f) * (0.6f + 0.6f * amount);
+                Scrap(root, x + Random.Range(-18f, 18f), y + Random.Range(-14f, 14f), vx, vy, Random.Range(0.55f, 1.05f), floorY, groundOrder,
+                    FrostWhites, FrostBack);
+            }
+        }
+
+        /// <summary>A drop of water falling off soaked paper at (x, y), landing around `floorY`.</summary>
+        public static void PaperDrip(Transform parent, float x, float y, float floorY, int groundOrder)
+        {
+            var root = Root(parent);
+            if (root == null) return;
+            Drop(parent, root, x, y, Random.Range(-8f, 8f), Random.Range(20f, 60f), Random.Range(0.48f, 0.68f), 0x8cc2ea, floorY, groundOrder, 0, 0);
+        }
+
+        /// <summary>Steam off wet paper that fire dried (or frost it melted): pale wisps rising from the w x h body around (x, y).</summary>
+        public static void PaperSteam(Transform parent, float x, float y, float w, float h)
+        {
+            Burst(parent, x, y, Tex.Soft, 16, new Emit
+            {
+                Zone = new Rect(-w / 2, -h / 2, w, h),
+                SpeedX = Val.Rand(-25, 25),
+                SpeedY = Val.Rand(-130, -55),
+                Scale = Val.Life(0.9f, 2.6f),
+                Alpha = Val.Life(0.6f, 0),
+                Lifespan = Val.Rand(800, 1400),
+                Delay = Val.Rand(0, 250),
+                Tints = new[] { 0xf4f7f9L, 0xdfe6ec },
+            });
+        }
+
+        static void Scrap(Transform root, float x, float y, float vx, float vy, float size, float floorY, int groundOrder,
+            long[] fronts = null, long backColor = ScrapBack)
+        {
+            fronts ??= ScrapReds;
             var holder = Holder(root, x, y, "paper scrap");
-            var r = Img(holder, ScrapSprite(), 0, 0, ScrapReds[Random.Range(0, ScrapReds.Length)], 1, OrderFx - 1, false);
+            var r = Img(holder, ScrapSprite(), 0, 0, fronts[Random.Range(0, fronts.Length)], 1, OrderFx - 1, false);
             var front = r.color;
-            var back = Design.Hex(ScrapBack);
+            var back = Design.Hex(backColor);
             var spin = Random.Range(-600f, 600f);
             var turnRate = Random.Range(7f, 13f) * (Random.value < 0.5f ? -1 : 1);
             var phase = Random.Range(0f, Mathf.PI * 2);

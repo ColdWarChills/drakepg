@@ -145,11 +145,25 @@ Shader "Drakepg/PaperFold"
             fixed4 frag(v2f_img i) : SV_Target
             {
                 float2 local = (i.uv * _Canvas.xy - _Pad.xy) / _Pad.zw;
-                float4 c = tex2D(_MainTex, _PaperRect.xy + saturate(local) * _PaperRect.zw);
+                float2 uv = _PaperRect.xy + saturate(local) * _PaperRect.zw;
+                float4 c = tex2D(_MainTex, uv);
                 float inside = local.x >= 0 && local.y >= 0 && local.x <= 1 && local.y <= 1 ? 1 : 0;
                 float2 p = float2(local.x * _PaperInfo.x, local.y);
-                c.rgb = PaperCreased(c.rgb, p, 1 / _Pad.w);
-                c = PaperDamaged(c, p, 1 / _Pad.w);
+                float px = 1 / _Pad.w;
+                c.rgb = PaperCreased(c.rgb, p, px);
+                // Water, ice and energy as the fight left them (step 1d), so the crumple keeps them.
+                c = PaperWet(c, p, px);
+                if (_PaperFrost.x > 0)
+                {
+                    float w2 = px * 3;
+                    float4 edge;
+                    float2 ups = float2(_PaperRect.z / _PaperInfo.x, _PaperRect.w);
+                    PAPER_EDGE(_MainTex, uv, log2(max(1, w2 * _PaperMore.w)), w2, ups, edge)
+                    float ww = max(0.035, px * 5);
+                    float wide = tex2Dlod(_MainTex, float4(uv, 0, log2(max(1, ww * _PaperMore.w)))).a;
+                    c = PaperFrost(c, p, px, edge, wide);
+                }
+                c = PaperSnapped(PaperRipped(PaperDamaged(c, p, px), p, px), p, px);
                 return c * inside;
             }
         ENDCG
