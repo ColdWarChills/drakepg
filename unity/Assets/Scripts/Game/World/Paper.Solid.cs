@@ -371,6 +371,7 @@ namespace Drakepg
             mat.SetVectorArray(CreasesId, creaseArray);
             mat.SetVectorArray(TearsId, tears);
             mat.SetVectorArray(HolesId, holes);
+            SetElements(mat);
             Graphics.Blit(body.sprite.texture, solidCanvas, mat, 2);
         }
 

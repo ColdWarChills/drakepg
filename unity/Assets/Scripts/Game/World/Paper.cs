@@ -102,6 +102,7 @@ namespace Drakepg
             pivot = s.pivot;
             block = new MaterialPropertyBlock();
             rng = new System.Random(Environment.TickCount ^ GetInstanceID());
+            InitElements();
             r.sharedMaterial = live;
             Push();
             StartPrebuild();
@@ -119,6 +120,7 @@ namespace Drakepg
             block.SetVectorArray(CreasesId, creaseArray);
             block.SetVectorArray(TearsId, tears);
             block.SetVectorArray(HolesId, holes);
+            PushElements(block);
             body.SetPropertyBlock(block);
         }
 
@@ -128,9 +130,9 @@ namespace Drakepg
         void Update()
         {
             PrebuildTick();
-            if (folding || holeCount == 0) return;
+            if (folding) return;
             var dt = Time.deltaTime * Anim.TimeScale * Anim.Speed;
-            var changed = false;
+            var changed = TickElements(dt);
             for (int i = 0; i < holeCount; i++)
             {
                 if (holeAge[i] > 2) continue;
@@ -155,19 +157,40 @@ namespace Drakepg
         /// <summary>
         /// A blow landed at design (x, y): a crease across the sheet, through a spot anywhere on its middle pulled a
         /// little toward where it landed, at any angle (crumpled paper creases every way). `weight` 0-1. A fire blow
-        /// also burns a hole where it landed (pulled onto the picture's middle).
+        /// also burns a hole where it landed (pulled onto the picture's middle); water, ice and energy act on it too
+        /// (Paper.Elements.cs). Returns what the screen should add for it ("steam", "melt", "snap", "scraps") or null.
         /// </summary>
-        public void Hit(float x, float y, float weight, string element = null)
+        public string Hit(float x, float y, float weight, string element = null)
         {
-            if (folding) return;
+            if (folding) return null;
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             var at = ToSheet(Design.World(x, y));
-            if (element == "fire") Burn(at, weight);
+            var shows = Elements(element, at, weight, out var burn);
+            if (burn) Burn(at, weight);
+            if (shows == "steam" || shows == "melt")
+            {
+                // Pale wisps off the body (the fire dried it, or melted its frost).
+                var lo = Design.FromWorld(body.bounds.min);
+                var hi = Design.FromWorld(body.bounds.max);
+                Fx.PaperSteam(null, (lo.x + hi.x) / 2, (lo.y + hi.y) / 2, Mathf.Abs(hi.x - lo.x) * 0.7f, Mathf.Abs(hi.y - lo.y) * 0.7f);
+            }
+            else if (shows == "scraps")
+            {
+                // Frozen through but already broken twice: only flakes off where it was struck.
+                var floor = Design.FromWorld(FromSheet(new Vector2(Mathf.Clamp(at.x, 0, aspect), 0))).y;
+                Fx.FrostScraps(null, x, y, 0.45f, floor, Design.Depth(floor) - 60);
+            }
             var spot = new Vector2(aspect * (0.2f + R() * 0.6f), 0.2f + R() * 0.6f);
             var p = Vector2.Lerp(spot, new Vector2(Mathf.Clamp(at.x, 0, aspect), Mathf.Clamp01(at.y)), 0.25f);
             var a = R() * Mathf.PI;
             creases.Add(new Vector4(p.x, p.y, -Mathf.Sin(a), Mathf.Cos(a)));
             if (creases.Count > MaxCreases) creases.RemoveAt(0);
             Push();
+            LastHitMs = (float)watch.Elapsed.TotalMilliseconds;
+            if (element == "water" || element == "ice" || element == "energy" || shows != null)
+                Debug.Log($"drakepg: paper hit {element ?? "plain"}{(shows != null ? " (" + shows + ")" : "")}, {LastHitMs:0.000} ms on the CPU"
+                    + (shows == "snap" ? " (" + LastSnapLaps + ")" : ""));
+            return shows;
         }
 
         /// <summary>A hole burnt at sheet point `at` (the oldest goes when there are too many).</summary>
@@ -354,6 +377,7 @@ namespace Drakepg
             mat.SetVectorArray(CreasesId, creaseArray);
             mat.SetVectorArray(TearsId, tears);
             mat.SetVectorArray(HolesId, holes);
+            SetElements(mat);
             sheet = NewCanvas();
             next = NewCanvas();
             Graphics.Blit(body.sprite.texture, sheet, mat, 2);
