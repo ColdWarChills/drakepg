@@ -1,0 +1,5 @@
+Blind writing trial, 2026-11-26. Page: https://claude.ai/artifact/9YWc43cq2W9xYjUe8z33UZ
+Don't tell the designer before they pick.
+
+Block 1 (Heart of Thorns quest): A = Gemini 4 Neon (High), B = Claude Opus 5.5
+Block 2 (Thornwood notes):       A = Claude Opus 5.5,       B = Gemini 4 Neon (High)

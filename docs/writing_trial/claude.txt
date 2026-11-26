@@ -1,0 +1,12 @@
+OFFER 1: The moss, the bandits, the imps: I believe they all point to one cause. An ancient heartwood tree has woken in the Hollow, past the Deep Thornwood.
+OFFER 2: They call it the Thornheart. Please, put it to rest. The thorn wall that blocked the path to the Hollow will part for you now.
+OFFER 3: A word of advice. When the Thornheart gathers its strength for a big blow, Defend or heal. Do not stand there admiring it.
+REMINDER: The Thornheart is in the Hollow, past the Deep Thornwood. Do buy potions before you go.
+COMPLETE 1: You came back, thank goodness. Listen: the forest is already quieter. Even the birds sound less nervous.
+COMPLETE 2: This weapon was carved from the Thornheart itself. Take it. Better that wood fights for us than against us.
+COMPLETE 3: I fear this is only the beginning. But that is for tomorrow. Tonight, Brindlemoor celebrates you, whether you like speeches or not.
+NOTE: The boars are running out of the deep wood, not into it. Whatever woke in the Hollow is not hunting them. / It is pushing them out. We leave at first light. The boars have the right idea. - B.
+SIGN: NO CUTTING PAST THIS POINT. By order of Elder Maren. / Underneath, freshly carved in shaky letters: THE TREES ARE FIGHTING BACK.
+STUMP: Cut about a week ago, by the look of the sawdust. / New shoots already grow from it, each as long as your arm.
+
+(Claude Opus 5.5, a fresh helper that saw only brief.md, 2026-11-26, first output, unedited.)

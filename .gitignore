@@ -16,3 +16,6 @@ art/redo/
 # Dragon Crashers sample (Unity Asset Store): its licence allows it built into the game, not as files in this public repo
 unity/Assets/Test2D/dc/
 unity/Assets/Test2D/dc.meta
+# scripts/gemini.cmd output: the agy log holds the account email
+*.agy_log.txt
+*.gemini_err.txt
