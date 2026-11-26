@@ -644,3 +644,22 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - `paper_crumple_timing_x2_old_snowmaw.jpg`, `_x2_hedge_troll.jpg`, `_x2_gust_sprite.jpg`, `_x1_old_snowmaw.jpg`: the motion stepped frame by frame;
   - `paper_crumple_timing_stop_bogmother.jpg`, `_stop_millstone.jpg`: the two stopped endings, 60 fps.
 - Runs: `art/tests/paper_crumple/tm/` (`P1` the defaults, `P2` the later settling, `M30` without the stop, `M1x`/`M2x`/`Q1x` at 60 fps).
+
+## Paper crumple surface: paper only with the colour out (2026-11-26; Unity, `claude/unity-port` ed1d625, all off)
+- **Asked by the parent session:** carry on with the shape after the timing; the lever proposed was the surface (a matte, lighter print and a paper grain), not the fold.
+- **Built, testing knobs, all off by default:**
+  - `CrumplePrint`: x lifts the printed side toward the paper's colour, y takes out that share of its colour;
+  - `CrumplePrintFade`: the print grows in over the folds' first 0.5 s, so the picture doesn't turn pale in one frame (it did on the Volt Eel before the ramp; not re-run on it since);
+  - `CrumpleTintFront`: a form change's tint goes on the printed side only, not the paper's back.
+- **Tried, at game size against today's look** (the timing defaults, one seed each):
+  - lifted 40%, colour kept: the Golem and the Gust Sprite still look like ice, the Frostbinder too; the Ember Salamander and the Hedge Troll turn pale and look most like paper;
+  - lifted 40% with 55% of the colour out: the Golem and the Gust Sprite read as paper, but every monster becomes the same pale lump; the Stormcoil stays blue, because its form-change tint is laid on after the print;
+  - the form-change tint on the printed side only: almost no change (the back barely faces the camera); with the 40% lift as well, the Stormcoil goes grey, close to paper;
+  - a paper grain fixed to the sheet: doesn't show at game size, looks like stone at 2x; removed from the shader.
+- **Found:** the Stormcoil's and the Frostbinder's blue is mostly their form-change tint (the only two monsters with a `phase`) on top of their own glassy pictures, not the paper's back.
+- **Verdict:** a "partly", no clip. The gem-like wads read as paper only once their colour is gone; the choice between colour and paper is the designer's (PLANS "Proposed").
+- To look at, in the `claude/unity-port` worktree on the PC (`art/tests/paper_clip/`):
+  - `paper_crumple_surface_lift_vs_colour.jpg`: today's look, lifted, colour out; Golem, Gust Sprite, Stormcoil, Ember Salamander, Hedge Troll at rest, game size;
+  - `paper_crumple_surface_pop_volt_eel.jpg`: the pale print popping in before the ramp;
+  - `paper_crumple_surface_grain_2x.jpg`: the grain at 2x.
+- Runs: `art/tests/paper_crumple/sf/` (`S0` today, `S1`-`S4` and `S2w` lift with colour out and grain, `L1` lift only, `T1` tint on the print only, `L1T` both).
