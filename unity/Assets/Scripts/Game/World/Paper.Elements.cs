@@ -4,10 +4,11 @@ using UnityEngine;
 namespace Drakepg
 {
     /// <summary>
-    /// Water, ice and energy on the paper (docs/PLANS.md step 1d; the mock's soak, frost and bolts): water soaks a dark,
-    /// a little see-through splash where it lands (it sags and drips) that dries over a few turns; ice frosts it pale,
-    /// and the next blow while it is frosted snaps a piece off; energy rips it where it lands. Fire on wet paper only
-    /// steams it, fire on frost melts it to wet. Looks only: no rule reads any of it (a snap does no damage). Drawn by
+    /// Ice and energy on the paper (docs/PLANS.md step 1d; the mock's frost and bolts): ice frosts it pale, and the next
+    /// blow while it is frosted snaps a piece off; energy rips it where it lands; fire on frost melts the frost (no hole).
+    /// Water is off (`Water`): a water hit is a plain blow. Its code stays, unused: it soaks a dark, a little see-through
+    /// splash where it lands (it sags and drips) that dries over a few turns, fire on wet paper only steams it, and fire on
+    /// frost melts it to wet. Looks only: no rule reads any of it (a snap does no damage). Drawn by
     /// Fx/Paper.cginc on the living picture and baked into the death, so the crumple keeps it. Eases on Anim time (x2 battle
     /// speed, a boss's slow motion).
     /// </summary>
@@ -19,7 +20,12 @@ namespace Drakepg
         static readonly int SnapsId = Shader.PropertyToID("_PaperSnaps"), SnapInfoId = Shader.PropertyToID("_PaperSnapInfo");
         static readonly int WetStyleId = Shader.PropertyToID("_PaperWetStyle"), WetAtId = Shader.PropertyToID("_PaperWetAt");
 
-        /// <summary>Water's look (testing switch): true, an irregular splash where the water landed, deeper in its own
+        /// <summary>Water on the paper: off. Dropped after two tries (2026-11-26: the first read as shadow, the second as
+        /// ghostly glass); a water hit is a plain blow (it snaps frozen paper) and fire on frost only melts the frost.
+        /// The code stays, unused, behind this switch.</summary>
+        public static bool Water = false;
+
+        /// <summary>Water's look when `Water` is on (testing switch): true, an irregular splash where the water landed, deeper in its own
         /// colour, see-through, with a tide line and short runs down (the second try); false, the first try's even
         /// darkening front from the top.</summary>
         public static bool WetBlotches = true;
@@ -151,6 +157,8 @@ namespace Drakepg
             switch (element)
             {
                 case "water":
+                    // Off: a plain blow (below).
+                    if (!Water) break;
                     elementsOn = true;
                     WetSpot(at);
                     soakTo = 1;
@@ -172,14 +180,18 @@ namespace Drakepg
                 case "fire":
                     if (frost > 0.3f || frostTo > 0.3f)
                     {
-                        // Fire on frost melts it: wet paper, no hole (the splash where the fire landed if it was dry).
-                        WetSpot(at);
+                        // Fire on frost melts the frost, no hole (with water on, to wet paper: the splash where the fire
+                        // landed if it was dry).
                         frostTo = 0;
-                        soakTo = Mathf.Max(soakTo, 0.7f);
+                        if (Water)
+                        {
+                            WetSpot(at);
+                            soakTo = Mathf.Max(soakTo, 0.7f);
+                        }
                         burn = false;
                         return "melt";
                     }
-                    if (soak > 0.45f || soakTo > 0.45f)
+                    if (Water && (soak > 0.45f || soakTo > 0.45f))
                     {
                         // Fire on wet paper only steams it dry (wavy where it was wet).
                         soakTo = 0;
