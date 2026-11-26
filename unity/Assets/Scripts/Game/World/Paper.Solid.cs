@@ -25,8 +25,9 @@ namespace Drakepg
 {
     public partial class Paper
     {
-        /// <summary>The fold redone on a solver (off: today's fold, which stays in the game until this beats it).</summary>
-        public static bool Solid;
+        /// <summary>The death on the solver (on: the crumple below, the designer's "Yes, switch it on", 2026-11-26). Off: the
+        /// first fold (`Fold`), kept in the code, unused, until the crumple has run in the game for a while.</summary>
+        public static bool Solid = true;
 
         /// <summary>Nonzero: the next death folds with this seed (the paper check, for like-for-like stills); used once.</summary>
         public static int NextSeed;
@@ -37,12 +38,13 @@ namespace Drakepg
         /// <summary>Testing: no solver; the first crease's side turned by this many degrees (the renderer alone).</summary>
         public static float HandAngle = float.NaN;
 
-        /// <summary>Testing (step 1c, gate A): no solver; the paper is crumpled into a fixed lump (the look alone) by folding
+        /// <summary>The crumple (on with `Solid`: every monster's death since 2026-11-26; the cheat menu's "Paper monsters"
+        /// turns all paper off for testing). Try 1 (`CrumpleKind` 1, gate A): no solver; the paper is crumpled into a fixed lump (the look alone) by folding
         /// the whole sheet across planes, again and again: `CrumpleBig` folds through its middle across its longest spread in 3D (each halves it, so it balls up), then
         /// `CrumpleRim` smaller ones near its edge (corners turned in). Each fold tilts `CrumpleTilt` degrees (min, max)
         /// out of the sheet, so a flap lies 180 minus twice that from the paper it folds onto. The lump is turned to show
         /// about `CrumpleBack` of paper back.</summary>
-        public static bool Crumple;
+        public static bool Crumple = true;
         public static int CrumpleBig = 4, CrumpleRim = 6;
         public static Vector2 CrumpleTilt = new Vector2(12, 32);
         public static float CrumpleBack = 0.25f;

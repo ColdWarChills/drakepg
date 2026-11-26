@@ -12,7 +12,8 @@ namespace Drakepg.EditorTools
     /// HP is set to 1 and the killing blow and the death are recorded (Drive.Record, f000.jpg...). The hero can't die.
     /// <c>PaperCheck.Run("mossling bog_lurker", dir)</c>; options: hits (creases before the tears), speed (x1/x2),
     /// paper off (today's deaths, for timing), an Elite affix, Heroic, a Spire floor (the monster id is ignored), oneHit
-    /// (no creases, no tears), escape (a Lucky Impling, recorded as it runs off). Busy while running.
+    /// (no creases, no tears), escape (a Lucky Impling, recorded as it runs off), solid (the crumple, the game's death since
+    /// 2026-11-26; false: the first fold). Busy while running.
     /// </summary>
     public static class PaperCheck
     {
@@ -65,7 +66,7 @@ namespace Drakepg.EditorTools
         }
 
         public static void Run(string monsters, string dir, int hits = 4, int speed = 1, bool paper = true, string elite = null, bool heroic = false,
-            int floor = 0, bool oneHit = false, int frames = 80, bool escape = false, bool solid = false, int seed = 0)
+            int floor = 0, bool oneHit = false, int frames = 80, bool escape = false, bool solid = true, int seed = 0)
         {
             Busy = true;
             System.IO.Directory.CreateDirectory(dir);
