@@ -765,7 +765,8 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 ## Gemini callable from Claude sessions (2026-11-26; PC only, live)
 
 - **Asked by the designer:** "set it up, I'll login when prompted, install what is needed", after proposing Gemini for the writing.
-- **Built:** `scripts\gemini.cmd <brief> [model]` asks Gemini to do what a brief file says and writes the answer to `<brief>.gemini.json` next to it. It runs read-only (plan mode, sandboxed) through Google's Antigravity CLI (`agy` 1.5.18) with the designer's Google login. The default model is Gemini 4 Neon (High). How to use it is in CLAUDE.md, Commands.
+- **Built:** `scripts\gemini.cmd <brief> [model]` (the work is in `scripts/gemini.mjs`) asks Gemini to do what a brief file says and writes the answer to `<brief>.gemini.txt` next to it. It runs through Google's Antigravity CLI (`agy` 1.5.18) with the designer's Google login. The default model is Gemini 4 Neon (High). How to use it is in CLAUDE.md, Commands.
+- **Changed the same day:** at first it ran in plan mode and had Gemini read the brief file. Gemini 4 Carbon then stalled with no answer, so the brief now goes inside the message, Gemini is told to use no tools, and plan mode is off. Sandboxing and the approval rule ("request-review": a change waits for an approval that can't come in an unattended run) still hold. Carbon still stalled twice after that (high, then medium; cause not confirmed). Gemini 3.8 Flash answered.
 - **Checked:** a one-word brief came back "ready", and the log named the model that answered.
 - **The dead end on the way:** Gemini CLI was installed first (npm, 0.71.1). It stopped serving personal Google accounts on 2026-06-18, so every call failed.
 - **Changed on the PC:** the Unity MCP server that `agy` copied from the old Gemini settings is switched off in `agy` (the designer's yes). `.gitignore` keeps out the script's log files, which hold the account email.

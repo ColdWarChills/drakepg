@@ -1,0 +1,12 @@
+OFFER 1: The Thornheart, an ancient heartwood tree, woke in the Hollow.
+OFFER 2: Past the Deep Thornwood, the thorn wall now parts for you.
+OFFER 3: When the Thornheart gathers strength, Defend or heal.
+REMINDER: The Thornheart waits in the Hollow, past the Deep Thornwood.
+COMPLETE 1: The forest is already quieter. Tonight, Brindlemoor celebrates you.
+COMPLETE 2: Take this weapon, carved from the Thornheart itself.
+COMPLETE 3: Still, I fear this is only the beginning.
+NOTE: Boars run out of the deep wood, not in. / Something in the Hollow drives them. We're leaving. -B
+SIGN: No cutting past this point. By order of Elder Maren. / Freshly carved below: THE TREES FIGHT BACK.
+STUMP: Cut about a week ago. / Its new shoots are already as long as your arm.
+
+(Claude Opus 5.5, a fresh helper that saw only brief.md, 2026-11-26, first output, unedited.)
