@@ -451,22 +451,25 @@ namespace Drakepg
 
         // --- Effects (fx.ts's coin shower, confetti and level burst, as UI pieces so they show over the board) ---
 
-        static VisualElement Bit(VisualElement layer, Fx.Tex tex, float size, Color tint)
+        /// <summary>An effect texture at `scale` times its own size (as Fx draws it: its texels / 2), so a confetti leaf stays a thin oval.</summary>
+        static VisualElement Bit(VisualElement layer, Fx.Tex tex, float scale, Color tint)
         {
+            var sprite = Fx.Get(tex);
             var e = new VisualElement { pickingMode = PickingMode.Ignore };
             e.style.position = Position.Absolute;
-            Ui.Size(e, size, size);
-            e.style.backgroundImage = new StyleBackground(Fx.Get(tex));
+            Ui.Size(e, sprite.rect.width / 2 * scale, sprite.rect.height / 2 * scale);
+            e.style.backgroundImage = new StyleBackground(sprite);
             e.style.unityBackgroundImageTintColor = tint;
             e.style.transformOrigin = new TransformOrigin(Length.Percent(50), Length.Percent(50));
             layer.Add(e);
             return e;
         }
 
-        static void Put(VisualElement e, float x, float y, float size)
+        /// <summary>Center an effect piece on (x, y).</summary>
+        static void Put(VisualElement e, float x, float y)
         {
-            e.style.left = x - size / 2;
-            e.style.top = y - size / 2;
+            e.style.left = x - e.style.width.value.value / 2;
+            e.style.top = y - e.style.height.value.value / 2;
         }
 
         /// <summary>Coins pop out of `from`, then fly into `to`, a coin sound and a twinkle as each lands.</summary>
@@ -474,22 +477,21 @@ namespace Drakepg
         {
             if (layer.panel == null) return;
             var n = Mathf.Clamp(count, 1, 14);
-            const float size = 30;
             for (int i = 0; i < n; i++)
             {
-                var coin = Bit(layer, Fx.Tex.Coin, size, Color.white);
-                Put(coin, from.x, from.y, size);
+                var coin = Bit(layer, Fx.Tex.Coin, 1, Color.white);
+                Put(coin, from.x, from.y);
                 coin.style.scale = new Scale(Vector3.zero);
                 float popX = from.x + UnityEngine.Random.Range(-110f, 110f), popY = from.y + UnityEngine.Random.Range(-70f, -10f);
                 Anim.Float(0, 1, 0.26f, t =>
                 {
-                    Put(coin, Mathf.LerpUnclamped(from.x, popX, t), Mathf.LerpUnclamped(from.y, popY, t), size);
+                    Put(coin, Mathf.LerpUnclamped(from.x, popX, t), Mathf.LerpUnclamped(from.y, popY, t));
                     var s = Mathf.LerpUnclamped(0, 1.3f, t);
                     coin.style.scale = new Scale(new Vector3(s, s, 1));
                 }, Ease.BackOut);
                 Anim.Float(0, 1, 0.48f, t =>
                 {
-                    Put(coin, Mathf.LerpUnclamped(popX, to.x, t), Mathf.LerpUnclamped(popY, to.y, t), size);
+                    Put(coin, Mathf.LerpUnclamped(popX, to.x, t), Mathf.LerpUnclamped(popY, to.y, t));
                     var s = Mathf.LerpUnclamped(1.3f, 0.7f, t);
                     coin.style.scale = new Scale(new Vector3(s, s, 1));
                 }, Ease.CubicIn, 0.38f + i * 0.045f).OnComplete(() =>
@@ -498,29 +500,29 @@ namespace Drakepg
                     if (layer.panel == null) return;
                     Sfx.Play("coin");
                     onLand?.Invoke();
-                    Stars(layer, to.x, to.y, 3, 100, new[] { Design.Hex(0xffd75e) }, 0.3f, 14);
+                    Stars(layer, to.x, to.y, 3, 100, new[] { Design.Hex(0xffd75e) }, 0.3f, 0.6f);
                 });
             }
         }
 
         /// <summary>Stars flung out of (x, y), falling a little and shrinking away.</summary>
-        static void Stars(VisualElement layer, float x, float y, int count, float speed, Color[] colors, float life = 0.9f, float size = 26,
+        static void Stars(VisualElement layer, float x, float y, int count, float speed, Color[] colors, float life = 0.9f, float scale = 1,
             float angleFrom = 0, float angleTo = 360, float gravity = 200)
         {
             if (layer.panel == null) return;
             for (int i = 0; i < count; i++)
             {
-                var star = Bit(layer, Fx.Tex.Star, size, colors[UnityEngine.Random.Range(0, colors.Length)]);
+                var star = Bit(layer, Fx.Tex.Star, scale, colors[UnityEngine.Random.Range(0, colors.Length)]);
                 var a = UnityEngine.Random.Range(angleFrom, angleTo) * Mathf.Deg2Rad;
                 var v = UnityEngine.Random.Range(speed * 0.35f, speed);
                 float vx = Mathf.Cos(a) * v, vy = Mathf.Sin(a) * v;
                 var spin = UnityEngine.Random.Range(-360f, 360f);
                 var lifeI = life * UnityEngine.Random.Range(0.75f, 1.1f);
-                Put(star, x, y, size);
+                Put(star, x, y);
                 Anim.Float(0, 1, lifeI, t =>
                 {
                     var s = t * lifeI;
-                    Put(star, x + vx * s, y + vy * s + gravity * s * s / 2, size);
+                    Put(star, x + vx * s, y + vy * s + gravity * s * s / 2);
                     star.style.scale = new Scale(Vector3.one * (1 - t));
                     star.style.rotate = new Rotate(spin * t);
                 }, Ease.Linear).OnComplete(star.RemoveFromHierarchy);
@@ -534,15 +536,14 @@ namespace Drakepg
             long[] tints = { 0xf1c40f, 0xe74c3c, 0x3498db, 0x2ecc71, 0x9b59b6, 0xffffff };
             for (int i = 0; i < 60; i++)
             {
-                var size = 26 * UnityEngine.Random.Range(0.6f, 1.1f);
-                var bit = Bit(layer, Fx.Tex.Leaf, size, Design.Hex(tints[UnityEngine.Random.Range(0, tints.Length)]));
+                var bit = Bit(layer, Fx.Tex.Leaf, UnityEngine.Random.Range(0.6f, 1.1f), Design.Hex(tints[UnityEngine.Random.Range(0, tints.Length)]));
                 float x = UnityEngine.Random.Range(0f, Design.Width), vx = UnityEngine.Random.Range(-60f, 60f), vy = UnityEngine.Random.Range(120f, 320f);
                 const float life = 2.6f;
-                Put(bit, x, -20, size);
+                Put(bit, x, -20);
                 Anim.Float(0, 1, life, t =>
                 {
                     var s = t * life;
-                    Put(bit, x + vx * s, -20 + vy * s, size);
+                    Put(bit, x + vx * s, -20 + vy * s);
                     bit.style.rotate = new Rotate(720 * t);
                     bit.style.opacity = t > 0.85f ? (1 - t) / 0.15f : 1;
                 }, Ease.Linear).OnComplete(bit.RemoveFromHierarchy);
@@ -570,14 +571,14 @@ namespace Drakepg
             Anim.Float(0, 1, 0.26f, t => Shape(Mathf.LerpUnclamped(0.5f, 4, t), Mathf.LerpUnclamped(0.5f, 18, t), 0.9f * t), Ease.CubicOut)
                 .OnComplete(() => Anim.Float(0, 1, 0.9f, t => Shape(Mathf.LerpUnclamped(4, 2.5f, t), 18, 0.9f * (1 - t)), Ease.Linear)
                     .OnComplete(pillar.RemoveFromHierarchy));
-            var ring = Bit(layer, Fx.Tex.Ring, 64, Design.Hex(0xffc93c));
-            Put(ring, x, y, 64);
+            var ring = Bit(layer, Fx.Tex.Ring, 1, Design.Hex(0xffc93c));
+            Put(ring, x, y);
             Anim.Float(0, 1, 0.5f, t =>
             {
                 ring.style.scale = new Scale(new Vector3(1 + 3 * t, (1 + 3 * t) * 0.35f, 1));
                 ring.style.opacity = 1 - t;
             }, Ease.CubicOut).OnComplete(ring.RemoveFromHierarchy);
-            Stars(layer, x, y - 120, 30, 420, new[] { Design.Hex(0xffe066), Design.Hex(0xffb300), Design.Hex(0xf5a623) }, 1.2f, 28, 200, 340, 300);
+            Stars(layer, x, y - 120, 30, 420, new[] { Design.Hex(0xffe066), Design.Hex(0xffb300), Design.Hex(0xf5a623) }, 1.2f, 1.2f, 200, 340, 300);
         }
     }
 }
