@@ -6,7 +6,18 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
-- **Now: handoff (2026-11-26). Read `docs/HANDOFF_2026-11-26.md` first; everything below is the record.** The designer opens a new Fable orchestrator session to decide where and how to move toward the goal.
+- **Now: the rule sheet (2026-11-26). `docs/RULE_SHEET.md` is what the game is checked against.** The designer: "The work on the game did not proceed as much as I would want. Have not tested it for a while as well. Testing it for now takes too long and have no clear target of what we are testing. We should look for some rulesets there are to see where and how we can improve."
+  - **What it is:** 29 rules in six groups: the first ten minutes, goals and progress, the fight, screens and controls, feel and world, the demo. They are cut from two checked lists (PLAY, Desurvire and Wiberg 2009; Pinelle's ten, 2008) plus the demo numbers. Each rule says who checks it: a bot, Claude, the designer or a new player.
+  - **Why it answers "takes too long":** most rules are checked by Claude and the bots, not by the designer playing. The designer's part is one sit-down of about 20 minutes with one question written down first.
+  - **Step 1, done:** the sheet is written. Nothing is scored yet; its "Known today" list is from the records, not from the game.
+  - **Proposed, step 2:** Claude scores the Unity game against the sheet, rule by rule, with a picture for every rule the game breaks, the worst five first. Starts after the designer's yes.
+  - **Proposed, step 3:** the designer's 20-minute sit-down, with the one question the scoring could not answer.
+  - It takes the place of "Play the first hour by hand and fix" in the roadmap (`docs/HANDOFF_2026-11-23.md`, section 8) as the way the game is tested.
+- **Decided (the designer, 2026-11-26): armor parts shown on the hero are still wanted, but benched.** "I mean I still want different armor parts to be shown somehow. We just don't get it to work, seems like it's impossible. So benching it for a bit until we figure out something."
+  - The work goes on with today's hero, where the weapon and the body armor show. This settles the handoff's "first decision" for now.
+  - Don't propose it again until a way turns up or the designer raises it.
+  - The roadmap still needs new dates without the hero chain.
+- **Handoff (2026-11-26). Read `docs/HANDOFF_2026-11-26.md` first; everything below is the record.** The designer opens a new Fable orchestrator session to decide where and how to move toward the goal.
   - **Done since 2026-11-24, all on the live branch:**
     - the defeat card that says why you lost;
     - the boss's first-kill card;
