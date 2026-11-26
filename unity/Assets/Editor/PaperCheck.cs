@@ -109,6 +109,8 @@ namespace Drakepg.EditorTools
                 GameRoot.I.Go(new BattleScreen(new BattleSetup
                 {
                     MonsterId = floor > 0 ? null : id, ZoneId = zone, RoomId = "thornwood_path", Elite = elite, Heroic = heroic, TowerFloor = floor,
+                    // A floor's finish puts back the HP and MP the hero came with (0 if not given), as TowerPanel.StartFloor does.
+                    EntryHp = Session.Player.Hp, EntryMp = Session.Player.Mp,
                     X = 640, Y = 600,
                 }), 0);
                 if (FastKill)
@@ -286,6 +288,8 @@ namespace Drakepg.EditorTools
             GameRoot.I.Go(new BattleScreen(new BattleSetup
             {
                 MonsterId = floor > 0 ? null : monster, ZoneId = ZoneOf(monster), RoomId = "thornwood_path", TowerFloor = floor, X = 640, Y = 600,
+                // A floor's finish puts back the HP and MP the hero came with (0 if not given), as TowerPanel.StartFloor does.
+                EntryHp = Session.Player.Hp, EntryMp = Session.Player.Mp,
             }), 0);
             yield return new WaitForSeconds(0.5f);
             var battle = Drive.Field("battle") as Battle;
