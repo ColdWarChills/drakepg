@@ -686,3 +686,22 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - with the cheat menu's switch off, the next fight built no crumple and ended as before;
   - the console: no errors.
 - **Not covered:** a long play session; a Unity web build (only the Phaser game deploys from the live branch; the crumple's no-thread path has never run).
+
+## Paper crumple, the icy wads' shape: two tries, not reached (2026-11-26; Unity, `claude/unity-port` 5cdf362, all off)
+- **Asked by the parent session:** the Glacier Golem, Gust Sprite, Stormcoil and Frostbinder leave wads that read as ice or gems. Make them lumpy, dented wads with many small creases and the white back at the edges, without changing the other wads; two failed tries, then stop. Judged at game size and 3x against three crumpled-paper photos (a brown paper ball, a white one, a blue lined one).
+- **Found first:** no measure of the wad sets the four apart. Their largest flat face is 21-33% (the Mossling's, which reads as paper, 34%), their normals' spread 0.80-0.90 (0.67-0.93 over all 30). A change for them alone would need a per-monster switch.
+- **Built, testing knobs, all off by default:**
+  - `CrumpleCrinkle`: x how steep the small creases are (short ridges and valleys drawn on the faces, one per cell of y canvas px, fixed to the paper), z the paper's white back along cut edges (px), w how much a crease's lit side brightens;
+  - `CrumpleLumps`: the outline pulled in and out in small lumps, after the relief; `CrumpleDents`: inner relief points pushed in. Both draw their own random numbers, so the build and its pick of tries play as without them;
+  - off, the notes of the four, the Mossling and the Hedge Troll are identical to the all-30 run.
+- **Try 1, on today's wads (same seed, same pick):**
+  - long straight crease lines and soft bumps were tried first: invisible at game size, or hammered metal at 3x. The short ridges show at game size; with their bright side the wads read as crumpled foil, with dark sides only as scratches on a gem;
+  - the lumps (kept under 0.08 of the reach; at 0.25 they made spikes) and the white edge hardly show at game size;
+  - the wad stays a block with a few big flat faces and a straight outline, which is what reads as ice. All at rest by 1.15 s, worst frame 12.4 ms.
+- **Try 2, more and smaller folds (7 tucks and 4 pleats instead of 4 and 2) and a smaller wad (x1.25 instead of x1.5), three seeds each:** smaller wads of many small shards, read as clusters of ice crystals at game size and 3x. 8,000-17,000 points instead of about 3,000, a worst frame of 22-48 ms, builds of 1.4-2.1 s; all at rest by 1.24 s.
+- **Verdict:** not reached, nothing shown. The gem look comes from the glassy pictures, as the second pass found; the shape lever doesn't turn them into paper. Claude's pick: leave the icy wads as they are (PLANS "Proposed").
+- To look at, in the `claude/unity-port` worktree on the PC (`art/tests/paper_clip/`):
+  - `paper_crumple_icy_try1_game.jpg`: the four at rest, game size: today, creases, creases with dark sides only, plus the white edge, plus lumps and dents (the Stormcoil's and the Frostbinder's rest frames have the petals and the dust over them);
+  - `paper_crumple_icy_try1_3x.jpg`: the Golem and the Gust Sprite at 3x beside a photo; `paper_crumple_icy_try1_crease_size_3x.jpg`: crease strengths and sizes on the Golem;
+  - `paper_crumple_icy_try2_game.jpg`: today and try 2 on three seeds each, game size; `paper_crumple_icy_try2_3x.jpg`.
+- Runs: `art/tests/paper_crumple/icy/` (`R0`-`R4` try 1's closing batch on today's wads; `T0`/`T2` today and try 2 on the new seeds; `A`-`F` the tuning).
