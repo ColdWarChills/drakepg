@@ -24,7 +24,7 @@ float4 _PaperSnaps[PAPER_SNAPS];    // per snapped piece: a point on the break (
 float4 _PaperSnapInfo[PAPER_SNAPS]; // per snapped piece: x 1 once it has broken off, y seed
 float4 _PaperWetAt;                 // where the water landed (xy, sheet space): the middle of the wet splash
 float _PaperWetDebug;               // testing: the wet area painted flat magenta
-float _PaperWetStyle;               // global (Paper.WetBlotches): 0 the first try (a front from the top), 1 a wet area with tongues and splash spots
+float _PaperWetStyle;               // global (Paper.WetBlotches): 0 the first try (a front from the top), 1 a splash where the water landed, with runs below it
 
 float2 PaperSheet(float2 uv)
 {
