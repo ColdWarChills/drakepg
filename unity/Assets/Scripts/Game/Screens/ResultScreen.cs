@@ -378,82 +378,23 @@ namespace Drakepg
             return parts;
         }
 
-        static readonly Dictionary<string, string> StatHelp = new Dictionary<string, string>
-        {
-            [Stat.Str] = "Melee damage", [Stat.Int] = "Magic, max MP", [Stat.Dex] = "Pierce, hit, crit", [Stat.End] = "Max HP",
-        };
-
         /// <summary>1: the fight's rewards. 2: the level-up page.</summary>
         int page = 1;
 
         /// <summary>
-        /// The level-up page: the level, what grew (before -> after), new skills, and the stat points to place right
-        /// here (buttons, or keys 1-4); what's left over waits in the Character panel. `intro`: with the fanfare (the
-        /// first time; placing a point redraws it without).
+        /// The level-up page (LevelUpPage, shared with a hand-in's cards), with its fanfare when `intro` (the first time;
+        /// placing a point redraws it without), then Continue.
         /// </summary>
         void LevelPage(bool intro)
         {
-            const float cx = Design.Width / 2;
-            var player = Session.Player;
-            var before = data.Before;
             page = 2;
             go = null;
             Root.Clear();
-
-            var title = Ui.Text(Root, cx, 150, "Level Up!", 56, Palette.TextGold, false, 0.5f, 0.5f, stroke: true);
-            Fonts.Title(title);
-            Ui.Text(Root, cx, 204, $"Level {before.Level}  →  {player.Level}", 26, bold: true, ax: 0.5f, ay: 0.5f);
-            HeroPortrait(player, cx - 235, 428, 190);
-
-            // What grew. Stat points placed here show up at once.
-            var rows = new List<(string label, double from, double to)> { ("Max HP", before.MaxHp, player.MaxHp), ("Max MP", before.MaxMp, player.MaxMp) };
-            var stats = player.Stats;
-            foreach (var k in Stat.Keys)
-                if (stats[k] != before.Stats[k]) rows.Add((Player.StatLabels[k], before.Stats[k], stats[k]));
-            const float x0 = cx - 100;
-            var y = 244f;
-            foreach (var (label, from, to) in rows)
-            {
-                Ui.Text(Root, x0, y, label, 20, ay: 0.5f);
-                Ui.Text(Root, x0 + 170, y, JsMath.Str(from), 20, Palette.TextDim, false, 1, 0.5f);
-                Ui.Text(Root, x0 + 196, y, "→", 20, Palette.TextDim, false, 0.5f, 0.5f);
-                Ui.Text(Root, x0 + 222, y, JsMath.Str(to), 20, Palette.TextGood, true, 0, 0.5f);
-                y += 28;
-            }
-            Ui.Text(Root, x0, y, "HP and MP restored", 18, Palette.TextGood, false, 0, 0.5f);
-            y += 28;
-            foreach (var skill in data.NewSkills)
-            {
-                Ui.Text(Root, x0, y, $"New skill: {skill}", 20, Palette.TextMagic, true, 0, 0.5f);
-                y += 28;
-            }
-            if (Hud.NextUnlock(player) is string next) Ui.Text(Root, x0, y, $"Coming up  ·  {next}", 16, Palette.TextDim, false, 0, 0.5f);
-
-            // The stat points, placed right here.
-            var points = player.Data.StatPoints;
-            Ui.Text(Root, cx, 448, points > 0 ? $"{points} stat point{(points > 1 ? "s" : "")} to place" : "All stat points placed", 19,
-                points > 0 ? Palette.TextGold : Palette.TextDim, points > 0, 0.5f, 0.5f);
-            for (int i = 0; i < Stat.Keys.Length; i++)
-            {
-                var k = Stat.Keys[i];
-                var x = cx + (i - 1.5f) * 158;
-                var text = $"{Player.StatLabels[k]}  {JsMath.Str(stats[k])}";
-                if (points > 0) new UiButton(Root, x, 488, $"{text}   +", () => PlacePoint(k), 146, 44, 19);
-                else Ui.Text(Root, x, 488, text, 20, bold: true, ax: 0.5f, ay: 0.5f);
-                Ui.Text(Root, x, 529, StatHelp[k], 13, Palette.TextDim, false, 0.5f, 0.5f);
-            }
-
+            var title = LevelUpPage.Draw(Root, Session.Player, data.Before, data.NewSkills, PlacePoint);
             if (intro)
             {
-                title.style.scale = new Scale(Vector3.one * 2);
-                title.style.opacity = 0;
-                Anim.Float(0, 1, 0.38f, t =>
-                {
-                    var s = Mathf.LerpUnclamped(2, 1, t);
-                    title.style.scale = new Scale(new Vector3(s, s, 1));
-                    title.style.opacity = Mathf.Clamp01(t);
-                }, Ease.BackOut);
-                Fx.LevelUpBurst(World, cx - 235, 428);
+                LevelUpPage.TitleIntro(title);
+                Fx.LevelUpBurst(World, LevelUpPage.HeroX, LevelUpPage.HeroY);
                 Fx.Confetti(World);
                 Sfx.Play("levelup");
             }
@@ -479,17 +420,6 @@ namespace Drakepg
                 gone = true;
                 GameRoot.I.Go(new RoomScreen(back));
             };
-        }
-
-        /// <summary>The hero's art as a UI picture (feet at x, y): the outfit with the weapon is the world figure's job, so this shows the body.</summary>
-        void HeroPortrait(Player player, float x, float y, float height)
-        {
-            var look = player.Look;
-            var key = look.Bare?.Select(b => b.Art).FirstOrDefault(Art.Has) ?? Art.Pick(look.Art);
-            if (key == null) return;
-            var size = Art.Size(Art.Get(key));
-            var w = size.y > 0 ? height * size.x / size.y : height;
-            Ui.Image(Root, x, y, w, height, key, 0.5f, 1);
         }
 
         class Card

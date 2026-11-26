@@ -57,9 +57,10 @@ namespace Drakepg
 
         /// <summary>
         /// The Guild Clerk's board: your rank, the hunts you've taken (turn in or drop) and the notices you can take.
-        /// `onChange` refreshes the room (HUD, tracker, save); `onTurnIn` lets the room show level-ups and promotions.
+        /// `onChange` refreshes the room (HUD, tracker, save); `onTurnIn` lets the room show what the hand-in paid, with
+        /// the hero and the rank (and its points) as they were before it.
         /// </summary>
-        public static UiModal OpenGuild(Player player, NpcDef clerk, Action onChange, Action<Guild.TurnInHunt> onTurnIn)
+        public static UiModal OpenGuild(Player player, NpcDef clerk, Action onChange, Action<Guild.TurnInHunt, HeroBefore, RankGain> onTurnIn)
         {
             var G = Db.B.Guild;
             var rng = new SystemRng();
@@ -127,8 +128,11 @@ namespace Drakepg
                     {
                         new UiButton(c, 490, y + 54, "Turn in", () =>
                         {
+                            var hero = HeroBefore.Of(player);
+                            var rankBefore = new RankGain { Rank = g.Rank, PointsBefore = g.Points };
                             var result = Guild.TurnIn(player, hunt.Key, rng);
                             if (result == null) return;
+                            rankBefore.Points = result.Points;
                             Sfx.Play("quest");
                             message = result.Promotions.Count > 0
                                 ? new Message { Text = $"Promoted to Rank {result.Promotions[result.Promotions.Count - 1]}!", Color = Palette.TextGood }
@@ -138,7 +142,7 @@ namespace Drakepg
                                     Color = Palette.TextGood,
                                 };
                             confirmDrop = null;
-                            onTurnIn?.Invoke(result);
+                            onTurnIn?.Invoke(result, hero, rankBefore);
                             Changed();
                         }, 130, 50, 19, color: Design.Hex(0x2f5d2f));
                     }

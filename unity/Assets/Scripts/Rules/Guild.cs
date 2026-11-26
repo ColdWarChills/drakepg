@@ -317,6 +317,17 @@ namespace Drakepg.Rules
             public int Points;
             public List<string> Promotions;
             public int LevelsGained;
+            /// <summary>What the hunt itself paid (testing rates included); `Rewards` also holds every promotion's pay.</summary>
+            public double HuntXp, HuntGold;
+            /// <summary>Each promotion's own pay, in order (one per entry of `Promotions`): its items are the grants in `Rewards.Items`.</summary>
+            public List<PromotionPay> Paid = new List<PromotionPay>();
+        }
+
+        public class PromotionPay
+        {
+            public string Rank;
+            public double Gold;
+            public List<ItemGrant> Items = new List<ItemGrant>();
         }
 
         public static TurnInHunt TurnIn(Player player, string key, IRng rng)
@@ -332,14 +343,18 @@ namespace Drakepg.Rules
             g.Points += points;
             var rewards = new Rewards { Xp = hunt.Xp * Cheats.Rates, Gold = hunt.Gold * Cheats.Rates };
             var promotions = new List<string>();
+            var paid = new List<PromotionPay>();
             while (g.Rank < MaxRank && g.Points >= PointsToNext(g.Rank))
             {
                 g.Points -= PointsToNext(g.Rank);
                 g.Rank += 1;
                 var id = RankId(g.Rank);
                 promotions.Add(id);
+                var pay = new PromotionPay { Rank = id };
+                paid.Add(pay);
                 if (Db.Data.Promotions == null || !Db.Data.Promotions.TryGetValue(id, out var p) || p == null) continue;
                 rewards.Gold += p.Gold;
+                pay.Gold = p.Gold;
                 string classItem = null;
                 p.ClassItems?.TryGetValue(player.Data.ClassId, out classItem);
                 var ids = new List<string>(p.Items ?? new List<string>());
@@ -347,12 +362,22 @@ namespace Drakepg.Rules
                 string classBook = null;
                 p.ClassBooks?.TryGetValue(player.Data.ClassId, out classBook);
                 if (classBook != null) ids.Add(Books.BookId(classBook));
-                foreach (var itemId in ids) rewards.Items.Add(Items.GrantFor(itemId, rng));
+                foreach (var itemId in ids)
+                {
+                    var grant = Items.GrantFor(itemId, rng);
+                    rewards.Items.Add(grant);
+                    pay.Items.Add(grant);
+                }
             }
             if (g.Rank >= MaxRank) g.Points = 0;
+            var huntXp = rewards.Xp;
+            var huntGold = hunt.Gold * Cheats.Rates;
             var levels = player.GrantRewards(rewards, true).levels;
             RerollBoard(player, rng);
-            return new TurnInHunt { Hunt = hunt, Rewards = rewards, Points = points, Promotions = promotions, LevelsGained = levels };
+            return new TurnInHunt
+            {
+                Hunt = hunt, Rewards = rewards, Points = points, Promotions = promotions, LevelsGained = levels, HuntXp = huntXp, HuntGold = huntGold, Paid = paid,
+            };
         }
 
         /// <summary>Save cleanup: a valid rank, and only hunts that still exist.</summary>

@@ -1171,6 +1171,8 @@ namespace Drakepg
         {
             if (!InputEnabled) return;
             if (Keys.Pressed(Key.Escape)) CloseTopModal();
+            // A hand-in's reward cards take the keys while one is on top (Space, Enter, E; 1-4 on the level page).
+            if (RewardCards.HandleKeys()) return;
             // Space and Enter turn the "New!" cards; the same press doesn't also start a talk.
             if (newsNext != null && UiModal.Top == newsModal && (Keys.Pressed(Key.Space) || Keys.Pressed(Key.Enter)))
             {
@@ -2073,7 +2075,7 @@ namespace Drakepg
                 moveTarget = null;
                 player.Facing = npc.X < player.X ? -1 : 1;
                 NpcHop(npc);
-                GuildPanel.OpenGuild(P, npc.Def, Refresh, r => HuntTurnedIn(r, npc));
+                GuildPanel.OpenGuild(P, npc.Def, Refresh, HuntTurnedIn);
                 return;
             }
             if (role.Kind == "tower")
@@ -2239,23 +2241,21 @@ namespace Drakepg
             });
         }
 
-        /// <summary>A hunt handed in at a clerk: coins, then level-ups and promotions over the board.</summary>
-        void HuntTurnedIn(Guild.TurnInHunt result, Npc npc)
+        /// <summary>
+        /// A hunt handed in at a clerk: its cards over the board (what it paid, each promotion, the level page). A skill
+        /// the level brought gets its "New!" card once the cards and the board are closed (ShowNews waits for no modal).
+        /// </summary>
+        void HuntTurnedIn(Guild.TurnInHunt result, HeroBefore before, RankGain rank)
         {
-            var rewards = result.Rewards;
-            var items = rewards.Items.Select(g => ItemUi.LootName(Db.Item(g.ItemId), g.Traits()));
-            Ui.Toast(string.Join("   ", new[] { $"+{rewards.Xp} XP", $"+{rewards.Gold} gold" }.Concat(items)), Palette.TextGood);
-            _ = Fx.CoinShower(World, new Vector2(npc.X, npc.Y - 120), new Vector2(320, 40), (int)Math.Ceiling(rewards.Gold / 6), () => Sfx.Play("coin"));
-            foreach (var rank in result.Promotions)
+            var run = new RewardRun
             {
-                Anim.After(0.3f, () =>
-                {
-                    Fx.Confetti(World);
-                    Sfx.Play("levelup");
-                    Ui.Toast($"Guild promotion: Rank {rank}!", Palette.TextGold);
-                });
-            }
-            LevelUpToasts(result.LevelsGained, P.SkillsLearnedSince(P.Level - result.LevelsGained), 0.7f);
+                Title = Guild.Title(result.Hunt), Xp = result.HuntXp, Gold = result.HuntGold,
+                // At the top rank there are no points to show.
+                Rank = rank.Rank >= Guild.MaxRank ? null : rank,
+                Promotions = result.Paid, LevelsGained = result.LevelsGained, Before = before,
+                NewSkills = P.SkillsLearnedSince(before.Level).Select(s => s.Name).ToList(),
+            };
+            RewardCards.Show(run, () => Save(false), Refresh);
             Save(false);
         }
 
