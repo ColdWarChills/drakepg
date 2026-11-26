@@ -102,17 +102,23 @@ float4 PaperWet(float4 c, float2 p, float px)
         c.rgb = lerp(c.rgb, deep, k);
         float band = max(px * 2.2, 0.007);
         float tide = saturate(1 - abs(d - band * 0.7) / band) * wet * dark;
-        c.rgb *= 1 - 0.25 * tide;
+        // The tide line: darker on light paper, a pale rim on dark paper (where darker would not show).
+        float lumW = dot(c.rgb, float3(0.3, 0.59, 0.11));
+        float paleRim = 1 - smoothstep(0.12, 0.3, lumW);
+        c.rgb = lerp(c.rgb * (1 - 0.25 * tide), c.rgb + 0.1 * tide, paleRim);
         c.a *= 1 - 0.1 * k;
     }
     if (cockle > 0.001)
     {
-        // Waves in the sheet: thin bright crests where the light catches them, soft shade in the troughs.
-        float2 q = p * 22 + float2(PaperNoise2(p * 3 + seed), PaperNoise2(p * 3 + seed + 7)) * 4;
-        float ph = q.x * 1.6 + q.y * 0.9 + PaperNoise2(p * 6 + seed * 2) * 2.5;
-        float amp = 0.5 + 0.5 * PaperNoise2(p * 4 + seed + 3);
-        float w = cos(ph);
-        c.rgb = saturate(c.rgb * (1 - 0.16 * cockle * amp * saturate(-w)) + 0.12 * cockle * amp * pow(saturate(w), 3));
+        // Buckles in the sheet (an uneven height field, not regular waves) lit from the top left: the slopes facing
+        // the light a little brighter, the others darker.
+        float2 q = p * 7 + float2(PaperNoise2(p * 2 + seed), PaperNoise2(p * 2 + seed + 7)) * 1.5;
+        float e = 0.08;
+        float h0 = PaperNoise2(q + seed * 3);
+        float hx = PaperNoise2(q + float2(e, 0) + seed * 3);
+        float hy = PaperNoise2(q + float2(0, e) + seed * 3);
+        float lit = ((hx - h0) - (hy - h0)) / e;
+        c.rgb = saturate(c.rgb * (1 + 0.13 * cockle * clamp(lit, -1.5, 1.5)));
     }
     return c;
 }

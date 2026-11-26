@@ -270,7 +270,7 @@ namespace Drakepg
 
         /// <summary>
         /// Frozen paper is brittle: a piece snaps off. The break cuts off about a tenth of the picture from one side
-        /// (its back, its feet or a lower corner; never the face, at the top of its front), straight across with sharp
+        /// (its back or a lower corner; never the face, at the top of its front, nor both feet), straight across with sharp
         /// kinks. Two at most a fight, so a long fight leaves a picture that still reads; frost thins after it.
         /// </summary>
         string Snap(Vector2 at)
@@ -279,8 +279,9 @@ namespace Drakepg
             frostTo = Mathf.Min(frostTo, 0.35f);
             frost = Mathf.Min(frost, 0.6f);
             if (snapCount >= MaxSnaps) return "scraps";
-            // Away from the face: the back (-x: the art faces +x), the back's upper and lower corners, the feet, the front's lower corner.
-            var dirs = new[] { new Vector2(-1, 0), new Vector2(-1, 0.8f), new Vector2(-1, -0.7f), new Vector2(0.15f, -1), new Vector2(1, -0.8f) };
+            // Away from the face: the back (-x: the art faces +x), the back's upper and lower corners, the front's lower
+            // corner. Not straight across the feet: with both feet gone it floats over its shadow.
+            var dirs = new[] { new Vector2(-1, 0), new Vector2(-1, 0.8f), new Vector2(-1, -0.7f), new Vector2(1, -0.8f) };
             var n = dirs[(int)(R() * dirs.Length) % dirs.Length].normalized;
             // The cut where about 10% of the picture lies past it (the scan's cells, else the sheet's corners).
             float cut;
