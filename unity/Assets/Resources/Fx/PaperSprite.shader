@@ -63,6 +63,8 @@ Shader "Drakepg/PaperSprite"
                 float2 p = PaperSheet(IN.texcoord);
                 float px = fwidth(p.y);
                 float4 c = PaperWet(float4(PaperCreased(tex.rgb, p, px), tex.a), p, px);
+                // A hit flash fills the whole outline: wet paper's see-through would leave a ghost hole in it.
+                c.a = lerp(c.a, tex.a, _Fill);
                 if (_PaperFrost.x > 0)
                 {
                     // The outline blurred to about 3 screen px (the art's own mips).

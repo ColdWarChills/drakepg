@@ -152,7 +152,10 @@ Shader "Drakepg/PaperFold"
                 float px = 1 / _Pad.w;
                 c.rgb = PaperCreased(c.rgb, p, px);
                 // Water, ice and energy as the fight left them (step 1d), so the crumple keeps them.
+                // Crumpled, wet paper lies in layers: its see-through is left out (the wad would look like glass).
+                float dryA = c.a;
                 c = PaperWet(c, p, px);
+                c.a = dryA;
                 if (_PaperFrost.x > 0)
                 {
                     float w2 = px * 3;
