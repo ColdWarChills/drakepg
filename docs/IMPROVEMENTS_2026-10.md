@@ -649,17 +649,17 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - **Asked by the parent session:** carry on with the shape after the timing; the lever proposed was the surface (a matte, lighter print and a paper grain), not the fold.
 - **Built, testing knobs, all off by default:**
   - `CrumplePrint`: x lifts the printed side toward the paper's colour, y takes out that share of its colour;
-  - `CrumplePrintFade`: the print grows in over the folds' first 0.5 s, so the picture doesn't turn pale in one frame (it did on the Volt Eel before the ramp; not re-run on it since);
+  - `CrumplePrintFade`: the print grows in over the folds' first 0.5 s, so the picture doesn't turn pale in one frame (it did on the Volt Eel before the ramp). Built, not checked by eye: the ramp ran only in the lift-only runs, never with the colour out;
   - `CrumpleTintFront`: a form change's tint goes on the printed side only, not the paper's back.
-- **Tried, at game size against today's look** (the timing defaults, one seed each):
-  - lifted 40%, colour kept: the Golem and the Gust Sprite still look like ice, the Frostbinder too; the Ember Salamander and the Hedge Troll turn pale and look most like paper;
-  - lifted 40% with 55% of the colour out: the Golem and the Gust Sprite read as paper, but every monster becomes the same pale lump; the Stormcoil stays blue, because its form-change tint is laid on after the print;
-  - the form-change tint on the printed side only: almost no change (the back barely faces the camera); with the 40% lift as well, the Stormcoil goes grey, close to paper;
+- **Tried, at game size against today's look** (the timing defaults, one seed each). Every lift run also softened the facet shading (`CrumpleTone` 0.75 dark / 1.05 light, against today's 0.55 / 1.12), so `CrumplePrint` alone won't give these pictures:
+  - lifted 40%, colour kept (`L1`): the Golem and the Gust Sprite still look like ice; the Ember Salamander and the Hedge Troll turn pale and look most like paper;
+  - lifted 40% with 55% of the colour out and a light grain (0.15, 5 px) (`S2` on the Golem, Gust Sprite, Stormcoil; `S2w`, the same, on the Mossling, Bramble Bandit, Ember Salamander, Thornheart, Hedge Troll, Volt Eel): the Golem and the Gust Sprite read as paper, but every monster becomes the same pale lump; the Stormcoil stays blue, because its form-change tint is laid on after the print;
+  - the form-change tint on the printed side only (`T1`, today's shading): almost no change on the Stormcoil (the back barely faces the camera); with the 40% lift as well (`L1T`), the Stormcoil goes grey, close to paper. The Frostbinder ran in both, but its resting wad was not judged;
   - a paper grain fixed to the sheet: doesn't show at game size, looks like stone at 2x; removed from the shader.
-- **Found:** the Stormcoil's and the Frostbinder's blue is mostly their form-change tint (the only two monsters with a `phase`) on top of their own glassy pictures, not the paper's back.
+- **Found:** the Stormcoil's blue is mostly its form-change tint on top of its own glassy picture, not the paper's back. The Frostbinder is the only other monster with a `phase`, so the same is expected there (read from the code, not seen).
 - **Verdict:** a "partly", no clip. The gem-like wads read as paper only once their colour is gone; the choice between colour and paper is the designer's (PLANS "Proposed").
 - To look at, in the `claude/unity-port` worktree on the PC (`art/tests/paper_clip/`):
   - `paper_crumple_surface_lift_vs_colour.jpg`: today's look, lifted, colour out; Golem, Gust Sprite, Stormcoil, Ember Salamander, Hedge Troll at rest, game size;
   - `paper_crumple_surface_pop_volt_eel.jpg`: the pale print popping in before the ramp;
   - `paper_crumple_surface_grain_2x.jpg`: the grain at 2x.
-- Runs: `art/tests/paper_crumple/sf/` (`S0` today, `S1`-`S4` and `S2w` lift with colour out and grain, `L1` lift only, `T1` tint on the print only, `L1T` both).
+- Runs: `art/tests/paper_crumple/sf/` (`S0` today; `S1`-`S4` lift, colour out and grain at four strengths, `S2w` the S2 settings on six more monsters; `L1` lift only; `T1` tint on the print only; `L1T` both).
