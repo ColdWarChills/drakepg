@@ -58,9 +58,10 @@ namespace Drakepg
         /// <summary>
         /// The Guild Clerk's board: your rank, the hunts you've taken (turn in or drop) and the notices you can take.
         /// `onChange` refreshes the room (HUD, tracker, save); `onTurnIn` lets the room show what the hand-in paid, with
-        /// the hero and the rank (and its points) as they were before it.
+        /// the hero and the rank (and its points) as they were before it, and the redraw (board and room) to run when
+        /// that's done.
         /// </summary>
-        public static UiModal OpenGuild(Player player, NpcDef clerk, Action onChange, Action<Guild.TurnInHunt, HeroBefore, RankGain> onTurnIn)
+        public static UiModal OpenGuild(Player player, NpcDef clerk, Action onChange, Action<Guild.TurnInHunt, HeroBefore, RankGain, Action> onTurnIn)
         {
             var G = Db.B.Guild;
             var rng = new SystemRng();
@@ -130,20 +131,17 @@ namespace Drakepg
                         {
                             var hero = HeroBefore.Of(player);
                             var rankBefore = new RankGain { Rank = g.Rank, PointsBefore = g.Points };
+                            var boardBefore = new HashSet<string>(g.Board);
                             var result = Guild.TurnIn(player, hunt.Key, rng);
                             if (result == null) return;
                             rankBefore.Points = result.Points;
                             Sfx.Play("quest");
-                            message = result.Promotions.Count > 0
-                                ? new Message { Text = $"Promoted to Rank {result.Promotions[result.Promotions.Count - 1]}!", Color = Palette.TextGood }
-                                : new Message
-                                {
-                                    Text = $"{Guild.Title(hunt)}: done. +{result.Points} rank point{(result.Points == 1 ? "" : "s")}. New notices are up.",
-                                    Color = Palette.TextGood,
-                                };
+                            // The cards tell the pay, the points and any promotion; the footer only what they don't.
+                            message = g.Board.Exists(k => !boardBefore.Contains(k)) ? new Message { Text = "New notices are up.", Color = Palette.TextGood } : null;
                             confirmDrop = null;
-                            onTurnIn?.Invoke(result, hero, rankBefore);
-                            Changed();
+                            // The board (and the room) keep showing how things were at the press until the last card closes.
+                            if (onTurnIn != null) onTurnIn(result, hero, rankBefore, Changed);
+                            else Changed();
                         }, 130, 50, 19, color: Design.Hex(0x2f5d2f));
                     }
                     else

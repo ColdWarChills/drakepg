@@ -2242,10 +2242,11 @@ namespace Drakepg
         }
 
         /// <summary>
-        /// A hunt handed in at a clerk: its cards over the board (what it paid, each promotion, the level page). A skill
-        /// the level brought gets its "New!" card once the cards and the board are closed (ShowNews waits for no modal).
+        /// A hunt handed in at a clerk: its cards over the board (what it paid, each promotion, the level page). It's saved
+        /// now; the board and the room (HUD, tracker) redraw once the last card closes (`redraw` refreshes the room too).
+        /// A skill the level brought gets its "New!" card once the cards and the board are closed (ShowNews waits for no modal).
         /// </summary>
-        void HuntTurnedIn(Guild.TurnInHunt result, HeroBefore before, RankGain rank)
+        void HuntTurnedIn(Guild.TurnInHunt result, HeroBefore before, RankGain rank, Action redraw)
         {
             var run = new RewardRun
             {
@@ -2255,7 +2256,7 @@ namespace Drakepg
                 Promotions = result.Paid, LevelsGained = result.LevelsGained, Before = before,
                 NewSkills = P.SkillsLearnedSince(before.Level).Select(s => s.Name).ToList(),
             };
-            RewardCards.Show(run, () => Save(false), Refresh);
+            RewardCards.Show(run, () => Save(false), redraw);
             Save(false);
         }
 

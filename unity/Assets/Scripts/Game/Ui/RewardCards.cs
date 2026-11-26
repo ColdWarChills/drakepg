@@ -144,9 +144,13 @@ namespace Drakepg
         }
 
         static readonly Queue<Job> waiting = new Queue<Job>();
+        /// <summary>The finished runs' `done`, run together when the last card of the last run closes (one redraw).</summary>
+        static readonly List<Action> finished = new List<Action>();
         static Card card;
         static VisualElement shade;
         static GameScreen owner;
+        /// <summary>Hidden labels on the shade styled as a gift's name and grade line, to measure how tall a gift's text is.</summary>
+        static Label nameRuler, subRuler;
 
         /// <summary>Whether a run's cards are up on this screen.</summary>
         public static bool Active => owner != null && owner == GameRoot.I.Screen && shade?.panel != null;
@@ -157,6 +161,7 @@ namespace Drakepg
             if (!Active)
             {
                 waiting.Clear();
+                finished.Clear();
                 card = null;
                 shade = null;
             }
@@ -198,8 +203,13 @@ namespace Drakepg
             card = null;
             if (waiting.Count == 0)
             {
+                // The last card is gone: the screen under it redraws once, in this same frame, as the shade lifts.
+                var done = finished.ToList();
+                finished.Clear();
+                foreach (var d in done) d?.Invoke();
                 shade?.RemoveFromHierarchy();
                 shade = null;
+                nameRuler = subRuler = null;
                 owner = null;
                 return;
             }
@@ -211,27 +221,27 @@ namespace Drakepg
                 shade = Ui.Rect(screen.Root, 0, 0, Design.Width, Design.Height, new Color(0.11f, 0.08f, 0.05f, 0.62f), blocksClicks: true);
                 shade.style.opacity = 0;
                 Anim.Float(0, 1, 0.15f, v => shade.style.opacity = v, Ease.Linear);
+                // Styled like the gift texts (GiftName, GiftSub); laid out with the shade, before any promotion card opens.
+                nameRuler = GiftName(shade, "Ag", Palette.Text);
+                subRuler = GiftSub(shade, "Ag");
+                nameRuler.style.visibility = subRuler.style.visibility = Visibility.Hidden;
             }
-            var steps = new List<Action<Action>>();
             var run = job.Run;
-            steps.Add(next => PayCard(run, next, run.Promotions.Count > 0 ? "Next" : run.LevelsGained > 0 ? "Level up!" : "Continue"));
-            for (int i = 0; i < run.Promotions.Count; i++)
-            {
-                var p = run.Promotions[i];
-                var last = i == run.Promotions.Count - 1;
-                steps.Add(next => PromotionCard(p, next, !last ? "Next" : run.LevelsGained > 0 ? "Level up!" : "Continue"));
-            }
-            if (run.LevelsGained > 0 && run.Before != null) steps.Add(next => LevelCard(run, job.Save, next));
+            // Each step opens a card with its button's label; the last card says "Continue", any before it "Next".
+            var steps = new List<Action<Action, string>>();
+            steps.Add((next, button) => PayCard(run, next, button));
+            foreach (var p in run.Promotions) steps.Add((next, button) => PromotionCard(p, next, button));
+            if (run.LevelsGained > 0 && run.Before != null) steps.Add((next, button) => LevelCard(run, job.Save, next, button));
             void Step(int i)
             {
                 if (i >= steps.Count)
                 {
                     waiting.Dequeue();
-                    job.Done?.Invoke();
+                    finished.Add(job.Done);
                     Next();
                     return;
                 }
-                steps[i](() => Step(i + 1));
+                steps[i](() => Step(i + 1), i < steps.Count - 1 || waiting.Count > 1 ? "Next" : "Continue");
             }
             Step(0);
         }
@@ -343,12 +353,55 @@ namespace Drakepg
 
         // --- A promotion ---
 
+        /// <summary>A gift's name under its frame: centered, wrapping at the slot's width.</summary>
+        static Label GiftName(VisualElement gift, string text, Color color) =>
+            Ui.Text(gift, 0, 34, text, 17, color, true, 0.5f, 0, 140, align: TextAnchor.UpperCenter);
+
+        /// <summary>A gear gift's grade (or Sigil) line, under its name.</summary>
+        static Label GiftSub(VisualElement gift, string text) => Ui.Text(gift, 0, 0, text, 14, Palette.TextDim, ax: 0.5f);
+
+        /// <summary>How tall a text set like the ruler comes out; two lines' worth if the ruler isn't laid out yet.</summary>
+        static float TextHeight(Label ruler, string text, bool wraps, float fallback)
+        {
+            if (ruler == null || ruler.panel == null || float.IsNaN(ruler.layout.height) || ruler.layout.height <= 0) return fallback;
+            return ruler.MeasureTextSize(text, wraps ? 140 : 0, wraps ? VisualElement.MeasureMode.Exactly : VisualElement.MeasureMode.Undefined,
+                0, VisualElement.MeasureMode.Undefined).y;
+        }
+
         static void PromotionCard(Guild.PromotionPay p, Action next, string button)
         {
             const float w = 640;
-            var gifts = p.Items.Count > 0 || p.Gold > 0;
-            var h = gifts ? 500f : 360f;
-            var c = Open(w, h, "Guild promotion", next, button, h - 54);
+            // The gifts: the gold, then each item, stacking ones as "x2".
+            var shown = new List<(ItemGrant g, int qty)>();
+            foreach (var g in p.Items)
+            {
+                var def = Db.Item(g.ItemId);
+                var same = def.IsGear ? -1 : shown.FindIndex(e => e.g.ItemId == g.ItemId);
+                if (same >= 0) shown[same] = (shown[same].g, shown[same].qty + 1);
+                else shown.Add((g, 1));
+            }
+            var gifts = shown.Count > 0 || p.Gold > 0;
+            string GoldText() => $"+{JsMath.Str(p.Gold)} gold";
+            string ItemText(ItemGrant grant, int qty) => $"{ItemUi.ItemName(Db.Item(grant.ItemId), grant.Traits())}{(qty > 1 ? $" x{qty}" : "")}";
+            string SubText(ItemGrant grant)
+            {
+                var info = ItemUi.GradeInfo(Db.Item(grant.ItemId), grant.Traits());
+                return info.Sigil != null ? Items.SigilNames[info.Sigil] : ItemUi.GradeLabel(info);
+            }
+            // Gift text runs from the row's y + 34 down to `low` (a name may wrap); the button sits the same air below the
+            // lowest of it as the gift frames sit below the rank's name.
+            const float rowY = 340, nameBottom = 268, air = 30;
+            var low = 22f;
+            if (p.Gold > 0) low = Mathf.Max(low, 34 + TextHeight(nameRuler, GoldText(), true, 44));
+            foreach (var (grant, qty) in shown)
+            {
+                var text = 34 + TextHeight(nameRuler, ItemText(grant, qty), true, 44);
+                if (Db.Item(grant.ItemId).IsGear) text += 2 + TextHeight(subRuler, SubText(grant), false, 18);
+                low = Mathf.Max(low, text);
+            }
+            var buttonY = (gifts ? rowY + low : nameBottom) + air + 28;
+            var h = buttonY + 54;
+            var c = Open(w, h, "Guild promotion", next, button, buttonY);
             var box = c.Modal.Content;
             var fx = FxLayer(c.Modal);
             var left = (Design.Width - w) / 2;
@@ -366,18 +419,10 @@ namespace Drakepg
             Anim.After(0.3f, () => Stars(fx, left + w / 2, top + 148, 18, 240, new[] { GuildPanel.RankColors.TryGetValue(p.Rank, out var rc) ? rc : Color.white, Design.Hex(0xffd75e) }));
             if (!gifts) return;
 
-            // The gifts: the gold, then each item (icon, name in its grade color), stacking ones as "x2".
-            var shown = new List<(ItemGrant g, int qty)>();
-            foreach (var g in p.Items)
-            {
-                var def = Db.Item(g.ItemId);
-                var same = def.IsGear ? -1 : shown.FindIndex(e => e.g.ItemId == g.ItemId);
-                if (same >= 0) shown[same] = (shown[same].g, shown[same].qty + 1);
-                else shown.Add((g, 1));
-            }
+            // The gifts in a row: a frame each (icon, name in its grade color).
             var slots = shown.Count + (p.Gold > 0 ? 1 : 0);
             const float step = 150;
-            var y = 340f;
+            const float y = rowY;
             for (int i = 0; i < slots; i++)
             {
                 var x = w / 2 + (i - (slots - 1) / 2f) * step;
@@ -394,7 +439,7 @@ namespace Drakepg
                     Ui.Size(coin, 44, 44);
                     coin.style.backgroundImage = new StyleBackground(Fx.Get(Fx.Tex.Coin));
                     gift.Add(coin);
-                    Ui.Text(gift, 0, 34, $"+{JsMath.Str(p.Gold)} gold", 17, Palette.TextGold, true, 0.5f, 0, 140, align: TextAnchor.UpperCenter);
+                    GiftName(gift, GoldText(), Palette.TextGold);
                     continue;
                 }
                 var (grant, qty) = shown[i - (p.Gold > 0 ? 1 : 0)];
@@ -404,11 +449,11 @@ namespace Drakepg
                 var icon = ItemUi.DrawItemIcon(gift, 0, -10, 52, itemDef);
                 if (info.Sigil != null) ItemUi.AnimateSigilIcon(icon, info.Sigil, 52);
                 var color = info.Sigil != null ? info.NameColor : info.Tier == "standard" && itemDef.IsGear ? Palette.Text : info.TextColor;
-                var label = Ui.Text(gift, 0, 34, $"{ItemUi.ItemName(itemDef, grant.Traits())}{(qty > 1 ? $" x{qty}" : "")}", 17, color, true, 0.5f, 0, 140,
-                    align: TextAnchor.UpperCenter);
+                var label = GiftName(gift, ItemText(grant, qty), color);
                 if (itemDef.IsGear)
                 {
-                    var sub = Ui.Text(gift, 0, 56, info.Sigil != null ? Items.SigilNames[info.Sigil] : ItemUi.GradeLabel(info), 14, Palette.TextDim, ax: 0.5f);
+                    var sub = GiftSub(gift, SubText(grant));
+                    sub.style.top = 34 + TextHeight(nameRuler, label.text, true, 44) + 2;
                     label.RegisterCallback<GeometryChangedEvent>(_ => sub.style.top = 36 + label.layout.height);
                 }
             }
@@ -416,10 +461,10 @@ namespace Drakepg
 
         // --- The level page ---
 
-        static void LevelCard(RewardRun run, Action save, Action next)
+        static void LevelCard(RewardRun run, Action save, Action next, string button)
         {
             // The result screen's sheet: 720 x 520, so the page's screen coordinates land as they do after a fight.
-            var c = Open(720, 520, "", next, "Continue", 478);
+            var c = Open(720, 520, "", next, button, 478);
             var modal = c.Modal;
             var page = new VisualElement { pickingMode = PickingMode.Ignore, name = "level page" };
             Ui.Place(page, -(Design.Width - 720) / 2, -(Design.Height - 520) / 2);
