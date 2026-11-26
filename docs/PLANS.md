@@ -6,7 +6,20 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
-- **Now: the short version (2026-11-24, 20:00 UTC; the designer: "things are getting confusing. thought we downloaded an asset for testing, tried many things. We need a little bit of order"). Read this first; the entries below it are the record.**
+- **Now: handoff (2026-11-26). Read `docs/HANDOFF_2026-11-26.md` first; everything below is the record.** The designer opens a new Fable orchestrator session to decide where and how to move toward the goal.
+  - **Done since 2026-11-24, all on the live branch:**
+    - the defeat card that says why you lost;
+    - the boss's first-kill card;
+    - "New!" shown as one card at a time;
+    - the Options page;
+    - paper damage on every monster: creases, scraps, tears, fire holes, the crumple death, and ice and energy on the paper (water dropped).
+  - **Decided 2026-11-26:** keep today's drawn hero for now.
+  - **The first thing to settle:** keeping him removes the roadmap's hero chain, about 11 weeks marked "decided, needed for the demo" in `docs/HANDOFF_2026-11-23.md` section 8. So the demo date of Apr 5, 2027 has to be planned again. It also collides with "every worn piece visible" (2026-11-23). This is open (handoff section 3).
+  - **Proposed by the designer 2026-11-26:** Gemini for the game's writing, working with Claude (handoff section 5).
+  - **Not now:** the Chapter Complete card ("No.").
+  - **Not answered:** the Elite and chest cards, Claude's pick; open question 1, does the art stay.
+  - **Superseded record:** the 2026-11-24 entries below. Unity-port is now 130 commits ahead of live, and Fable's week is at 0%.
+- **The short version of 2026-11-24, 20:00 UTC (record; the designer: "things are getting confusing. thought we downloaded an asset for testing, tried many things. We need a little bit of order").**
   - **The game:** unchanged by any of the hero work. The hero is the drawn hero, with drawn poses for a few signature moves.
   - **Hero tries since 2026-11-21, none in the game:** (1) a 3D hero: dropped, it doesn't look like the game's drawing. (2) The drawn hero cut into pieces on joints: shown, "No, looks off". (3) Drawn moments with gear layers: shown, "it snaps instantly backwards". (4) Hero 4, drawn for joints with a bending sleeve: not shown, the lifted shoulder looked pinned on. (5) Hero 4 on Unity's bones (Unity's 2D Animation package): not shown, the wind-up stayed weaker than today's; by the agreed stop rule, joints are closed. (6) The Dragon Crashers test below.
   - **The downloaded asset: Dragon Crashers (2026-11-24, about 10:50-11:01 UTC).** The browser chat (the design advisor) downloaded Unity's free sample "Dragon Crashers 2D Sample Project" (147 MB; the designer added it to his Unity account) and, through the Unity editor on the PC, copied its four characters into the Unity test folder. Its test plays the Knight's own attack on the Knight's skeleton, then the same skeleton and attack wearing the Witch's, Wolfman's and Skeleton's drawings; the designer saw stills of it in the browser chat. The handoff below missed it because the browser chat cannot push; its own handoff came later: `docs/HANDOFF_2026-11-24_browser.md`. Record: `docs/IMPROVEMENTS_2026-10.md`, "Dragon Crashers test". It is Unity's art, not our hero.
