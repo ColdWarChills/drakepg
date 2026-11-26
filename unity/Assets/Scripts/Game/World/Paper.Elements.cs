@@ -128,6 +128,17 @@ namespace Drakepg
         }
 
         /// <summary>
+        /// The splash's middle: where the water landed, pulled toward the body's middle and kept off the head and feet
+        /// (dry paper shows all round it). On dry paper it starts there; a second soak moves it a little toward the blow.
+        /// </summary>
+        void WetSpot(Vector2 at)
+        {
+            var spot = new Vector2(Mathf.Lerp(Mathf.Clamp(at.x, 0, aspect), aspect / 2, 0.3f),
+                Mathf.Clamp(Mathf.Lerp(Mathf.Clamp01(at.y), 0.55f, 0.3f), 0.38f, 0.7f));
+            wetAt = soak < 0.15f ? spot : Vector2.Lerp(wetAt, spot, 0.35f);
+        }
+
+        /// <summary>
         /// What a blow's element does to the paper (`at`: where it landed, sheet space). Returns what the screen should
         /// show for it ("steam", "melt", "snap") or null; `burn` is false when fire must not burn a hole (it steams or melts).
         /// </summary>
@@ -141,13 +152,7 @@ namespace Drakepg
             {
                 case "water":
                     elementsOn = true;
-                    {
-                        // The splash's middle: where it landed, pulled toward the body's middle and kept off the head
-                        // and feet (dry paper shows all round it); a second soak moves it a little toward the new blow.
-                        var spot = new Vector2(Mathf.Lerp(Mathf.Clamp(at.x, 0, aspect), aspect / 2, 0.3f),
-                            Mathf.Clamp(Mathf.Lerp(Mathf.Clamp01(at.y), 0.55f, 0.3f), 0.38f, 0.7f));
-                        wetAt = soak < 0.15f ? spot : Vector2.Lerp(wetAt, spot, 0.35f);
-                    }
+                    WetSpot(at);
                     soakTo = 1;
                     cockleTo = 0;
                     // Water puts burns out: they stop eating outward and stop glowing.
@@ -167,7 +172,8 @@ namespace Drakepg
                 case "fire":
                     if (frost > 0.3f || frostTo > 0.3f)
                     {
-                        // Fire on frost melts it: wet paper, no hole.
+                        // Fire on frost melts it: wet paper, no hole (the splash where the fire landed if it was dry).
+                        WetSpot(at);
                         frostTo = 0;
                         soakTo = Mathf.Max(soakTo, 0.7f);
                         burn = false;
