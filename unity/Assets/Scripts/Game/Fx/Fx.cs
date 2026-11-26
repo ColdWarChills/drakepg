@@ -1538,6 +1538,17 @@ namespace Drakepg
             }
         }
 
+        /// <summary>`r`'s own color: the one under a flash still showing on `fig`, else its color now.</summary>
+        public static Color RestColor(Figure fig, SpriteRenderer r)
+        {
+            if (fig != null && flashes.TryGetValue(fig, out var st))
+            {
+                var i = st.Rs.IndexOf(r);
+                if (i >= 0) return st.Cols[i];
+            }
+            return r.color;
+        }
+
         sealed class FlashState
         {
             public readonly List<SpriteRenderer> Rs = new List<SpriteRenderer>();

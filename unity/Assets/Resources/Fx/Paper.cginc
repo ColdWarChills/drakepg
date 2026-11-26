@@ -22,6 +22,9 @@ float4 _PaperRips[PAPER_RIPS];      // per rip: its two ends (xy, zw), sheet spa
 float4 _PaperRipInfo[PAPER_RIPS];   // per rip: x how open 0-1, y seed, z the side whose flap lifts (+1 / -1), w half its widest (sheet units)
 float4 _PaperSnaps[PAPER_SNAPS];    // per snapped piece: a point on the break (xy), the unit normal toward the piece (zw)
 float4 _PaperSnapInfo[PAPER_SNAPS]; // per snapped piece: x 1 once it has broken off, y seed
+float4 _PaperWetAt;                 // where the water landed (xy, sheet space): the middle of the wet splash
+float _PaperWetDebug;               // testing: the wet area painted flat magenta
+float _PaperWetStyle;               // global (Paper.WetBlotches): 0 the first try (a front from the top), 1 a wet area with tongues and splash spots
 
 float2 PaperSheet(float2 uv)
 {
@@ -87,10 +90,71 @@ float PaperNoise2(float2 x)
 // Soaked from the top down (straight alpha): darker and deeper in its own colour, patchy, a darker tide line at the wet
 // front, a little see-through where it is wet; drying leaves soft light and dark ripples (cockling). `px`: one screen
 // pixel in sheet units (thin lines keep a floor in px, so they show on small monsters).
+// Where it is wet (try 2), > 0 inside, in sheet units: one irregular splash around where the water landed
+// (`_PaperWetAt`), dry paper on every side, made of a few overlapping lobes with a wobbly edge, and short runs down from
+// its lower edge. `level` 0-1 sizes it, so drying shrinks it.
+float PaperWetArea(float2 p, float level, float seed)
+{
+    float2 at = _PaperWetAt.xy;
+    float R = 0.1 + 0.2 * level;
+    // A position warp at about the splash's own size (a few wobbles round its edge), and a finer one.
+    float f = 1.6 / R;
+    float2 w = float2(PaperNoise2(p * f + seed), PaperNoise2(p * f + seed + 17.7)) - 0.5;
+    float2 w2 = float2(PaperNoise2(p * f * 2.7 + seed * 1.3), PaperNoise2(p * f * 2.7 + seed + 5.1)) - 0.5;
+    float2 q = p + w * R * 0.55 + w2 * R * 0.16;
+    float g = -1;
+    for (int i = 0; i < 4; i++)
+    {
+        float a = PaperHash(seed * 2.7 + i * 1.9) * 6.283;
+        float d = (i == 0 ? 0 : 0.45 + 0.25 * PaperHash(seed * 4.1 + i * 3.3)) * R;
+        float2 o = at + float2(cos(a), sin(a) * 0.8) * d;
+        float r = R * (i == 0 ? 0.75 : 0.45 + 0.2 * PaperHash(seed * 5.3 + i * 2.1));
+        g = max(g, r - length(q - o));
+    }
+    // Runs: water gathering at the lower edge and running down, narrowing to a rounded end (a round bead at the end,
+    // with the tide line round it, read as a rivet).
+    float runs = saturate((level - 0.3) / 0.5);
+    float2 qr = p + w2 * R * 0.06;
+    for (int j = 0; j < 3; j++)
+    {
+        float x = at.x + (PaperHash(seed * 6.1 + j * 4.7) - 0.5) * R * 1.2;
+        float top = at.y - R * 0.3;
+        float len = R * (0.7 + 0.9 * PaperHash(seed * 8.3 + j * 1.7)) * runs;
+        float wid = R * (0.06 + 0.04 * PaperHash(seed * 9.7 + j));
+        float yy = clamp(qr.y, top - len, top);
+        float t = (top - yy) / max(len, 1e-4);
+        g = max(g, lerp(wid, wid * 0.7, t) - length(float2(qr.x - x, qr.y - yy)));
+    }
+    return g;
+}
+
 float4 PaperWet(float4 c, float2 p, float px)
 {
     float level = _PaperWet.x, dark = _PaperWet.y, cockle = _PaperWet.z, seed = _PaperWet.w;
-    if (level > 0.001 && dark > 0.001)
+    if (_PaperWetStyle > 0.5 && level > 0.001 && dark > 0.001)
+    {
+        // Try 2: a crisp-edged wet area, deeper and richer in its own colour inside, with a tide line just inside
+        // its edge: darker on light paper, a pale rim on dark paper (where darker would not show).
+        float g = PaperWetArea(p, level, seed);
+        float gp = g / max(fwidth(g), 1e-6);
+        float wet = saturate(gp / 1.2 + 0.5);
+        // The tide line: a band fading in from the edge, and a crisp line on the edge itself.
+        float rimPx = max(3.0, 0.024 / max(px, 1e-6));
+        float rim = wet * pow(saturate(1 - gp / rimPx), 1.5);
+        float edgeLine = wet * saturate(1 - gp / max(1.5, 0.006 / max(px, 1e-6)));
+        // Inside: darker and deeper in its own colour (like wet construction paper), wetter in big soft patches.
+        float blotch = smoothstep(0.3, 0.7, PaperNoise2(p * 4.0 + seed * 5.3));
+        float k = wet * dark * (0.8 + 0.2 * blotch);
+        float lum = dot(c.rgb, float3(0.3, 0.59, 0.11));
+        float3 deep = saturate(lum + (c.rgb - lum) * 1.2) * 0.62;
+        c.rgb = lerp(c.rgb, deep, k);
+        // The tide line darker still.
+        c.rgb *= 1 - (0.25 * rim + 0.35 * edgeLine) * dark;
+        // Wet paper goes a little see-through: the stage shows through it.
+        c.a *= 1 - 0.25 * k;
+        if (_PaperWetDebug > 0.5) c.rgb = lerp(c.rgb, float3(1, 0, 1), wet);
+    }
+    else if (level > 0.001 && dark > 0.001)
     {
         float front = 1.04 - level * 1.14 + (PaperNoise(p.x * 5 + seed) - 0.5) * 0.14 + (PaperNoise(p.x * 17 + seed * 3) - 0.5) * 0.05;
         float d = p.y - front;
@@ -110,6 +174,17 @@ float4 PaperWet(float4 c, float2 p, float px)
     }
     if (cockle > 0.001)
     {
+        float where = 1;
+        if (_PaperWetStyle > 0.5)
+        {
+            // Only where it was wet (the splash at its biggest), and a faint dried tide ring at that edge, showing as
+            // the wet shrinks inside it.
+            float g1 = PaperWetArea(p, 1, seed);
+            where = saturate(g1 / 0.03 + 0.5);
+            float gp1 = g1 / max(fwidth(g1), 1e-6);
+            float ring = saturate(1 - abs(gp1 - 1.5) / max(1.5, 0.007 / max(px, 1e-6)));
+            c.rgb *= 1 - 0.2 * ring * cockle * (1 - saturate(level * 1.5));
+        }
         // Buckles in the sheet (an uneven height field, not regular waves) lit from the top left: the slopes facing
         // the light a little brighter, the others darker.
         float2 q = p * 7 + float2(PaperNoise2(p * 2 + seed), PaperNoise2(p * 2 + seed + 7)) * 1.5;
@@ -118,7 +193,7 @@ float4 PaperWet(float4 c, float2 p, float px)
         float hx = PaperNoise2(q + float2(e, 0) + seed * 3);
         float hy = PaperNoise2(q + float2(0, e) + seed * 3);
         float lit = ((hx - h0) - (hy - h0)) / e;
-        c.rgb = saturate(c.rgb * (1 + 0.13 * cockle * clamp(lit, -1.5, 1.5)));
+        c.rgb = saturate(c.rgb * (1 + 0.13 * cockle * where * clamp(lit, -1.5, 1.5)));
     }
     return c;
 }
@@ -229,6 +304,10 @@ float4 PaperSnapped(float4 c, float2 p, float px)
         float k = dot(p - s.xy, float2(-nrm.y, nrm.x)) / 0.055 + seed;
         float ki = floor(k);
         float off = lerp(PaperHash(ki + seed) - 0.5, PaperHash(ki + 1 + seed) - 0.5, frac(k)) * 0.04;
+        // Small jags on it: short straight runs between kinks a few px apart, of uneven depth.
+        float k2 = k * 3.4 + seed * 1.3;
+        float kj = floor(k2);
+        off += lerp(PaperHash(kj * 1.7 + seed) - 0.5, PaperHash((kj + 1) * 1.7 + seed) - 0.5, frac(k2)) * 0.016;
         float d = dot(p - s.xy, nrm) - off;
         float piece = saturate(d / px + 0.5);
         float bw = max(px * 1.4, 0.004);
