@@ -14,6 +14,8 @@ Shader "Drakepg/PaperSolid"
         _Ink ("Fold line colour", Color) = (0.16,0.1,0.08,0.75)
         _Light ("Light (canvas space, toward it)", Vector) = (-0.5,0.7,0.5,0)
         _Tone ("Tone: x dark, y light, z steps, w line px", Vector) = (0.55,1.12,3,1.1)
+        _Print ("Print: x toward the paper, y less colour", Vector) = (0,0,0,0)
+        _PrintTint ("A tint on the printed side only", Color) = (1,1,1,1)
         _Shade ("Shadow strength (x), blur mip (y), front faces flip (z)", Vector) = (0.38,2.5,-1,0)
         _Outline ("A dark line round the outline in pass 0, texels (0 none)", Float) = 0
         _EdgeInk ("A line along every cut edge of the paper in pass 1, times the fold line's width (0 none)", Float) = 0
@@ -25,7 +27,7 @@ Shader "Drakepg/PaperSolid"
     #include "UnityCG.cginc"
 
     sampler2D _MainTex, _CloseTex;
-    float4 _Color, _Back, _Ink, _Light, _Tone, _Shade, _MainTex_TexelSize;
+    float4 _Color, _Back, _Ink, _Light, _Tone, _Shade, _Print, _PrintTint, _MainTex_TexelSize;
     float _Outline, _EdgeInk, _Close;
 
     // The canvas with the outline's closing under it (made as the fight starts, so the fight's burns and tears on the
@@ -153,7 +155,13 @@ Shader "Drakepg/PaperSolid"
                 float tone = t < 0 ? lerp(1, _Tone.x, -t) : lerp(1, _Tone.y, t);
                 float3 rgb;
                 if (front)
-                    rgb = pic.rgb * tone;
+                {
+                    // Printed on matte paper (`_Print`): lifted toward the paper's colour, with less of its own.
+                    float3 p = pic.rgb * _PrintTint.rgb;
+                    p = lerp(p, dot(p, float3(0.3, 0.59, 0.11)).xxx, _Print.y);
+                    p = lerp(p, _Back.rgb, _Print.x);
+                    rgb = p * tone;
+                }
                 else
                 {
                     // The paper's back: its own colour, the picture faintly through it, and its cut edge drawn.

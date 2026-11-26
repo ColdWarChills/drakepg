@@ -220,7 +220,16 @@ namespace Drakepg
         int seed;
 
         static readonly int ColorIdS = Shader.PropertyToID("_Color"), LightId = Shader.PropertyToID("_Light"), ShadeId = Shader.PropertyToID("_Shade"),
-            OutlineId = Shader.PropertyToID("_Outline"), EdgeInkId = Shader.PropertyToID("_EdgeInk"), ToneId = Shader.PropertyToID("_Tone");
+            OutlineId = Shader.PropertyToID("_Outline"), EdgeInkId = Shader.PropertyToID("_EdgeInk"), ToneId = Shader.PropertyToID("_Tone"),
+            PrintId = Shader.PropertyToID("_Print"), PrintTintId = Shader.PropertyToID("_PrintTint");
+        /// <summary>Testing (off: 0,0): the crumple's picture printed on matte paper: x lifts it toward the paper's
+        /// colour, y takes out that share of its colour. It grows smoothly over `CrumplePrintFade` seconds from the
+        /// fold's start, so the picture doesn't pop pale.</summary>
+        public static Vector2 CrumplePrint = Vector2.zero;
+        public static float CrumplePrintFade = 0.5f;
+        /// <summary>Testing (off): a form change's tint (the Stormcoil's, the Frostbinder's) goes on the crumple's
+        /// printed side only, not on the paper's back.</summary>
+        public static bool CrumpleTintFront;
         /// <summary>The crumple's facets shaded by how they face the light: x the darkest share, y the lightest, z how
         /// many steps each way (0: smooth), w the fold lines' width in px (the shader's default otherwise).</summary>
         public static Vector4 CrumpleTone = new Vector4(0.55f, 1.12f, 3, 1.1f);
@@ -403,6 +412,12 @@ namespace Drakepg
         void ShowScene()
         {
             tint = new Color(body.color.r, body.color.g, body.color.b, 1);
+            if (solidMat != null) solidMat.SetColor(PrintTintId, Color.white);
+            if (solidMat != null && Crumple && CrumpleKind == 2 && CrumpleTintFront)
+            {
+                solidMat.SetColor(PrintTintId, tint);
+                tint = Color.white;
+            }
             showMat.SetColor(ColorIdS, tint);
             var mr = quad.GetComponent<MeshRenderer>();
             mr.sortingLayerID = body.sortingLayerID;
@@ -2385,6 +2400,7 @@ namespace Drakepg
             showMat.SetFloat(OutlineId, Crumple ? CrumpleOutline : 0);
             solidMat.SetFloat(EdgeInkId, Crumple && CrumpleKind == 2 ? CrumpleEdgeInk : 0);
             if (Crumple && CrumpleKind == 2) solidMat.SetVector(ToneId, CrumpleTone);
+            solidMat.SetVector(PrintId, Vector4.zero);
             simTime = 0;
             landedOnce = false;
             startWidthPx = 0;
