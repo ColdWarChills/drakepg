@@ -76,6 +76,11 @@ namespace Drakepg
         /// <summary>Try 2: the outline's relief points about this far apart (share of its reach); the rim pull varied round
         /// the rim by up to this share of itself (smooth lobes), so the outline isn't left a straight-sided box.</summary>
         public static float CrumpleRimStep = 0.45f, CrumpleWobble = 0;
+        /// <summary>Testing (off: 0), the icy wads' shape (a convex wad with clean faces reads as cut ice): `CrumpleDents`
+        /// x is the share of the inner relief points pushed in, y how deep (share of its reach); `CrumpleLumps` x pulls
+        /// the outline in and out by up to this share of the reach (small lumps, after the relief), y about how many.
+        /// Both draw from their own random numbers, so the build and its pick of tries play as without them.</summary>
+        public static Vector2 CrumpleDents = Vector2.zero, CrumpleLumps = Vector2.zero;
         /// <summary>Gate C: neighbouring facets within this angle (degrees) read as one flat face; a try costs this much
         /// for each share of the lump its largest flat face takes (0: only logged).</summary>
         public static float CrumpleFlatAngle = 12, CrumpleFacetCost = 0;
@@ -223,7 +228,13 @@ namespace Drakepg
 
         static readonly int ColorIdS = Shader.PropertyToID("_Color"), LightId = Shader.PropertyToID("_Light"), ShadeId = Shader.PropertyToID("_Shade"),
             OutlineId = Shader.PropertyToID("_Outline"), EdgeInkId = Shader.PropertyToID("_EdgeInk"), ToneId = Shader.PropertyToID("_Tone"),
-            PrintId = Shader.PropertyToID("_Print"), PrintTintId = Shader.PropertyToID("_PrintTint");
+            PrintId = Shader.PropertyToID("_Print"), PrintTintId = Shader.PropertyToID("_PrintTint"), CrinkleId = Shader.PropertyToID("_Crinkle");
+        /// <summary>Testing (off: 0), the icy wads' shape: x small creases drawn on the crumple's faces (how steep), y
+        /// their size in canvas px (one short ridge or valley a cell), z the paper's white back along its cut edges (px
+        /// wide on the printed side), w how much a crease's lit side brightens (0: creases only shade). Both grow in over
+        /// the folds' first `CrinkleFade` seconds.</summary>
+        public static Vector4 CrumpleCrinkle = Vector4.zero;
+        public static float CrinkleFade = 0.3f;
         /// <summary>Testing (off: 0,0): the crumple's picture printed on matte paper: x lifts it toward the paper's
         /// colour, y takes out that share of its colour. It grows smoothly over `CrumplePrintFade` seconds from the
         /// fold's start, so the picture doesn't pop pale.</summary>
@@ -1152,6 +1163,17 @@ namespace Drakepg
                 var rr = (ctrl[i] - cen).magnitude / R;
                 hz[i] = CrumpleDome * R * (1 - rr * rr) + U(-CrumpleRelief, CrumpleRelief) * R;
             }
+            var dents = 0;
+            // Their own random numbers (from the folded sheet, so each try differs), not the build's.
+            var own = new System.Random(unchecked(foldedN * 7919 + levelCount * 31 + tucks + 17 * pleats));
+            float V(float a, float b) => a + (b - a) * (float)own.NextDouble();
+            if (CrumpleDents.x > 0)
+                for (int i = hullN; i < hz.Length; i++)
+                    if (V(0, 1) < CrumpleDents.x)
+                    {
+                        hz[i] -= CrumpleDents.y * R * V(0.6f, 1f);
+                        dents++;
+                    }
             FacetMeasures(ctrl, net, hz, out var spread, out var largestFace);
             // A flat skirt round the net, at its rim's heights, out far enough to hold the whole sheet: the paper
             // beyond the rim points takes its height from inside a facet too (the same plane for every layer there),
@@ -1225,6 +1247,24 @@ namespace Drakepg
                 relief[i] = add;
                 bPos[i] += new Vector3(0, 0, add);
             }
+            // 5b. Small lumps round the outline (three harmonics, seeded phases), after the relief: each point moved along
+            // its ray from the middle, one rising map on every ray (the pull stays under a third), so nothing crosses.
+            if (CrumpleLumps.x > 0)
+            {
+                var ln = Mathf.Max(3, Mathf.RoundToInt(CrumpleLumps.y));
+                float lp1 = V(0, 2 * Mathf.PI), lp2 = V(0, 2 * Mathf.PI), lp3 = V(0, 2 * Mathf.PI);
+                var amp = Mathf.Min(CrumpleLumps.x, 0.3f);
+                for (int i = 0; i < bPos.Count; i++)
+                {
+                    var p = bPos[i];
+                    var d = (Vector2)p - cen;
+                    var rr = d.magnitude / R;
+                    var th = Mathf.Atan2(d.y, d.x);
+                    var f = 0.5f * Mathf.Sin(ln * th + lp1) + 0.3f * Mathf.Sin((ln + 3) * th + lp2) + 0.2f * Mathf.Sin((2 * ln - 1) * th + lp3);
+                    var q = cen + d * (1 - amp * f * rr * rr);
+                    bPos[i] = new Vector3(q.x, q.y, p.z);
+                }
+            }
             // 6. Posed: about its middle, leaning back a little, turned a little.
             var tb = U(10, 25) * Mathf.Deg2Rad;
             var rl = U(-25, 25) * Mathf.Deg2Rad;
@@ -1232,6 +1272,7 @@ namespace Drakepg
             crumplePos = new Vector3[bPos.Count];
             for (int i = 0; i < bPos.Count; i++) crumplePos[i] = PoseRot(bPos[i] - new Vector3(cen.x, cen.y, 0), rl, tb, yw);
             var note = $"{tucks} tucks, {pleats} pleats, {flaps} flaps, {levelCount} depths, {ctrl.Count} relief points ({hullN} on the outline, skirt to x{skirtK:0.00}), {facets} facets";
+            if (CrumpleDents.x > 0) note += $", {dents} dents";
             var sh = new CrumpleShape
             {
                 Flat = bFlat, Tri = bTri, Mask = bMask, Folds = bFolds, Moves = bMoves, Z = bZ, Final = bPos.ToArray(), Relief = relief, Cen = cen,
@@ -2403,6 +2444,7 @@ namespace Drakepg
             solidMat.SetFloat(EdgeInkId, Crumple && CrumpleKind == 2 ? CrumpleEdgeInk : 0);
             if (Crumple && CrumpleKind == 2) solidMat.SetVector(ToneId, CrumpleTone);
             solidMat.SetVector(PrintId, Vector4.zero);
+            solidMat.SetVector(CrinkleId, Vector4.zero);
             simTime = 0;
             landedOnce = false;
             startWidthPx = 0;

@@ -16,6 +16,7 @@ Shader "Drakepg/PaperSolid"
         _Tone ("Tone: x dark, y light, z steps, w line px", Vector) = (0.55,1.12,3,1.1)
         _Print ("Print: x toward the paper, y less colour", Vector) = (0,0,0,0)
         _PrintTint ("A tint on the printed side only", Color) = (1,1,1,1)
+        _Crinkle ("Small creases: x steepness, y size px, w lit side gain; z the white back along cut edges, px", Vector) = (0,0,0,0)
         _Shade ("Shadow strength (x), blur mip (y), front faces flip (z)", Vector) = (0.38,2.5,-1,0)
         _Outline ("A dark line round the outline in pass 0, texels (0 none)", Float) = 0
         _EdgeInk ("A line along every cut edge of the paper in pass 1, times the fold line's width (0 none)", Float) = 0
@@ -27,7 +28,42 @@ Shader "Drakepg/PaperSolid"
     #include "UnityCG.cginc"
 
     sampler2D _MainTex, _CloseTex;
-    float4 _Color, _Back, _Ink, _Light, _Tone, _Shade, _Print, _PrintTint, _MainTex_TexelSize;
+    float4 _Color, _Back, _Ink, _Light, _Tone, _Shade, _Print, _PrintTint, _Crinkle, _MainTex_TexelSize;
+
+    // Small creases (`_Crinkle`): one short ridge or valley in each cell of `_Crinkle.y` canvas px of the flat sheet
+    // (fixed to the paper), a little roof: a crease down its middle and along both sides, tapering to points at its
+    // ends, so its two sides take the light differently. Returns the paper's slope (height per px, steepness
+    // `_Crinkle.x` applied by the caller) at `px`, canvas px on the sheet.
+    float3 CrinkleHash(float2 p)
+    {
+        float3 q = frac(p.xyx * float3(0.1031, 0.1030, 0.0973));
+        q += dot(q, q.yxz + 33.33);
+        return frac((q.xxy + q.yzz) * q.zyx);
+    }
+    float2 CrinkleSlope(float2 px)
+    {
+        float T = _Crinkle.y;
+        float2 cell = floor(px / T);
+        float2 g = 0;
+        for (int j = -1; j <= 1; j++)
+            for (int i = -1; i <= 1; i++)
+            {
+                float2 c = cell + float2(i, j);
+                float3 h = CrinkleHash(c * 1.37 + 0.5);
+                float3 h2 = CrinkleHash(c * 2.11 + 3.1);
+                float2 at = (c + h.xy) * T;
+                float ang = h.z * 3.14159265;
+                float2 n = float2(cos(ang), sin(ang)), t = float2(-n.y, n.x);
+                float2 d = px - at;
+                float across = dot(d, n), along = dot(d, t);
+                float L = T * (0.55 + 0.45 * h2.x), D = T * (0.22 + 0.16 * h2.y);
+                float inside = saturate((D - abs(across)) / 0.75) * saturate((L - abs(along)) / 0.75);
+                float taper = 1 - abs(along) / L;
+                float a = (h2.z < 0.5 ? -1 : 1) * (0.6 + 0.8 * frac(h2.z * 7.3));
+                g += inside * a * (-clamp(across / 0.75, -1, 1) * taper * n - (D - abs(across)) * sign(along) / L * t);
+            }
+        return g;
+    }
     float _Outline, _EdgeInk, _Close;
 
     // The canvas with the outline's closing under it (made as the fight starts, so the fight's burns and tears on the
@@ -146,6 +182,24 @@ Shader "Drakepg/PaperSolid"
                 float3 n = normalize(i.normal);
                 if (n.z < 0) n = -n;
                 float lit = dot(n, normalize(_Light.xyz));
+                // Small creases: the face's normal tipped by the creases' slope, along the sheet's own directions here
+                // (from how the flat sheet and the bent paper change across the pixel).
+                float crinkle = 0;
+                if (_Crinkle.x > 0)
+                {
+                    float2 q = i.uv * _MainTex_TexelSize.zw;
+                    float2 qx = ddx(q), qy = ddy(q);
+                    float3 px = ddx(i.world), py = ddy(i.world);
+                    float det = qx.x * qy.y - qy.x * qx.y;
+                    if (abs(det) > 1e-6)
+                    {
+                        float3 tu = (px * qy.y - py * qx.y) / det;
+                        float3 tv = (py * qx.x - px * qy.x) / det;
+                        float2 g = _Crinkle.x * CrinkleSlope(q);
+                        float3 n2 = normalize(n - g.x * tu - g.y * tv);
+                        crinkle = (dot(n2, normalize(_Light.xyz)) - lit) * 1.6;
+                    }
+                }
                 float rest = normalize(_Light.xyz).z;
                 // Facing us as it lay: tone 1 (the picture as drawn); turned to the light: lighter; away: darker. A few
                 // steps, the flat cut-out look.
@@ -153,6 +207,7 @@ Shader "Drakepg/PaperSolid"
                 float t = clamp((lit - rest) * 1.6, -1, 1);
                 t = _Tone.z > 0.5 ? round(t * _Tone.z) / _Tone.z : t;
                 float tone = t < 0 ? lerp(1, _Tone.x, -t) : lerp(1, _Tone.y, t);
+                if (_Crinkle.x > 0) tone *= clamp(1 + crinkle * (crinkle < 0 ? 1 - _Tone.x : _Crinkle.w), 0.4, 1.4);
                 float3 rgb;
                 if (front)
                 {
@@ -161,6 +216,13 @@ Shader "Drakepg/PaperSolid"
                     p = lerp(p, dot(p, float3(0.3, 0.59, 0.11)).xxx, _Print.y);
                     p = lerp(p, _Back.rgb, _Print.x);
                     rgb = p * tone;
+                    if (_Crinkle.z > 0)
+                    {
+                        // The paper's white back showing along its cut edge (turned up where the edge curls): a band
+                        // about `_Crinkle.z` canvas px in from it, from the outline blurred to that size.
+                        float blurred = PicLod(i.uv, log2(max(1.0, _Crinkle.z))).a;
+                        rgb = lerp(rgb, _Back.rgb * tone, 0.9 * (1 - smoothstep(0.6, 0.97, blurred)));
+                    }
                 }
                 else
                 {
