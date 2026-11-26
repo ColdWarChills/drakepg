@@ -736,3 +736,28 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - **How far these checks go:** the harness gives the monster 20x HP, teaches the four element skills for the fight and turns on God mode, so these are not untouched fights. The troll and floors 1-2 were recorded, at about 30 ms a frame while saving pictures; one recorded floor fight had a single 1.1 s frame after the crumple had ended. Floor 3's kill, unrecorded: worst frame 29.3 ms, mean 3.9 ms, 2 frames over 16.7 ms in the 5 s after it, so the 1.1 s frame did not come back.
 - **Fixed in the check (f6eda90):** the floor fights in `PaperCheck` (`Run`'s `floor` and `Sequence`'s "floorN") didn't pass the HP and MP the hero came in with. A floor's finish left the hero at 0 HP, so the next fight opened with "You collapse..." (seen on the first Impling run). They now pass them, as the Warden's panel does.
 - **Not covered:** a long play session; a Unity web build (only the Phaser game deploys from the live branch); GPU cost.
+
+## Rule sheet scored: the Old Road and Chapter 1 (2026-11-26; played in the Unity editor on claude/unity-port 5ad3e78; docs only on live)
+
+- **Decided by the designer:** "okay, if you say so, do that." The scoring is step 2 of the rule sheet. It covers the Old Road and Chapter 1 only, because that is what a demo player sees.
+- **What was done:**
+  - A worker played a new Warrior in the Unity editor, by script through the game's own buttons: New Game, the Old Road, Brindlemoor, Chapter 1 to the Thornheart, the hand-in, save, quit and Continue.
+  - It took pictures and two clips of the running game.
+  - It ran attack-only fights against five ordinary monsters and both bosses.
+  - The Unity bot (`Playthrough.Run(20, 1234, false, false)`) and the two headless checks (`npm run sim`, `npm run pace`) gave the numbers.
+- **The result** is in `docs/RULE_SHEET.md` under "The score": of 29 rules, 8 kept, 8 broken, 6 kept in one part and broken in another, 7 could not be checked by a script. The worst five:
+  1. handing in hunts is a pile-up of floating lines, with no level page;
+  2. Chapter 1 ends with "Chapter Complete!" over a "New!" card and no wishlist ask;
+  3. a Tough Ash Imp in the first Chapter 1 room kills the Lv 2-3 hero in 2 turns;
+  4. the first goal on screen is "reach Guild Rank E" before the Guild is met;
+  5. developer leftovers and flat-shape stand-ins.
+- **The old findings of 2026-11-10 were looked at again:** "+95 XP with no XP bar" and the bare level-up line are fixed (the level-up one only for fights); "88% no loot" is no longer true as written; bosses falling on the first try and gold piling up are still true.
+- **Nothing in the game was changed.** The designer's save and settings were backed up before the run and put back after it.
+- **Where the pictures are:** `art/tests/rule_sheet/` on the PC (git-ignored), with the worker's full notes in `EVIDENCE.md` and the five captioned pictures in `worst5/`.
+- **How far it goes:**
+  - It was a script, not a person: it shows what is on the screen, not what a new player understands or feels.
+  - Hover text was never tried, so an "icon with no words" may have a line on hover.
+  - Sound was not listened to.
+  - Two steps went through the game's rules instead of the screen (putting on two body armors, buying five potions), and the boss-kill clip used a boss set to 1 HP.
+  - The build was `claude/unity-port`, which differs from live in the benched hero bone tests and about 60 lines on how the hero's hands are read. Nothing was checked a second time on live.
+- **Not covered:** Chapters 2 and 3; the forge, the coach, the Spire; a new player; the designer's own sit-down.

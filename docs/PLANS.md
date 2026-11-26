@@ -9,9 +9,17 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 - **Now: the rule sheet (2026-11-26). `docs/RULE_SHEET.md` is what the game is checked against.** The designer: "The work on the game did not proceed as much as I would want. Have not tested it for a while as well. Testing it for now takes too long and have no clear target of what we are testing. We should look for some rulesets there are to see where and how we can improve."
   - **What it is:** 29 rules in six groups: the first ten minutes, goals and progress, the fight, screens and controls, feel and world, the demo. They are cut from two checked lists (PLAY, Desurvire and Wiberg 2009; Pinelle's ten, 2008) plus the demo numbers. Each rule says who checks it: a bot, Claude, the designer or a new player.
   - **Why it answers "takes too long":** most rules are checked by Claude and the bots, not by the designer playing. The designer's part is one sit-down of about 20 minutes with one question written down first.
-  - **Step 1, done:** the sheet is written. Nothing is scored yet; its "Known today" list is from the records, not from the game.
-  - **Proposed, step 2:** Claude scores the Unity game against the sheet, rule by rule, with a picture for every rule the game breaks, the worst five first. Starts after the designer's yes.
-  - **Proposed, step 3:** the designer's 20-minute sit-down, with the one question the scoring could not answer.
+  - **Step 1, done:** the sheet is written.
+  - **Step 2, done 2026-11-26 (the designer: "okay, if you say so, do that."):** the Old Road and Chapter 1 are scored, in the Unity game. That part only, because it is what a demo player sees; Chapters 2 and 3 are not scored. The result is in the sheet under "The score"; the record is in IMPROVEMENTS.
+    - **The count:** of 29 rules, 8 kept, 8 broken, 6 kept in one part and broken in another, 7 could not be checked by a script.
+    - **The worst five:**
+      1. Handing in hunts: four reward lines land on top of the Guild board, and a level gained there gets no level page.
+      2. Chapter 1's end: "Chapter Complete!" is drawn over a "New!" card after the walk back, with no wishlist ask, and the game carries on.
+      3. A Tough Ash Imp in the first Chapter 1 room kills the Lv 2-3 hero in 2 turns; the loss offers only "Wake up".
+      4. The first goal on screen says "reach Guild Rank E" before the player has met the Guild.
+      5. Developer leftovers: the chapter picker on the class screen, "v0.8 · Chapter 3 · Unity" on the title, flat shapes at the campfire.
+  - **Proposed, step 3:** the designer's 20-minute sit-down, with the one question the scoring could not answer. Claude's pick: "Does any ordinary fight in Chapter 1 make me press something other than Attack?"
+  - **Proposed, step 4:** fix what the score found, one at a time, each shown before the next. Nothing is built. Claude's pick for the first: the hunt hand-in. Starts after the designer's yes.
   - It takes the place of "Play the first hour by hand and fix" in the roadmap (`docs/HANDOFF_2026-11-23.md`, section 8) as the way the game is tested.
 - **Decided (the designer, 2026-11-26): armor parts shown on the hero are still wanted, but benched.** "I mean I still want different armor parts to be shown somehow. We just don't get it to work, seems like it's impossible. So benching it for a bit until we figure out something."
   - The work goes on with today's hero, where the weapon and the body armor show. This settles the handoff's "first decision" for now.
