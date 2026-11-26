@@ -673,3 +673,16 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - **By eye:** all five quarter-speed close-ups stepped (every recorded frame), no jumps; every close-up keeps the wad in frame to the dust. Each death's game-speed part opens on its killing blow. On the sheet, the Mimic's rest frame is behind its own red burst (it stays through the death, as in the earlier timing run), so it reads less surely.
 - To look at, in the `claude/unity-port` worktree on the PC (`art/tests/paper_clip/`): `paper_crumple_close_call.mp4` (36 s, each death at game speed, then a quarter speed close-up at 2-3x), `paper_crumple_close_call_rest_30a.jpg`, `_30b.jpg` (all 30 at rest, game size).
 - Runs: `art/tests/paper_crumple/cl/` (`FD` the fade check, `CL` the clip's six deaths, `RS` all 30).
+
+## Paper crumple switched on for every monster (2026-11-26; Unity, live 54e74f4, `claude/unity-port` c2fd930)
+- **Decided by the designer** after the close-call clip, to "Switch the crumple on in place of the fold?": "Yes, switch it on".
+- **Built:** `Paper.Solid` and `Paper.Crumple` default on, so every monster's death is the crumple, built on a worker thread as the fight starts. The cheat menu's "Paper monsters" switch stays the off switch for testing (all paper off: the old bleed and slump). The first fold (`Fold`) stays in the code, unused. The paper check (`PaperCheck.Run`) defaults to the crumple too (`solid: false` for the fold).
+- **Onto the live branch:** the 15 crumple commits (`claude/unity-port` a0f1b68 to ed1d625: the solver, the crumple, its motion, timing and knobs) and the switch were cherry-picked with no conflicts. The paper files (`Paper.cs`, `Paper.Solid.cs`, `Paper.Crumple.cs`, `PaperSolid.shader`, their .meta files, `PaperCheck.cs`) are byte-identical on both branches. The rest of `claude/unity-port` (the hero experiments, the right-hand rule commit) stays off the live branch.
+- **Checked on the live branch's code** (live's copies of the 9 files that still differ laid over the worktree, compiled with no errors, then put back):
+  - EditMode tests: 5 of 5 pass;
+  - a fight with nothing set (a Mossling, attacks only, the saved x2 battle speed): the crumple built as the fight started (620 ms on the worker thread), nothing waited at the kill, and the wad came to rest;
+  - a Spire floor: floor 1 cleared with the crumple and advanced (best 0 to 1, 10 marks);
+  - the Lucky Impling still gets away without folding (its crumple is built at the fight's start and left unused, as before);
+  - with the cheat menu's switch off, the next fight built no crumple and ended as before;
+  - the console: no errors.
+- **Not covered:** a long play session; a Unity web build (only the Phaser game deploys from the live branch; the crumple's no-thread path has never run).
