@@ -161,16 +161,16 @@ namespace Drakepg
             breathPhase += dt * 2 * Mathf.PI / Mathf.Lerp(2.6f, 1.4f, hurt);
             breath = Idle ? (0.5f - 0.5f * Mathf.Cos(breathPhase)) * (1 + 0.7f * hurt) * live : 0;
             shift = Idle ? Mathf.Sin(time * 2 * Mathf.PI / 4.3f) * (1 - 0.4f * hurt) * live : 0;
-            var settle = Idle ? (0.04f + 0.06f * (1 - breath) + 0.15f * hurt) * (1 - stiff) + 0.18f * droop : 0;
+            var settle = Idle ? (0.04f + 0.06f * (1 - breath) + 0.15f * hurt) * (1 - stiff) + 0.3f * droop : 0;
             crouch.Step(Crouch + settle, 22, 0.7f, dt);
-            lean.Step(Lean + (Idle ? 6 * hurt + 6 * droop : 0), 17, 0.5f, dt);
+            lean.Step(Lean + (Idle ? 6 * hurt + 10 * droop : 0), 17, 0.5f, dt);
             // Hair and cloth trail behind the motion and settle with a small swing when it stops. Damped hard: a swingy
             // drag (and head) made the face bob back and forth with every lunge (designer, 2026-10-26).
             var limit = height * 0.045f * (1 - stiff);
             dragX.Step(Mathf.Clamp(-vel.x * 0.022f, -limit, limit), 12, 0.65f, dt);
             dragY.Step(Mathf.Clamp(-vel.y * 0.012f, -limit, limit), 12, 0.65f, dt);
             // The head follows the body's tilt late.
-            head.Step(BodyTilt(shift, lean.X) + 12 * droop, 14, 0.7f, dt);
+            head.Step(BodyTilt(shift, lean.X) + 22 * droop, 14, 0.7f, dt);
         }
 
         /// <summary>Forward-lean rotation times a scale (bone frame), as the shader's (m00, m01, m10, m11).</summary>
@@ -207,7 +207,7 @@ namespace Drakepg
             var j1b = Mul(a0, j1);
             // Body: fills out and rises with each breath.
             // A soaked body sags: a little shorter and wider.
-            a1 = Mat(th0 + th1, 1 + 0.025f * breath + 0.03f * droop, 1 + 0.045f * breath - 0.05f * droop);
+            a1 = Mat(th0 + th1, 1 + 0.025f * breath + 0.05f * droop, 1 + 0.045f * breath - 0.09f * droop);
             var t1 = j1b - Mul(a1, j1);
             var j2b = Mul(a1, j2) + t1;
             a2 = Mat(th0 + th1 + th2, 1, 1);

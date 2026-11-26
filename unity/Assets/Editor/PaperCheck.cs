@@ -226,6 +226,8 @@ namespace Drakepg.EditorTools
             GameRoot.I.StartCoroutine(SequenceLoop(monster, dir, fps, close, width, record, steps.Split(' '), speed));
 
         static bool recording, holding;
+        /// <summary>The frame the recorder is on (logged with each step, so a clip can be cut from the log).</summary>
+        static int recFrame;
 
         static IEnumerator HoldView(float x, float y, float zoom)
         {
@@ -240,6 +242,7 @@ namespace Drakepg.EditorTools
         {
             System.IO.Directory.CreateDirectory(dir);
             Time.captureFramerate = fps;
+            recFrame = 0;
             var rt = new RenderTexture(width, width * 9 / 16, 0);
             var small = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
             var i = 0;
@@ -255,6 +258,7 @@ namespace Drakepg.EditorTools
                 System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir, $"f{i:0000}.jpg"), small.EncodeToJPG(92));
                 Object.Destroy(tex);
                 i++;
+                recFrame = i;
             }
             Time.captureFramerate = 0;
             Object.Destroy(rt);
@@ -327,18 +331,20 @@ namespace Drakepg.EditorTools
                 p.Data.Mp = 999;
                 (cooldowns?.GetValue(battle) as Dictionary<string, int>)?.Clear();
                 (cooldownOrder?.GetValue(battle) as List<string>)?.Clear();
-                // "kill" or "kill:<skill>": HP to 1, then that blow.
+                // "kill" or "kill:<skill>": HP to 1, then that blow. "phase": HP to just above the form change, then an attack.
                 var kill = step == "kill" || step.StartsWith("kill:");
-                var move = kill ? (step.Length > 5 ? step.Substring(5) : "attack") : step;
+                var move = kill ? (step.Length > 5 ? step.Substring(5) : "attack") : step == "phase" ? "attack" : step;
                 if (kill)
                 {
                     SetHp(battle, shown, 1);
                     GameRoot.I.StartCoroutine(Probe());
                 }
+                if (step == "phase" && battle.Enemy.Def.Phase != null)
+                    SetHp(battle, shown, System.Math.Floor(battle.Enemy.MaxHp * battle.Enemy.Def.Phase.At) + 1);
                 List<BattleEvent> events = null;
                 System.Func<List<BattleEvent>> act = () => events = move == "attack" ? battle.Attack() : battle.UseSkill(move);
                 Drive.Call("Act", act);
-                Debug.Log($"drakepg paper sequence: {step}");
+                Debug.Log($"drakepg paper sequence: {step} at frame {recFrame}");
                 if (kill)
                 {
                     // A miss: again (up to three more), until it dies.
@@ -470,7 +476,7 @@ namespace Drakepg.EditorTools
                         case "melt": paper.TestHit("ice"); paper.Settle(); paper.TestHit("fire"); break;
                     }
                     paper.Settle();
-                    yield return new WaitForSeconds(0.25f);
+                    yield return new WaitForSeconds(state == "wet" || state == "drying" ? 1.2f : 0.25f);
                     // The snapped piece, its flakes and the steam gone before the picture.
                     if (state == "snap" || state == "melt") yield return new WaitForSeconds(2f);
                     GameRoot.I.Snapshot($"{dir}/{id}_{state}.png");

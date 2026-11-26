@@ -4,11 +4,12 @@ using UnityEngine;
 namespace Drakepg
 {
     /// <summary>
-    /// Water, ice and energy on the paper (docs/PLANS.md step 1d; the mock's soak, frost and bolts): water soaks it dark
-    /// from the top down and it dries over a few turns; ice frosts it pale, and the next blow while it is frosted snaps a
-    /// piece off; energy rips it where it lands. Fire on wet paper only steams it, fire on frost melts it to wet. Looks
-    /// only: no rule reads any of it (a snap does no damage). Drawn by Fx/Paper.cginc on the living picture and baked into
-    /// the death, so the crumple keeps it. Eases on Anim time (x2 battle speed, a boss's slow motion).
+    /// Water, ice and energy on the paper (docs/PLANS.md step 1d; the mock's soak, frost and bolts): water soaks a dark,
+    /// a little see-through splash where it lands (it sags and drips) that dries over a few turns; ice frosts it pale,
+    /// and the next blow while it is frosted snaps a piece off; energy rips it where it lands. Fire on wet paper only
+    /// steams it, fire on frost melts it to wet. Looks only: no rule reads any of it (a snap does no damage). Drawn by
+    /// Fx/Paper.cginc on the living picture and baked into the death, so the crumple keeps it. Eases on Anim time (x2 battle
+    /// speed, a boss's slow motion).
     /// </summary>
     public partial class Paper
     {
@@ -16,6 +17,12 @@ namespace Drakepg
         static readonly int MoreId = Shader.PropertyToID("_PaperMore"), WetId = Shader.PropertyToID("_PaperWet"), FrostId = Shader.PropertyToID("_PaperFrost");
         static readonly int RipsId = Shader.PropertyToID("_PaperRips"), RipInfoId = Shader.PropertyToID("_PaperRipInfo");
         static readonly int SnapsId = Shader.PropertyToID("_PaperSnaps"), SnapInfoId = Shader.PropertyToID("_PaperSnapInfo");
+        static readonly int WetStyleId = Shader.PropertyToID("_PaperWetStyle"), WetAtId = Shader.PropertyToID("_PaperWetAt");
+
+        /// <summary>Water's look (testing switch): true, an irregular splash where the water landed, deeper in its own
+        /// colour, see-through, with a tide line and short runs down (the second try); false, the first try's even
+        /// darkening front from the top.</summary>
+        public static bool WetBlotches = true;
 
         /// <summary>Soaked: how far down it has soaked (0-1) and where that is going; the ripples drying leaves.</summary>
         float soak, soakTo, cockle, cockleTo;
@@ -29,14 +36,14 @@ namespace Drakepg
         readonly Vector4[] snaps = new Vector4[MaxSnaps], snapInfo = new Vector4[MaxSnaps];
         int snapCount;
         float wetSeed, frostSeed;
+        /// <summary>The middle of the wet splash (sheet space): where the water landed, kept on the picture's body.</summary>
+        Vector2 wetAt;
         /// <summary>Seconds of battle time (Anim) since the paper was made.</summary>
         float clock;
         bool elementsOn;
         /// <summary>Seconds (Anim) to the next drip; the picture's lower edges (sheet space, from the scan) it drips from.</summary>
         float dripIn = 0.3f;
         List<Vector2> dripFrom;
-        /// <summary>The picture's own color (a hit's white flash swaps it for a moment).</summary>
-        Color pictureColor = Color.white;
         /// <summary>Snapped pieces still falling (each goes when it lands).</summary>
         readonly List<Transform> pieces = new List<Transform>();
 
@@ -47,7 +54,7 @@ namespace Drakepg
 
         void InitElements()
         {
-            pictureColor = body.color;
+            Shader.SetGlobalFloat(WetStyleId, WetBlotches ? 1 : 0);
             wetSeed = R() * 50;
             frostSeed = R() * 50;
         }
@@ -96,6 +103,7 @@ namespace Drakepg
         {
             b.SetVector(MoreId, new Vector4(ripCount, snapCount, 0, size.y));
             b.SetVector(WetId, new Vector4(soak, 1, cockle, wetSeed));
+            b.SetVector(WetAtId, wetAt);
             b.SetVector(FrostId, new Vector4(frost, frostSeed, 0, 0));
             b.SetVectorArray(RipsId, rips);
             b.SetVectorArray(RipInfoId, ripInfo);
@@ -109,6 +117,7 @@ namespace Drakepg
         {
             m.SetVector(MoreId, new Vector4(ripCount, snapCount, 0, size.y));
             m.SetVector(WetId, new Vector4(Mathf.Max(soak, soakTo), 1, Mathf.Max(cockle, cockleTo), wetSeed));
+            m.SetVector(WetAtId, wetAt);
             m.SetVector(FrostId, new Vector4(Mathf.Max(frost, frostTo), frostSeed, 0, 0));
             var open = new Vector4[MaxRips];
             for (int i = 0; i < MaxRips; i++) open[i] = i < ripCount ? new Vector4(1, ripInfo[i].y, ripInfo[i].z, ripInfo[i].w) : ripInfo[i];
@@ -132,6 +141,13 @@ namespace Drakepg
             {
                 case "water":
                     elementsOn = true;
+                    {
+                        // The splash's middle: where it landed, pulled toward the body's middle and kept off the head
+                        // and feet (dry paper shows all round it); a second soak moves it a little toward the new blow.
+                        var spot = new Vector2(Mathf.Lerp(Mathf.Clamp(at.x, 0, aspect), aspect / 2, 0.3f),
+                            Mathf.Clamp(Mathf.Lerp(Mathf.Clamp01(at.y), 0.55f, 0.3f), 0.38f, 0.7f));
+                        wetAt = soak < 0.15f ? spot : Vector2.Lerp(wetAt, spot, 0.35f);
+                    }
                     soakTo = 1;
                     cockleTo = 0;
                     // Water puts burns out: they stop eating outward and stop glowing.
@@ -341,11 +357,24 @@ namespace Drakepg
         void Drip()
         {
             if (dripFrom == null && pre == PreReady && preScan.Solid != null) dripFrom = LowerEdges();
-            // The wet front as Paper.cginc draws it (without its wander).
-            var front = 1.04f - soak * 1.14f;
             var s = new Vector2(aspect * Random.Range(0.25f, 0.75f), Random.Range(0.15f, 0.35f));
-            if (dripFrom != null && dripFrom.Count > 0)
+            if (WetBlotches)
             {
+                // From the bottom of the splash (its size as Paper.cginc draws it, without the wobble), or a lower edge
+                // of the picture inside it.
+                var r = 0.1f + 0.2f * soak;
+                s = wetAt + new Vector2(Random.Range(-0.5f, 0.5f) * r, -r * Random.Range(0.6f, 1.1f));
+                if (dripFrom != null && dripFrom.Count > 0)
+                    for (int k = 0; k < 6; k++)
+                    {
+                        var e = dripFrom[Random.Range(0, dripFrom.Count)];
+                        if (e.y < wetAt.y && (e - wetAt).magnitude < r * 0.9f) { s = e; break; }
+                    }
+            }
+            else if (dripFrom != null && dripFrom.Count > 0)
+            {
+                // The wet front as Paper.cginc draws it (without its wander).
+                var front = 1.04f - soak * 1.14f;
                 var found = false;
                 for (int k = 0; k < 6 && !found; k++)
                 {
@@ -399,9 +428,10 @@ namespace Drakepg
             pic.SetParent(holder, true);
             var r = pic.gameObject.AddComponent<SpriteRenderer>();
             r.sprite = body.sprite;
-            // The paper material and color, not a hit flash's (the blow that snaps it flashes the figure white).
+            // The paper material and color, not a hit flash's (the blow that snaps it flashes the figure white); the color
+            // as it is now, so a form change's tint stays on the piece.
             r.sharedMaterial = live;
-            r.color = pictureColor;
+            r.color = Fx.RestColor(GetComponent<Figure>(), body);
             r.flipX = body.flipX;
             r.flipY = body.flipY;
             r.sortingLayerID = body.sortingLayerID;
