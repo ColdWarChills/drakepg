@@ -109,6 +109,8 @@ namespace Drakepg.EditorTools
                 GameRoot.I.Go(new BattleScreen(new BattleSetup
                 {
                     MonsterId = floor > 0 ? null : id, ZoneId = zone, RoomId = "thornwood_path", Elite = elite, Heroic = heroic, TowerFloor = floor,
+                    // A floor's finish puts back the HP and MP the hero came with (0 if not given), as TowerPanel.StartFloor does.
+                    EntryHp = Session.Player.Hp, EntryMp = Session.Player.Mp,
                     X = 640, Y = 600,
                 }), 0);
                 if (FastKill)
@@ -219,7 +221,7 @@ namespace Drakepg.EditorTools
         /// for the menu after each: a skill id (tidal_wave, frost_lance, spark_chain...), "attack", or "kill" (HP to 1,
         /// then an attack). Recorded the whole way as dir/f000.jpg... at `fps` frames a game second (`close`: the camera
         /// zoomed 2x on the monster, no HUD), until 5 s after the killing blow. `frames` 0: not recorded, frame times
-        /// probed instead. The monster has 20x HP so only "kill" kills it.
+        /// probed instead. The monster has 20x HP so only "kill" kills it. `monster` "floor3": that Spire floor's monster.
         /// </summary>
         public static void Sequence(string monster, string dir, int fps = 20, bool close = false, int width = 1920, bool record = true,
             string steps = "tidal_wave frost_lance attack spark_chain kill", int speed = 1) =>
@@ -281,7 +283,14 @@ namespace Drakepg.EditorTools
                 QualitySettings.vSyncCount = 0;
             }
             yield return new WaitUntil(() => !(GameRoot.I.Screen is BattleScreen) && Time.captureFramerate == 0);
-            GameRoot.I.Go(new BattleScreen(new BattleSetup { MonsterId = monster, ZoneId = ZoneOf(monster), RoomId = "thornwood_path", X = 640, Y = 600 }), 0);
+            // "floor3": that Spire floor's monster (built by the tower's own rules) instead of a monster id.
+            var floor = monster.StartsWith("floor") ? int.Parse(monster.Substring(5)) : 0;
+            GameRoot.I.Go(new BattleScreen(new BattleSetup
+            {
+                MonsterId = floor > 0 ? null : monster, ZoneId = ZoneOf(monster), RoomId = "thornwood_path", TowerFloor = floor, X = 640, Y = 600,
+                // A floor's finish puts back the HP and MP the hero came with (0 if not given), as TowerPanel.StartFloor does.
+                EntryHp = Session.Player.Hp, EntryMp = Session.Player.Mp,
+            }), 0);
             yield return new WaitForSeconds(0.5f);
             var battle = Drive.Field("battle") as Battle;
             var shown = Drive.Field("hpShown") as Dictionary<string, double>;
