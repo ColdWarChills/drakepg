@@ -2853,7 +2853,7 @@ namespace Drakepg
             // Monsters spill blood (or chips, or wisps): more for heavier blows, a gush for the last one.
             if (targetSide == "enemy" && e.Effect != "immune" && paper != null)
             {
-                // Water, ice and energy act on the paper too (Paper.Elements.cs); fire that only steams or melts it burns no hole.
+                // Ice and energy act on the paper too (Paper.Elements.cs; water is off); fire that only melts frost burns no hole.
                 var shows = paper.Hit(x, y, weight, e.Element);
                 if (e.Element == "fire" && shows == null) Anim.After(0.12f, () => Fx.PaperEmbers(World, x, y));
             }
