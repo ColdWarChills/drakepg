@@ -693,7 +693,8 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
 - **Built, testing knobs, all off by default:**
   - `CrumpleCrinkle`: x how steep the small creases are (short ridges and valleys drawn on the faces, one per cell of y canvas px, fixed to the paper), z the paper's white back along cut edges (px), w how much a crease's lit side brightens;
   - `CrumpleLumps`: the outline pulled in and out in small lumps, after the relief; `CrumpleDents`: inner relief points pushed in. Both draw their own random numbers, so the build and its pick of tries play as without them;
-  - off, the notes of the four, the Mossling and the Hedge Troll are identical to the all-30 run.
+  - off, the notes of the four, the Mossling and the Hedge Troll are identical to the all-30 run, and the resting wads differ from it pixel for pixel no more than two runs of the old code differ from each other (the falling petals; Mossling, Hedge Troll, Gust Sprite, Golem);
+  - only on `claude/unity-port`: live's paper files don't have the knobs.
 - **Try 1, on today's wads (same seed, same pick):**
   - long straight crease lines and soft bumps were tried first: invisible at game size, or hammered metal at 3x. The short ridges show at game size; with their bright side the wads read as crumpled foil, with dark sides only as scratches on a gem;
   - the lumps (kept under 0.08 of the reach; at 0.25 they made spikes) and the white edge hardly show at game size;
