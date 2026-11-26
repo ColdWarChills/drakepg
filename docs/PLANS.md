@@ -15,7 +15,7 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
     - **The worst five:**
       1. Handing in hunts: four reward lines land on top of the Guild board, and a level gained there gets no level page.
       2. Chapter 1's end: "Chapter Complete!" is drawn over a "New!" card after the walk back, with no wishlist ask, and the game carries on.
-      3. A Tough Ash Imp in the first Chapter 1 room kills the Lv 2-3 hero in 2 turns; the loss offers only "Wake up".
+      3. A Tough Ash Imp in the first Chapter 1 room kills the Lv 2-3 hero in 2 turns; the loss card has no "Try again", only "Wake up" back in town.
       4. The first goal on screen says "reach Guild Rank E" before the player has met the Guild.
       5. Developer leftovers: the chapter picker on the class screen, "v0.8 · Chapter 3 · Unity" on the title, flat shapes at the campfire.
   - **Proposed, step 3:** the designer's 20-minute sit-down, with the one question the scoring could not answer. Claude's pick: "Does any ordinary fight in Chapter 1 make me press something other than Attack?"

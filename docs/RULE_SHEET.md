@@ -99,7 +99,7 @@ This is the target. It is cut down from the known lists people use to judge game
 3. **A Tough Ash Imp stands in the first Chapter 1 room.**
    - It is Lv 3 among Lv 1-2 monsters. It killed the Lv 2-3 hero in 4 of 7 meetings, each time in 2 turns.
    - Nearly all of the bot's deaths in Chapter 1 are this monster.
-   - The loss offers only "Wake up" and four weak-spot icons with no words.
+   - The loss card names the biggest hit, but it has no "Try again": only "Wake up", back in town. Its four weak-spot icons have no words.
    - Pictures: `cards/card_002`, `battles_attackonly/ash_imp`.
    - Rules: obvious first ten minutes; difficulty rises with the player; a loss says why.
    - It also goes against the designer's own rule that the early game is easy.
@@ -132,7 +132,7 @@ Each rule is named by its first words, in the sheet's order.
 - **3. The fight**
   - **The same action, the same kind of result, and every result shows its reason:** broken. The log names the move, the number and crits ("You use Heavy Strike: 26 damage. Critical!"). It never says that a weak spot was hit, that a hit was resisted, or what Defend took off. `3_ch1trash_mid`, `3_boss_end`.
   - **The monster's next move, and why you took the damage:** part kept, part broken. Kept: the next move is always shown with its numbers ("Next: Cinder Spit ~31 dmg + Burn 30%"), and Defend says "-60% dmg, +MP". Broken: weak spots and resistances are icons with no words, and two badges are icons only (a star and a bag). The code has hover text for them; hovering could not be tried. `3_road2_menu`, `3_boss_start`.
-  - **A loss says why, and trying again is immediate:** part kept, part broken. Kept at bosses: the card names the biggest hit and has "Try again" (three clicks, about 4 seconds). Its weak spot is a hammer icon with no word. Broken in ordinary fights: only "Wake up", then 1 to 4 rooms to walk back. `3_guard_attackonly_card`, `cards/card_002`.
+  - **A loss says why, and trying again is immediate:** part kept, part broken. Kept at bosses: the card names the biggest hit and has "Try again" (three clicks, about 4 seconds). Its weak spot is a hammer icon with no word. Broken in ordinary fights: the card names the biggest hit too, but it has only "Wake up", then 1 to 4 rooms to walk back. `3_guard_attackonly_card`, `cards/card_002`.
   - **Difficulty rises with the player:** part kept, part broken. Kept: ordinary fights are short (2 to 5 turns, 6 to 15 seconds), and Attack alone lost to both bosses, 12 tries of 12. Broken: the hardest thing in Chapter 1 is the Ash Imp in its first room, not the boss. The bot beats both bosses on the first try, 117 times of 120.
   - **Fights don't all play the same:** broken for ordinary fights. Attack alone won 30 of 30: 6 against the road's Burrow Rat at Lv 1, and 24 in Chapter 1 with a Lv 4-5 hero, a little ahead of where a player first meets those monsters. Whether they feel the same is the designer's to say.
 - **4. Screens and controls**
