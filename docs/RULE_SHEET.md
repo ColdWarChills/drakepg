@@ -88,6 +88,7 @@ This is the target. It is cut down from the known lists people use to judge game
    - A level gained here gets no level page. The stat points have to be found under Character.
    - Pictures: `2_turnin_0`, `2_character_points`.
    - Rules: the screen shows what the next decision needs; rewards and level-ups.
+   - **Fixed, in the live game since 2026-11-27:** a hunt handed in opens cards of its own (what it paid, each promotion, the level page a fight gives). The score above is left as it was scored.
 2. **Chapter 1 ends badly.**
    - The boss's card is the high point (`3_boss_card`). "Chapter Complete!" comes only after the walk back to Maren.
    - It is drawn over a "New!" card, with two buttons at once (Continue and Next).
@@ -212,7 +213,7 @@ The designer: "i've added gemini cli maybe it would be useful to run a check thr
 1. **This sheet.** Done when the designer has read it.
 2. **Claude scores the Unity game against it.** Done 2026-11-26 for the Old Road and Chapter 1 (the designer: "okay, if you say so, do that."). The result is "The score" above. Chapters 2 and 3 are not scored.
 3. **The designer's 20-minute sit-down,** with the one question the scoring could not answer. Claude's pick for the question: "Does any ordinary fight in Chapter 1 make me press something other than Attack?"
-4. **Fixing what the score found.** Started 2026-11-26 (the designer: "Yes, hand-in first"), one fix at a time, each shown before the next. The hunt hand-in is built and shown and waits for the designer's yes. What comes after it is in `docs/PLANS.md`.
+4. **Fixing what the score found.** Started 2026-11-26 (the designer: "Yes, hand-in first"), one fix at a time, each shown before the next. The hunt hand-in (worst five, 1) is in the live game since 2026-11-27 (the designer: "Yes, put it in"). What comes after it is in `docs/PLANS.md` and waits for the designer's yes.
 
 This takes the place of the roadmap's "Play the first hour by hand and fix".
 

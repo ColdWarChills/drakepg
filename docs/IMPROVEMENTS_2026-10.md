@@ -793,3 +793,24 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - The private page https://claude.ai/artifact/9YWc43cq2W9xYjUe8z33UZ showed them as A and B, shuffled per block (`key.txt`).
 - **The designer's picks:** "1 B, 2 A". Both are Claude's versions.
 - **Nothing in the game changed.**
+
+## Hunt hand-in reward cards (2026-11-27; Unity, live)
+
+- **Why:** the first of the rule sheet score's worst five. A hunt handed in at the Guild board threw its rewards, the promotion, the level-up and the new skill as loose lines over the board's own text, and a level gained there got no level page. The designer: "Yes, hand-in first", and after the pictures: "Yes, put it in".
+- **What the player sees:** handing in a hunt opens cards of its own over the dimmed board.
+  - First what the hunt paid (XP, gold, rank points), then one card per promotion with its gifts, then the same level page a fight gives, with the stat points to place.
+  - The button says "Next" while another card follows and "Continue" on the last one. Space, Enter and E turn the cards; 1-4 place points on the level page.
+  - The board behind keeps its old state until the last card closes. A skill the level brought gets its "New!" card after that.
+- **How:**
+  - `unity/Assets/Scripts/Game/Ui/RewardCards.cs` is new: the cards, and the level page that `ResultScreen` used to draw for itself, so a fight and a hand-in show the same page.
+  - `Rules/Guild.cs`: `TurnIn` now also returns what the hunt itself paid and each promotion's own pay (`HuntXp`, `HuntGold`, `Paid`). The pay itself is unchanged.
+  - `RoomScreen.cs` and `GuildPanel.cs` hand the result to the cards and redraw the board once they close.
+  - Built on `claude/unity-port`, brought to live as three commits (`897d6ed`, `3b1f31b`, `247008a`).
+- **Checked:**
+  - Played in the Unity editor on `claude/unity-port`: a hand-in with a promotion and a level, a plain hand-in, a hand-in with no rank points, a hand-in at the top rank, and a fight's level page. Pictures: `art/tests/hunt_hand_in/` (on the PC, not in the repo).
+  - The live tree was not run: the editor is open on `claude/unity-port`. The six files are byte for byte the same on both branches, and the live tree's scripts (rules, game, editor, tests) compile with no errors against the editor's libraries.
+- **How far it goes:**
+  - Three hunts done are three cards in a row; one "Hand in all" button is proposed in `docs/PLANS.md`.
+  - A hunt below the hero's rank says "No rank points" with no reason; the fix (a hunt pays the points it showed when it was taken) is proposed in `docs/PLANS.md`.
+  - The story quest hand-in still uses the loose lines. It goes with Chapter 1's end.
+  - The web game is untouched.
