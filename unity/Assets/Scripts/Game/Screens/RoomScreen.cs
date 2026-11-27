@@ -272,10 +272,17 @@ namespace Drakepg
                     if (data.Outcome == "fled")
                     {
                         safeUntil = Now + (float)Db.B.FleeGraceSeconds;
-                        BlinkPlayer();
+                        BlinkPlayer((float)Db.B.FleeGraceSeconds);
                     }
                     if (data.Outcome == "escaped") safeUntil = Now + (float)Db.B.FleeGraceSeconds;
                 }
+            }
+            // Try again after a loss: back where the fight began, the monster still there (it was never beaten).
+            var retry = data.Via == "battle" && data.Outcome == "retry";
+            if (retry)
+            {
+                safeUntil = Now + (float)Db.B.RetryGraceSeconds;
+                BlinkPlayer((float)Db.B.RetryGraceSeconds);
             }
 
             if (roaming == null && memory != null)
@@ -304,14 +311,16 @@ namespace Drakepg
                     roaming[roaming.Count - 1] = new RoamingMonster { Uid = last.Uid, MonsterId = Monsters.LuckyId, X = last.X, Y = last.Y };
                 }
             }
-            // Give some room: nobody stays right next to you when you arrive or come back from a fight.
+            // Give some room: nobody stays right next to you when you arrive or come back from a fight. After Try again
+            // they stand a little past the range they notice you from, so you can get ready and walk in when you choose.
+            var space = retry ? (float)Db.B.MonsterAggroRange + 40 : 260;
             foreach (var m in roaming)
             {
-                if (Math.Abs(m.X - player.X) < 260)
+                if (Math.Abs(m.X - player.X) < space)
                 {
                     var away = m.X < player.X ? -1 : 1;
-                    var x = player.X + away * 260;
-                    m.X = x < 80 || x > Design.Width - 80 ? player.X - away * 260 : x;
+                    var x = player.X + away * space;
+                    m.X = x < 80 || x > Design.Width - 80 ? player.X - away * space : x;
                 }
             }
             foreach (var r in roaming) AddMob(r);
@@ -1658,11 +1667,12 @@ namespace Drakepg
             Anim.Float(0, -18, 0.12f, v => m.Hop = v, Ease.CubicOut, yoyo: true).OnComplete(() => m.Hop = 0);
         }
 
-        void BlinkPlayer()
+        /// <summary>The hero blinks for `seconds` (the safe moment after fleeing or Try again).</summary>
+        void BlinkPlayer(float seconds)
         {
             var fig = player.Fig;
             Anim.Float(1, 0.35f, 0.12f, a => { if (player.Fig != null) player.Fig.SetAlpha(a); }, Ease.Linear,
-                repeat: Mathf.RoundToInt((float)Db.B.FleeGraceSeconds * 1000 / 240), yoyo: true).OnComplete(() => { if (player.Fig != null) player.Fig.SetAlpha(1); });
+                repeat: Mathf.RoundToInt(seconds * 1000 / 240), yoyo: true).OnComplete(() => { if (player.Fig != null) player.Fig.SetAlpha(1); });
         }
 
         // --- Transitions ---
@@ -1696,7 +1706,8 @@ namespace Drakepg
             GameRoot.I.Shake(0.25f, 15);
             GameRoot.I.Flash(0.18f, Color.white);
             GameRoot.I.View((m.X + player.X) / 2, m.Y - 120, 1.6f, 0.45f, Ease.CubicIn, 0.08f);
-            var setup = new BattleSetup { ZoneId = room.ZoneId, MonsterId = m.Def.Id, Elite = m.Elite, RoomId = room.Id, X = player.X, Y = player.Y };
+            // A monster walking on the map (not a Lucky Impling, which runs off anyway) can be tried again after a loss.
+            var setup = new BattleSetup { ZoneId = room.ZoneId, MonsterId = m.Def.Id, Elite = m.Elite, RoomId = room.Id, X = player.X, Y = player.Y, OnMap = !m.Def.Lucky };
             Anim.After(0.38f, () => GameRoot.I.Go(new BattleScreen(setup), 0.2f));
         }
 

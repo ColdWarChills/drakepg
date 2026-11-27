@@ -24,7 +24,7 @@ namespace Drakepg
         public bool Intro;
         /// <summary>Spawn: arriving by Recall Scroll (a shimmer).</summary>
         public bool Recalled;
-        /// <summary>Battle: victory, fled or escaped.</summary>
+        /// <summary>Battle: victory, fled, escaped, or retry (Try again after losing to a monster on the map).</summary>
         public string Outcome;
 
         public static RoomArrival Spawn(string roomId, float x, float y, bool intro = false, bool recalled = false) =>
@@ -59,6 +59,8 @@ namespace Drakepg
         public bool Mimic;
         /// <summary>Heroic rematch of a boss.</summary>
         public bool Heroic;
+        /// <summary>A monster walking on the room's map (not a mimic, a Lucky Impling or a boss): a loss offers Try again where it began.</summary>
+        public bool OnMap;
         public string RoomId;
         public float X, Y;
         /// <summary>A tower floor (0 = none): its monster, twists and pay come from Tower.cs.</summary>
@@ -99,7 +101,10 @@ namespace Drakepg
         public FightRecap Recap;
         /// <summary>Defeat: the monster as the fight ended (its weak spots and resists, after any change of form).</summary>
         public MonsterDef Monster;
-        /// <summary>Defeat by a room's boss: Try again puts you at its door, fully rested (null: no Try again).</summary>
+        /// <summary>
+        /// Defeat: where Try again puts you, fully rested (null: no Try again). A room's boss: its door (Via "exit"). A
+        /// monster on the map: where the fight began, the monster still there (Via "battle", Outcome "retry").
+        /// </summary>
         public RoomArrival Door;
         /// <summary>A tower floor's outcome (null for other fights).</summary>
         public TowerOutcome Tower;

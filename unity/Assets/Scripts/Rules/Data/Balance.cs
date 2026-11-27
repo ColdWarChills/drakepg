@@ -47,7 +47,7 @@ namespace Drakepg.Rules
         public GuildTuning Guild;
         public double RespawnSeconds;
         public ChestTuning Chest;
-        public double WalkSpeed, MonsterWanderSpeed, MonsterChaseSpeed, MonsterAggroRange, FleeGraceSeconds;
+        public double WalkSpeed, MonsterWanderSpeed, MonsterChaseSpeed, MonsterAggroRange, FleeGraceSeconds, RetryGraceSeconds;
     }
 
     /// <summary>

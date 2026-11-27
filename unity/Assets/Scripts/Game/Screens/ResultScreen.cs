@@ -252,16 +252,35 @@ namespace Drakepg
             const float labelX = 548, valueX = 566;
             float y = 292;
             var shown = 0;
-            void Row(string label, List<VisualElement> parts, string note = null)
+            // `wrap`: parts carry their width (userData, a float) and go on more lines rather than past `wrap` px.
+            void Row(string label, List<VisualElement> parts, string note = null, float wrap = 0)
             {
                 var name = Ui.Text(Root, labelX, y, label, 20, Palette.TextDim, false, 1, 0.5f);
-                var row = new VisualElement();
-                Ui.Place(row, valueX, y, 0, 0.5f);
-                row.style.flexDirection = FlexDirection.Row;
-                row.style.alignItems = Align.Center;
-                foreach (var p in parts) row.Add(p);
-                Root.Add(row);
-                var fade = new List<VisualElement> { name, row };
+                var fade = new List<VisualElement> { name };
+                var lines = new List<List<VisualElement>> { new List<VisualElement>() };
+                float used = 0;
+                foreach (var p in parts)
+                {
+                    var w = wrap > 0 && p.userData is float pw ? pw : 0;
+                    if (wrap > 0 && used > 0 && used + w > wrap)
+                    {
+                        lines.Add(new List<VisualElement>());
+                        used = 0;
+                    }
+                    lines[lines.Count - 1].Add(p);
+                    used += w;
+                }
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    if (i > 0) y += 36;
+                    var row = new VisualElement();
+                    Ui.Place(row, valueX, y, 0, 0.5f);
+                    row.style.flexDirection = FlexDirection.Row;
+                    row.style.alignItems = Align.Center;
+                    foreach (var p in lines[i]) row.Add(p);
+                    Root.Add(row);
+                    fade.Add(row);
+                }
                 if (note != null)
                 {
                     fade.Add(Ui.Text(Root, valueX, y + 18, note, 16, Palette.TextDim, false, 0, 0, wrap: 410));
@@ -303,7 +322,7 @@ namespace Drakepg
             if (data.Monster != null)
             {
                 var spots = WeakSpots(data.Monster);
-                Row("Weak to", spots.Count > 0 ? spots : new List<VisualElement> { Word("nothing", 20, Palette.TextDim, false) });
+                Row("Weak to", spots.Count > 0 ? spots : new List<VisualElement> { Word("nothing", 20, Palette.TextDim, false) }, wrap: 410);
             }
             if (data.Grit is double grit && grit > 0)
             {
@@ -320,7 +339,9 @@ namespace Drakepg
                 ContinueButton("Wake up", wake, buttonY);
                 return;
             }
-            Ui.Text(Root, cx, lineY, $"Fully rested: try again at its door, or wake up in {town}.", 21, Palette.TextDim, false, 0.5f, 0.5f);
+            // A boss: at its door. A monster on the map: where the fight began, the monster still there.
+            var where = data.Door.Via == "battle" ? "where you fell" : "at its door";
+            Ui.Text(Root, cx, lineY, $"Fully rested: try again {where}, or wake up in {town}.", 21, Palette.TextDim, false, 0.5f, 0.5f);
             var tryAgain = ToRoom(data.Door);
             go = tryAgain;
             var b1 = new UiButton(Root, cx - 150, buttonY, "Try again", tryAgain, 260, 56);
@@ -364,17 +385,32 @@ namespace Drakepg
             return R(element) + R("all");
         }
 
-        /// <summary>The monster's weak spots as icons (the battle sheet's "Weak" icons): elements, then Blunt and Poison.</summary>
+        /// <summary>
+        /// The monster's weak spots (the battle sheet's "Weak" icons), each its icon and name, the details on hover:
+        /// elements, then Blunt and Poison. Each pair carries its rough width (userData) so the row can wrap between pairs.
+        /// </summary>
         static List<VisualElement> WeakSpots(MonsterDef m)
         {
             var parts = new List<VisualElement>();
+            void Spot(string icon, string name, string title, string body)
+            {
+                var pair = new VisualElement { pickingMode = PickingMode.Ignore };
+                pair.style.flexDirection = FlexDirection.Row;
+                pair.style.alignItems = Align.Center;
+                pair.style.flexShrink = 0;
+                pair.Add(Token(icon, title, body));
+                pair.Add(Word(name, 19, Palette.Text, false, 2, 16));
+                // Icon 30 + 4, the name (~10.5 px a letter at 19 px, on the safe side), its margins.
+                pair.userData = 34f + name.Length * 10.5f + 18;
+                parts.Add(pair);
+            }
             foreach (var e in Db.Data.Elements.Where(e => ResistOf(m, e) <= -25))
             {
                 var label = Db.Data.ElementLabels[e];
-                parts.Add(Token("el_" + e, $"Weak to {label}", $"Takes {JsMath.Str(-ResistOf(m, e))}% more from {label}."));
+                Spot("el_" + e, label, $"Weak to {label}", $"Takes {JsMath.Str(-ResistOf(m, e))}% more from {label}.");
             }
-            if (m.WeakTo?.Blunt > 0) parts.Add(Token("spot_blunt", "Weak to Blunt", $"Takes {JsMath.Str(m.WeakTo.Blunt.Value)}% more from Blunt skills."));
-            if (m.WeakTo?.Poison > 0) parts.Add(Token("spot_poison", "Weak to Poison", $"Poison hurts it {JsMath.Str(m.WeakTo.Poison.Value)}% more."));
+            if (m.WeakTo?.Blunt > 0) Spot("spot_blunt", "Blunt", "Weak to Blunt", $"Takes {JsMath.Str(m.WeakTo.Blunt.Value)}% more from Blunt skills.");
+            if (m.WeakTo?.Poison > 0) Spot("spot_poison", "Poison", "Weak to Poison", $"Poison hurts it {JsMath.Str(m.WeakTo.Poison.Value)}% more.");
             return parts;
         }
 

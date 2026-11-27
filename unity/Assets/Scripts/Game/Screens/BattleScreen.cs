@@ -3009,7 +3009,9 @@ namespace Drakepg
                         Outcome = "defeat", MonsterName = monsterName, Wake = Db.Room(back.RoomId).WakeAt ?? Db.Data.InnSpawn,
                         Grit = monster.Boss ? battle.Grit : (double?)null,
                         Recap = battle.Recap, Monster = battle.Enemy.Def,
-                        Door = monster.Boss ? RoomArrival.BossDoor(back.RoomId, back.Y) : null,
+                        // Try again: a boss at its door; a monster that was walking on the map, where the fight began.
+                        Door = monster.Boss ? RoomArrival.BossDoor(back.RoomId, back.Y)
+                            : back.OnMap && !monster.Lucky ? RoomArrival.Battle(back.RoomId, "retry", back.X, back.Y) : null,
                     }));
                     break;
                 }
