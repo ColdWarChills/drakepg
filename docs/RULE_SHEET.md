@@ -104,6 +104,7 @@ This is the target. It is cut down from the known lists people use to judge game
    - Pictures: `cards/card_002`, `battles_attackonly/ash_imp`.
    - Rules: difficulty rises with the player; a loss says why. (Not "always obvious what to press": the fight does show the imp's next move and its numbers.)
    - It also goes against the designer's own rule that the early game is easy.
+   - **Fixed, in the live game since 2026-11-27:** the Ash Imp is out of the first two wood rooms and its biggest hit is about 22, was about 31. A loss to a monster walking on the map has "Try again" where the fight began, and the loss card names the weak spots in words. The score above is left as it was scored.
 4. **The first goal on the screen is wrong.**
    - In the first road room the goal box says "Next: reach Guild Rank E (you are F)", before the player has met the Guild.
    - Picture: `1_first_room_0s`.
@@ -213,7 +214,7 @@ The designer: "i've added gemini cli maybe it would be useful to run a check thr
 1. **This sheet.** Done when the designer has read it.
 2. **Claude scores the Unity game against it.** Done 2026-11-26 for the Old Road and Chapter 1 (the designer: "okay, if you say so, do that."). The result is "The score" above. Chapters 2 and 3 are not scored.
 3. **The designer's 20-minute sit-down,** with the one question the scoring could not answer. Claude's pick for the question: "Does any ordinary fight in Chapter 1 make me press something other than Attack?"
-4. **Fixing what the score found.** Started 2026-11-26 (the designer: "Yes, hand-in first"), one fix at a time, each shown before the next. The hunt hand-in (worst five, 1) is in the live game since 2026-11-27 (the designer: "Yes, put it in"). What comes after it is in `docs/PLANS.md` and waits for the designer's yes.
+4. **Fixing what the score found.** Started 2026-11-26 (the designer: "Yes, hand-in first"), one fix at a time, each shown before the next. The hunt hand-in (worst five, 1) and the Ash Imp with "Try again" (worst five, 3) are in the live game since 2026-11-27 (the designer: "Yes, put it in", "Yeah, put it in"). What comes after them is in `docs/PLANS.md` and waits for the designer's yes.
 
 This takes the place of the roadmap's "Play the first hour by hand and fix".
 

@@ -814,3 +814,27 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - A hunt below the hero's rank says "No rank points" with no reason; the fix (a hunt pays the points it showed when it was taken) is proposed in `docs/PLANS.md`.
   - The story quest hand-in still uses the loose lines. It goes with Chapter 1's end.
   - The web game is untouched.
+
+## The Ash Imp and Try again (2026-11-27; data and Unity, live)
+
+- **Why:** the third of the rule sheet score's worst five, moved to the front after the second read (the middle demo player stops at about minute 14). A Tough Lv 3 Ash Imp stood in the first Chapter 1 room and killed the Lv 2-3 hero in two turns, and the loss card of an ordinary fight had only "Wake up", back in town. The designer: "Yes, start it", and after the pictures: "Yeah, put it in".
+- **What the player sees:**
+  - Thornwood Path and Fallen Oak hold only Mosslings and Thornback Boars. The Ash Imp is first met in Deep Thornwood. Its Guild hunt shows up once Woodcutters' Clearing has been visited (the board looks one room past where the hero has been).
+  - Its Cinder Spit shows about 22 against a Lv 3 starter hero's 114 / 110 / 90 HP (warrior / mage / rogue), was about 31: four hits to go down, not two.
+  - Losing to a monster walking on the map: the card has "Try again" beside "Wake up". The hero comes back fully rested where the fight began and blinks for 3 seconds; the monster is still there, the others stand out of reach and hold still for those seconds. Elites and hunt monsters get it too.
+  - The loss card names the weak spots in words beside their icons (the details still on hover; a long row wraps). Its last line reads "Fully rested: try again where you fell, or wake up in Brindlemoor."
+  - Bosses keep "Try again" at the door, Spire floors keep their own card, chest mimics and Lucky Implings get only "Wake up".
+- **How:**
+  - Data: `ash_imp` is out of the `thornwood` zone's encounters (`src/data/world.ts`); damage 10-14 to 6-9 and HP 64 to 80, so its weak spots still decide the fight (`src/data/monsters.ts`); `BALANCE.retryGraceSeconds` 3 (`src/config.ts`, `Rules/Data/Balance.cs`).
+  - `Nav.cs`: `BattleSetup.OnMap`, set by `RoomScreen.StartBattle` for a monster walking on the map. `BattleScreen` turns a loss to one into a way back (`RoomArrival.Battle(room, "retry", x, y)`).
+  - `RoomScreen.cs`: after a retry the others are moved past the range they notice the hero from, without stacking; nobody wanders or starts a fight for the safe seconds, and the hero blinks.
+  - `ResultScreen.cs`: the weak spots as icon and name, rows that wrap, the buttons stepping down under a tall card.
+  - Built on `claude/unity-port` by an advised worker, brought to live as three commits (`6c621c6`, `6f240d9`, `fc48c53`) plus the regenerated `game.json` and `golden.json` (`b3b6fe9`).
+- **Checked:**
+  - `npm run sim` on live, the Ash Imp against a Lv 3 starter hero (warrior / mage / rogue): 97 / 98 / 91% to 100 / 100 / 100%; pressing buttons at random 50 / 84 / 78% to 72 / 96 / 95%. The Spire's floor 7 got easier at Lv 6 (39 / 97 / 21% to 82 / 100 / 41%); floor 9 hardly moved (13 / 67 / 3% to 14 / 87 / 3%).
+  - Played in the Unity editor on `claude/unity-port`: the fight, the loss card, Try again in Deep Thornwood, and a boss's loss card. Pictures: `art/tests/ash_imp_retry/` (on the PC, not in the repo).
+  - The live tree was not run: the editor is open on `claude/unity-port`. The live tree's scripts (rules, game, editor, tests) compile with no errors against the editor's libraries. Of the fix's five script files only `BattleScreen.cs` differs between the branches, in another place (a hero pose).
+- **How far it goes:**
+  - Chapter 1 got shorter for the test hero. `npm run pace`: 25 / 19 / 23 minutes to 14 / 13 / 13 (target about 35), the Thornheart met at Lv 4-5 instead of Lv 5-6, and the Unity playthrough's 60 heroes lost to it 10 times instead of once. The test hero used to spend that time looking for the rare imp in Thornwood for its Guild hunt. Open in `docs/PLANS.md`.
+  - After the 3 safe seconds another monster can wander in. Not played: a loss to an Elite, to a Lucky Impling, and to a mimic from a real chest (read in the code only).
+  - The web game's loss screen is untouched.
