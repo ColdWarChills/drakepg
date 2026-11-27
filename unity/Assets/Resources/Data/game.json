@@ -439,7 +439,8 @@
   "monsterWanderSpeed": 50,
   "monsterChaseSpeed": 150,
   "monsterAggroRange": 260,
-  "fleeGraceSeconds": 2
+  "fleeGraceSeconds": 2,
+  "retryGraceSeconds": 3
  },
  "elements": [
   "fire",
@@ -6287,7 +6288,7 @@
      "color": 16747050
     }
    },
-   "hp": 64,
+   "hp": 80,
    "stats": {
     "str": 3,
     "int": 9,
@@ -6295,8 +6296,8 @@
     "end": 4
    },
    "damage": [
-    10,
-    14
+    6,
+    9
    ],
    "element": "fire",
    "defense": {
@@ -8536,10 +8537,6 @@
     {
      "monsterId": "thornback_boar",
      "weight": 4
-    },
-    {
-     "monsterId": "ash_imp",
-     "weight": 1
     }
    ]
   },
