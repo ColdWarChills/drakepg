@@ -6,6 +6,68 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
+- **Proposed (Claude as project manager, 2026-11-27): the road to the demo.** The designer: "Imagine you are a project manager and setup priorities and wrokplan for the best and fastest results. So we could release demo asap". It waits for his yes. Nothing below is built.
+  - **This changes an older decision, on his word:** "first make a game the designer enjoys; Steam work (store page, demo, marketing) starts only after that" (2026-10-26, "Steam launch" below). What is kept of it: nothing goes public before he has played the demo himself and said yes (step 4).
+  - **The target:**
+    - December 19: the first outside players, on a private build.
+    - Mid to late January 2027: the demo is public on Steam.
+    - February 22 to March 1, 2027: Steam Next Fest.
+  - **Steam's dates and rules** (Steamworks pages, read 2026-11-27):
+    - December 8: Valve's live question hour for developers.
+    - January 10: sign-up closes. The game's store page must be public by then, with at least one trailer that shows the game being played.
+    - January 18: the demo and its page are in for review, if press are to play it from February 11.
+    - February 1: the last day to hand everything in.
+    - A store page review takes 1 to 5 days, and Steam says to allow 7 working days. So the page goes in by December 28.
+    - 21 days must pass between paying the $100 fee and a release (the older note in this file says 30), and the page must be public for two weeks first. Not checked: whether the 21 days also hold a demo back. The plan assumes they do.
+    - A demo may go public as soon as its review passes; it does not have to wait for the fest.
+    - One fest per game, ever. The next is June 14 to 21 (sign up by April 25, everything in by May 24).
+  - **The rules of the plan:**
+    - The demo is the Old Road and Chapter 1, ending on the Thornheart. Nothing new is added to it.
+    - Work goes in the order a new player meets it: the first minute first.
+    - One step a week. A step's fixes are built together and shown together, as one clip or the running build. This is a change from "one at a time, each shown before the next": the designer looks once a week, not once per fix. His call.
+    - What only the designer can do has waiting times at Steam, so it starts in week 1, beside the building.
+    - Building goes to workers, side by side where they share no files.
+  - **The steps:**
+    1. **By December 4: the first five minutes are clean.**
+       - The first goal on the Old Road is right (the rule sheet's worst five, 4).
+       - The title loses "v0.8 · Chapter 3 · Unity". The class screen loses "Start at Ch 1 / Ch 2 / Ch 3" and marks the Warrior as the class to start with (worst five, 5).
+       - Drawn props replace the flat shapes: the campfire, the old bones, the thorns at the Briar Wall, the box on the post in Woodcutters' Clearing. From the props rated on 2026-11-14 where one fits, drawn new where none does.
+       - A Windows build of the live game is made and starts. It is made this early so build trouble shows now, not in January.
+       - Shown: a clip of the first five minutes, and the build to start.
+    2. **By December 11: the middle and the end.**
+       - The hero meets the Thornheart at level 5 to 6 again (today 4 to 5; "Open: Chapter 1 is short for the test hero" below). How is picked when the step starts.
+       - The demo ends on the Thornheart: the first-kill card, then one closing page with a wishlist button, the feedback link and a line on whether the hero carries over to the full game (Claude's pick: he does). Chapter 2 is shut in the demo build (worst five, 2). This is not the Chapter Complete summary card the designer refused.
+       - Shown: a clip of the ending, with the pace and playthrough numbers.
+    3. **By December 18: sound.**
+       - Music: the title, the town, the road and the wood, a fight, the boss, and short stings. Two volume rows, music and effects.
+       - The feedback link in the menu.
+       - Shown: the build, with sound.
+    4. **December 19 to January 3: people play it.**
+       - The designer plays the demo once, 20 to 30 minutes, with one question written down first (the rule sheet's step 3).
+       - Claude plays the Mage and the Rogue through the screen. Only the bot has played them.
+       - Five to ten people who have never seen the game play the private build (a zip of the Windows build; no page or account is needed). What stops them is fixed. Nothing else is.
+       - Beside it, the store page: screenshots, a trailer cut from the game, the short text and the note on AI art. Claude drafts, the designer signs off. In for review by December 28.
+    5. **January 4: go or wait.** If step 4 went well: sign up for February by January 10 and hand the demo in by January 18. If not: the demo still goes public on Steam when it is ready, and the fest is June.
+  - **Only the designer can do these.** Claude prepares each as far as it can.
+    - This week: open the Steam developer account and pay the fee. The waits start on that day.
+    - By December 4: the game's name. The title screen says "DRAKEPG", the working name. The store page, the logo and the capsule need the real one.
+    - By December 11: where the music comes from. Claude's pick: bought, licensed tracks. They are fast, and AI music would widen the AI note on the store page, which the research says costs reach.
+    - By December 18: who draws the store capsule. By hand, not AI: in the research, capsules named as AI drew the most thumbs down.
+    - December 19: the sit-down, the five to ten players, and a form for their answers (Claude drafts the questions).
+  - **Parked until the demo is out:**
+    - Bigger rooms. The designer on the trial room, 2026-11-27: "Dunno if we should do that." It needs new backgrounds and a following camera, and skipped fights lower the level at the boss. The decision that rooms differ in size stands (below).
+    - His idea of trying each class in a spar before picking (2026-11-23). It rebuilds the first ten minutes.
+    - The menus' layout pass, unless the sit-down or the new players name it.
+    - Chapters 2 and 3, the Spire, and the long game.
+    - The small proposals below ("Hand in all", the rank points a hunt showed, what Defend took off), unless a new player trips on one.
+    - A public itch.io page. It could come weeks sooner, but the designer said "itch.io comes much later" (2026-10-18) and proposed Steam first (2026-10-26). The private build teaches the same.
+    - Hero animation and armor parts stay benched.
+  - **The risks:**
+    - One fest entry, ever. Step 5 is there so February is not spent on a demo new players quit.
+    - The holidays (December 24 to January 1) take review days at Steam and days from the players.
+    - The length is not the worry, the level at the boss is. The Unity bot took 29 to 33 minutes for the Old Road and Chapter 1 before the Ash Imp change (`npm run pace` says about 16, a rougher clock). The rule sheet asks for 20 to 45, and step 2 measures again.
+    - The middle demo player stops at about minute 14, and nobody has checked that the best of the game comes before that. The sit-down and the new players are the check.
+    - No engine move before the demo. The build is made with the editor version in use today, from the live branch.
 - **Now: the rule sheet (2026-11-26). `docs/RULE_SHEET.md` is what the game is checked against.** The designer: "The work on the game did not proceed as much as I would want. Have not tested it for a while as well. Testing it for now takes too long and have no clear target of what we are testing. We should look for some rulesets there are to see where and how we can improve."
   - **What it is:** 29 rules in six groups: the first ten minutes, goals and progress, the fight, screens and controls, feel and world, the demo. They are cut from two checked lists (PLAY, Desurvire and Wiberg 2009; Pinelle's ten, 2008) plus the demo numbers. Each rule says who checks it: a bot, Claude, the designer or a new player.
   - **Why it answers "takes too long":** most rules are checked by Claude and the bots, not by the designer playing. The designer's part is one sit-down of about 20 minutes with one question written down first.
