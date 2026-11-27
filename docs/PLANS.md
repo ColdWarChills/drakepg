@@ -6,7 +6,17 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
-- **Proposed (Claude as project manager, 2026-11-27): the road to the demo.** The designer: "Imagine you are a project manager and setup priorities and wrokplan for the best and fastest results. So we could release demo asap". It waits for his yes. Nothing below is built.
+- **Open (the designer, 2026-11-27): is the demo the thing to push now?** His words on the workplan in the next bullet: "Are we sure we want to prioritize that now? seems like we still lack items, coherancy, metaloop, so much". So that workplan is not agreed and its February dates do not stand.
+  - **What the game says** (data and the rule sheet's evidence, checked the same day). His doubt holds for the demo itself:
+    - The demo as planned ends on the Thornheart, and that is where the loop begins. Elite monsters, treasure chests, the spare weapon and the Spire all open when the Heart of Thorns is handed in (`src/data/features.ts`: "Chapter 1 has fights, elements, the shop and rolled gear only"). Sigils open after Chapter 2. Crafting and materials are off.
+    - Items in Chapter 1: the Thornwood's table holds 24 pieces and a set (`src/data/loot.ts`), but a run sees few of them. In Claude's run 7 of 34 wins gave gear and 17 gave no item; 5 to 6 of the bag's 30 slots were in use at the end; the bot ended with 340 to 390 gold left over (EVIDENCE.md). Set pieces come from Elites and bosses, so in Chapter 1 only the Thornheart can drop one.
+    - So a clean Chapter 1 would show a simple game and stop before the part that keeps a player.
+  - **Claude's changed pick (proposed, waits for his yes):**
+    - Skip the February fest. A game gets one fest, and this one is not ready to spend it. June 14 to 21 is the date that bounds the work (sign up by April 25, everything in by May 24). Nothing for the designer to do at Steam yet.
+    - The order: the loop first (what the player does again and again, what it pays, what that buys), then the items that feed it, then the demo, cut from a game that has both. The demo steps in the next bullet keep their order for when their turn comes.
+    - "Coherency" is not pinned down yet. Claude's read: the systems (hunts, the Spire, rework, sets, sigils, books) were built one at a time and nothing shows the player how one feeds the next. The picture below is where that would show.
+    - Next job: one picture of the loop as the game has it today, hour by hour, with the holes marked, so "so much" becomes a short list he can point at. No building before it.
+- **Proposed (Claude as project manager, 2026-11-27): the road to the demo. Not agreed: see the bullet above.** The designer: "Imagine you are a project manager and setup priorities and wrokplan for the best and fastest results. So we could release demo asap". Nothing below is built.
   - **This changes an older decision, on his word:** "first make a game the designer enjoys; Steam work (store page, demo, marketing) starts only after that" (2026-10-26, "Steam launch" below). What is kept of it: nothing goes public before he has played the demo himself and said yes (step 4).
   - **The target:**
     - December 19: the first outside players, on a private build.
