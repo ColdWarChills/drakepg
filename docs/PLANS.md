@@ -15,7 +15,19 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
     - Skip the February fest. A game gets one fest, and this one is not ready to spend it. June 14 to 21 is the date that bounds the work (sign up by April 25, everything in by May 24). Nothing for the designer to do at Steam yet.
     - The order: the loop first (what the player does again and again, what it pays, what that buys), then the items that feed it, then the demo, cut from a game that has both. The demo steps in the next bullet keep their order for when their turn comes.
     - "Coherency" is not pinned down yet. Claude's read: the systems (hunts, the Spire, rework, sets, sigils, books) were built one at a time and nothing shows the player how one feeds the next. The picture below is where that would show.
-    - Next job: one picture of the loop as the game has it today, hour by hour, with the holes marked, so "so much" becomes a short list he can point at. No building before it.
+    - **The picture of the loop was shown on 2026-11-27** (in the chat, on his "Yes, draw it"). Numbers: the Unity bot's full runs (`Playthrough.Run(6, 1234, false, true)`, 6 heroes per class, Spire on; a person plays slower) and the data. The story with the Spire takes the bot about 3 hours (Old Road 3 min, chapters about 38, 73 and 72 min) and ends near level 16 of 50. Every chapter is the same round: fight, gold and XP and sometimes an item, hand in a hunt, rework gear, boss. Gold spent per chapter: about 800, 6,100 and 10,200 g, with rework taking 14%, 79% and 86% of it.
+    - **The nine holes it marks** (numbered as in the picture):
+      1. Elites, chests, the second weapon and the Spire all come on one hand-in, about where the demo would end.
+      2. Half the wins drop nothing; gear comes on about 1 ordinary win in 9.
+      3. Gold has one real use: rework. Shop gear gets about 73 g in Chapter 2 and 43 g in Chapter 3.
+      4. Levels teach their last skill at 7 (mage, rogue) or 9 (warrior); after that a level is 3 stat points.
+      5. Every boss after the Thornheart fell to the bot on the first try (the bot had spent heavily on rework).
+      6. The Spire pays once: a repeat climb gives nothing.
+      7. After the story nothing new opens and there are no new monsters (the top roaming one is level 13); what is left is 5 Heroic rematches and hunts on the same monsters.
+      8. The last three Guild ranks (B, A, S) pay only gold and potions.
+      9. Items in each chapter: 3 to pick from per armor slot, 3 to 5 weapons per fighting style, 1 or 2 necklaces. The forge and its 29 materials are switched off.
+    - **Next (waits for his pick):** which group to work out first, on paper and as a picture, before any building. Claude's pick: gold and items (2, 3, 9), because they are in every chapter from minute 3 and the after-story holes (6, 7, 8) need something to want first. The rest (1, 4, 5) is about when things open and how hard the bosses are.
+    - Noted in passing, not fixed: CLAUDE.md says equipment has 8 slots; `EQUIP_SLOTS` has 10.
 - **Proposed (Claude as project manager, 2026-11-27): the road to the demo. Not agreed: see the bullet above.** The designer: "Imagine you are a project manager and setup priorities and wrokplan for the best and fastest results. So we could release demo asap". Nothing below is built.
   - **This changes an older decision, on his word:** "first make a game the designer enjoys; Steam work (store page, demo, marketing) starts only after that" (2026-10-26, "Steam launch" below). What is kept of it: nothing goes public before he has played the demo himself and said yes (step 4).
   - **The target:**
