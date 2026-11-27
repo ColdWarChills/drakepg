@@ -6,6 +6,20 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
 
 ## Next up
 
+- **Decided direction (the designer, 2026-11-28): big goals, few small goals, no handholding.** His words: "What I'm thinking is more of RPG game, where we have big goals and less small goals. so we don't handhold players all the way. they can do whatever they want. They can farm wherever they want and so on." It came as his answer to "which group of holes first" in the bullet below, so that question is closed. The demo workplan stays not agreed.
+  - **The picture of the game against it was shown the same day** (in the chat; numbers read from `src/data` with scratch scripts). The map already has the shape: the Old Road ends in Brindlemoor, and the Thornwood (monsters level 1 to 4, 4 rooms to fight in), Mirewater Fen (6 to 9, 5 rooms), Frostfang Pass (10 to 13, 5 rooms) and the Spire (30 floors, level 6 to 24) all start from that one town.
+  - **Big goals the game already has:** 5 bosses with a Heroic rematch each, the Spire's 30 floors, Guild rank F to S, 3 sets of 5 pieces (one per land), level 50.
+  - **What leads the player by the hand today** (all of it is locks and a fixed order):
+    - 7 story quests in one chain (`requires` in `src/data/quests.ts`), with a Guild rank check before 3 of them (E, D, C).
+    - Brindlemoor's exits to the Fen and to Frostfang are shut until `rising_waters` and `cold_scale` are taken, and the way to every boss is shut until its quest (5 more exits; `requiresQuest` in `src/data/world.ts`, rule `exitOpen` in `src/game/Travel.ts`).
+    - 7 things switch on at a hand-in (`src/data/features.ts`): Elites, chests, the second weapon and the Spire on the Thornheart; the coach on Rising Waters; Sigils and mimics on the Stormcoil. Spire floors 11 to 20 and 21 to 30 wait for the Stormcoil and the Frostbinder (`src/data/tower.ts`).
+  - **What is missing for "farm wherever they want":**
+    - Roaming monsters stop at level 13 and levels go to 50. The story ends near level 16 with about 5% of the XP to level 50 (18,899 of 344,738); the rest is roughly 1,700 wins on the strongest roaming monster (190 XP). XP has no rule by level gap (`Battle.ts`: the monster's XP times the rates).
+    - Every monster in a land drops gear from the same table (`thornwood`, `fen`, `frostfang`; only the Bogmother and Old Snowmaw have their own), so no room is a better spot than the next.
+    - Gold has one real use, rework (hole 3 below).
+  - **What it changes in the nine holes below:** hole 1 (four things on one hand-in) goes away if nothing hangs on hand-ins; holes 2, 3, 7 and 9 become one job, a reason to farm in a place; holes 4, 5, 6 and 8 stand as they are.
+  - **Proposed next step (Claude, waits for his yes):** the open version of the game on one page, before any building: every door open from Brindlemoor with the monsters' level as the only gate, what each big goal pays, what the 7 switched-on things hang on instead of hand-ins, and where monsters above level 13 come from. His to decide on that page: what becomes of the story's fixed order. The other way round (open the two town exits in the running game first and try it) is cheaper to see but leaves those questions open.
+
 - **Open (the designer, 2026-11-27): is the demo the thing to push now?** His words on the workplan in the next bullet: "Are we sure we want to prioritize that now? seems like we still lack items, coherancy, metaloop, so much". So that workplan is not agreed and its February dates do not stand.
   - **What the game says** (data and the rule sheet's evidence, checked the same day). His doubt holds for the demo itself:
     - The demo as planned ends on the Thornheart, and that is where the loop begins. Elite monsters, treasure chests, the spare weapon and the Spire all open when the Heart of Thorns is handed in (`src/data/features.ts`: "Chapter 1 has fights, elements, the shop and rolled gear only"). Sigils open after Chapter 2. Crafting and materials are off.
@@ -26,7 +40,7 @@ Combined on 2026-10-14 from three chats ("Progress review and planning", "Drakep
       7. After the story nothing new opens and there are no new monsters (the top roaming one is level 13); what is left is 5 Heroic rematches and hunts on the same monsters.
       8. The last three Guild ranks (B, A, S) pay only gold and potions.
       9. Items in each chapter: 3 to pick from per armor slot, 3 to 5 weapons per fighting style, 1 or 2 necklaces. The forge and its 29 materials are switched off.
-    - **Next (waits for his pick):** which group to work out first, on paper and as a picture, before any building. Claude's pick: gold and items (2, 3, 9), because they are in every chapter from minute 3 and the after-story holes (6, 7, 8) need something to want first. The rest (1, 4, 5) is about when things open and how hard the bosses are.
+    - **Closed on 2026-11-28:** the question "which group to work out first" (Claude's pick was gold and items: 2, 3, 9). He answered with a direction instead; see the first bullet of this section.
     - Noted in passing, not fixed: CLAUDE.md says equipment has 8 slots; `EQUIP_SLOTS` has 10.
 - **Proposed (Claude as project manager, 2026-11-27): the road to the demo. Not agreed: see the bullet above.** The designer: "Imagine you are a project manager and setup priorities and wrokplan for the best and fastest results. So we could release demo asap". Nothing below is built.
   - **This changes an older decision, on his word:** "first make a game the designer enjoys; Steam work (store page, demo, marketing) starts only after that" (2026-10-26, "Steam launch" below). What is kept of it: nothing goes public before he has played the demo himself and said yes (step 4).
