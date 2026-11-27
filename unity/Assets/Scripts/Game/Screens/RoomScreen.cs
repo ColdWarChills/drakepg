@@ -135,6 +135,8 @@ namespace Drakepg
         Thing pendingThing;
         Cutscene cutscene;
         float safeUntil;
+        /// <summary>After Try again: monsters stand where they were put (out of reach) until then, so none wanders back in.</summary>
+        float holdUntil;
         bool leaving;
         float dustTimer;
         int nextUid = 1;
@@ -281,7 +283,7 @@ namespace Drakepg
             var retry = data.Via == "battle" && data.Outcome == "retry";
             if (retry)
             {
-                safeUntil = Now + (float)Db.B.RetryGraceSeconds;
+                safeUntil = holdUntil = Now + (float)Db.B.RetryGraceSeconds;
                 BlinkPlayer((float)Db.B.RetryGraceSeconds);
             }
 
@@ -321,7 +323,19 @@ namespace Drakepg
                     var away = m.X < player.X ? -1 : 1;
                     var x = player.X + away * space;
                     m.X = x < 80 || x > Design.Width - 80 ? player.X - away * space : x;
+                    // After Try again, two pushed to the same spot would hide each other: step further out.
+                    if (retry) m.X = SpacedX(m, away) ?? SpacedX(m, -away) ?? m.X;
                 }
+            }
+            float? SpacedX(RoamingMonster m, int away)
+            {
+                for (int k = 0; k < 4; k++)
+                {
+                    var x = player.X + away * (space + k * MobGap.x);
+                    if (x < 80 || x > Design.Width - 80) return null;
+                    if (roaming.All(o => o == m || Math.Abs(o.X - x) >= MobGap.x || Math.Abs(o.Y - m.Y) >= MobGap.y)) return x;
+                }
+                return null;
             }
             foreach (var r in roaming) AddMob(r);
             if (chestData != null) AddChest(chestData);
@@ -1484,6 +1498,7 @@ namespace Drakepg
                         }
                         break;
                     case "wander":
+                        if (Now < holdUntil) break;
                         target = m.Target;
                         speed = (float)Db.B.MonsterWanderSpeed;
                         if (!target.HasValue || (Math.Abs(target.Value.x - m.X) < 5 && Math.Abs(target.Value.y - m.Y) < 5))

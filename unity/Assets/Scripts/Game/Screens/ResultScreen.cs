@@ -332,7 +332,8 @@ namespace Drakepg
             var town = Db.Room(data.Wake.RoomId).Name;
             var wake = ToRoom(RoomArrival.Spawn(data.Wake.RoomId, (float)data.Wake.X, (float)data.Wake.Y));
             var lineY = Mathf.Max(486, y + 4);
-            var buttonY = Mathf.Min(570, lineY + 56);
+            // A tall card (a wrapped weak row): the buttons step down rather than crowd the line.
+            var buttonY = Mathf.Max(Mathf.Min(570, lineY + 56), lineY + 46);
             if (data.Door == null)
             {
                 Ui.Text(Root, cx, lineY, $"You wake up in {town}, fully rested.", 21, Palette.TextDim, false, 0.5f, 0.5f);
