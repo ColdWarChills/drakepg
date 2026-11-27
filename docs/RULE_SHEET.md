@@ -77,7 +77,7 @@ This is the target. It is cut down from the known lists people use to judge game
 
 - **What was played:** a new Warrior, from New Game through the Old Road, Brindlemoor and Chapter 1 to the Thornheart, the hand-in after it, and back in through Continue. It was played in the Unity game by script, through the game's own buttons, with a new player's settings and no cheats in the fights that were judged.
 - **Why only this part:** it is what a demo player sees.
-- **The count:** of 29 rules, 8 are kept, 8 are broken, 6 are kept in one part and broken in another, and 7 could not be checked this way.
+- **The count:** of 29 rules, 8 are kept, 7 are broken, 7 are kept in one part and broken in another, and 7 could not be checked this way. (Corrected 2026-11-27 after a second read; before it was 8, 8, 6 and 7. What changed is under "The second read" below.)
 - **The pictures** are on the PC in `art/tests/rule_sheet/`, not in the repo. The worst five, with a line of text on each, are in `worst5/` there. The full notes are `EVIDENCE.md` in the same folder. Names in `code` below are pictures in that folder.
 - **Nothing in the game was changed.** The fixes are not built.
 
@@ -101,7 +101,7 @@ This is the target. It is cut down from the known lists people use to judge game
    - Nearly all of the bot's deaths in Chapter 1 are this monster.
    - The loss card names the biggest hit, but it has no "Try again": only "Wake up", back in town. Its four weak-spot icons have no words.
    - Pictures: `cards/card_002`, `battles_attackonly/ash_imp`.
-   - Rules: obvious first ten minutes; difficulty rises with the player; a loss says why.
+   - Rules: difficulty rises with the player; a loss says why. (Not "always obvious what to press": the fight does show the imp's next move and its numbers.)
    - It also goes against the designer's own rule that the early game is easy.
 4. **The first goal on the screen is wrong.**
    - In the first road room the goal box says "Next: reach Guild Rank E (you are F)", before the player has met the Guild.
@@ -120,20 +120,20 @@ Each rule is named by its first words, in the sheet's order.
 
 - **1. The first ten minutes**
   - **Playing within one minute:** kept. No logos, no intro. Three clicks from the title to the first room (four when a save exists), and the room is there in half a second. About 2 seconds in, Odo's talk box opens by itself and the hero can't walk until "Goodbye". `1_title`, `1_create_hero`, `1_first_room_2s`.
-  - **Always obvious where to go and what to press:** broken. Good: the big yellow exit arrow with the next room's name, the control hints, and an answer to every action. Broken: the first goal (worst five, 4) and the Ash Imp (worst five, 3).
+  - **Always obvious where to go and what to press:** broken. Good: the big yellow exit arrow with the next room's name, the control hints, and an answer to every action. Broken: the first goal (worst five, 4).
   - **Nothing has to be read to play:** kept, with one gap. There is one "New!" card per new thing, and the level page names the new skill. The gap: why the story waits for Guild Rank E is told only in writing, by Maren and the guild board. `2_levelup_L2`, `2_maren`, `2_guild_hunts_taken`.
   - **Early choices are few, and one is suggested:** broken, small. Three classes is few. The Warrior is picked already (a green card), but no word says he is the suggested one. `1_create_class`.
   - **The first thing worth telling a friend about:** not checked. Minute 15 falls early in Chapter 1, after the gate guard (about minute 3) and the first Thornwood rooms. Whether anything by then is worth telling is the designer's to say.
 - **2. Goals and progress**
   - **What they are doing now and the big goal:** kept, with gaps. The goal box is always on in rooms: hunts with their counts, then "Heart of Thorns: Defeat the Thornheart 0/1". The gaps: there is no quest log, the big goal is only in Maren's lines, and a talk box covers the goal box. `2_thornwood_path_3s`, `2_briar_rest`, `4_menu`, `4_map`.
   - **Rewards and level-ups change what the hero can do:** part kept, part broken. Kept: levels 2, 3, 4 and 6 each teach a skill, and handing in the boss quest gives a skill book and a weapon. Levels 5, 7 and 8 give numbers only (7 and 8 read from the Spellbook, not played). Broken: a level gained by handing in hunts (worst five, 1). `2_levelup_L2`, `2_levelup_L3`, `2_levelup_L5`, `4_skills`.
-  - **No long stretch with nothing new:** kept by the numbers. Chapter 1 is 47 to 54 fights, with hunts, the promotion, books and drops between them. The longest stretch with nothing new was not measured.
-  - **Nothing hard-won is lost:** kept, with one small loss. Losing a fight costs nothing: gold and XP stay, HP is full. The small loss: two Rank F hunts taken at "+1 rank pt" paid "+0 rank points" once the hero was Rank E. `3_retry_room`, `2_turnin_2`.
+  - **No long stretch with nothing new:** not checked. Chapter 1 is 47 to 54 fights, with hunts, the promotion, books and drops between them, but the longest stretch with nothing new was not measured. Against it: 17 of 34 wins gave no item, and levels 5, 7 and 8 give numbers only.
+  - **Nothing hard-won is lost:** part kept, part broken. Kept: losing a fight costs nothing (gold and XP stay, HP is full). Broken: two Rank F hunts taken at "+1 rank pt" paid "+0 rank points" once the hero was Rank E. The board promised a point and the hand-in did not pay it, and which hunts lose their point depends on the order they are handed in. `3_retry_room`, `2_turnin_2`.
 - **3. The fight**
-  - **The same action, the same kind of result, and every result shows its reason:** broken. The log names the move, the number and crits ("You use Heavy Strike: 26 damage. Critical!"). It never says that a weak spot was hit, that a hit was resisted, or what Defend took off. `3_ch1trash_mid`, `3_boss_end`.
+  - **The same action, the same kind of result, and every result shows its reason:** kept, with one gap. The first score said "broken", and that was wrong. The log names the move, the number and crits ("You use Heavy Strike: 26 damage. Critical!"). A hit on a weak spot or a resistance also gets its words: " Weak spot!", " Resisted." or " Immune!" in the log and a tag over the number, and a hit taken while defending gets a "Guarded" tag. The weak-spot words were in the run's own pictures: at the gate guard the log reads "You use Heavy Strike: 25 damage. Weak spot!", under a sheet that says "Weak" with a hammer. "Resisted.", "Immune!", "Guarded" and the tags over the number are read from the code (`BattleScreen.cs`), not seen: no hit in the run landed on a resistance. The gap: nothing says how much Defend took off. `3_guard_mid`, `3_ch1trash_mid`, `3_boss_end`.
   - **The monster's next move, and why you took the damage:** part kept, part broken. Kept: the next move is always shown with its numbers ("Next: Cinder Spit ~31 dmg + Burn 30%"), and Defend says "-60% dmg, +MP". Broken: weak spots and resistances are icons with no words, and two badges are icons only (a star and a bag). The code has hover text for them; hovering could not be tried. `3_road2_menu`, `3_boss_start`.
   - **A loss says why, and trying again is immediate:** part kept, part broken. Kept at bosses: the card names the biggest hit and has "Try again" (three clicks, about 4 seconds). Its weak spot is a hammer icon with no word. Broken in ordinary fights: the card names the biggest hit too, but it has only "Wake up", then 1 to 4 rooms to walk back. `3_guard_attackonly_card`, `cards/card_002`.
-  - **Difficulty rises with the player:** part kept, part broken. Kept: ordinary fights are short (2 to 5 turns, 6 to 15 seconds), and Attack alone lost to both bosses, 12 tries of 12. Broken: the hardest thing in Chapter 1 is the Ash Imp in its first room, not the boss. The bot beats both bosses on the first try, 117 times of 120.
+  - **Difficulty rises with the player:** part kept, part broken. Kept: ordinary fights are short (2 to 5 turns, 6 to 15 seconds), and Attack alone lost to both bosses, 12 tries of 12. Broken: the hardest thing in Chapter 1 is the Ash Imp in its first room, not the boss. The bot beats both bosses on the first try, 117 times of 120; that is a bot playing well at Lv 6, so no boss gets changed on that number alone.
   - **Fights don't all play the same:** broken for ordinary fights. Attack alone won 30 of 30: 6 against the road's Burrow Rat at Lv 1, and 24 in Chapter 1 with a Lv 4-5 hero, a little ahead of where a player first meets those monsters. Whether they feel the same is the designer's to say.
 - **4. Screens and controls**
   - **The screen shows what the next decision needs:** broken in two places. The battle screen is clear. Broken: the hunt hand-in (worst five, 1) and "Chapter Complete!" over a "New!" card (worst five, 2).
@@ -141,14 +141,14 @@ Each rule is named by its first words, in the sheet's order.
   - **Menus take few steps:** kept. The shop is two clicks, the guild board one, a recall three. X or Esc closes. The bag held 5 or 6 of 30 and has "Sell junk". `4_shop_buy`, `4_bag`, `2_recall_confirm`.
   - **Things seen many times can be skipped or sped up:** kept. Battles run at x1 or x2, and an ordinary win ends in a slip of about 1.25 seconds, not a card. Two small things: scene lines need one key each and the hint does not say that Esc skips the scene (read from the code), and every level gained in a fight gives a page to click through. `4_options`, `3_ch1trash_slip`, `2_scene_briar_wall_1`.
   - **Keys, settings and sound sliders:** part kept, part broken. Kept: 16 keys can be changed, and speed, sound and shake stayed after save, quit and continue. Broken: there is one volume row, no split between music and effects, and no music. Also: S is both battle speed and Walk down. `4_options`, `4_options_changed`.
-  - **Nothing by colour alone or sound alone:** broken, small. A gear's grade is a frame colour and a percent; the word (Fine, Fair) shows only on hover or on the reward card. Weak and resist are told by an icon's colour and shape. The smallest text was readable. `4_bag`, `3_boss_start`.
+  - **Nothing by colour alone or sound alone:** kept. The first score said "broken, small"; nothing found is told by colour alone. A gear's grade is a frame colour and a percent, and weak and resist are an icon's colour and its shape, under the words "Weak" and "Resists". The words that are missing (Fine, Fair; the elements' names) belong to the hover rule above, which was not checked. The smallest text was readable. `4_bag`, `3_boss_start`.
 - **5. Feel and world**
   - **The hit feels good:** not judged; facts only. An ordinary hit: the hero is already moving in the first picture, a white flash on contact, the number rises, paper bits fly, and the HP bar drains with a lighter trail. The boss kill: a whole-screen flash, "FINISH!", slow motion, petals. The background moves in every room and fight. `clips/hit.mp4`, `clips/boss_kill.mp4`.
-  - **Sound and music carry the mood:** not checked. There is no music, and the sounds were not listened to.
+  - **Sound and music carry the mood:** broken. There is no music at all, so the rule fails without listening. The sounds were not listened to.
   - **Something of its own:** not checked. For the designer and a new player.
   - **The player cares about the hero and the world:** not checked. For a new player and the designer.
 - **6. The demo**
-  - **20 to 45 minutes of the best content:** kept for length. The Old Road and Chapter 1 take 29 to 33 minutes by the bot's rough clock. Whether the best thing comes early could not be checked.
+  - **20 to 45 minutes of the best content:** kept for length only. The Old Road and Chapter 1 take 29 to 33 minutes by the bot's rough clock; a person is slower. Whether the best thing comes early, before the middle player's minute 14, could not be checked.
   - **Only finished things are in it:** broken (worst five, 5).
   - **It ends on a high point and asks for a wishlist:** broken (worst five, 2).
   - **Saving, continuing, settings and a feedback link:** part kept, part broken. Kept: save and continue work (the same hero, level, gold and settings; back at the title in 1.5 seconds). Broken: the menu has Save, Options and "Save and quit to title", and no feedback link. `4_menu`, `6_title_after_quit`, `6_continue_room`.
@@ -169,6 +169,7 @@ These came from the review of 2026-11-10.
 - **It was a script, not a person.** It shows what is on the screen, not what a new player understands or feels.
 - **Hover text was never tried.** Every "icon with no words" above may be softened by a line on hover.
 - **Sound was not listened to.**
+- **No hit landed on a resistance,** so "Resisted." and "Immune!" were not seen; they are read from the code. "Weak spot!" was seen once, at the gate guard.
 - **Two steps went through the game's rules instead of the screen:** putting on two body armors and buying five potions.
 - **The boss-kill clip** used a boss set to 1 HP.
 - **"New!" cards 2 to 4** at the end of Chapter 1 were closed unseen.
@@ -177,12 +178,41 @@ These came from the review of 2026-11-10.
 - **The gate guard's "fight the boss?" box** did not open under the script. The Thornheart's did.
 - **The build:** the Unity editor's game on `claude/unity-port`. It differs from the live branch in the benched hero bone tests and about 60 lines on how the hero's hands are read. The findings were not checked a second time on the live branch.
 
+### The second read (2026-11-27)
+
+The designer: "i've added gemini cli maybe it would be useful to run a check through it as well and evaluate suggestions it has as well."
+
+- **What it was:** Gemini 4 Neon read this sheet, the score and the notes on the new hunt hand-in, as text only: no pictures and no game. Claude then checked each of its points against the code, the data and the run's pictures. Nothing below is taken on Gemini's word.
+- **What it found:** no new problem in the game itself. It found mistakes in the score, made a case for a different fix order, and raised two real points about the hand-in.
+- **The score, corrected** (the count went from 8, 8, 6 and 7 to 8, 7, 7 and 7):
+  - **Sound and music:** from "not checked" to broken. No music fails the rule without listening.
+  - **Nothing by colour alone:** from "broken, small" to kept. Every case had a second sign (a percent, a shape).
+  - **No long stretch with nothing new:** from kept to not checked. The longest stretch was never measured.
+  - **Nothing hard-won is lost:** from kept to part broken. A hunt taken at "+1 rank pt" can pay none.
+  - **20 to 45 minutes:** kept for length only. The minutes are a bot's.
+  - **The worst five, 3:** it no longer cites "always obvious what to press". The fight shows the imp's next move and its numbers.
+  - **Bosses:** no boss is changed on the bot's first-try number alone.
+  - **Every result shows its reason:** from broken to kept with one gap. This one was Claude's own mistake, found while checking Gemini's first suggestion ("tag weak spots and resists"): the game already does, and the run's own picture of the gate guard shows "Weak spot!". Only Defend's saved amount is missing.
+- **The fix order.** Gemini's point holds: the middle demo player stops at about minute 14, so what is met in the first minutes weighs more than Chapter 1's ending at minute 30. The order proposed after the hand-in is in `docs/PLANS.md`. The worst five above keep their numbers.
+- **Rules it would add.** Three hold, as a clause on a rule that is already here, not as new rules. They are proposed, not in the sheet yet:
+  - the game can be played with the mouse alone and with the keyboard alone, and fullscreen or window can be set (keys, settings and sound sliders);
+  - the three classes don't play the same (fights don't all play the same). The Mage and the Rogue were only played by the bot;
+  - the demo says where it ends and whether progress carries over (it ends on a high point).
+- **Turned down:**
+  - a new rule on knowing what a purchase gives before paying: "numbers explained on hover" covers it;
+  - dropping "five to ten new players": the sheet is also the demo's to-do list;
+  - dropping "level-ups change what the hero can do": a level with only stat points is not scored as a failure;
+  - "end empty drops": an ordinary win now ends in a slip of 1.25 seconds, not a card that says "No loot", and an item on every win would flood the bag (Claude's view). The gold left over at the end of Chapter 1 (343 to 534 g) is one for the sit-down to watch;
+  - cutting the opening talk with Odo: it is one talk box, closed with one press;
+  - its hand-in worries that did not hold: gifts and stat points can't be skipped away (keys are ignored for the first 0.45 seconds of each card and nothing is lost by closing one), gifts go into a full bag anyway, and the board behind the cards is dimmed on purpose.
+- **What Gemini could not do:** see anything. Where the brief was wrong, it was wrong with it. One of its sources ("Valve Steam guidelines") was not checked.
+
 ## The steps
 
 1. **This sheet.** Done when the designer has read it.
 2. **Claude scores the Unity game against it.** Done 2026-11-26 for the Old Road and Chapter 1 (the designer: "okay, if you say so, do that."). The result is "The score" above. Chapters 2 and 3 are not scored.
 3. **The designer's 20-minute sit-down,** with the one question the scoring could not answer. Claude's pick for the question: "Does any ordinary fight in Chapter 1 make me press something other than Attack?"
-4. **Fixing what the score found.** Not started. It starts after the designer has seen the worst five, one fix at a time.
+4. **Fixing what the score found.** Started 2026-11-26 (the designer: "Yes, hand-in first"), one fix at a time, each shown before the next. The hunt hand-in is built and shown and waits for the designer's yes. What comes after it is in `docs/PLANS.md`.
 
 This takes the place of the roadmap's "Play the first hour by hand and fix".
 

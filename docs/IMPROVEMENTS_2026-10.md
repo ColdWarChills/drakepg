@@ -745,7 +745,7 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - It took pictures and two clips of the running game.
   - It ran attack-only fights against five ordinary monsters and both bosses.
   - The Unity bot (`Playthrough.Run(20, 1234, false, false)`) and the two headless checks (`npm run sim`, `npm run pace`) gave the numbers.
-- **The result** is in `docs/RULE_SHEET.md` under "The score": of 29 rules, 8 kept, 8 broken, 6 kept in one part and broken in another, 7 could not be checked by a script. The worst five:
+- **The result** is in `docs/RULE_SHEET.md` under "The score": of 29 rules, 8 kept, 8 broken, 6 kept in one part and broken in another, 7 could not be checked by a script (corrected on 2026-11-27 to 8, 7, 7 and 7; see "Rule sheet score, second read" below). The worst five:
   1. handing in hunts is a pile-up of floating lines, with no level page;
   2. Chapter 1 ends with "Chapter Complete!" over a "New!" card and no wishlist ask;
   3. a Tough Ash Imp in the first Chapter 1 room kills the Lv 2-3 hero in 2 turns;
@@ -761,6 +761,18 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - Two steps went through the game's rules instead of the screen (putting on two body armors, buying five potions), and the boss-kill clip used a boss set to 1 HP.
   - The build was `claude/unity-port`, which differs from live in the benched hero bone tests and about 60 lines on how the hero's hands are read. Nothing was checked a second time on live.
 - **Not covered:** Chapters 2 and 3; the forge, the coach, the Spire; a new player; the designer's own sit-down.
+
+## Rule sheet score, second read (2026-11-27; docs only, live)
+
+- **Asked by the designer:** "i've added gemini cli maybe it would be useful to run a check through it as well and evaluate suggestions it has as well."
+- **What was done:** Gemini 4 Neon read the rule sheet, the score and the notes on the new hunt hand-in through `scripts\gemini.cmd`, as text only. Claude checked each of its points against the code, the data and the run's pictures before taking any.
+- **The result:**
+  - No new problem in the game.
+  - The score is corrected in eight places, and the count is now 8 kept, 7 broken, 7 part kept, 7 not checked.
+  - One correction was Claude's own mistake: "every result shows its reason" was scored broken, but the fight names weak, resisted and immune hits, and the run's own picture of the gate guard shows "Weak spot!". Only Defend's saved amount is missing.
+  - A new fix order and two hand-in follow-ups are proposed in `docs/PLANS.md`.
+- **Where it is:** `docs/RULE_SHEET.md`, "The second read". Nothing in the game was changed.
+- **How far it goes:** Gemini saw no pictures and no game, so it could only weigh what the brief told it. "Resisted." and "Immune!" are read from the code, not seen.
 
 ## Gemini callable from Claude sessions (2026-11-26; PC only, live)
 
