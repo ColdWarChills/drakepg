@@ -176,9 +176,11 @@ export const MONSTERS: MonsterDef[] = [
     level: 3,
     tough: true,
     look: { shape: 'imp', color: 0xc0462b, accent: 0x2b1a12, scale: 0.8, art: 'mon_ash_imp', blood: { kind: 'wisps', color: 0xff8a2a } },
-    hp: 64,
+    // Its biggest everyday hit (Cinder Spit) is about a quarter of a Lv 3 starter hero's HP: four hits, not two. The
+    // extra HP keeps its weak spots deciding the fight (it lasts long enough for the wrong element to cost you).
+    hp: 80,
     stats: { str: 3, int: 9, dex: 8, end: 4 },
-    damage: [10, 14],
+    damage: [6, 9],
     element: 'fire',
     // Fire only feeds it. Douse it with ice or water; a crushing blow or poison works too, so every class has
     // an answer from level 1 (Heavy Strike is Blunt, Gas Shot poisons).

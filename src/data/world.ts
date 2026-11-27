@@ -25,7 +25,6 @@ export const ZONES: ZoneDef[] = [
     encounters: [
       { monsterId: 'mossling', weight: 5 },
       { monsterId: 'thornback_boar', weight: 4 },
-      { monsterId: 'ash_imp', weight: 1 },
     ],
   },
   {

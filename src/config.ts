@@ -296,6 +296,11 @@ export const BALANCE = {
   monsterAggroRange: 260,
   /** Seconds of safety after fleeing, so the same monster can't instantly re-engage. */
   fleeGraceSeconds: 2,
+  /**
+   * "Try again" after losing to a monster on the map: seconds of safety back in the room (the monsters nearby also
+   * step back out of reach, so you can change skills or gear first).
+   */
+  retryGraceSeconds: 3,
 };
 
 export const COLORS = {
