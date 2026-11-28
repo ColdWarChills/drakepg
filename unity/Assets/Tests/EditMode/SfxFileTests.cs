@@ -19,7 +19,7 @@ namespace Drakepg.Tests
         {
             Sfx.LoadFile = Sfx.DefaultLoadFile;
             Sfx.ResetCache();
-            foreach (var c in made) UnityEngine.Object.DestroyImmediate(c);
+            foreach (var c in made) if (c != null) UnityEngine.Object.DestroyImmediate(c);
             made.Clear();
         }
 
@@ -89,6 +89,21 @@ namespace Drakepg.Tests
             Assert.IsNotNull(clip);
             StringAssert.StartsWith("sfx_coin", clip.name);
             Assert.AreEqual(1f, gain);
+        }
+
+        [Test]
+        public void FileRemovedWhileRunningFallsBackToTheSynth()
+        {
+            // The file's asset goes away mid-session (uninstalled while the game runs): the synth takes over.
+            var file = Tone("test_miss_gone", 0.9f);
+            Only("miss", file);
+            Assert.AreSame(file, Sfx.ClipFor("miss", out _, out _));
+            UnityEngine.Object.DestroyImmediate(file);
+            var clip = Sfx.ClipFor("miss", out float gain, out float pitch);
+            Assert.IsNotNull(clip);
+            StringAssert.StartsWith("sfx_miss", clip.name);
+            Assert.AreEqual(1f, gain);
+            Assert.AreEqual(1f, pitch);
         }
 
         [Test]

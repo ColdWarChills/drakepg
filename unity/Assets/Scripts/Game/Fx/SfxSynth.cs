@@ -135,7 +135,8 @@ namespace Drakepg
                     // Its own noise seed, so the synth sounds that do play keep today's noise.
                     float synthLevel = Loudness(plain.Render(new System.Random(20261128)), Rate);
                     float gain = Mathf.Min(1, synthLevel / fileLevel);
-                    return new Sound { Drifts = drifts, File = file, Gain = gain, Clips = new AudioClip[0] };
+                    // Synth slots stay, so a file asset that goes away mid-session falls back to the synth.
+                    return new Sound { Drifts = drifts, File = file, Gain = gain, Clips = new AudioClip[drifts ? DriftSteps : 1] };
                 }
                 Debug.LogWarning("Sfx: could not read the samples of Resources/Sfx/" + name + ", playing the synth sound");
             }
