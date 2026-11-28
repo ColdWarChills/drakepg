@@ -3,11 +3,11 @@
   "sounds": [
     { "name": "slash",   "seconds": 0.5, "takes": 3, "prompt": "A single sword blade swishing fast through the air, a sharp clean whoosh ending in a short crisp cut, one swing only." },
     { "name": "hit",     "seconds": 0.5, "takes": 3, "prompt": "A single dull heavy thump of a fist striking padded leather armor, short and punchy, one impact only." },
-    { "name": "crit",    "seconds": 0.8, "takes": 3, "prompt": "A single powerful heavy impact, a deep thud with a bright metallic crack on top, strong and sharp, one blow only." },
+    { "name": "crit",    "seconds": 0.5, "takes": 3, "prompt": "A single powerful heavy impact, a deep thud with a bright metallic crack on top, strong and sharp, one blow only." },
     { "name": "miss",    "seconds": 0.5, "takes": 3, "prompt": "A quick clear whoosh of a sword swung hard through empty air, close and airy, the swing passing by with no impact." },
     { "name": "block",   "seconds": 0.6, "takes": 3, "prompt": "A steel sword striking a wooden shield with a metal rim, a solid knock followed by a short bright metallic ring, one hit only." },
     { "name": "heal",    "seconds": 1.2, "takes": 3, "prompt": "A soft warm rising chime shimmer, gentle glass bells and a light sparkle swelling upward, then fading out." },
-    { "name": "coin",    "seconds": 0.8, "takes": 3, "prompt": "A few small gold coins clinking together in a hand, bright short metallic jingles." },
+    { "name": "coin",    "seconds": 0.5, "takes": 3, "prompt": "Two small gold coins clinking together once, a bright short metallic clink." },
     { "name": "victory", "seconds": 3.0, "takes": 3, "prompt": "A short bright triumphant fanfare of brass trumpets and a light drum, a rising three-note flourish ending on a held major chord." }
   ]
 }

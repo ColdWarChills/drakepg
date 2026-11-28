@@ -10,7 +10,7 @@ Model:   C:\\Users\\Epic\\moss-sfx\\weights   (Hugging Face OpenMOSS-Team/MOSS-S
 Code:    C:\\Users\\Epic\\moss-sfx\\MOSS-TTS\\moss_soundeffect_v2  (github.com/OpenMOSS/MOSS-TTS)
 Windows: no Triton, so torch.compile is switched off (TORCHDYNAMO_DISABLE=1, set below before torch loads);
          the models are loaded straight onto the GPU by load_pipeline() (DiT in bf16, ~8 GB VRAM), because
-         the stock from_pretrained holds them all in RAM first and runs out of Windows commit space.
+         loading them all on the CPU first ran out of Windows commit space ("paging file is too small").
 
 Each take (seed = take number) is post-processed: mono, leading silence trimmed (starts within 10 ms,
 1.5 ms fade-in), tail cut where it has decayed (short fade-out), peaked to -1 dBFS, 48 kHz 16-bit mono WAV.
@@ -46,7 +46,7 @@ def db(x):
 
 def load_pipeline(model_dir):
     """Low-memory twin of MossSoundEffectPipeline.from_pretrained for a PC with little free commit
-    (Windows "paging file is too small" when all three models sit in RAM at once). Each model goes to
+    (Windows "paging file is too small" when all three models sat in RAM at once). Each model goes to
     the GPU as soon as it is read; the DiT is filled tensor by tensor on the GPU and kept in bf16
     (it runs under bf16 autocast anyway): ~8 GB of VRAM in all, no CPU offload needed."""
     import torch
@@ -104,7 +104,7 @@ def post_process(audio, told_seconds):
         x = x.mean(axis=0)
     x = x - x.mean()
     raw_peak = float(np.abs(x).max()) if x.size else 0.0
-    stats = {"raw_peak_db": round(db(raw_peak), 1)}
+    stats = {"raw_peak_db": round(db(raw_peak), 1), "decayed_s": None, "capped": False}
     if raw_peak < 1e-6:
         return np.zeros(int(0.1 * SR), dtype=np.float32), stats
 
