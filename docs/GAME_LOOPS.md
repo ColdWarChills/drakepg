@@ -44,11 +44,11 @@ A boss kill opens something, not only the next boss: the second weapon and the S
 | Big goal | Fixed order by quest; bosses 2 to 5 asked for nothing | Every land and boss room open from the first town; a boss kill counts without its quest; the Bogmother asks for preparation (Energy skills or farmed Fen gear); Guild hunts reach one rank up, so a new hero's board stays in the Thornwood |
 | Long | Nothing roams above level 13; the Spire pays once | Nothing |
 
-All of it is in the Unity game on the branch `claude/unity-port`, each change its own commit, and stays off the live branch until the designer has played and said yes. Checked with the rules' tests, screenshots and the bot: all three classes beat every boss on the first try, with about 2 to 2.5 hours of story. That is the bot, which spends its stat points and buys gear. By hand, a level 9 hero with nine levels of stat points unspent lost the Bogmother's rematch twice, so the points come first. Both hand checks (a new warrior's first half hour, then the title screen, a mage's start and the level 9 save) are in `docs/PLANS.md`.
+All of it is in the Unity game on the branch `claude/unity-port`, each change its own commit, and stays off the live branch until the designer has played and said yes. Checked with the rules' tests, screenshots and the bot: all three classes beat every boss on the first try, with about 2 to 2.5 hours of story. That is the bot, which spends its stat points and buys gear. By hand, a level 9 hero with nine levels of stat points unspent lost the Bogmother's rematch twice, so the points come first. Both hand checks (a new warrior's first half hour, then the title screen, a mage's start and the level 9 save) are in `docs/PLANS.md`. Added on 2026-11-28, same branch: the Guild clerk's board has a Bosses tab (every boss with its level, room and land, beaten or not, and its weak spots, then the Spire's floor), so the big goals can be found in one place.
 
 ## Still open, for the designer
 
 - A second use for gold in town (two outside reads picked a paid inn meal that lasts a number of fights).
-- A list of the bosses, their levels and what each opens, somewhere the player can find it (the Guild clerk was suggested).
+- Whether the Bosses tab should also mark a won Heroic rematch (the save keeps no record of one today).
 - What roams above level 13, and what the Spire pays on a repeat.
 - Whether high lands need more than the level number as a warning.
