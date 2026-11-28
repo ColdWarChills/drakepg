@@ -10,8 +10,9 @@ namespace Drakepg
     /// The sound synth (src/ui/sfx.ts): every sound is oscillator tones plus filtered noise, rendered the first time it
     /// plays into an AudioClip. The web version drifts the pitch of some sounds by up to 4% on every play; here those
     /// sounds keep a few drifted renders and pick one at random. Playback is a small pool of AudioSources so sounds
-    /// overlap. A recorded file at Resources/Sfx/&lt;name&gt; (scripts/make_sfx.py --install) plays in place of the
-    /// synth sound of that name, turned down to the synth's loudness and with the same pitch drift.
+    /// overlap. Recorded files at Resources/Sfx/&lt;name&gt;, &lt;name&gt;_2, &lt;name&gt;_3 ... (scripts/make_sfx.py
+    /// --install) play in place of the synth sound of that name: one of them at random per play, never the same one
+    /// twice in a row, each turned down to the synth's loudness and with the same pitch drift.
     /// </summary>
     public static partial class Sfx
     {
@@ -47,15 +48,24 @@ namespace Drakepg
         /// <summary>Drifted renders kept per drifting sound (the web rolls v freely; these are the bucket centers).</summary>
         const int DriftSteps = 5;
         const int Voices = 8;
+        /// <summary>Recorded takes looked up per sound: &lt;name&gt;, &lt;name&gt;_2 ... &lt;name&gt;_9.</summary>
+        const int MaxTakes = 9;
+
+        /// <summary>One recorded file and its volume factor (synth loudness / file loudness, at most 1).</summary>
+        struct Take
+        {
+            public AudioClip File;
+            public float Gain;
+        }
 
         sealed class Sound
         {
             public bool Drifts;
             public AudioClip[] Clips;
-            /// <summary>A recorded file that plays instead of the synth, or null.</summary>
-            public AudioClip File;
-            /// <summary>Volume factor for File: synth loudness / file loudness, at most 1.</summary>
-            public float Gain = 1;
+            /// <summary>Recorded files that play instead of the synth (empty: the synth plays).</summary>
+            public Take[] Takes = Array.Empty<Take>();
+            /// <summary>Index in Takes of the take played last, or -1.</summary>
+            public int Last = -1;
         }
 
         static readonly Dictionary<string, Sound> sounds = new Dictionary<string, Sound>();
@@ -65,7 +75,7 @@ namespace Drakepg
         static float[] started;
         static int next;
 
-        /// <summary>Finds a sound's recorded file, or null (looked up once per name). Tests swap it out.</summary>
+        /// <summary>Finds a recorded file by its name under Resources/Sfx (crit, crit_2 ...), or null; each is looked up once. Tests swap it out.</summary>
         internal static Func<string, AudioClip> LoadFile = DefaultLoadFile;
 
         internal static AudioClip DefaultLoadFile(string name) => Resources.Load<AudioClip>("Sfx/" + name);
@@ -86,8 +96,9 @@ namespace Drakepg
         }
 
         /// <summary>
-        /// The clip to play for a sound, with its volume factor and pitch: the recorded file when there is one, else a
-        /// synth render (factor 1, pitch 1). Null for an unknown name.
+        /// The clip to play for a sound, with its volume factor and pitch: one of its recorded takes when there is one
+        /// (at random, never the one played last when two or more are left), else a synth render (factor 1, pitch 1).
+        /// Null for an unknown name.
         /// </summary>
         internal static AudioClip ClipFor(string name, out float gain, out float pitch)
         {
@@ -99,11 +110,13 @@ namespace Drakepg
                 sounds[name] = sound; // null for an unknown name, so it warns once
             }
             if (sound == null) return null;
-            if (sound.File != null)
+            int take = PickTake(sound);
+            if (take >= 0)
             {
-                gain = sound.Gain;
+                sound.Last = take;
+                gain = sound.Takes[take].Gain;
                 if (sound.Drifts) pitch = 1 + (float)(Drift * (UnityEngine.Random.value - 0.5));
-                return sound.File;
+                return sound.Takes[take].File;
             }
             int k = sound.Drifts ? UnityEngine.Random.Range(0, DriftSteps) : 0;
             if (sound.Clips[k] == null)
@@ -112,6 +125,31 @@ namespace Drakepg
                 sound.Clips[k] = Render(sound.Drifts ? name + "_" + k : name, name, v);
             }
             return sound.Clips[k];
+        }
+
+        /// <summary>
+        /// Index in sound.Takes of the take to play, or -1 when none is left. Takes whose asset went away mid-session
+        /// are skipped; with two or more left, the one played last is not picked again.
+        /// </summary>
+        static int PickTake(Sound sound)
+        {
+            int live = 0;
+            bool lastLive = false;
+            for (int i = 0; i < sound.Takes.Length; i++)
+            {
+                if (sound.Takes[i].File == null) continue;
+                live++;
+                if (i == sound.Last) lastLive = true;
+            }
+            if (live == 0) return -1;
+            bool skipLast = live >= 2 && lastLive;
+            int n = UnityEngine.Random.Range(0, skipLast ? live - 1 : live);
+            for (int i = 0; i < sound.Takes.Length; i++)
+            {
+                if (sound.Takes[i].File == null || (skipLast && i == sound.Last)) continue;
+                if (n-- == 0) return i;
+            }
+            return -1;
         }
 
         static Sound Describe(string name)
@@ -126,21 +164,26 @@ namespace Drakepg
             var drifted = new Mix();
             Compose(drifted, name, 1 + Drift / 2);
             bool drifts = !plain.SameAs(drifted);
-            var file = LoadFile?.Invoke(name);
-            if (file != null)
+            // Takes: name, name_2, name_3 ... up to the first one that is missing.
+            var takes = new List<Take>();
+            float synthLevel = -1;
+            for (int t = 1; t <= MaxTakes && LoadFile != null; t++)
             {
+                string fileName = t == 1 ? name : name + "_" + t;
+                var file = LoadFile(fileName);
+                if (file == null) break;
                 float fileLevel = Loudness(file);
-                if (fileLevel > 1e-6f)
+                if (fileLevel <= 1e-6f)
                 {
-                    // Its own noise seed, so the synth sounds that do play keep today's noise.
-                    float synthLevel = Loudness(plain.Render(new System.Random(20261128)), Rate);
-                    float gain = Mathf.Min(1, synthLevel / fileLevel);
-                    // Synth slots stay, so a file asset that goes away mid-session falls back to the synth.
-                    return new Sound { Drifts = drifts, File = file, Gain = gain, Clips = new AudioClip[drifts ? DriftSteps : 1] };
+                    Debug.LogWarning("Sfx: could not read the samples of Resources/Sfx/" + fileName + ", playing the synth sound");
+                    continue;
                 }
-                Debug.LogWarning("Sfx: could not read the samples of Resources/Sfx/" + name + ", playing the synth sound");
+                // Its own noise seed, so the synth sounds that do play keep today's noise.
+                if (synthLevel < 0) synthLevel = Loudness(plain.Render(new System.Random(20261128)), Rate);
+                takes.Add(new Take { File = file, Gain = Mathf.Min(1, synthLevel / fileLevel) });
             }
-            return new Sound { Drifts = drifts, Clips = new AudioClip[drifts ? DriftSteps : 1] };
+            // Synth slots stay, so takes whose assets all go away mid-session fall back to the synth.
+            return new Sound { Drifts = drifts, Takes = takes.ToArray(), Clips = new AudioClip[drifts ? DriftSteps : 1] };
         }
 
         /// <summary>A clip's loudness (Loudness(float[], int) of its samples), or 0 when they can't be read.</summary>

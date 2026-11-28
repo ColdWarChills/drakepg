@@ -6,8 +6,11 @@ Run with the model's own Python (everything lives in C:\\Users\\Epic\\moss-sfx\\
     ... --takes 5 --out .sim\\sfx_try                                                        # more takes, other folder
     ... --page-only                                                                           # just rebuild listen.html
     ... --install slash:1 [hit:2 ...]    # copy <out>\\slash_1.wav to unity\\Assets\\Resources\\Sfx\\<game name>.wav (the game plays it instead of the synth)
-    ... --uninstall slash [hit ...]      # remove that file and its .meta (and the Sfx folder once it is empty)
+    ... --install crit_blade:1 crit_ring:3  # several picks for one game name: crit.wav, crit_2.wav ... in the order given
+                                         # (the game plays one of them at random); that name's older extra takes are removed
+    ... --uninstall slash [hit ...]      # remove every take of that game name and their .meta (and the Sfx folder once it is empty)
 --page-only, --install and --uninstall don't load the model. The game name is the row's "game" field, else its "name".
+A file that is overwritten keeps its .meta (same GUID and import settings). At most 9 takes per game name (MaxTakes in SfxSynth.cs).
 
 Model:   C:\\Users\\Epic\\moss-sfx\\weights   (Hugging Face OpenMOSS-Team/MOSS-SoundEffect-v2.0, ~11 GB)
 Code:    C:\\Users\\Epic\\moss-sfx\\MOSS-TTS\\moss_soundeffect_v2  (github.com/OpenMOSS/MOSS-TTS)
@@ -32,6 +35,7 @@ import argparse
 import base64
 import html
 import json
+import re
 import shutil
 import time
 from pathlib import Path
@@ -53,7 +57,25 @@ def game_name(table, name):
     sys.exit(f"no sound named {name!r} in {TABLE}")
 
 
+MAX_TAKES = 9  # MaxTakes in unity/Assets/Scripts/Game/Fx/SfxSynth.cs
+
+
+def take_file(game, n):
+    """The game's file name of a game name's n-th take (1 = <game>.wav, then <game>_2.wav ...)."""
+    return f"{game}.wav" if n == 1 else f"{game}_{n}.wav"
+
+
+def installed_takes(game):
+    """Files in Resources/Sfx that belong to a game name: <game>.wav, <game>_N.wav and their .meta (orphans too)."""
+    if not GAME_SFX.is_dir():
+        return []
+    pattern = re.compile(rf"^{re.escape(game)}(_\d+)?\.wav(\.meta)?$")
+    return sorted(p for p in GAME_SFX.iterdir() if p.is_file() and pattern.match(p.name))
+
+
 def install(table, out, picks):
+    # Check every pick before touching anything, so a bad one can't leave half an install.
+    groups = {}
     for pick in picks:
         name, sep, take = pick.partition(":")
         if not sep or not take.isdigit():
@@ -61,19 +83,32 @@ def install(table, out, picks):
         src = out / f"{name}_{take}.wav"
         if not src.exists():
             sys.exit(f"no take {src}")
-        GAME_SFX.mkdir(parents=True, exist_ok=True)
-        dst = GAME_SFX / f"{game_name(table, name)}.wav"
-        shutil.copyfile(src, dst)
-        print(f"installed {src.name} -> {dst}")
+        groups.setdefault(game_name(table, name), []).append(src)
+    for game, srcs in groups.items():
+        if len(srcs) > MAX_TAKES:
+            sys.exit(f"{len(srcs)} picks for {game}, the game plays at most {MAX_TAKES}")
+
+    GAME_SFX.mkdir(parents=True, exist_ok=True)
+    for game, srcs in groups.items():
+        keep = {take_file(game, n) for n in range(1, len(srcs) + 1)}
+        keep |= {k + ".meta" for k in keep}
+        for p in installed_takes(game):
+            if p.name not in keep:
+                p.unlink()
+                print(f"removed the old take {p.name}")
+        for n, src in enumerate(srcs, 1):
+            dst = GAME_SFX / take_file(game, n)
+            shutil.copyfile(src, dst)  # an existing .meta stays as it is
+            print(f"installed {src.name} -> {dst}")
 
 
 def uninstall(table, names):
     for name in names:
-        dst = GAME_SFX / f"{game_name(table, name)}.wav"
-        gone = [p for p in (dst, dst.with_name(dst.name + ".meta")) if p.exists()]
+        game = game_name(table, name)
+        gone = installed_takes(game)
         for p in gone:
             p.unlink()
-        print(f"removed {', '.join(p.name for p in gone)}" if gone else f"nothing installed at {dst}")
+        print(f"removed {', '.join(p.name for p in gone)}" if gone else f"nothing installed for {game} in {GAME_SFX}")
     if GAME_SFX.is_dir() and not any(GAME_SFX.iterdir()):
         GAME_SFX.rmdir()
         folder_meta = GAME_SFX.with_name(GAME_SFX.name + ".meta")
