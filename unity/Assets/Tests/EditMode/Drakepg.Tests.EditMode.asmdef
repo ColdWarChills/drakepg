@@ -3,6 +3,7 @@
   "rootNamespace": "Drakepg.Tests",
   "references": [
     "Drakepg.Rules",
+    "Drakepg.Game",
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner"
   ],

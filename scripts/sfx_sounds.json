@@ -1,5 +1,5 @@
 {
-  "_about": "Battle sound table for scripts/make_sfx.py. name = the game's sound name (SfxSynth.Compose), prompt = the sound itself and its materials, seconds = the length told to the model (the file is trimmed to where it has decayed), takes = how many seeds.",
+  "_about": "Battle sound table for scripts/make_sfx.py. name = the take's name and the game's sound name (SfxSynth.Compose), game = the game's sound name when it differs (used by --install; none do today), prompt = the sound itself and its materials, seconds = the length told to the model (the file is trimmed to where it has decayed), takes = how many seeds.",
   "sounds": [
     { "name": "slash",   "seconds": 0.5, "takes": 3, "prompt": "A single sword blade swishing fast through the air, a sharp clean whoosh ending in a short crisp cut, one swing only." },
     { "name": "hit",     "seconds": 0.5, "takes": 3, "prompt": "A single dull heavy thump of a fist striking padded leather armor, short and punchy, one impact only." },

@@ -5,6 +5,9 @@ Run with the model's own Python (everything lives in C:\\Users\\Epic\\moss-sfx\\
     C:\\Users\\Epic\\moss-sfx\\.venv\\Scripts\\python.exe scripts\\make_sfx.py --only hit      # redo one sound
     ... --takes 5 --out .sim\\sfx_try                                                        # more takes, other folder
     ... --page-only                                                                           # just rebuild listen.html
+    ... --install slash:1 [hit:2 ...]    # copy <out>\\slash_1.wav to unity\\Assets\\Resources\\Sfx\\<game name>.wav (the game plays it instead of the synth)
+    ... --uninstall slash [hit ...]      # remove that file and its .meta (and the Sfx folder once it is empty)
+--page-only, --install and --uninstall don't load the model. The game name is the row's "game" field, else its "name".
 
 Model:   C:\\Users\\Epic\\moss-sfx\\weights   (Hugging Face OpenMOSS-Team/MOSS-SoundEffect-v2.0, ~11 GB)
 Code:    C:\\Users\\Epic\\moss-sfx\\MOSS-TTS\\moss_soundeffect_v2  (github.com/OpenMOSS/MOSS-TTS)
@@ -29,6 +32,7 @@ import argparse
 import base64
 import html
 import json
+import shutil
 import time
 from pathlib import Path
 
@@ -38,6 +42,44 @@ SR = 48000
 REPO = Path(__file__).resolve().parent.parent
 TABLE = Path(__file__).resolve().parent / "sfx_sounds.json"
 DEFAULT_OUT = REPO / ".sim" / "sfx_2026-11-28"
+GAME_SFX = REPO / "unity" / "Assets" / "Resources" / "Sfx"
+
+
+def game_name(table, name):
+    """The game's sound name for a table row, found by its name or its game name."""
+    for s in table:
+        if name in (s["name"], s.get("game", s["name"])):
+            return s.get("game", s["name"])
+    sys.exit(f"no sound named {name!r} in {TABLE}")
+
+
+def install(table, out, picks):
+    for pick in picks:
+        name, sep, take = pick.partition(":")
+        if not sep or not take.isdigit():
+            sys.exit(f"--install wants name:take (like slash:1), got {pick!r}")
+        src = out / f"{name}_{take}.wav"
+        if not src.exists():
+            sys.exit(f"no take {src}")
+        GAME_SFX.mkdir(parents=True, exist_ok=True)
+        dst = GAME_SFX / f"{game_name(table, name)}.wav"
+        shutil.copyfile(src, dst)
+        print(f"installed {src.name} -> {dst}")
+
+
+def uninstall(table, names):
+    for name in names:
+        dst = GAME_SFX / f"{game_name(table, name)}.wav"
+        gone = [p for p in (dst, dst.with_name(dst.name + ".meta")) if p.exists()]
+        for p in gone:
+            p.unlink()
+        print(f"removed {', '.join(p.name for p in gone)}" if gone else f"nothing installed at {dst}")
+    if GAME_SFX.is_dir() and not any(GAME_SFX.iterdir()):
+        GAME_SFX.rmdir()
+        folder_meta = GAME_SFX.with_name(GAME_SFX.name + ".meta")
+        if folder_meta.exists():
+            folder_meta.unlink()
+        print(f"removed the empty folder {GAME_SFX}")
 
 
 def db(x):
@@ -210,9 +252,17 @@ def main():
     ap.add_argument("--cfg", type=float, default=4.0)
     ap.add_argument("--extra", type=float, default=1.0, help="seconds generated past the told length (found tail, not a hard crop)")
     ap.add_argument("--page-only", action="store_true", help="only rebuild listen.html")
+    ap.add_argument("--install", nargs="+", metavar="NAME:TAKE", help="put takes into the game (Resources/Sfx), no model")
+    ap.add_argument("--uninstall", nargs="+", metavar="NAME", help="take installed sounds out of the game, no model")
     args = ap.parse_args()
 
     table = json.loads(TABLE.read_text(encoding="utf-8"))["sounds"]
+    if args.install or args.uninstall:
+        if args.uninstall:
+            uninstall(table, args.uninstall)
+        if args.install:
+            install(table, Path(args.out), args.install)
+        return
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     todo = [s for s in table if not args.only or s["name"] == args.only]

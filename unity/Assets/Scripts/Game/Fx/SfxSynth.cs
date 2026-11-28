@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Drakepg.Tests.EditMode")]
+
 namespace Drakepg
 {
     /// <summary>
     /// The sound synth (src/ui/sfx.ts): every sound is oscillator tones plus filtered noise, rendered the first time it
-    /// plays into an AudioClip (no audio files). The web version drifts the pitch of some sounds by up to 4% on every
-    /// play; here those sounds keep a few drifted renders and pick one at random. Playback is a small pool of
-    /// AudioSources so sounds overlap.
+    /// plays into an AudioClip. The web version drifts the pitch of some sounds by up to 4% on every play; here those
+    /// sounds keep a few drifted renders and pick one at random. Playback is a small pool of AudioSources so sounds
+    /// overlap. A recorded file at Resources/Sfx/&lt;name&gt; (scripts/make_sfx.py --install) plays in place of the
+    /// synth sound of that name, turned down to the synth's loudness and with the same pitch drift.
     /// </summary>
     public static partial class Sfx
     {
@@ -49,6 +52,10 @@ namespace Drakepg
         {
             public bool Drifts;
             public AudioClip[] Clips;
+            /// <summary>A recorded file that plays instead of the synth, or null.</summary>
+            public AudioClip File;
+            /// <summary>Volume factor for File: synth loudness / file loudness, at most 1.</summary>
+            public float Gain = 1;
         }
 
         static readonly Dictionary<string, Sound> sounds = new Dictionary<string, Sound>();
@@ -58,25 +65,46 @@ namespace Drakepg
         static float[] started;
         static int next;
 
+        /// <summary>Finds a sound's recorded file, or null (looked up once per name). Tests swap it out.</summary>
+        internal static Func<string, AudioClip> LoadFile = DefaultLoadFile;
+
+        internal static AudioClip DefaultLoadFile(string name) => Resources.Load<AudioClip>("Sfx/" + name);
+
+        /// <summary>Forgets every looked-up sound (tests).</summary>
+        internal static void ResetCache() => sounds.Clear();
+
         static partial void PlayImpl(string name)
         {
             if (Muted || !Application.isPlaying || string.IsNullOrEmpty(name)) return;
-            var clip = ClipFor(name);
+            var clip = ClipFor(name, out float gain, out float pitch);
             if (clip == null) return;
             var source = FreeSource();
             source.clip = clip;
-            source.volume = Saves.Volume / 100f;
+            source.volume = Saves.Volume / 100f * gain;
+            source.pitch = pitch; // pooled sources: a synth clip always resets it to 1
             source.Play();
         }
 
-        static AudioClip ClipFor(string name)
+        /// <summary>
+        /// The clip to play for a sound, with its volume factor and pitch: the recorded file when there is one, else a
+        /// synth render (factor 1, pitch 1). Null for an unknown name.
+        /// </summary>
+        internal static AudioClip ClipFor(string name, out float gain, out float pitch)
         {
+            gain = 1;
+            pitch = 1;
             if (!sounds.TryGetValue(name, out var sound))
             {
                 sound = Describe(name);
                 sounds[name] = sound; // null for an unknown name, so it warns once
             }
             if (sound == null) return null;
+            if (sound.File != null)
+            {
+                gain = sound.Gain;
+                if (sound.Drifts) pitch = 1 + (float)(Drift * (UnityEngine.Random.value - 0.5));
+                return sound.File;
+            }
             int k = sound.Drifts ? UnityEngine.Random.Range(0, DriftSteps) : 0;
             if (sound.Clips[k] == null)
             {
@@ -98,7 +126,59 @@ namespace Drakepg
             var drifted = new Mix();
             Compose(drifted, name, 1 + Drift / 2);
             bool drifts = !plain.SameAs(drifted);
+            var file = LoadFile?.Invoke(name);
+            if (file != null)
+            {
+                float fileLevel = Loudness(file);
+                if (fileLevel > 1e-6f)
+                {
+                    // Its own noise seed, so the synth sounds that do play keep today's noise.
+                    float synthLevel = Loudness(plain.Render(new System.Random(20261128)), Rate);
+                    float gain = Mathf.Min(1, synthLevel / fileLevel);
+                    return new Sound { Drifts = drifts, File = file, Gain = gain, Clips = new AudioClip[0] };
+                }
+                Debug.LogWarning("Sfx: could not read the samples of Resources/Sfx/" + name + ", playing the synth sound");
+            }
             return new Sound { Drifts = drifts, Clips = new AudioClip[drifts ? DriftSteps : 1] };
+        }
+
+        /// <summary>A clip's loudness (Loudness(float[], int) of its samples), or 0 when they can't be read.</summary>
+        static float Loudness(AudioClip clip)
+        {
+            if (clip.loadState != AudioDataLoadState.Loaded) clip.LoadAudioData();
+            var data = new float[clip.samples * clip.channels];
+            if (data.Length == 0 || !clip.GetData(data, 0)) return 0;
+            return Loudness(data, clip.frequency * clip.channels);
+        }
+
+        /// <summary>
+        /// Gated RMS: the RMS of the 10 ms frames within 40 dB of the loudest frame, so silent tails and the length of
+        /// a sound don't count, only how loud it is while it sounds. `rate` = values per second (frequency * channels).
+        /// </summary>
+        internal static float Loudness(float[] data, int rate)
+        {
+            int frame = Math.Max(1, rate / 100);
+            int frames = (data.Length + frame - 1) / frame;
+            var power = new double[frames];
+            double loudest = 0;
+            for (int f = 0; f < frames; f++)
+            {
+                int from = f * frame, to = Math.Min(data.Length, from + frame);
+                double sum = 0;
+                for (int i = from; i < to; i++) sum += (double)data[i] * data[i];
+                power[f] = sum / (to - from);
+                loudest = Math.Max(loudest, power[f]);
+            }
+            if (loudest <= 0) return 0;
+            double gate = loudest * 1e-4, total = 0;
+            int count = 0;
+            foreach (double p in power)
+            {
+                if (p < gate) continue;
+                total += p;
+                count++;
+            }
+            return (float)Math.Sqrt(total / count);
         }
 
         static AudioClip Render(string clipName, string name, double v)
