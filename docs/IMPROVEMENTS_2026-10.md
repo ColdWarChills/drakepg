@@ -838,3 +838,14 @@ The designer's overnight prompt (PLANS "Overnight runs on the hero on bones"): t
   - Chapter 1 got shorter for the test hero. `npm run pace`: 25 / 19 / 23 minutes to 14 / 13 / 13 (target about 35), the Thornheart met at Lv 4-5 instead of Lv 5-6, and the Unity playthrough's 60 heroes lost to it 10 times instead of once. The test hero used to spend that time looking for the rare imp in Thornwood for its Guild hunt. Open in `docs/PLANS.md`.
   - After the 3 safe seconds another monster can wander in. Not played: a loss to an Elite, to a Lucky Impling, and to a mimic from a real chest (read in the code only).
   - The web game's loss screen is untouched.
+
+## Recorded battle sounds (2026-11-28; Unity, live)
+
+The designer found a guide to making sound effects on his own PC ("look what I found for sounds") and said "Yes, set it up". The Unity game's battle sounds are now recorded takes he picked by ear, in place of the code-made ones.
+
+- **The model:** MOSS-SoundEffect v2.0 (Apache-2.0; code `github.com/OpenMOSS/MOSS-TTS`, weights `OpenMOSS-Team/MOSS-SoundEffect-v2.0`, 11.2 GB) in `C:\Users\Epic\moss-sfx` on his PC. It runs offline, about 25 seconds per take. Nothing else from the guide was set up (no MCP server, no WSL, no voice model).
+- **Making takes:** `scripts/make_sfx.py` reads `scripts/sfx_sounds.json` (name, prompt, seconds, takes) and writes trimmed WAVs plus a `listen.html` to pick from. `--install name:take ...` copies picks into the game, `--uninstall name` takes them out.
+- **In the game** (`unity/Assets/Scripts/Game/Fx/SfxSynth.cs`): a file at `unity/Assets/Resources/Sfx/<name>.wav` plays in place of that synth sound. More takes go in as `<name>_2.wav`, `<name>_3.wav` (up to 9, the lookup stops at the first missing one). Each take is turned down to the synth sound's loudness (never up), one take plays at random and never the same one twice in a row, and a missing or destroyed file falls back to the synth. No files = the old sounds.
+- **His picks:** slash 3, hit 3, miss 1, block 3 and coin 2 from the first batch ("most of them are decent ... Victory ones are all weird ... Crit ones sound like hitting an empty barrel"). After a redo of crit, victory and heal: crit = blade cut 1, whip crack 1, steel ring 3; victory = drums 2, big chord 3; heal = glow 3, harp 1. His word on them in the game: "Good, next job".
+- **Checked:** 13 EditMode tests in `SfxFileTests.cs` (42 of 42 in the whole suite, run on the side branch), and the installed files are byte-equal to the picked takes. The live checkout itself was not compiled in Unity: the commits were cherry-picked onto files that were identical on both branches. Open items are in `docs/PLANS.md`.
+- The web game keeps its synth sounds.
