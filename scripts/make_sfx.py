@@ -211,15 +211,15 @@ def build_page(out, sounds):
             )
             count += 1
         if cells:
-            rows.append(f'<div class="row"><span class="name">{html.escape(s["name"])}</span>{"".join(cells)}</div>')
+            rows.append(f'<div class="row"><span class="name">{html.escape(s.get("label", s["name"]))}</span>{"".join(cells)}</div>')
     page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Battle sounds</title>
 <style>
 body {{ background: #f4ecd8; color: #2b241c; font: 18px/1.4 Georgia, serif; margin: 0; padding: 24px 16px; }}
 h1 {{ font-size: 24px; font-weight: normal; margin: 0 0 20px; }}
-.row {{ display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #d8ccb0; max-width: 420px; }}
-.name {{ width: 110px; }}
+.row {{ display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #d8ccb0; max-width: 520px; }}
+.name {{ width: 170px; }}
 button {{ font: inherit; width: 48px; height: 40px; background: #fbf6ea; color: #2b241c; border: 1px solid #8a7b62; border-radius: 4px; cursor: pointer; }}
 button.on {{ background: #2b241c; color: #fbf6ea; }}
 </style></head><body>
@@ -244,7 +244,7 @@ document.querySelectorAll('button[data-a]').forEach(function (b) {{
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--only", help="make just this sound (name from sfx_sounds.json)")
+    ap.add_argument("--only", help="make just these sounds (names from sfx_sounds.json, comma separated)")
     ap.add_argument("--takes", type=int, help="takes per sound (default: the table's)")
     ap.add_argument("--out", default=str(DEFAULT_OUT), help="output folder")
     ap.add_argument("--model", default=os.path.join(HOME, "weights"), help="model folder")
@@ -265,9 +265,10 @@ def main():
         return
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    todo = [s for s in table if not args.only or s["name"] == args.only]
-    if args.only and not todo:
-        sys.exit(f"no sound named {args.only!r} in {TABLE}")
+    only = [n.strip() for n in args.only.split(",")] if args.only else None
+    todo = [s for s in table if not only or s["name"] in only]
+    if only and len(todo) != len(set(only)):
+        sys.exit(f"no sound named {sorted(set(only) - {s['name'] for s in todo})} in {TABLE}")
 
     if not args.page_only:
         import torch

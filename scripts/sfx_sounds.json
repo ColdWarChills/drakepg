@@ -1,5 +1,5 @@
 {
-  "_about": "Battle sound table for scripts/make_sfx.py. name = the take's name and the game's sound name (SfxSynth.Compose), game = the game's sound name when it differs (used by --install; none do today), prompt = the sound itself and its materials, seconds = the length told to the model (the file is trimmed to where it has decayed), takes = how many seeds.",
+  "_about": "Battle sound table for scripts/make_sfx.py. name = the take's name and the game's sound name (SfxSynth.Compose), game = the game's sound name when it differs (used by --install; the redo rows like crit_blade install as crit), label = the row's words on the listening page (default: name), prompt = the sound itself and its materials, seconds = the length told to the model (the file is trimmed to where it has decayed), takes = how many seeds.",
   "sounds": [
     { "name": "slash",   "seconds": 0.5, "takes": 3, "prompt": "A single sword blade swishing fast through the air, a sharp clean whoosh ending in a short crisp cut, one swing only." },
     { "name": "hit",     "seconds": 0.5, "takes": 3, "prompt": "A single dull heavy thump of a fist striking padded leather armor, short and punchy, one impact only." },
@@ -8,6 +8,15 @@
     { "name": "block",   "seconds": 0.6, "takes": 3, "prompt": "A steel sword striking a wooden shield with a metal rim, a solid knock followed by a short bright metallic ring, one hit only." },
     { "name": "heal",    "seconds": 1.2, "takes": 3, "prompt": "A soft warm rising chime shimmer, gentle glass bells and a light sparkle swelling upward, then fading out." },
     { "name": "coin",    "seconds": 0.5, "takes": 3, "prompt": "Two small gold coins clinking together once, a bright short metallic clink." },
-    { "name": "victory", "seconds": 3.0, "takes": 3, "prompt": "A short bright triumphant fanfare of brass trumpets and a light drum, a rising three-note flourish ending on a held major chord." }
+    { "name": "victory", "seconds": 3.0, "takes": 3, "prompt": "A short bright triumphant fanfare of brass trumpets and a light drum, a rising three-note flourish ending on a held major chord." },
+
+    { "name": "crit_blade",    "game": "crit",    "label": "crit: blade cut",    "seconds": 0.5, "takes": 3, "prompt": "A sharp sword blade cutting deep into its target, a fast bright steel slice ending in a hard tight smack, dry and close, one strike only." },
+    { "name": "crit_crack",    "game": "crit",    "label": "crit: whip crack",   "seconds": 0.5, "takes": 3, "prompt": "A fierce heavy punch landing with a sharp snapping crack, a whip crack and a body blow at once, very short, dry and close, one hit only." },
+    { "name": "crit_ring",     "game": "crit",    "label": "crit: steel ring",   "seconds": 0.5, "takes": 3, "prompt": "A sword striking steel plate armor at full force, a sharp bright clang with a short high ringing shing, crisp and piercing, one strike only." },
+    { "name": "victory_drums", "game": "victory", "label": "victory: drums",     "seconds": 1.5, "takes": 3, "prompt": "A short roll on a deep timpani drum ending in one bright cymbal crash, bold and triumphant." },
+    { "name": "victory_chord", "game": "victory", "label": "victory: big chord", "seconds": 1.5, "takes": 3, "prompt": "One bright triumphant orchestral chord, brass and strings struck together once and ringing out, majestic and warm." },
+    { "name": "victory_lute",  "game": "victory", "label": "victory: lute",      "seconds": 1.5, "takes": 3, "prompt": "A quick happy flourish strummed on a lute with small bells, four rising notes ending on a bright chord, a medieval tavern cheer." },
+    { "name": "heal_glow",     "game": "heal",    "label": "heal: glow",         "seconds": 1.0, "takes": 3, "prompt": "A soft warm hum swelling gently like a glowing light, ending in one clear small bell note, calm and soothing." },
+    { "name": "heal_harp",     "game": "heal",    "label": "heal: harp",         "seconds": 1.0, "takes": 3, "prompt": "A soft harp glissando rising upward with a warm gentle glow, soothing and magical, short." }
   ]
 }
