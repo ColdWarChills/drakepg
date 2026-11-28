@@ -39,12 +39,12 @@ A boss kill opens something, not only the next boss: the second weapon and the S
 | Loop | Thin before | Built this night |
 | --- | --- | --- |
 | Fight | Fine | Nothing changed |
-| Spot | A room stayed empty while the hero stood in it; most wins dropped nothing; no spot was better than another; Elites and chests came late | Rooms refill (one monster per 25 s); Elites and chests from the first town on. Being built: gear on about 1 win in 5, a favoured piece per monster |
+| Spot | A room stayed empty while the hero stood in it; most wins dropped nothing; no spot was better than another; Elites and chests came late | Rooms refill (one monster per 25 s); Elites and chests from the first town on; gear on about 1 win in 5; each roaming monster favours one kind of gear, named on its sheet |
 | Town | Gold has one real use | Nothing (left for the designer after he has played) |
-| Big goal | Fixed order by quest; bosses 2 to 5 asked for nothing | Being built: open lands and boss rooms, a kill that counts without the quest, the Bogmother asking for preparation |
+| Big goal | Fixed order by quest; bosses 2 to 5 asked for nothing | Every land and boss room open from the first town; a boss kill counts without its quest; the Bogmother asks for preparation (Energy skills or farmed Fen gear); Guild hunts reach one rank up, so a new hero's board stays in the Thornwood |
 | Long | Nothing roams above level 13; the Spire pays once | Nothing |
 
-This table is brought up to date when the night's builds are checked.
+All of it is in the Unity game on the branch `claude/unity-port`, each change its own commit, and stays off the live branch until the designer has played and said yes. Checked with the rules' tests, screenshots and the bot: all three classes beat every boss on the first try, with about 2 to 2.5 hours of story. What a new hero's first half hour looks like by hand is in `docs/PLANS.md`.
 
 ## Still open, for the designer
 
